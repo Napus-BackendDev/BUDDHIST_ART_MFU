@@ -9,10 +9,13 @@ module.exports = function uploadImage(folderType, fieldName = "image") {
 
       switch (folderType) {
         case "artwork":
-          folderPath = path.join(__dirname, "../public/uploads/artwork/");
+          folderPath = path.join(__dirname, "../public/data/uploads/artwork/");
           break;
         case "profile":
-          folderPath = path.join(__dirname, "../public/uploads/profile/");
+          folderPath = path.join(__dirname, "../public/data/uploads/profile/");
+          break;
+        case "news":
+          folderPath = path.join(__dirname, "../public/data/uploads/news/");
           break;
         default:
           cb(new Error("Invalid field name"), null);

@@ -6,8 +6,9 @@ const artworkService = require("./service/artwork");
 
 router.get("", artworkService.onQuerys);
 router.post("/artwork", artworkService.onQuerys);
-router.post("", uploadImage("artwork", "image"), artworkService.onCreate);
-router.put("", uploadImage("artwork", "image"), artworkService.onUpdate);
+router.post("", artworkService.onCreate);
+router.put("/upload/artwork", uploadImage("artwork", "image"), artworkService.onUpload);
+router.put("", artworkService.onUpdate);
 router.delete("", artworkService.onDelete);
 
 module.exports = router;
