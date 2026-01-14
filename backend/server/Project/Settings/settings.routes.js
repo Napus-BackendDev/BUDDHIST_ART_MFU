@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const message = require("./service/message");
+const group = require("./service/group");
 const status = require("./service/status");
 const verification = require("./service/verification");
 // const auth_message = require("./service/auth_message");
@@ -13,6 +14,11 @@ router.get("/message", message.onQuerys);
 router.post("/message", message.onCreate);
 router.put("/message", message.onUpdate);
 router.delete("/message", message.onDelete);
+
+router.get("/group", group.onQuerys);
+router.post("/group", group.onCreate);
+router.put("/group", group.onUpdate);
+router.delete("/group", group.onDelete);
 
 router.get("/status", status.onQuerys);
 router.post("/status", status.onCreate);

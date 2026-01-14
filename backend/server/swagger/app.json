@@ -1,212 +1,926 @@
 {
-    "openapi": "3.0.0",
-    "info": {
-    "title": "My API",
-        "version": "1.0.0",
-        "description": "API documentation"
-},
-    "paths": {
-    "/users": {
-        "get": {
-            "summary": "Get all users",
-                "responses": {
-                "200": {
-                    "description": "Success"
-                }
-            }
-        },
-        "post": {
-            "summary": "Create a user",
-                "requestBody": {
-                "required": true,
-                    "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                                "required": ["name", "email"],
-                                "properties": {
-                                "name": {
-                                    "type": "string"
-                                },
-                                "email": {
-                                    "type": "string"
-                                },
-                                "age": {
-                                    "type": "number"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "responses": {
-                "201": {
-                    "description": "Created"
-                }
-            }
-        }
-    },
-    "/users/{id}": {
-        "put": {
-            "summary": "Update a user",
-                "parameters": [
-                {
-                    "in": "path",
-                    "name": "id",
-                    "schema": {
-                        "type": "string"
-                    },
-                    "required": true,
-                    "description": "The user ID"
-                }
-            ],
-                "requestBody": {
-                "required": true,
-                    "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                                "properties": {
-                                "name": {
-                                    "type": "string"
-                                },
-                                "email": {
-                                    "type": "string"
-                                },
-                                "age": {
-                                    "type": "number"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "responses": {
-                "200": {
-                    "description": "Updated"
-                }
-            }
-        },
-        "delete": {
-            "summary": "Delete a user",
-                "parameters": [
-                {
-                    "in": "path",
-                    "name": "id",
-                    "schema": {
-                        "type": "string"
-                    },
-                    "required": true,
-                    "description": "The user ID"
-                }
-            ],
-                "responses": {
-                "200": {
-                    "description": "Deleted"
-                }
-            }
-        }
-    },
-    "/products": {
-        "get": {
-            "summary": "Get all products",
-                "responses": {
-                "200": {
-                    "description": "Success"
-                }
-            }
-        },
-        "post": {
-            "summary": "Create a product",
-                "requestBody": {
-                "required": true,
-                    "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                                "required": ["name", "price"],
-                                "properties": {
-                                "name": {
-                                    "type": "string"
-                                },
-                                "price": {
-                                    "type": "number"
-                                },
-                                "description": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "responses": {
-                "201": {
-                    "description": "Created"
-                }
-            }
-        }
-    },
-    "/products/{id}": {
-        "put": {
-            "summary": "Update a product",
-                "parameters": [
-                {
-                    "in": "path",
-                    "name": "id",
-                    "schema": {
-                        "type": "string"
-                    },
-                    "required": true,
-                    "description": "The product ID"
-                }
-            ],
-                "requestBody": {
-                "required": true,
-                    "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                                "properties": {
-                                "name": {
-                                    "type": "string"
-                                },
-                                "price": {
-                                    "type": "number"
-                                },
-                                "description": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "responses": {
-                "200": {
-                    "description": "Updated"
-                }
-            }
-        },
-        "delete": {
-            "summary": "Delete a product",
-                "parameters": [
-                {
-                    "in": "path",
-                    "name": "id",
-                    "schema": {
-                        "type": "string"
-                    },
-                    "required": true,
-                    "description": "The product ID"
-                }
-            ],
-                "responses": {
-                "200": {
-                    "description": "Deleted"
-                }
-            }
-        }
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Buddhist Art API",
+    "description": "API documentation for Buddhist Art Management System",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
     }
-}
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081/api/v1",
+      "description": "Development server"
+    },
+    {
+      "url": "http://api.example.com",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/artwork": {
+      "get": {
+        "tags": ["Artwork"],
+        "summary": "Get all artworks",
+        "description": "Retrieve all artwork records"
+      },
+      "post": {
+        "tags": ["Artwork"],
+        "summary": "Create new artwork",
+        "description": "Create a new artwork record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "example": "P003"
+                  },
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "owner": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "size": {
+                    "type": "string"
+                  },
+                  "technique": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  },
+                  "price": {
+                    "type": "number",
+                    "example": 1500
+                  },
+                  "concept": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "category": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  },
+                  "presentation": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  },
+                  "approvalStatus": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  },
+                  "saleStatus": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  }
+                },
+                "required": ["title", "code"]
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Artwork"],
+        "summary": "Update artwork",
+        "description": "Update an existing artwork record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "code": {
+                    "type": "string",
+                    "example": "P003"
+                  },
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "owner": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "size": {
+                    "type": "string"
+                  },
+                  "technique": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  },
+                  "price": {
+                    "type": "number",
+                    "example": 1500
+                  },
+                  "concept": {
+                    "type": "object",
+                    "properties": {
+                      "en": {
+                        "type": "string",
+                        "example": "Concept in English"
+                      },
+                      "th": {
+                        "type": "string",
+                        "example": "แนวคิดภาษาไทย"
+                      }
+                    }
+                  },
+                  "category": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  },
+                  "presentation": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  },
+                  "approvalStatus": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  },
+                  "saleStatus": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  }
+                },
+                "required": ["title", "code"]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Artwork"],
+        "summary": "Delete artwork",
+        "description": "Delete an artwork record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                  }
+                },
+                "required": ["_id"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/artwork/upload": {
+      "put": {
+        "tags": ["Artwork"],
+        "summary": "Upload artwork image",
+        "description": "Upload image for artwork",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["_id", "image"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/artwork/explore": {
+      "post": {
+        "tags": ["Artwork"],
+        "summary": "Explore artworks",
+        "description": "Get artworks for exploration",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news": {
+      "get": {
+        "tags": ["News"],
+        "summary": "Get all news",
+        "description": "Retrieve all news records"
+      },
+      "post": {
+        "tags": ["News"],
+        "summary": "Create new news",
+        "description": "Create a new news record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "description": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  }
+                },
+                "required": ["title", "description"]
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["News"],
+        "summary": "Update news",
+        "description": "Update an existing news record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "description": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  }
+                },
+                "required": ["_id"]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["News"],
+        "summary": "Delete news",
+        "description": "Delete a news record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string"
+                  }
+                },
+                "required": ["_id"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/upload": {
+      "put": {
+        "tags": ["News"],
+        "summary": "Upload news image",
+        "description": "Upload image for news",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["_id", "image"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/explore": {
+      "post": {
+        "tags": ["News"],
+        "summary": "Explore news",
+        "description": "Get news for exploration",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings/message": {
+      "get": {
+        "tags": ["Settings Message"],
+        "summary": "Get all messages",
+        "description": "Retrieve all message records",
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Failed to retrieve messages"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Settings Message"],
+        "summary": "Create new message",
+        "description": "Create a new message record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": ["title"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created message"
+          },
+          "404": {
+            "description": "Failed to create message"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Settings Message"],
+        "summary": "Update message",
+        "description": "Update an existing message record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": ["_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully updated message"
+          },
+          "404": {
+            "description": "Failed to update message"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Settings Message"],
+        "summary": "Delete message",
+        "description": "Delete a message record by ID",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully deleted message"
+          },
+          "404": {
+            "description": "Failed to delete message"
+          }
+        }
+      }
+    },
+    "/settings/group": {
+      "get": {
+        "tags": ["Settings Group"],
+        "summary": "Get all groups",
+        "description": "Retrieve all group records"
+      },
+      "post": {
+        "tags": ["Settings Status"],
+        "summary": "Create new status",
+        "description": "Create a new status record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "description": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created status"
+          },
+          "404": {
+            "description": "Failed to create status"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Settings Status"],
+        "summary": "Update status",
+        "description": "Update an existing status record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "description": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Settings Status"],
+        "summary": "Delete status",
+        "description": "Delete a status record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully deleted status"
+          },
+          "404": {
+            "description": "Failed to delete status"
+          }
+        }
+      }
+    },
+    "/settings/status": {
+      "get": {
+        "tags": ["Settings Status"],
+        "summary": "Get all statuses",
+        "description": "Retrieve all status records"
+      },
+      "post": {
+        "tags": ["Settings Status"],
+        "summary": "Create new status",
+        "description": "Create a new status record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "description": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "group": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Settings Status"],
+        "summary": "Update status",
+        "description": "Update an existing status record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "description": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": { "type": "string" },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  },
+                  "group": {
+                    "type": "string",
+                    "example": "689c04cb255db4e56aea88ef"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Settings Status"],
+        "summary": "Delete status",
+        "description": "Delete a status record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings/verification": {
+      "get": {
+        "tags": ["Settings Verification"],
+        "summary": "Get all verifications",
+        "description": "Retrieve all verification records",
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved verifications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Failed to retrieve verifications"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Settings Verification"],
+        "summary": "Create new verification",
+        "description": "Create a new verification record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created verification"
+          },
+          "404": {
+            "description": "Failed to create verification"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Settings Verification"],
+        "summary": "Update verification",
+        "description": "Update an existing verification record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully updated verification"
+          },
+          "404": {
+            "description": "Failed to update verification"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Settings Verification"],
+        "summary": "Delete verification",
+        "description": "Delete a verification record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully deleted verification"
+          },
+          "404": {
+            "description": "Failed to delete verification"
+          }
+        }
+      }
+    },
+    "/settings/verification/explorers": {
+      "post": {
+        "tags": ["Settings Verification"],
+        "summary": "Create verification (explorers)",
+        "description": "Create a new verification record (explorers endpoint)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created verification"
+          },
+          "404": {
+            "description": "Failed to create verification"
+          }
+        }
+      }
+    }
+  }
 }

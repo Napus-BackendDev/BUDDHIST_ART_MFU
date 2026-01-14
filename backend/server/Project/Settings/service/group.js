@@ -1,12 +1,12 @@
 var mongo = require('mongodb');
-var Status = require('../controller/status');
+var Group = require('../controller/group');
 const resMsg = require("../service/message");
 
 exports.onQuery = async function (request, response, next) {
     try {
 
         var querys = {};
-        const doc = await Status.onQuery(querys);
+        const doc = await Group.onQuery(querys);
 
         var resData = await resMsg.onMessage_Response(0,20000)
         resData.data = doc
@@ -22,7 +22,7 @@ exports.onQuerys = async function (request, response, next) {
 
         var querys = {};
 
-        const doc = await Status.onQuerys(querys);
+        const doc = await Group.onQuerys(querys);
 
         var resData = await resMsg.onMessage_Response(0,20000)
         resData.data = doc
@@ -35,7 +35,7 @@ exports.onQuerys = async function (request, response, next) {
 };
 exports.onCreate = async function (request, response, next) {
     try {
-        const doc = await Status.onCreate(request.body);
+        const doc = await Group.onCreate(request.body);
 
         // var data = {}
         // data.tiltle = request.body.tiltle;
@@ -60,7 +60,7 @@ exports.onUpdate = async function (request, response, next) {
         query._id = new mongo.ObjectId(request.body._id);
 
 
-        const doc = await Status.onUpdate(query,request.body);
+        const doc = await Group.onUpdate(query,request.body);
 
 
         var resData = await resMsg.onMessage_Response(0,20000)
@@ -77,7 +77,7 @@ exports.onDelete = async function (request, response, next) {
 
         var query = {};
         query._id = new mongo.ObjectId(request.body.id)
-        const doc = await Status.onDelete(query);
+        const doc = await Group.onDelete(query);
 
         var resData = await resMsg.onMessage_Response(0,20000)
         resData.data = doc

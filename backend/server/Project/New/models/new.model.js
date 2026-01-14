@@ -14,7 +14,7 @@ var objsSchema = new Schema({
         value          : {type: String, default: null},
     }],
     create          : {
-        by              : {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+        // by              : {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
         datetime        : {type: Date, default: Date.now},
         updatedAt       : {type: Date, default: Date.now},
     },

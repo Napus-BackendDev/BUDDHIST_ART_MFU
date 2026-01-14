@@ -15,7 +15,7 @@ module.exports = function (app) {
   app.use(path + '/new', newRoutes); // inprogress
   app.use(path + '/order', orderRoutes); // inprogress
   app.use(path + '/artwork', artworkRoutes); // inprogress
-  app.use(path + '/setting', settingsRoutes); // inprogress
+  app.use(path + '/settings', settingsRoutes); // inprogress
 
   // app.use(path + '/address', addressRoutes); // complete
 
