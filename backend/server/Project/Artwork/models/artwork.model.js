@@ -20,8 +20,12 @@ var objsSchema = new Schema({
     }],
     category        : {type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: "689c04cb255db4e56aea88ef" },
     presentation    : {type: mongoose.Schema.Types.ObjectId, ref: 'Presentation', default: "689c04cb255db4e56aea88ef" },
-    approvalStatus  : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69677d4de5f76f7a8c42dbf6" }, // Pending 
-    saleStatus      : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69678075e5f76f7a8c42dc12" }, // Not for sale
+    status          : {
+        approval        : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69677d4de5f76f7a8c42dbf6" }, // Pending 
+        sale            : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69678075e5f76f7a8c42dc12" }, // Not for sale
+    }, 
+    location        : {type: mongoose.Schema.Types.ObjectId, ref: 'Location', default: "689c04cb255db4e56aea88ef"},
+    // สัดส่วนการจัดสรรผลงาน จำเป้นไหม ???
 }, { timestamps: true });
 
 module.exports = mongoose.model('Artwork', objsSchema, 'Artwork');
