@@ -8,7 +8,7 @@ var objsSchema = new Schema({
         key            : {type: String, default: null},
         value          : {type: String, default: null},
     }],
-      description     : [{
+    description     : [{
         key            : {type: String, default: null},
         value          : {type: String, default: null},
     }]
