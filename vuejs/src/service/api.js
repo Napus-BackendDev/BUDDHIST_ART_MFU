@@ -254,4 +254,94 @@ export default {
     },
 
 
+    artwork(method, data, configs) {
+        switch (method) {
+            case 'explorers':
+                return instance.post("/api/v1/artwork/explorers", data);
+            case 'get':
+                return instance.get("/api/v1/artwork", { params: data });
+            case 'post':
+                return instance.post("/api/v1/artwork", data);
+            case 'put':
+                return instance.put("/api/v1/artwork", data);
+            case 'delete':
+                return instance.delete("/api/v1/artwork/" + data._id);
+            case 'get-by-id':
+                return instance.get("/api/v1/artwork/" + data);
+            case 'upload':
+                return instance.put("/api/v1/artwork/upload", data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+            default:
+                break;
+        }
+    },
+
+    order(method, data, configs) {
+        switch (method) {
+            case 'get':
+                return instance.get("/api/v1/order", { params: data });
+            case 'post':
+                return instance.post("/api/v1/order", data);
+            case 'put':
+                return instance.put("/api/v1/order", data);
+            case 'delete':
+                return instance.delete("/api/v1/order", { data: data });
+            default:
+                break;
+        }
+    },
+
+    donation(method, data, configs) {
+        switch (method) {
+            case 'get':
+                return instance.get("/api/v1/donation", { params: data });
+            case 'post':
+                return instance.post("/api/v1/donation", data);
+            case 'put':
+                return instance.put("/api/v1/donation", data);
+            case 'delete':
+                return instance.delete("/api/v1/donation", { data: data });
+            default:
+                break;
+        }
+    },
+
+    news(method, data, configs) {
+        switch (method) {
+            case 'get':
+                return instance.get("/api/v1/new", { params: data });
+            case 'post':
+                return instance.post("/api/v1/new", data);
+            case 'put':
+                return instance.put("/api/v1/new", data);
+            case 'delete':
+                return instance.delete("/api/v1/new", { data: data });
+            case 'upload':
+                return instance.put("/api/v1/new/upload", data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+            default:
+                break;
+        }
+    },
+
+    submission(method, data, configs) {
+        switch (method) {
+            case 'get':
+                return instance.get("/api/v1/submission", { params: data });
+            case 'post':
+                return instance.post("/api/v1/submission", data);
+            case 'put':
+                return instance.put("/api/v1/submission", data);
+            case 'delete':
+                return instance.delete("/api/v1/submission", { data: data });
+            default:
+                break;
+        }
+    },
 }

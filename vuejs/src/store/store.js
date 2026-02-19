@@ -5,8 +5,9 @@ Vue.use(Vuex);
 import DialogMessages from "./modules/Dialog/index";
 import Setting from './modules/Setting/index'
 
-import Payment from  "@/store/modules/Payments/index";
+import Payment from "@/store/modules/Payments/index";
 import Organization from "@/store/modules/organization";
+import Cart from "@/store/modules/Cart/index";
 import Accounts from "@/store/modules/Accounts/index";
 import Authentication from "@/store/modules/Authentication/index";
 
@@ -20,18 +21,18 @@ const state = {
 }
 
 const mutations = {
-  toggleSidebarDesktop (state) {
+  toggleSidebarDesktop(state) {
     const sidebarOpened = [true, 'responsive'].includes(state.sidebarShow)
     state.sidebarShow = sidebarOpened ? false : 'responsive'
   },
-  toggleSidebarMobile (state) {
+  toggleSidebarMobile(state) {
     const sidebarClosed = [false, 'responsive'].includes(state.sidebarShow)
     state.sidebarShow = sidebarClosed ? true : 'responsive'
   },
-  set (state, [variable, value]) {
+  set(state, [variable, value]) {
     state[variable] = value
   },
-  toggle (state, variable) {
+  toggle(state, variable) {
     state[variable] = !state[variable]
   }
 }
@@ -40,11 +41,12 @@ const mutations = {
 export default new Vuex.Store({
   state,
   mutations,
-  modules : {
-      dialog: DialogMessages,
-      setting : Setting,
-      payment : Payment,
-      organization : Organization,
+  modules: {
+    dialog: DialogMessages,
+    setting: Setting,
+    payment: Payment,
+    organization: Organization,
+    cart: Cart,
     //
     //
     // campus : Campus,
@@ -52,8 +54,8 @@ export default new Vuex.Store({
     // departent : Departments,
     //
     //
-      auth : Authentication,
-    account : Accounts,
+    auth: Authentication,
+    account: Accounts,
     //
     // roles : settingRoles,
     //
