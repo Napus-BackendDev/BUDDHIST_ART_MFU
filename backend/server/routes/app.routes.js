@@ -2,7 +2,7 @@ const settingsRoutes = require("../Project/Settings/settings.routes");
 const artworkRoutes = require("../Project/Artwork/artwort.routes");
 const newRoutes = require("../Project/New/new.routes");
 const orderRoutes = require("../Project/Order/order.routes");
-// const organizationRoutes = require("../Project/Organization/organization.routes");
+const userRoutes = require("../Project/User/user.routes");
 
 // const sync = require("../sync/mis");
 module.exports = function (app) {
@@ -16,6 +16,7 @@ module.exports = function (app) {
   app.use(path + '/order', orderRoutes); // inprogress
   app.use(path + '/artwork', artworkRoutes); // inprogress
   app.use(path + '/settings', settingsRoutes); // inprogress
+  app.use(path + '/user', userRoutes); // inprogress
 
   // app.use(path + '/address', addressRoutes); // complete
 

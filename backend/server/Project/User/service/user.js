@@ -1,11 +1,12 @@
 const mongo = require('mongodb');
-const Organization = require('../controller/organization');
+const User = require('../controller/user');
 const ResMessage = require("../../Settings/service/message");
 
 exports.onQuery = async function (request, response) {
     try {
         let query = {};
-        const doc = await Organization.onQuery(query);
+        query._id = new mongo.ObjectId(request.body._id);
+        const doc = await User.onQuery(query);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
@@ -15,7 +16,7 @@ exports.onQuery = async function (request, response) {
 exports.onQuerys = async function (request, response) {
     try {
         let query = {};
-        const doc = await Organization.onQuerys(query);
+        const doc = await User.onQuerys(query);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
@@ -25,7 +26,7 @@ exports.onQuerys = async function (request, response) {
 exports.onCreate = async function (request, response) {
     try {
 
-        const doc = await Organization.onCreate(request.body);
+        const doc = await User.onCreate(request.body);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         console.log(err);
@@ -38,7 +39,7 @@ exports.onUpdate = async function (request, response) {
         let query = {}
         query._id = new mongo.ObjectId(request.body._id);
 
-        const doc = await Organization.onUpdate(query, request.body);
+        const doc = await User.onUpdate(query, request.body);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         console.error(err);
@@ -50,7 +51,7 @@ exports.onDelete = async function (request, response) {
     try {
         let query = {};
         query._id = new mongo.ObjectId(request.body._id);
-        const doc = await Organization.onDelete(query);
+        const doc = await User.onDelete(query);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);

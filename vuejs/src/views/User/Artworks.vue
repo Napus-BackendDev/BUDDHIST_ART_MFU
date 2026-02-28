@@ -2,89 +2,39 @@
     <div class="artworks-page bg-white min-vh-100">
         <div class="artworks-page bg-white min-vh-100">
             <!-- Page Header -->
-            <div class="py-5">
-                <CContainer class="text-center">
-                    <h1 class="display-4 font-weight-bold mb-3"
-                        style="color: #1a202c; font-family: 'Playfair Display', serif;">Explore Artworks</h1>
-                    <p class="text-muted mx-auto" style="max-width: 600px;">
-                        Discover a curated selection of contemporary art from emerging and established artists
-                        worldwide.
-                    </p>
-                </CContainer>
-            </div>
+            <CContainer>
+                <PageHeader title="Explore Artworks"
+                    description="Discover a curated selection of contemporary art from emerging and established artists worldwide."
+                    titleFontFamily="'Playfair Display', serif" />
+            </CContainer>
 
             <CContainer class="pb-5">
-                <!-- Filter Bar -->
-                <CCard class="p-3 shadow-sm border-0 mb-5">
-                    <CRow class="align-items-center">
-                        <CCol md="5" class="mb-3 mb-md-0">
-                            <CInput placeholder="Search by artwork or artist..."
-                                class="border-0 bg-light pl-0 mb-0 h-100 input-field"
-                                style="border-radius: 8px; height: 45px;" v-model="searchQuery">
-                                <template #prepend-content>
-                                    <CIcon name="cil-search" class="text-muted" />
-                                </template>
-                            </CInput>
-                        </CCol>
-                        <CCol md="7" class="d-flex justify-content-md-end flex-wrap gap-2">
-                            <div class="d-inline-block mr-2" style="width: 150px;">
-                                <CSelect :options="categories" :value.sync="selectedCategory" placeholder="Category"
-                                    class="mb-0 border-0 bg-light" style="border-radius: 8px; height: 45px;" />
-                            </div>
-                            <div class="d-inline-block mr-2" style="width: 150px;">
-                                <CSelect :options="['All Prices', 'Under $500', '$500 - $1000', 'Over $1000']"
-                                    placeholder="Price" class="mb-0 border-0 bg-light"
-                                    style="border-radius: 8px; height: 45px;" />
-                            </div>
-                            <div class="d-inline-block" style="width: 150px;">
-                                <CSelect :options="['Newest', 'Oldest', 'Price: Low to High', 'Price: High to Low']"
-                                    placeholder="Sort By" class="mb-0 border-0 bg-light"
-                                    style="border-radius: 8px; height: 45px;" />
-                            </div>
-                        </CCol>
-                    </CRow>
-                </CCard>
-
-                <!-- Artwork Grid -->
-                <CRow>
-                    <CCol md="4" class="mb-4" v-for="(art, index) in filteredArtworks" :key="index">
-                        <CCard class="h-100 border shadow-sm artwork-card cursor-pointer"
-                            style="border-radius: 16px; overflow: hidden; border-color: #e2e8f0 !important;"
-                            @click="goToDetail(art.id)">
-                            <div class="card-img-wrapper position-relative" style="height: 380px;">
-                                <div class="position-absolute top-0 left-0 m-3 px-3 py-1 bg-white rounded-pill shadow-sm text-uppercase font-weight-bold"
-                                    style="font-size: 0.7rem; letter-spacing: 1px; z-index: 1; color: #4a5568;">
-                                    {{ art.category }}
-                                </div>
-                                <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${art.image})` }">
-                                </div>
-                            </div>
-                            <div class="card-body p-3 bg-white border-top position-relative">
-                                <h5 class="font-weight-bold mb-1 text-dark">{{ art.title }}</h5>
-                                <p class="text-muted small mb-2">by {{ art.artist }}</p>
-                                <h5 class="font-weight-bold text-danger">{{ art.price }}</h5>
-
-                                <!-- Hover Add Button -->
-                                <div class="add-cart-btn shadow-sm" @click.stop="addToCart(art)">
-                                    <CIcon name="cil-plus" size="lg" />
-                                </div>
-                            </div>
-                        </CCard>
-                    </CCol>
-                </CRow>
+                <FilterArtworks @filter-update="handleFilterUpdate" />
+                <ArtworkCard :artworks="filteredArtworks" />
             </CContainer>
         </div>
     </div>
 </template>
 
 <script>
+import ArtworkCard from './components/card/CardArtworks.vue'
+import FilterArtworks from './components/filter/FilterArtworks.vue'
+import PageHeader from './components/Util/Header.vue'
 export default {
     name: 'Artworks',
+    components: {
+        ArtworkCard,
+        FilterArtworks,
+        PageHeader
+    },
     data() {
         return {
-            searchQuery: '',
-            categories: ['All', 'Painting', 'Digital', 'Sculpture', 'Drawing', 'Photography'],
-            selectedCategory: 'All',
+            filters: {
+                searchQuery: '',
+                category: 'All Categories',
+                price: 'All Prices',
+                sort: 'Newest'
+            },
             artworks: [
                 {
                     id: 1,
@@ -163,13 +113,54 @@ export default {
     },
     computed: {
         filteredArtworks() {
-            if (this.selectedCategory === 'All') {
-                return this.artworks;
+            let result = this.artworks;
+
+            // Search Filter
+            if (this.filters.searchQuery) {
+                const query = this.filters.searchQuery.toLowerCase();
+                result = result.filter(art =>
+                    art.title.toLowerCase().includes(query) ||
+                    art.artist.toLowerCase().includes(query)
+                );
             }
-            return this.artworks.filter(art => art.category === this.selectedCategory);
+
+            // Category Filter
+            if (this.filters.category && this.filters.category !== 'All Categories') {
+                result = result.filter(art => art.category === this.filters.category);
+            }
+
+            // Price Filter
+            if (this.filters.price && this.filters.price !== 'All Prices') {
+                result = result.filter(art => {
+                    const price = parseFloat(art.price.replace('$', '').replace(',', ''));
+                    if (this.filters.price === 'Under $500') return price < 500;
+                    if (this.filters.price === '$500 - $1000') return price >= 500 && price <= 1000;
+                    if (this.filters.price === 'Over $1000') return price > 1000;
+                    return true;
+                });
+            }
+
+            // Sort
+            if (this.filters.sort) {
+                result = [...result].sort((a, b) => {
+                    const priceA = parseFloat(a.price.replace('$', '').replace(',', ''));
+                    const priceB = parseFloat(b.price.replace('$', '').replace(',', ''));
+
+                    if (this.filters.sort === 'Price: Low to High') return priceA - priceB;
+                    if (this.filters.sort === 'Price: High to Low') return priceB - priceA;
+                    if (this.filters.sort === 'Newest') return b.id - a.id;
+                    if (this.filters.sort === 'Oldest') return a.id - b.id;
+                    return 0;
+                });
+            }
+
+            return result;
         }
     },
     methods: {
+        handleFilterUpdate(newFilters) {
+            this.filters = newFilters;
+        },
         goToDetail(id) {
             this.$router.push(`/artwork/${id}`);
         },
@@ -187,85 +178,3 @@ export default {
     }
 }
 </script>
-
-<style scoped>
-.artworks-page {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.artwork-card {
-    transition: transform 0.3s ease;
-}
-
-.artwork-card:hover {
-    transform: translateY(-5px);
-}
-
-.card-img-bg {
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.5s ease;
-}
-
-.artwork-card:hover .card-img-bg {
-    transform: scale(1.1);
-}
-
-.add-cart-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    bottom: auto;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
-    color: #2c3e50;
-    border: 1px solid #edf2f7;
-    z-index: 2;
-}
-
-.add-cart-btn:hover {
-    background-color: #E55B5B;
-    color: white;
-    border-color: #E55B5B;
-    box-shadow: 0 4px 6px rgba(229, 91, 91, 0.3);
-}
-
-.artwork-card:hover .add-cart-btn {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.cursor-pointer {
-    cursor: pointer;
-}
-
-/* Custom Input Styles */
-::v-deep .input-group-text {
-    background-color: #f8f9fa;
-    /* bg-light */
-    border: none;
-    border-radius: 8px 0 0 8px;
-    padding-left: 15px;
-}
-
-::v-deep .input-field {
-    background-color: #f8f9fa;
-    /* bg-light */
-    border: none;
-    border-radius: 0 8px 8px 0;
-}
-
-::v-deep .input-field:focus {
-    box-shadow: none;
-    background-color: #f8f9fa;
-}
-</style>

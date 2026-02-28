@@ -48,6 +48,7 @@ module.exports = function (app) {
     app.use(sass({ src: "./sass", dest: "./public/css", debug: true, outputStyle: "compressed" }));
     app.use(express.static(path.join(__dirname, "./public")));
     app.use(express.static(path.join(__dirname, "../node_modules/bootstrap/dist")));
+    app.use(express.static(path.join(__dirname, "../uploads")));
 
     // การใช้งาน logger ใน Express
     // app.use(loggerMiddleware);

@@ -4,7 +4,9 @@
             <TheHeaderUser />
             <div class="c-body">
                 <main>
-                    <router-view></router-view>
+                    <transition name="fade">
+                        <router-view></router-view>
+                    </transition>
                 </main>
                 <TheFooterUser />
             </div>

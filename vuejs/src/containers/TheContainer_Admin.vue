@@ -1,6 +1,6 @@
 <template>
   <div class="c-app" :class="{ 'c-dark-theme': $store.state.darkMode }">
-    <TheSidebar_Project/>
+    <TheSidebar/>
     <TheAside/>
     <CWrapper>
       <TheHeader/>
@@ -14,10 +14,11 @@
         </main>
         <TheFooter/>
       </div>
+
     </CWrapper>
     <CenterLoading/>
-    <DialogMessage/>
     <SignIn/>
+    <TwoFA/>
 
   </div>
 </template>
@@ -34,12 +35,13 @@ import { io } from "socket.io-client";
 import DialogMessage from "@/projects/components/dialog/DialogMessage.vue";
 import CenterLoading from "@/projects/components/dialog/CenterLoading.vue";
 import SignIn from "@/projects/components/dialog/SignIn.vue";
-import TheSidebar_Project from "@/containers/TheSidebar_Project.vue";
+import TwoFA from "@/projects/components/dialog/TwoFA.vue";
+
 //
 export default {
-  name: 'TheContainer_Project',
+  name: 'TheContainer',
   components: {
-    TheSidebar_Project,
+    TwoFA,
     SignIn,
     CenterLoading,
     DialogMessage,
@@ -53,6 +55,9 @@ export default {
 
     // this.notifyUser();
     this.showNotification();
+
+
+
 
 //     const socket = io("127.0.0.1:8082",{
 //       transports: ["websocket", "polling"],

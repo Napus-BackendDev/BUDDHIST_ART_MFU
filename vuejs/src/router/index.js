@@ -2,7 +2,35 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 // Containers
-const TheContainerUser = () => import('@/containers/TheContainerUser')
+const TheContainerUser = () => import('@/containers/TheContainer_User')
+const TheContainerAdmin = () => import('@/containers/TheContainer_Admin')
+
+// Views User
+const Home = () => import('@/views/User/Home')
+const News = () => import('@/views/User/News')
+const ArtworkDetail = () => import('@/views/User/ArtworkDetail')
+const Orders = () => import('@/views/User/Orders')
+const Payment = () => import('@/views/User/Payment')
+const Bill = () => import('@/views/User/Bill')
+const Artworks = () => import('@/views/User/Artworks')
+
+// View Admin
+const Overview = () => import('@/views/Admin/Overview')
+const ArtworksAdmin = () => import('@/views/Admin/Artworks')
+const Submissions = () => import('@/views/Admin/Submissions')
+const OrdersAdmin = () => import('@/views/Admin/Orders')
+const Certification = () => import('@/views/Admin/Certification')
+const Database = () => import('@/views/Admin/Database')
+const Users = () => import('@/views/Admin/Users')
+
+// View Page
+const Login = () => import('@/views/page/Login')
+// const Register = () => import('@/views/page/Register')
+// const Page404 = () => import('@/views/page/Page404')
+// const Page500 = () => import('@/views/page/Page500')
+
+
+
 
 
 
@@ -21,39 +49,86 @@ export default new Router({
                 {
                     path: '',
                     name: 'Home',
-                    component: () => import('@/views/User/Home')
+                    component: Home
                 },
                 {
                     path: 'news',
                     name: 'News',
-                    component: () => import('@/views/User/News')
+                    component: News
                 },
                 {
                     path: 'artwork/:id',
                     name: 'ArtworkDetail',
-                    component: () => import('@/views/User/ArtworkDetail')
+                    component: ArtworkDetail
                 },
                 {
                     path: 'orders',
                     name: 'Orders',
-                    component: () => import('@/views/User/Orders')
+                    component: Orders
                 },
                 {
                     path: 'payment',
                     name: 'Payment',
-                    component: () => import('@/views/User/Payment')
+                    component: Payment
                 },
                 {
                     path: 'bill',
                     name: 'Bill',
-                    component: () => import('@/views/User/Bill')
+                    component: Bill
                 },
                 {
                     path: 'artworks',
                     name: 'Artworks',
-                    component: () => import('@/views/User/Artworks')
+                    component: Artworks
                 }
             ]
         },
+        {
+            path: '/admin',
+            name: 'Admin',
+            component: TheContainerAdmin,
+            children: [
+                {
+                    path: '',
+                    name: 'Overview',
+                    component: Overview
+                },
+                {
+                    path: 'artworks',
+                    name: 'ArtworksAdmin',
+                    component: ArtworksAdmin
+                },
+                {
+                    path: 'submissions',
+                    name: 'Submissions',
+                    component: Submissions
+                },
+                {
+                    path: 'orders',
+                    name: 'OrdersAdmin',
+                    component: OrdersAdmin
+                },
+                {
+                    path: 'certification',
+                    name: 'Certification',
+                    component: Certification
+                },
+                {
+                    path: 'database',
+                    name: 'Database',
+                    component: Database
+                },
+                {
+                    path: 'users',
+                    name: 'Users',
+                    component: Users
+                }
+            ]
+        },
+        {
+            path: '/login',
+            name: 'Login',
+            component: Login
+        }
     ]
 })

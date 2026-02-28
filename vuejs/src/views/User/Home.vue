@@ -96,44 +96,9 @@
         <!-- Featured Collection Section -->
         <div class="featured-section py-5">
             <CContainer>
-                <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap">
-                    <h2 class="font-weight-bold display-4 mb-3 mb-md-0" style="color: #2c3e50;">Featured Collection</h2>
-                    <div class="filter-buttons">
-                        <CButton v-for="cat in categories" :key="cat" shape="pill" variant="outline"
-                            :color="selectedCategory === cat ? 'danger' : 'secondary'"
-                            class="m-1 font-weight-bold border-0 px-4"
-                            :class="{ 'bg-danger text-white': selectedCategory === cat, 'bg-light text-muted': selectedCategory !== cat }"
-                            @click="selectedCategory = cat">
-                            {{ cat }}
-                        </CButton>
-                    </div>
-                </div>
+                <FilterArtworksHome @category-changed="cat => selectedCategory = cat" />
 
-                <CRow>
-                    <CCol md="4" class="mb-4" v-for="(art, index) in filteredArtworks" :key="index">
-                        <CCard class="h-100 border-0 shadow-sm artwork-card cursor-pointer"
-                            style="border-radius: 20px; overflow: hidden;" @click="explore(art.id)">
-                            <div class="card-img-wrapper position-relative" style="height: 400px;">
-                                <div class="position-absolute top-0 left-0 m-4 px-3 py-1 bg-light rounded-pill shadow-sm text-uppercase font-weight-bold"
-                                    style="font-size: 0.75rem; letter-spacing: 1px; z-index: 1;">
-                                    {{ art.category }}
-                                </div>
-                                <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${art.image})` }">
-                                </div>
-                            </div>
-                            <CCardBody class="p-4 bg-white position-relative">
-                                <h4 class="font-weight-bold mb-1" style="color: #1a202c;">{{ art.title }}</h4>
-                                <p class="text-muted mb-3">by {{ art.artist }}</p>
-                                <h4 class="font-weight-bold" style="color: #E55B5B;">{{ art.price }}</h4>
-
-                                <!-- Hover Add Button -->
-                                <div class="add-cart-btn shadow-sm">
-                                    <CIcon name="cil-plus" size="lg" />
-                                </div>
-                            </CCardBody>
-                        </CCard>
-                    </CCol>
-                </CRow>
+                <CardArtworks :artworks="filteredArtworks" />
             </CContainer>
         </div>
 
@@ -142,11 +107,16 @@
 </template>
 
 <script>
+import CardArtworks from './components/card/CardArtworks.vue'
+import FilterArtworksHome from './components/filter/FilterArtworksHome.vue'
 export default {
     name: 'UserIndex',
+    components: {
+        CardArtworks,
+        FilterArtworksHome
+    },
     data() {
         return {
-            categories: ['All', 'Painting', 'Digital', 'Sculpture', 'Drawing'],
             selectedCategory: 'All',
             artworks: [
                 {
