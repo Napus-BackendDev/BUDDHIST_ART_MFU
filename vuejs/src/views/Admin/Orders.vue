@@ -3,7 +3,7 @@
         <div class="filter-bar mb-4 d-flex justify-content-between align-items-center">
             <!-- Search Input -->
             <div class="search-wrapper">
-                <CIcon name="cil-search" class="search-icon" />
+                <CIcon name="cilMagnifyingGlass" class="search-icon" />
                 <CInput class="m-0 w-100 custom-search-cinput"
                     placeholder="Search orders by ID, customer, or artwork..." />
             </div>

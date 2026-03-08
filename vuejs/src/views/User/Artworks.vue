@@ -9,7 +9,7 @@
             </CContainer>
 
             <CContainer class="pb-5">
-                <FilterArtworks @filter-update="handleFilterUpdate" />
+                <FilterArtworks @category-changed="cat => selectedCategory = cat" />
                 <ArtworkCard :artworks="filteredArtworks" />
             </CContainer>
         </div>
@@ -29,12 +29,7 @@ export default {
     },
     data() {
         return {
-            filters: {
-                searchQuery: '',
-                category: 'All Categories',
-                price: 'All Prices',
-                sort: 'Newest'
-            },
+            selectedCategory: 'All',
             artworks: [
                 {
                     id: 1,

@@ -107,7 +107,7 @@ export default {
           {
             _name: 'CSidebarNavItem',
             name: 'User Management',
-            to: '/admin/users',
+            to: '/admin/users-management',
             icon: 'cil-people'
           },
           {

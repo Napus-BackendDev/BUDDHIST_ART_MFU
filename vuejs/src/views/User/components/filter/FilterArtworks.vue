@@ -6,7 +6,7 @@
                     class="border-0 bg-light pl-0 mb-0 h-100 input-field" style="border-radius: 8px; height: 45px;"
                     v-model="searchQuery">
                     <template #prepend-content>
-                        <CIcon name="cil-search" class="text-muted" />
+                        <CIcon name="cilMagnifyingGlass" class="text-muted" />
                     </template>
                 </CInput>
             </CCol>

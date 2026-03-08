@@ -8,7 +8,7 @@
                     add-input-classes="search-input-field">
                     <template #prepend>
                         <div class="search-icon-wrapper">
-                            <CIcon name="cil-search" class="search-icon" />
+                            <CIcon name="cilMagnifyingGlass" class="search-icon" />
                         </div>
                     </template>
                 </CInput>

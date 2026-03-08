@@ -18,10 +18,13 @@ const Artworks = () => import('@/views/User/Artworks')
 const Overview = () => import('@/views/Admin/Overview')
 const ArtworksAdmin = () => import('@/views/Admin/Artworks')
 const Submissions = () => import('@/views/Admin/Submissions')
+const SubmissionsDetail = () => import('@/views/Admin/SubmissionsDetail')
+const Assignment = () => import('@/views/Admin/Assignment')
 const OrdersAdmin = () => import('@/views/Admin/Orders')
 const Certification = () => import('@/views/Admin/Certification')
+const CreateCertification = () => import('@/views/Admin/CreateCertification')
 const Database = () => import('@/views/Admin/Database')
-const Users = () => import('@/views/Admin/Users')
+const UsersManagement = () => import('@/views/Admin/UsersManagement')
 
 // View Page
 const Login = () => import('@/views/page/Login')
@@ -104,6 +107,16 @@ export default new Router({
                     component: Submissions
                 },
                 {
+                    path: 'submissions/:id',
+                    name: 'SubmissionsDetail',
+                    component: SubmissionsDetail
+                },
+                {
+                    path: 'submissions/assignment/:id',
+                    name: 'Assignment',
+                    component: Assignment
+                },
+                {
                     path: 'orders',
                     name: 'OrdersAdmin',
                     component: OrdersAdmin
@@ -114,14 +127,19 @@ export default new Router({
                     component: Certification
                 },
                 {
+                    path: 'certifications/create',
+                    name: 'Create Certification',
+                    component: CreateCertification
+                },
+                {
                     path: 'database',
                     name: 'Database',
                     component: Database
                 },
                 {
-                    path: 'users',
-                    name: 'Users',
-                    component: Users
+                    path: 'users-management',
+                    name: 'UsersManagement',
+                    component: UsersManagement
                 }
             ]
         },

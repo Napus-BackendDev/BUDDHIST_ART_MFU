@@ -48,7 +48,7 @@
                     <td class="text-right">
                         <div v-if="item.status === 'Pending'" class="d-inline-flex align-items-center">
                             <button class="action-btn icon-view" title="View">
-                                <CIcon name="cil-eye" size="lg" />
+                                <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                             <button class="action-btn icon-edit ml-2" title="Edit">
                                 <CIcon name="cil-pencil" size="lg" />
@@ -62,7 +62,7 @@
                         </div>
                         <div v-else class="d-inline-flex align-items-center">
                             <button class="action-btn icon-view" title="View">
-                                <CIcon name="cil-eye" size="lg" />
+                                <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                         </div>
                     </td>

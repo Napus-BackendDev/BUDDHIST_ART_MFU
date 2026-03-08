@@ -12,6 +12,9 @@ import store from "@/store/store";
 import OtpInput from "@bachdgvn/vue-otp-input";
 Vue.component("v-otp-input", OtpInput);
 
+import VueKonva from 'vue-konva'
+Vue.use(VueKonva)
+
 Vue.use(CoreuiVuePro)
 Vue.prototype.$log = console.log.bind(console)
 
@@ -24,9 +27,9 @@ Vue.prototype.moment = moment
 
 import GAuth from 'vue-google-oauth2'
 const gauthOption = {
-    clientId: process.env.VUE_APP_CLIENTID,
-    scope: process.env.VUE_APP_SCOPE,
-    prompt: process.env.VUE_APP_PROMPT
+  clientId: process.env.VUE_APP_CLIENTID,
+  scope: process.env.VUE_APP_SCOPE,
+  prompt: process.env.VUE_APP_PROMPT
 }
 Vue.use(GAuth, gauthOption)
 console.log(gauthOption)
