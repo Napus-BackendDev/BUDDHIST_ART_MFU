@@ -57,10 +57,18 @@
         <CModal :show.sync="showManualImportModal" title="Add New User Manually" color="dark">
             <p class="text-muted">Fill out the fields below to add a new system user.</p>
             <CForm>
-                <CInput label="Full Name" placeholder="e.g. John Doe" />
-                <CInput label="Email Address" type="email" placeholder="e.g. john@example.com" />
-                <CSelect label="Role" :options="['Admin', 'Developer', 'Evaluator', 'Customer']" />
-                <CInput label="Password" type="password" placeholder="Enter temporary password" />
+                <CInput label="StudentId" v-model="form.studentId" placeholder="e.g. 66xxxxxxxx" />
+                <CInput label="Full Name TH" v-model="form.nameTh" placeholder="e.g. John Doe" />
+                <CInput label="Full Name EN" v-model="form.nameEn" placeholder="e.g. John Doe" />
+                <CInput label="Email Address" v-model="form.email" type="email" placeholder="e.g. john@example.com" />
+                <CInput label="Telephone" v-model="form.telephone" type="email" placeholder="e.g. john@example.com" />
+                <CInput label="StudentEmail" v-model="form.studentEmail" type="email"
+                    placeholder="e.g. john@example.com" />
+                <CInput label="PersonalEmail" v-model="form.personalEmail" type="email"
+                    placeholder="e.g. john@example.com" />
+                <CSelect label="Role" v-model="form.role" :options="['Admin', 'Customer']" />
+                <CInput label="Password" v-model="form.password" type="password"
+                    placeholder="Enter temporary password" />
             </CForm>
             <template #footer>
                 <CButton color="secondary" @click="showManualImportModal = false">Cancel</CButton>
@@ -82,6 +90,17 @@ export default {
     data() {
         return {
             showManualImportModal: false,
+            form: {
+                studentId: '',
+                nameTh: '',
+                nameEn: '',
+                email: '',
+                telephone: '',
+                studentEmail: '',
+                personalEmail: '',
+                role: 'Customer',
+                password: ''
+            }
         }
     },
     methods: {
@@ -97,9 +116,33 @@ export default {
             event.target.value = '';
         },
         submitManualImport() {
-            alert(`New manual user record added successfully.`);
+            try {
+                const payload = {
+                    studentId: this.form.studentId,
+                    image: "",
+                    name: [{ key: "th", value: this.form.nameTh }, { key: "en", value: this.form.nameEn }],
+                    contact: { telephone: this.form.telephone, studentEmail: this.form.studentEmail, personalEmail: this.form.personalEmail },
+                    password: this.form.password,
+                    status: this.form.status,
+                }
+                this.$store.dispatch("user/create", payload);
+                resetForm();
+                alert("User created successfully!");
+            } catch (error) {
+                console.error("Failed to create user:", error);
+                alert("Error: Something went wrong.");
+            }
+        },
+
+        resetForm() {
+            this.form = {
+                studentId: '', nameTh: '', nameEn: '', email: '',
+                telephone: '', studentEmail: '', personalEmail: '',
+                role: 'Customer', password: ''
+            };
             this.showManualImportModal = false;
         },
+
         exportToExcel() {
             if (!this.$refs.usersTable || !this.$refs.usersTable.users) {
                 console.error("Could not locate table data for export.");

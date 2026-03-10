@@ -49,214 +49,34 @@ instance.defaults.headers = {
 
 export default {
 
-
-    authen(method, data, configs) {
-        switch (method) {
-            case 'sign-in':
-                return instance.post("/api/v1/signin", data);
-            case '2fa':
-                return instance.post("/api/v1/2fa", data);
-            case '2fa-send':
-                return instance.put("/api/v1/2fa", data);
-            default:
-                break;
-        }
-    },
-
-    message(method, data, configs) {
+    user(method, data, configs) {
         switch (method) {
             case 'exp':
-                return instance.post("/api/v1/setting/message/explorers", data);
+                return instance.post("/api/v1/user/explorers", data);
             case 'get':
-                return instance.get("/api/v1/setting/message");
+                return instance.get("/api/v1/user", { params: data });
             case 'post':
-                return instance.post("/api/v1/setting/message", data);
+                return instance.post("/api/v1/user", data);
             case 'put':
-                return instance.put("/api/v1/setting/message", data);
+                return instance.put("/api/v1/user", data);
             case 'delete':
-                return instance.delete("/api/v1/setting/message");
+                return instance.delete("/api/v1/user", { data });
+            case 'get-by-id':
+                return instance.get("/api/v1/user", { params: data });
+            case 'upload':
+                return instance.put("/api/v1/user/upload", data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
             default:
                 break;
         }
     },
-
-    status(method, data, configs) {
-        switch (method) {
-            case 'exp':
-                return instance.post("/api/v1/setting/status/explorers", data);
-            case 'get':
-                return instance.get("/api/v1/setting/status");
-            case 'post':
-                return instance.post("/api/v1/setting/status", data);
-            case 'put':
-                return instance.put("/api/v1/setting/status", data);
-            case 'delete':
-                return instance.delete("/api/v1/setting/status");
-            default:
-                break;
-        }
-    },
-
-    verification(method, data, configs) {
-        switch (method) {
-            case 'exp':
-                return instance.post("/api/v1/setting/verification/explorers", data);
-            case 'get':
-                return instance.get("/api/v1/setting/verification");
-            case 'post':
-                return instance.post("/api/v1/setting/verification", data);
-            case 'put':
-                return instance.put("/api/v1/setting/verification", data);
-            case 'delete':
-                return instance.delete("/api/v1/setting/verification");
-            default:
-                break;
-        }
-    },
-
-
-    authenMessage(method, data, configs) {
-        switch (method) {
-            case 'exp':
-                return instance.post("/api/v1/setting/auth/message/explorers", data);
-            case 'get':
-                return instance.get("/api/v1/setting/auth/message");
-            case 'post':
-                return instance.post("/api/v1/setting/auth/message", data);
-            case 'put':
-                return instance.put("/api/v1/setting/auth/message", data);
-            case 'delete':
-                return instance.delete("/api/v1/setting/auth/message");
-            default:
-                break;
-        }
-    },
-
-
-
-
-
-    organization(method, data, configs) {
-        switch (method) {
-            case 'explorers':
-                return instance.post("/api/v1/organization/explorers", data);
-            default:
-                break;
-        }
-    },
-
-    // facultys(method, data, configs) {
-    //     switch (method) {
-    //         case 'get':
-    //             return instance.get("/api/v1/setting/faculty");
-    //         case 'post':
-    //             delete data._id;
-    //             return instance.post("/api/v1/setting/faculty", data);
-    //         case 'put':
-    //             return instance.put("/api/v1/setting/faculty", data);
-    //         case 'delete':
-    //             return instance.delete("/api/v1/setting/faculty");
-    //         default:
-    //             break;
-    //     }
-    // },
-    agencies(method, data, configs) {
-        switch (method) {
-            case 'explorers':
-                return instance.post("/api/v1/organization/agencies/explorers", data);
-            // case 'get':
-            //     return instance.get("/api/v1/setting/department");
-            // case 'post':
-            //     delete data._id;
-            //     return instance.post("/api/v1/setting/department", data);
-            // case 'put':
-            //     return instance.put("/api/v1/setting/department", data);
-            // case 'delete':
-            //     return instance.delete("/api/v1/setting/department");
-            default:
-                break;
-        }
-    },
-
-    department(method, data, configs) {
-        switch (method) {
-            case 'explorers':
-                return instance.post("/api/v1/organization/department/explorers", data);
-            // case 'get':
-            //     return instance.get("/api/v1/setting/department");
-            // case 'post':
-            //     delete data._id;
-            //     return instance.post("/api/v1/setting/department", data);
-            // case 'put':
-            //     return instance.put("/api/v1/setting/department", data);
-            // case 'delete':
-            //     return instance.delete("/api/v1/setting/department");
-            default:
-                break;
-        }
-    },
-
-
-    members(method, data, configs) {
-        switch (method) {
-            case 'exp':
-                return instance.post("/api/v1/system/profile", data);
-
-            default:
-                break;
-        }
-    },
-
-
-    //
-    roles(method, data, configs) {
-        switch (method) {
-            case 'exp':
-                return instance.get("/api/v1/setting/role", data);
-            case 'post':
-                return instance.post("/api/v1/setting/role", data);
-            case 'put':
-                return instance.put("/api/v1/setting/role", data);
-
-            default:
-                break;
-        }
-    },
-
-
-    // payment
-
-    method(method, data, configs) {
-        switch (method) {
-            case 'exp':
-                return instance.post("/api/v1/payment/method/explorers", data);
-            case 'get':
-                return instance.get("/api/v1/payment/method");
-            case 'post':
-                return instance.post("/api/v1/payment/method", data);
-            case 'put':
-                return instance.put("/api/v1/payment/method", data);
-            case 'delete':
-                return instance.delete("/api/v1/payment/method");
-            default:
-                break;
-        }
-    },
-
-    payment(method, data, configs) {
-        switch (method) {
-            case 'explorers-transaction':
-                return instance.post("/api/v1/payment/transaction/explorers", data);
-
-            default:
-                break;
-        }
-    },
-
 
     artwork(method, data, configs) {
         switch (method) {
-            case 'explorers':
+            case 'exp':
                 return instance.post("/api/v1/artwork/explorers", data);
             case 'get':
                 return instance.get("/api/v1/artwork", { params: data });

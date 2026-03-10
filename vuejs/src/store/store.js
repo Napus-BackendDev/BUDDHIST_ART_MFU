@@ -2,14 +2,8 @@ import Vue from "vue";
 import Vuex from "vuex";
 Vue.use(Vuex);
 
-import DialogMessages from "./modules/Dialog/index";
-import Setting from './modules/Setting/index'
-
-import Payment from "@/store/modules/Payments/index";
-import Organization from "@/store/modules/organization";
 import Cart from "@/store/modules/Cart/index";
-import Accounts from "@/store/modules/Accounts/index";
-import Authentication from "@/store/modules/Authentication/index";
+import User from "@/store/modules/User/index";
 
 
 
@@ -42,27 +36,7 @@ export default new Vuex.Store({
   state,
   mutations,
   modules: {
-    dialog: DialogMessages,
-    setting: Setting,
-    payment: Payment,
-    organization: Organization,
     cart: Cart,
-    //
-    //
-    // campus : Campus,
-    // faculty : Facultys,
-    // departent : Departments,
-    //
-    //
-    auth: Authentication,
-    account: Accounts,
-    //
-    // roles : settingRoles,
-    //
-    //
-    // // application
-    //
-    // application: Application,
-
+    user: User,
   }
 });

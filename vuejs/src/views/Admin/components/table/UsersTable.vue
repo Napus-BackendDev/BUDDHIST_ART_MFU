@@ -15,8 +15,7 @@
                             </div>
                             <div>
                                 <div class="font-weight-bold" style="color: #2c3e50;">{{ item.name }}</div>
-                                <div class="small text-muted">{{ item.student_id ? `ID: ${item.student_id}` : 'No
-                                    Student ID' }}</div>
+                                <div class="small text-muted">{{ item.student_id ? `ID: ${item.student_id}` : 'NoStudent ID' }}</div>
                             </div>
                         </div>
                     </td>
