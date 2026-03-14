@@ -1,7 +1,7 @@
 <template>
     <CCard class="order-table-card mb-4">
         <div>
-            <CDataTable :items="items" :fields="fields" class="custom-table mb-0" hover :border="false"
+            <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
                 :striped="false">
 
                 <template #id="{ item }">
@@ -47,7 +47,7 @@
                 <template #actions="{ item }">
                     <td class="text-right">
                         <div v-if="item.status === 'Pending'" class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" title="View">
+                            <button class="action-btn icon-view" title="View" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                             <button class="action-btn icon-edit ml-2" title="Edit">
@@ -61,7 +61,7 @@
                             </button>
                         </div>
                         <div v-else class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" title="View">
+                            <button class="action-btn icon-view" title="View" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                         </div>
@@ -72,7 +72,7 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ items.length }} of {{ items.length }} orders</div>
+            <div class="text-muted text-sm">Showing {{ filteredItems.length }} of {{ items.length }} orders</div>
             <div class="pagination-buttons">
                 <CButton color="light" class="btn-pagination mr-2" disabled>Previous</CButton>
                 <CButton color="light" class="btn-pagination">Next</CButton>
@@ -82,8 +82,21 @@
 </template>
 
 <script>
+import moment from 'moment';
+
 export default {
     name: 'OrderTable',
+    props: {
+        filters: {
+            type: Object,
+            default: () => ({
+                search: '',
+                status: 'All Status',
+                startDate: null,
+                endDate: null
+            })
+        }
+    },
     data() {
         return {
             fields: [
@@ -103,6 +116,31 @@ export default {
                 { id: '#ORD-7826', datetime: 'Oct 23, 2023 02:20 PM', customer: 'James Miller', thumbnail: 'F', imgBg: 'a0aec0', imgColor: 'ffffff', artwork: 'Forest Path', artist: 'Mike R.', amount: '$320.00', status: 'Completed', statusIcon: 'cil-check', statusClass: 'badge-completed' },
                 { id: '#ORD-7825', datetime: 'Oct 23, 2023 11:00 AM', customer: 'Sophia Davis', thumbnail: 'G', imgBg: 'edf2f7', imgColor: '808080', artwork: 'Geometric #5', artist: 'Alex T.', amount: '$2,100.00', status: 'Cancelled', statusIcon: 'cil-x', statusClass: 'badge-cancelled' }
             ]
+        }
+    },
+    computed: {
+        filteredItems() {
+            return this.items.filter(item => {
+                // Search Filter
+                const searchMatch = !this.filters.search || 
+                    item.id.toLowerCase().includes(this.filters.search.toLowerCase()) ||
+                    item.customer.toLowerCase().includes(this.filters.search.toLowerCase()) ||
+                    item.artwork.toLowerCase().includes(this.filters.search.toLowerCase());
+
+                // Status Filter
+                const statusMatch = this.filters.status === 'All Status' || item.status === this.filters.status;
+
+                // Date Filter
+                let dateMatch = true;
+                if (this.filters.startDate && this.filters.endDate) {
+                    const itemDate = moment(item.datetime, 'MMM DD, YYYY hh:mm A');
+                    const start = moment(this.filters.startDate).startOf('day');
+                    const end = moment(this.filters.endDate).endOf('day');
+                    dateMatch = itemDate.isBetween(start, end, null, '[]');
+                }
+
+                return searchMatch && statusMatch && dateMatch;
+            });
         }
     }
 }
@@ -241,15 +279,9 @@ export default {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
+    transition: transform 0.2s, background-color 0.2s;
     outline: none;
-    opacity: 0;
-    /* Hidden by default */
-}
-
-/* Show action buttons when the table row is hovered */
-::v-deep .custom-table tbody tr:hover .action-btn {
-    opacity: 1;
+    opacity: 1; /* Always visible */
 }
 
 .action-btn:hover {
