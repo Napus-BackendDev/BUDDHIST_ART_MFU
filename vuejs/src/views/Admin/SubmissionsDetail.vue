@@ -1,84 +1,119 @@
 <template>
-    <div>
-        <div class="mb-4 d-flex align-items-center">
-            <CLink :to="{ name: 'Submissions' }" class="back-btn mr-3">
-                <CIcon name="cil-arrow-left" size="lg" />
+    <div class="submissions-detail-dashboard">
+        <!-- Back Button -->
+        <div class="mb-3">
+            <CLink :to="{ name: 'Submissions' }" class="back-link d-inline-flex align-items-center text-muted">
+                <CIcon name="cil-arrow-left" class="mr-2" />
+                <span class="font-weight-bold">Back to Submissions</span>
             </CLink>
-            <div>
-                <h3 class="font-weight-bold m-0" style="color: #2c3e50;">Midterm Art Project</h3>
-                <p class="text-muted mt-1 mb-0 small">Managing assignments for 45 students</p>
-            </div>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="filter-bar mb-4 d-flex justify-content-between align-items-center">
-            <!-- Search Input -->
-            <div class="search-wrapper">
-                <CIcon name="cilMagnifyingGlass" class="search-icon" />
-                <CInput class="m-0 w-100 custom-search-cinput" placeholder="Search assignment by title..." />
-            </div>
-
-            <!-- Right Actions -->
-            <div class="right-filters d-flex">
-                <CButton class="add-btn d-flex align-items-center" @click="addAssignment">
-                    <CIcon name="cil-plus" class="mr-2" /> Add Assignment
-                </CButton>
-            </div>
-        </div>
-
-        <!-- DataTable Component -->
-        <SubmissionDetailTable @view="handleView" @edit="handleEdit" @delete="handleDelete" />
+        <HeaderHero 
+            title="Midterm Art Project" 
+            description="Managing assignments and tracking student progress for 45 students." 
+            icon="cil-list"
+            :showCreateButton="true"
+            createButtonText="Create Assignment"
+            :showExportButton="true"
+            @create="addAssignment"
+            @export="handleExport"
+        />
+        <SubmissionDetailWidget />
+        <SubmissionDetailFilter v-model="filters" @create="addAssignment" />
+        <SubmissionDetailTable :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
+        <AssignmentCreateModal :show.sync="showAssignmentModal" :enrolledStudents="mockEnrolledStudents" @save="handleAssignmentSave" />
+        <AssignmentEditModal :show.sync="showEditAssignmentModal" :assignmentData="selectedAssignment" :enrolledStudents="mockEnrolledStudents" @update="handleAssignmentUpdate" />
     </div>
 </template>
 
 <script>
 import SubmissionDetailTable from './components/table/SubmissionDetailTable.vue'
+import SubmissionDetailWidget from './components/submission_detail/SubmissionDetailWidget.vue'
+import SubmissionDetailFilter from './components/submission_detail/SubmissionDetailFilter.vue'
+import AssignmentCreateModal from './components/modal/submission/AssignmentCreateModal.vue'
+import AssignmentEditModal from './components/modal/submission/AssignmentEditModal.vue'
+import HeaderHero from './components/HeaderHero.vue'
 
 export default {
     name: 'SubmissionsDetail',
     components: {
-        SubmissionDetailTable
+        SubmissionDetailTable,
+        SubmissionDetailWidget,
+        SubmissionDetailFilter,
+        AssignmentCreateModal,
+        AssignmentEditModal,
+        HeaderHero
+    },
+    data() {
+        return {
+            showAssignmentModal: false,
+            showEditAssignmentModal: false,
+            selectedAssignment: null,
+            filters: {
+                search: '',
+                status: 'All Status',
+                startDate: null,
+                endDate: null,
+                quickRange: 'All Time'
+            },
+            // Mock enrolled students for this submission
+            mockEnrolledStudents: [
+                { id: 'USR-001', name: 'Albus Dumbledore', student_id: '6450001' },
+                { id: 'USR-002', name: 'Harry Potter', student_id: '6450002' },
+                { id: 'USR-003', name: 'Hermione Granger', student_id: '6450003' },
+                { id: 'USR-004', name: 'Severus Snape', student_id: '6450004' },
+                { id: 'USR-005', name: 'Ron Weasley', student_id: '6450005' }
+            ]
+        }
     },
     methods: {
         addAssignment() {
-            // Logic to add a new assignment
-            console.log('Add new assignment clicked');
+            this.showAssignmentModal = true;
+        },
+        handleAssignmentSave(data) {
+            console.log('New assignment task created:', data);
+            alert('New assignment task created successfully!');
+            this.showAssignmentModal = false;
         },
         handleView(item) {
             console.log('Viewing assignment item:', item);
             this.$router.push({ name: 'Assignment', params: { id: item.id } });
         },
         handleEdit(item) {
-            console.log('Editing item:', item);
-            // Open edit form or modal
+            console.log('Editing assignment item:', item);
+            this.selectedAssignment = item;
+            this.showEditAssignmentModal = true;
+        },
+        handleAssignmentUpdate(data) {
+            console.log('Assignment task updated:', data);
+            alert('Assignment task updated successfully!');
+            this.showEditAssignmentModal = false;
         },
         handleDelete(item) {
             console.log('Deleting item:', item);
             // Confirm and delete
+        },
+        handleExport() {
+            if (this.$refs.detailTable) {
+                // Assuming SubmissionDetailTable has an export method or logic
+                console.log('Exporting data...');
+                // In a real scenario, you'd call a method on the table ref or use a utility
+            }
         }
     }
 }
 </script>
 
 <style scoped>
-.back-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    border: 1px solid #eef0f3;
-    background-color: #ffffff;
-    color: #5c6873;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-    transition: all 0.2s ease-in-out;
+.back-link {
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s;
 }
 
-.back-btn:hover {
-    background-color: #f8f9fa;
-    color: #2c3e50;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+.back-link:hover {
+    color: #2c3e50 !important;
+    transform: translateX(-4px);
 }
 
 .filter-bar {
@@ -86,19 +121,19 @@ export default {
 }
 
 .add-btn {
-    background-color: #eb7a34;
-    border-color: #eb7a34;
+    background-color: #321fdb;
+    border-color: #321fdb;
     color: #ffffff !important;
     border-radius: 8px;
     padding: 0.5rem 1.25rem;
     font-weight: 600;
-    box-shadow: 0 2px 6px rgba(235, 122, 52, 0.3);
+    box-shadow: 0 2px 6px rgba(50, 31, 219, 0.3);
     transition: all 0.2s;
 }
 
 .add-btn:hover {
-    background-color: #d66a26;
-    border-color: #d66a26;
+    background-color: #2c1bbd;
+    border-color: #2c1bbd;
     color: #ffffff !important;
 }
 
@@ -116,8 +151,9 @@ export default {
     width: 420px;
 }
 
-.search-wrapper:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+.search-wrapper:focus-within {
+    border-color: #321fdb;
+    box-shadow: 0 4px 10px rgba(50, 31, 219, 0.05);
 }
 
 .search-icon {

@@ -1,0 +1,204 @@
+<template>
+  <CCard class="user-filter-card border-0 shadow-sm mb-4">
+    <CCardBody class="p-3">
+      <CRow class="align-items-end">
+        <!-- Search Field -->
+        <CCol lg="6" md="12" class="mb-3 mb-lg-0">
+          <label class="filter-label">Search Users</label>
+          <div class="search-field-wrapper">
+            <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
+            <CInput 
+              :value="value.search" 
+              @input="updateFilter('search', $event)"
+              class="m-0 border-0 custom-input-plain"
+              placeholder="Name, Email or Student ID..." 
+            />
+          </div>
+        </CCol>
+
+        <!-- Role Filter -->
+        <CCol lg="3" md="6" class="mb-3 mb-lg-0">
+          <label class="filter-label">Role</label>
+          <CDropdown :caret="false" class="w-100">
+            <template #toggler>
+              <button class="filter-select-btn">
+                <span class="text-truncate mr-2">{{ value.role }}</span>
+                <CIcon name="cil-user" class="filter-icon-small" />
+              </button>
+            </template>
+            <CDropdownItem @click="updateFilter('role', 'All Roles')">All Roles</CDropdownItem>
+            <CDropdownItem @click="updateFilter('role', 'Admin')">Admin</CDropdownItem>
+            <CDropdownItem @click="updateFilter('role', 'Developer')">Developer</CDropdownItem>
+            <CDropdownItem @click="updateFilter('role', 'Evaluator')">Evaluator</CDropdownItem>
+            <CDropdownItem @click="updateFilter('role', 'Customer')">Customer</CDropdownItem>
+          </CDropdown>
+        </CCol>
+
+        <!-- Status Filter -->
+        <CCol lg="3" md="6" class="mb-3 mb-lg-0">
+          <label class="filter-label">Status</label>
+          <CDropdown :caret="false" class="w-100">
+            <template #toggler>
+              <button class="filter-select-btn">
+                <span class="text-truncate mr-2">{{ value.status }}</span>
+                <CIcon name="cil-filter" class="filter-icon-small" />
+              </button>
+            </template>
+            <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
+            <CDropdownItem @click="updateFilter('status', 'Active')">Active</CDropdownItem>
+            <CDropdownItem @click="updateFilter('status', 'Inactive')">Inactive</CDropdownItem>
+            <CDropdownItem @click="updateFilter('status', 'Suspended')">Suspended</CDropdownItem>
+          </CDropdown>
+        </CCol>
+      </CRow>
+    </CCardBody>
+  </CCard>
+</template>
+
+<script>
+export default {
+  name: 'UserFilter',
+  props: {
+    value: {
+      type: Object,
+      required: true
+    }
+  },
+  methods: {
+    updateFilter(key, val) {
+      const newFilters = { ...this.value, [key]: val };
+      this.$emit('input', newFilters);
+    }
+  }
+}
+</script>
+
+<style scoped>
+.user-filter-card {
+  border-radius: 12px;
+  background-color: #ffffff;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4f5d73;
+  margin-bottom: 8px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.search-field-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  height: 42px;
+  padding: 0 12px;
+  transition: all 0.2s;
+}
+
+.search-field-wrapper:focus-within {
+  border-color: #321fdb;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(50, 31, 219, 0.1);
+}
+
+.search-icon-fixed {
+  color: #8c98a9;
+  width: 16px;
+  height: 16px;
+  margin-right: 10px;
+}
+
+.custom-input-plain {
+  flex-grow: 1;
+}
+
+::v-deep .custom-input-plain .form-group {
+  margin-bottom: 0 !important;
+}
+
+::v-deep .custom-input-plain .form-control {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  height: auto !important;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  box-shadow: none !important;
+}
+
+.filter-select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 42px;
+  background-color: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #44546d;
+  transition: all 0.2s;
+  outline: none !important;
+}
+
+.filter-select-btn:hover {
+  background-color: #f1f3f5;
+  border-color: #cbd5e0;
+}
+
+.filter-icon-small {
+  width: 14px;
+  height: 14px;
+  color: #8a93a2;
+}
+
+.btn-primary-premium {
+  background-color: #321fdb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  height: 42px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(50, 31, 219, 0.2);
+}
+
+.btn-primary-premium:hover {
+  background-color: #2c1bbd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(50, 31, 219, 0.3);
+}
+
+.btn-export-soft {
+  background-color: #f0f2f5;
+  color: #4f5d73;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  height: 42px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-export-soft:hover {
+  background-color: #e4e7eb;
+  color: #2c3e50;
+}
+
+::v-deep .custom-add-dropdown .dropdown-menu {
+  border-radius: 10px;
+  border: 1px solid #eef0f3;
+  box-shadow: 0 8px 24px rgba(149, 157, 165, 0.2);
+  padding: 8px;
+  min-width: 180px;
+}
+</style>

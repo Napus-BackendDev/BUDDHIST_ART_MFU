@@ -50,7 +50,7 @@
                             <button class="action-btn icon-view" title="View" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit ml-2" title="Edit">
+                            <button class="action-btn icon-edit ml-2" title="Edit" @click="$emit('edit-order', item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button class="action-btn icon-success mx-2" title="Approve">
@@ -83,6 +83,7 @@
 
 <script>
 import moment from 'moment';
+import * as XLSX from 'xlsx';
 
 export default {
     name: 'OrderTable',
@@ -141,6 +142,24 @@ export default {
 
                 return searchMatch && statusMatch && dateMatch;
             });
+        }
+    },
+    methods: {
+        exportExcel() {
+            const dataToExport = this.filteredItems.map(item => ({
+                'Order ID': item.id,
+                'Date & Time': item.datetime,
+                'Customer': item.customer,
+                'Artwork': item.artwork,
+                'Artist': item.artist,
+                'Amount': item.amount,
+                'Status': item.status
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+            XLSX.writeFile(wb, `Orders_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
         }
     }
 }
@@ -208,11 +227,12 @@ export default {
 .status-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.35rem 0.85rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background-color: #ffffff;
+    padding: 0.35rem 1rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
 .status-icon {
@@ -223,16 +243,19 @@ export default {
 
 .badge-completed {
     color: #38a169;
+    background-color: #f0fff4;
     border: 1px solid rgba(56, 161, 105, 0.4);
 }
 
 .badge-pending {
     color: #d69e2e;
+    background-color: #fffaf0;
     border: 1px solid rgba(214, 158, 46, 0.4);
 }
 
 .badge-cancelled {
     color: #e53e3e;
+    background-color: #fff5f5;
     border: 1px solid rgba(229, 62, 62, 0.4);
 }
 

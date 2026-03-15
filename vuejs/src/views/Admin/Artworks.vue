@@ -1,67 +1,119 @@
 <template>
-    <div class="artworks-dashboard pt-3">
-        <!-- Top Filters Section -->
-        <div class="metrics-header mb-4 d-flex justify-content-between align-items-center">
-            <!-- Left Filter: Search -->
-            <div class="left-filters">
-                <CInput placeholder="Search artworks by title or artist..." class="search-input-custom mb-0"
-                    add-input-classes="search-input-field">
-                    <template #prepend>
-                        <div class="search-icon-wrapper">
-                            <CIcon name="cilMagnifyingGlass" class="search-icon" />
-                        </div>
-                    </template>
-                </CInput>
-            </div>
-
-            <!-- Right Filters: Categories and Status -->
-            <div class="right-filters d-flex">
-                <!-- Categories Dropdown -->
-                <CDropdown :caret="false" class="mr-3" placement="bottom-end">
-                    <template #toggler>
-                        <button class="filter-btn">
-                            <span class="filter-text">All Categories</span>
-                            <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
-                        </button>
-                    </template>
-                    <CDropdownItem>All Categories</CDropdownItem>
-                    <CDropdownItem>Painting</CDropdownItem>
-                    <CDropdownItem>Sculpture</CDropdownItem>
-                    <CDropdownItem>Digital Art</CDropdownItem>
-                    <CDropdownItem>Photography</CDropdownItem>
-                </CDropdown>
-
-                <!-- Status Filter Dropdown -->
-                <CDropdown :caret="false" placement="bottom-end">
-                    <template #toggler>
-                        <button class="filter-btn">
-                            <span class="filter-text">All Status</span>
-                            <CIcon name="cil-filter" class="filter-icon right-icon" />
-                        </button>
-                    </template>
-                    <CDropdownItem>All Status</CDropdownItem>
-                    <CDropdownItem>Pending</CDropdownItem>
-                    <CDropdownItem>Completed</CDropdownItem>
-                    <CDropdownItem>Cancelled</CDropdownItem>
-                </CDropdown>
-            </div>
-        </div>
-
-        <CRow>
-            <CCol md="12">
-                <AdminTable />
-            </CCol>
-        </CRow>
+    <div class="artworks-dashboard">
+        <HeaderHero title="Artwork Management" description="Manage your art collection, update availability, and showcase new arrivals." icon="cil-paint" :showCreateButton="true" :showExportButton="true" createButtonText="Create Artwork" @create="onAddArtwork" @export="handleExport" />
+        <ArtworkWidget @filter-status="filters.status = $event" />
+        <ArtworkFilter v-model="filters" />
+        <AdminTable ref="adminTable" :filters="filters" @view="handleViewArtwork" @edit="handleEditArtwork"/>
+        <ArtworkCreateModal :show.sync="showCreateModal" @save="handleSaveArtwork"/>
+        <ArtworkCreateChoiceModal 
+            :show.sync="showChoiceModal" 
+            @manual="handleChoiceManual"
+            @import="handleChoiceImport"
+        />
+        <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView"/>
+        <ArtworkEditModal :show.sync="showEditModal" :artwork="selectedArtwork" @save="handleUpdateArtwork"/>
     </div>
 </template>
 
 <script>
 import AdminTable from './components/table/AdminTable.vue';
+import HeaderHero from './components/HeaderHero.vue';
+import ArtworkWidget from './components/widget/ArtworkWidget.vue';
+import ArtworkFilter from './components/filter/ArtworkFilter.vue';
+import ArtworkCreateModal from './components/modal/artwork/ArtworkCreateModal.vue';
+import ArtworkViewModal from './components/modal/artwork/ArtworkViewModal.vue';
+import ArtworkEditModal from './components/modal/artwork/ArtworkEditModal.vue';
+import ArtworkCreateChoiceModal from './components/modal/artwork/ArtworkCreateChoiceModal.vue';
+import * as XLSX from 'xlsx';
 
 export default {
     name: 'Artworks',
     components: {
-        AdminTable
+        AdminTable,
+        HeaderHero,
+        ArtworkWidget,
+        ArtworkFilter,
+        ArtworkCreateModal,
+        ArtworkViewModal,
+        ArtworkEditModal,
+        ArtworkCreateChoiceModal
+    },
+    data() {
+        return {
+            showCreateModal: false,
+            showChoiceModal: false,
+            showViewModal: false,
+            showEditModal: false,
+            selectedArtwork: null,
+            filters: {
+                search: '',
+                category: 'All Categories',
+                status: 'All Status',
+                startDate: null,
+                endDate: null,
+                quickRange: 'All Time'
+            }
+        }
+    },
+    methods: {
+        onAddArtwork() {
+            this.showChoiceModal = true;
+        },
+        handleChoiceManual() {
+            this.showChoiceModal = false;
+            this.showCreateModal = true;
+        },
+        handleChoiceImport(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const results = XLSX.utils.sheet_to_json(worksheet);
+                
+                console.log('Imported Data:', results);
+                
+                // Show success toast or message
+                if (this.$store && this.$store.commit) {
+                    this.$store.commit('dialog/showToast', {
+                        title: 'Import Successful',
+                        message: `Successfully imported ${results.length} artworks.`,
+                        variant: 'success'
+                    });
+                } else {
+                    alert(`Imported ${results.length} artworks successfully (check console).`);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        },
+        handleSaveArtwork(formData) {
+            console.log('New Artwork:', formData);
+            // Mocking success
+            this.showCreateModal = false;
+        },
+        handleViewArtwork(artwork) {
+            this.selectedArtwork = artwork;
+            this.showViewModal = true;
+        },
+        handleEditArtwork(artwork) {
+            this.selectedArtwork = artwork;
+            this.showEditModal = true;
+        },
+        handleEditArtworkFromView(artwork) {
+            this.showViewModal = false;
+            this.handleEditArtwork(artwork);
+        },
+        handleUpdateArtwork(formData) {
+            console.log('Updated Artwork:', formData);
+            // In a real app, this would refresh the table or show success
+            this.showEditModal = false;
+        },
+        handleExport() {
+            if (this.$refs.adminTable) {
+                this.$refs.adminTable.exportExcel();
+            }
+        }
     }
 }
 </script>
@@ -69,108 +121,5 @@ export default {
 <style scoped>
 .artworks-dashboard {
     padding-bottom: 2rem;
-}
-
-/* Base custom input wrapper styles for that "pill" card look */
-.search-input-custom {
-    width: 320px;
-}
-
-/* Give the wrapper standard container stylings */
-::v-deep .search-input-custom .input-group {
-    background-color: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #eef0f3;
-    display: flex;
-    align-items: center;
-    height: 48px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-    transition: all 0.2s;
-    overflow: hidden;
-}
-
-::v-deep .search-input-custom .input-group:hover,
-::v-deep .search-input-custom .input-group:focus-within {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    border-color: #d1d5db;
-}
-
-/* Style the prepend icon area */
-::v-deep .search-input-custom .input-group-prepend {
-    margin: 0;
-    height: 100%;
-}
-
-::v-deep .search-icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-left: 16px;
-    padding-right: 12px;
-    height: 100%;
-    background: transparent;
-}
-
-::v-deep .search-icon {
-    color: #7a8aa3;
-    width: 18px;
-    height: 18px;
-}
-
-/* Style the actual input field to seamlessly blend */
-::v-deep .search-input-field {
-    border: none !important;
-    background: transparent !important;
-    padding-left: 0;
-    height: 100%;
-    font-size: 0.95rem;
-    color: #3b4d6b;
-    box-shadow: none !important;
-}
-
-::v-deep .search-input-field::placeholder {
-    color: #a0aec0;
-    font-weight: 400;
-}
-
-/* Filter Buttons (Dropdown Toggles) */
-.filter-btn {
-    background-color: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #eef0f3;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    height: 48px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-    transition: all 0.2s;
-    cursor: pointer;
-    outline: none;
-}
-
-.filter-btn:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    border-color: #d1d5db;
-}
-
-/* Dropdown text */
-.filter-text {
-    font-weight: 600;
-    color: #3b4d6b;
-    font-size: 0.95rem;
-    margin: 0 16px 0 0;
-    /* Margin on the right to separate from icons */
-}
-
-/* Give Categories button a bit less tight margin since it doesn't have a left icon */
-.right-filters>CDropdown:first-child .filter-text {
-    margin: 0 12px 0 0;
-}
-
-.dropdown-icon,
-.filter-icon {
-    color: #7a8aa3;
-    width: 16px;
-    height: 16px;
 }
 </style>

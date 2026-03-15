@@ -1,7 +1,9 @@
 <template>
+    <CRow>
+            <CCol md="12">
     <CCard class="artwork-table-card mb-4">
         <div>
-            <CDataTable :items="items" :fields="fields" class="custom-table mb-0" hover :border="false"
+            <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
                 :striped="false">
                 <template #thumbnail="{ item }">
                     <td>
@@ -17,6 +19,9 @@
                 <template #artist="{ item }">
                     <td class="text-muted">{{ item.artist }}</td>
                 </template>
+                <template #createdAt="{ item }">
+                    <td class="text-muted text-sm">{{ item.createdAt }}</td>
+                </template>
                 <template #category="{ item }">
                     <td>
                         <span class="category-pill">{{ item.category }}</span>
@@ -31,23 +36,55 @@
                 </template>
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="item.status === 'Pending'" class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" title="View">
+                        <div v-if="item.status === 'Pending' || item.status === 'Update'" class="d-inline-flex align-items-center">
+                            <button 
+                                class="action-btn icon-view" 
+                                v-c-tooltip="'ดูรายละเอียด'"
+                                @click="onView(item)"
+                            >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit ml-2" title="Edit">
+                            <button 
+                                class="action-btn icon-edit ml-2" 
+                                v-c-tooltip="'แก้ไข'"
+                                @click="onEdit(item)"
+                            >
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-success mx-2" title="Approve">
+                            <button 
+                                class="action-btn icon-success mx-2" 
+                                v-c-tooltip="'อนุมัติ'"
+                            >
                                 <CIcon name="cil-check" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger" title="Reject">
+                            <button 
+                                class="action-btn icon-danger" 
+                                v-c-tooltip="'ปฏิเสธ'"
+                            >
                                 <CIcon name="cil-x" size="lg" />
+                            </button>
+                            <button 
+                                class="action-btn icon-trash ml-2" 
+                                v-c-tooltip="'ลบ'"
+                                @click="onDelete(item)"
+                            >
+                                <CIcon name="cil-trash" size="lg" />
                             </button>
                         </div>
                         <div v-else class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" title="View">
+                            <button 
+                                class="action-btn icon-view" 
+                                v-c-tooltip="'ดูรายละเอียด'"
+                                @click="onView(item)"
+                            >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
+                            </button>
+                            <button 
+                                class="action-btn icon-trash ml-2" 
+                                v-c-tooltip="'ลบ'"
+                                @click="onDelete(item)"
+                            >
+                                <CIcon name="cil-trash" size="lg" />
                             </button>
                         </div>
                     </td>
@@ -57,35 +94,117 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ items.length }} of {{ items.length }} artworks</div>
+            <div class="text-muted text-sm">Showing {{ filteredItems.length }} of {{ items.length }} artworks</div>
             <div class="pagination-buttons">
                 <CButton color="light" class="btn-pagination mr-2" disabled>Previous</CButton>
                 <CButton color="light" class="btn-pagination">Next</CButton>
             </div>
         </CCardFooter>
     </CCard>
+    </CCol>
+        </CRow>
 </template>
 
 <script>
+import moment from 'moment';
+import * as XLSX from 'xlsx';
+
 export default {
-    name: 'OrderTable',
+    name: 'AdminTable',
+    props: {
+        filters: {
+            type: Object,
+            default: () => ({
+                search: '',
+                category: 'All Categories',
+                status: 'All Status'
+            })
+        }
+    },
     data() {
         return {
             fields: [
                 { key: 'thumbnail', label: 'THUMBNAIL', _classes: 'border-top-0 border-bottom' },
                 { key: 'title', label: 'ARTWORK TITLE', _classes: 'border-top-0 border-bottom' },
                 { key: 'artist', label: 'ARTIST', _classes: 'border-top-0 border-bottom' },
+                { key: 'createdAt', label: 'DATE CREATED', _classes: 'border-top-0 border-bottom' },
                 { key: 'category', label: 'CATEGORY', _classes: 'border-top-0 border-bottom' },
                 { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
             ],
             items: [
-                { thumbnail: 'S', imgBg: 'e2e8f0', imgColor: '808080', title: 'Sunset Blues', artist: 'Jane Doe', category: 'Painting', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' },
-                { thumbnail: 'A', imgBg: 'cbd5e0', imgColor: '808080', title: 'Abstract #44', artist: 'Mike Smith', category: 'Digital', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' },
-                { thumbnail: 'U', imgBg: 'a0aec0', imgColor: 'ffffff', title: 'Urban Chaos', artist: 'Sarah Lee', category: 'Photography', status: 'Completed', statusIcon: 'cil-check', statusClass: 'badge-completed' },
-                { thumbnail: 'M', imgBg: '2d3748', imgColor: 'ffffff', title: 'Mountain Mist', artist: 'John Art', category: 'Painting', status: 'Cancelled', statusIcon: 'cil-x', statusClass: 'badge-cancelled' },
-                { thumbnail: 'G', imgBg: 'edf2f7', imgColor: '808080', title: 'Golden Hour', artist: 'Emily Rose', category: 'Sculpture', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' }
+                { thumbnail: 'S', imgBg: 'e2e8f0', imgColor: '808080', title: 'Sunset Blues', artist: 'Jane Doe', createdAt: 'Oct 24, 2023', category: 'Painting', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' },
+                { thumbnail: 'A', imgBg: 'cbd5e0', imgColor: '808080', title: 'Abstract #44', artist: 'Mike Smith', createdAt: 'Oct 23, 2023', category: 'Digital', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' },
+                { thumbnail: 'U', imgBg: 'a0aec0', imgColor: 'ffffff', title: 'Urban Chaos', artist: 'Sarah Lee', createdAt: 'Oct 22, 2023', category: 'Photography', status: 'Completed', statusIcon: 'cil-check', statusClass: 'badge-completed' },
+                { thumbnail: 'R', imgBg: 'e2e8f0', imgColor: '3b82f6', title: 'Riverside Walk', artist: 'Alex J.', createdAt: 'Oct 21, 2023', category: 'Painting', status: 'Update', statusIcon: 'cil-sync', statusClass: 'badge-update' },
+                { thumbnail: 'M', imgBg: '2d3748', imgColor: 'ffffff', title: 'Mountain Mist', artist: 'John Art', createdAt: 'Oct 21, 2023', category: 'Painting', status: 'Cancelled', statusIcon: 'cil-x', statusClass: 'badge-cancelled' },
+                { thumbnail: 'G', imgBg: 'edf2f7', imgColor: '808080', title: 'Golden Hour', artist: 'Emily Rose', createdAt: 'Oct 20, 2023', category: 'Sculpture', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' }
             ]
+        }
+    },
+    computed: {
+        filteredItems() {
+            return this.items.filter(item => {
+                // Search Filter
+                const searchMatch = !this.filters.search || 
+                    item.title.toLowerCase().includes(this.filters.search.toLowerCase()) ||
+                    item.artist.toLowerCase().includes(this.filters.search.toLowerCase());
+
+                // Category Filter
+                const categoryMatch = this.filters.category === 'All Categories' || item.category === this.filters.category;
+
+                // Status Filter
+                const statusMatch = this.filters.status === 'All Status' || item.status === this.filters.status;
+
+                // Date Filter
+                let dateMatch = true;
+                if (this.filters.startDate || this.filters.endDate) {
+                    const itemDate = moment(item.createdAt, 'MMM DD, YYYY');
+                    if (this.filters.startDate) {
+                        dateMatch = dateMatch && itemDate.isSameOrAfter(moment(this.filters.startDate).startOf('day'));
+                    }
+                    if (this.filters.endDate) {
+                        dateMatch = dateMatch && itemDate.isSameOrBefore(moment(this.filters.endDate).endOf('day'));
+                    }
+                }
+
+                return searchMatch && categoryMatch && statusMatch && dateMatch;
+            });
+        }
+    },
+    methods: {
+        onView(item) {
+            this.$emit('view', item);
+        },
+        onEdit(item) {
+            this.$emit('edit', item);
+        },
+        onDelete(item) {
+            if (confirm(`Are you sure you want to delete "${item.title}"? This action cannot be undone.`)) {
+                this.items = this.items.filter(i => i !== item);
+                // In a real app, this would be an API call
+                this.$store.commit('dialog/showToast', {
+                    title: 'Deleted',
+                    message: `"${item.title}" has been removed.`,
+                    variant: 'info'
+                });
+            }
+        },
+        exportExcel() {
+            const dataToExport = this.filteredItems.map(item => ({
+                'ID': item.id,
+                'Title': item.title,
+                'Artist': item.artist,
+                'Category': item.category,
+                'Price': item.price,
+                'Status': item.status,
+                'Created At': item.createdAt
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Artworks');
+            XLSX.writeFile(wb, `Artworks_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
         }
     }
 }
@@ -163,11 +282,12 @@ export default {
 .status-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.35rem 0.85rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background-color: #ffffff;
+    padding: 0.35rem 1rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
 .status-icon {
@@ -178,17 +298,26 @@ export default {
 
 .badge-completed {
     color: #38a169;
+    background-color: #f0fff4;
     border: 1px solid rgba(56, 161, 105, 0.4);
 }
 
 .badge-pending {
     color: #d69e2e;
+    background-color: #fffaf0;
     border: 1px solid rgba(214, 158, 46, 0.4);
 }
 
 .badge-cancelled {
     color: #e53e3e;
+    background-color: #fff5f5;
     border: 1px solid rgba(229, 62, 62, 0.4);
+}
+
+.badge-update {
+    color: #3182ce;
+    border: 1px solid rgba(49, 130, 206, 0.4);
+    background-color: #ebf8ff;
 }
 
 /* Footer Pagination */
@@ -236,13 +365,7 @@ export default {
     border-radius: 50%;
     transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
     outline: none;
-    opacity: 0;
-    /* Hidden by default */
-}
-
-/* Show action buttons when the table row is hovered */
-::v-deep .custom-table tbody tr:hover .action-btn {
-    opacity: 1;
+    opacity: 1; /* Always visible */
 }
 
 .action-btn:hover {
@@ -265,6 +388,14 @@ export default {
 .icon-danger:hover {
     background-color: #ffdddd;
     /* Light red bg */
+}
+
+.icon-trash {
+    color: #ed8936; /* An orange/red for warning but not same as reject */
+}
+
+.icon-trash:hover {
+    background-color: #fffaf0;
 }
 
 .icon-view {

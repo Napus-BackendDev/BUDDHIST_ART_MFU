@@ -23,7 +23,6 @@ const Assignment = () => import('@/views/Admin/Assignment')
 const OrdersAdmin = () => import('@/views/Admin/Orders')
 const Certification = () => import('@/views/Admin/Certification')
 const CreateCertification = () => import('@/views/Admin/CreateCertification')
-const Database = () => import('@/views/Admin/Database')
 const UsersManagement = () => import('@/views/Admin/UsersManagement')
 
 // View Page
@@ -130,11 +129,6 @@ export default new Router({
                     path: 'certifications/create',
                     name: 'Create Certification',
                     component: CreateCertification
-                },
-                {
-                    path: 'database',
-                    name: 'Database',
-                    component: Database
                 },
                 {
                     path: 'users-management',

@@ -4,7 +4,7 @@
         <div :class="[selectedItem ? 'col-md-8' : 'col-12', 'pl-0 pr-0 pr-md-3 transition-width']">
             <CCard class="assignment-table-card mb-4">
                 <div>
-                    <CDataTable :items="items" :fields="fields" class="custom-table mb-0" hover :border="false"
+                    <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
                         :striped="false">
 
                         <!-- Preview Image Column -->
@@ -32,17 +32,22 @@
                         <!-- Status Column -->
                         <template #status="{ item }">
                             <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                <span :class="getStatusBadge(item.status)" class="badge-custom">
+                                <div :class="['status-badge', getStatusBadge(item.status).class]">
+                                    <CIcon :name="getStatusBadge(item.status).icon" size="sm" class="status-icon" />
                                     {{ item.status }}
-                                </span>
+                                </div>
                             </td>
                         </template>
 
                         <!-- Deadline Column -->
                         <template #deadline="{ item }">
                             <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                <span v-if="item.on_time" class="badge-custom badge-success-soft">On Time</span>
-                                <span v-else class="badge-custom badge-danger-soft">Late</span>
+                                <div v-if="item.on_time" class="status-badge badge-passed">
+                                    <CIcon name="cil-check" size="sm" class="status-icon" /> On Time
+                                </div>
+                                <div v-else class="status-badge badge-fail">
+                                    <CIcon name="cil-warning" size="sm" class="status-icon" /> Late
+                                </div>
                             </td>
                         </template>
                     </CDataTable>
@@ -61,68 +66,61 @@
 
         <!-- Right Side Panel (Split-View Card) -->
         <div v-if="selectedItem" class="col-md-4 p-0 mt-4 mt-md-0 slide-in">
-            <CCard class="shadow-sm h-100 preview-card">
-                <CCardHeader
-                    class="bg-white border-0 d-flex justify-content-between align-items-center pt-3 pb-0 rounded-top">
-                    <h6 class="m-0 font-weight-bold text-dark">Submission Detail</h6>
-                    <button class="btn btn-link text-muted p-0" @click="closePanel">
-                        <CIcon name="cil-x" size="lg" />
+            <CCard class="preview-card h-100 border-0 shadow-sm">
+                <CCardHeader class="bg-white border-0 d-flex justify-content-between align-items-center pt-4 px-4 pb-0">
+                    <h6 class="m-0 font-weight-bold panel-title">Submission Detail</h6>
+                    <button class="close-panel-btn" @click="closePanel">
+                        <CIcon name="cil-x" size="custom" height="18" />
                     </button>
                 </CCardHeader>
-                <CCardBody class="pt-3">
+
+                <CCardBody class="p-4 d-flex flex-column">
                     <!-- Artwork Image -->
-                    <div class="image-container mb-4 text-center pb-3 border-bottom position-relative custom-img-hover">
-                        <img :src="selectedItem.preview" alt="Student Submission"
-                            class="img-fluid rounded shadow-sm detail-image" />
-                        <div class="img-overlay d-flex align-items-center justify-content-center rounded">
-                            <a :href="selectedItem.preview" target="_blank"
-                                class="btn btn-light rounded-pill font-weight-bold shadow-sm px-4">
-                                View Fullscreen
-                            </a>
+                    <div class="image-section mb-4">
+                        <div class="detail-image-wrapper shadow-sm custom-img-hover">
+                            <img :src="selectedItem.preview" alt="Student Submission" class="img-fluid detail-image" />
+                            <div class="img-overlay d-flex align-items-center justify-content-center">
+                                <a :href="selectedItem.preview" target="_blank" class="btn btn-light rounded-pill font-weight-bold shadow-sm px-4">
+                                    View Fullscreen
+                                </a>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Student & Submission Details -->
-                    <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h3 class="font-weight-bold text-dark mb-1" style="font-size: 1.4rem;">{{
-                                selectedItem.student_name
-                            }}</h3>
-                            <p class="text-muted mb-0 font-weight-bold" style="font-size: 0.95rem;">
-                                Submitted on {{ selectedItem.submitted_date }}
-                            </p>
+                    <div class="d-flex justify-content-between align-items-start mb-4 pb-4 border-bottom-light">
+                        <div class="student-info-block">
+                            <h3 class="student-name mb-1">{{ selectedItem.student_name }}</h3>
+                            <p class="submission-date mb-0">Submitted on {{ selectedItem.submitted_date }}</p>
                         </div>
-                        <div class="text-right d-flex flex-column align-items-end">
-                            <span :class="getStatusBadge(selectedItem.status)" class="badge-custom mb-2">
+                        <div class="status-badges-group d-flex flex-column align-items-end">
+                            <div :class="['status-badge status-badge-sm mb-2', getStatusBadge(selectedItem.status).class]">
+                                <CIcon :name="getStatusBadge(selectedItem.status).icon" size="sm" class="status-icon" />
                                 {{ selectedItem.status }}
-                            </span>
-                            <span v-if="selectedItem.on_time" class="status-text text-success font-weight-bold"
-                                style="font-size: 0.9rem;">
-                                On-time Submission
-                            </span>
-                            <span v-else class="status-text text-danger font-weight-bold" style="font-size: 0.9rem;">
-                                Late Submission
-                            </span>
+                            </div>
+                            <div v-if="selectedItem.on_time" class="status-badge status-badge-sm badge-passed">
+                                <CIcon name="cil-check" size="sm" class="status-icon" /> On-time
+                            </div>
+                            <div v-else class="status-badge status-badge-sm badge-fail">
+                                <CIcon name="cil-warning" size="sm" class="status-icon" /> Late
+                            </div>
                         </div>
                     </div>
 
                     <!-- Artwork Detail Block -->
                     <div class="mb-4">
-                        <p class="text-muted small mb-2 text-uppercase font-weight-bold tracking-wide"
-                            style="color: #6c7d93;">
-                            ARTWORK DETAIL
-                        </p>
-                        <div class="artwork-detail-box p-3 rounded" style="background-color: #f8f9fa;">
-                            <p class="mb-0 text-dark" style="font-size: 1rem; line-height: 1.6;">
+                        <p class="detail-label mb-2">ARTWORK DETAIL</p>
+                        <div class="artwork-description-box">
+                            <p class="description-text m-0">
                                 Acrylic on canvas, 24x36 inches. A study of color theory using primary colors.
                             </p>
                         </div>
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="d-flex justify-content-between action-buttons mt-auto pt-3">
-                        <CButton color="success" class="flex-grow-1 mr-2 px-0" variant="outline">Mark Passed</CButton>
-                        <CButton color="danger" class="flex-grow-1 ml-2 px-0" variant="outline">Mark Fail</CButton>
+                    <div class="d-flex justify-content-between action-buttons mt-auto pt-2">
+                        <CButton class="btn-action btn-passed flex-grow-1 mr-3" variant="outline">Mark Passed</CButton>
+                        <CButton class="btn-action btn-failed flex-grow-1" variant="outline">Mark Fail</CButton>
                     </div>
                 </CCardBody>
             </CCard>
@@ -131,8 +129,23 @@
 </template>
 
 <script>
+import moment from 'moment'
+
 export default {
     name: 'AssignmentTable',
+    props: {
+        filters: {
+            type: Object,
+            default: () => ({
+                search: '',
+                status: 'All Statuses',
+                deadline: 'Any Deadline',
+                quickRange: 'All Time',
+                startDate: null,
+                endDate: null
+            })
+        }
+    },
     data() {
         return {
             selectedItem: null,
@@ -197,6 +210,36 @@ export default {
             ]
         }
     },
+    computed: {
+        filteredItems() {
+            return this.items.filter(item => {
+                // Search Filter
+                const searchMatch = !this.filters.search || 
+                    item.student_name.toLowerCase().includes(this.filters.search.toLowerCase()) ||
+                    item.student_id.toLowerCase().includes(this.filters.search.toLowerCase());
+
+                // Status Filter
+                const statusMatch = this.filters.status === 'All Statuses' || item.status === this.filters.status;
+
+                // Deadline Filter
+                let deadlineMatch = true;
+                if (this.filters.deadline !== 'Any Deadline') {
+                    const isOnTime = this.filters.deadline === 'On Time';
+                    if (item.on_time !== isOnTime) deadlineMatch = false;
+                }
+
+                // Date Filter
+                let dateMatch = true;
+                if (this.filters.startDate || this.filters.endDate) {
+                    const itemDate = moment(item.submitted_date, 'MMM DD, YYYY hh:mm A');
+                    if (this.filters.startDate && itemDate.isBefore(moment(this.filters.startDate).startOf('day'))) dateMatch = false;
+                    if (this.filters.endDate && itemDate.isAfter(moment(this.filters.endDate).endOf('day'))) dateMatch = false;
+                }
+
+                return searchMatch && statusMatch && deadlineMatch && dateMatch;
+            });
+        }
+    },
     methods: {
         selectItem(item) {
             this.selectedItem = item;
@@ -205,9 +248,9 @@ export default {
             this.selectedItem = null;
         },
         getStatusBadge(status) {
-            if (status === 'Passed') return 'badge-success-soft';
-            if (status === 'Fail') return 'badge-danger-soft';
-            return 'badge-warning-soft'; // Pending
+            if (status === 'Passed') return { class: 'badge-passed', icon: 'cil-check-circle' };
+            if (status === 'Fail') return { class: 'badge-fail', icon: 'cil-x-circle' };
+            return { class: 'badge-pending', icon: 'cil-clock' }; // Pending
         }
     }
 }
@@ -233,42 +276,117 @@ export default {
     opacity: 1;
 }
 
-.img-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: calc(100% - 1rem);
-    /* avoid border-bottom area */
-    background: rgba(0, 0, 0, 0.4);
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
+.preview-card {
+    border-radius: 16px;
+    border: 1px solid #eef0f3;
 }
 
-.badge-custom {
-    padding: 0.2em 0.8em;
+.panel-title {
+    color: #4f5d73;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+}
+
+.close-panel-btn {
+    background: transparent;
+    border: none;
+    color: #8a93a2;
+    padding: 0;
+    transition: color 0.2s;
+    outline: none !important;
+}
+
+.close-panel-btn:hover {
+    color: #4f5d73;
+}
+
+.detail-image-wrapper {
+    position: relative;
     border-radius: 12px;
-    font-size: 0.85rem;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+
+.detail-image {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    display: block;
+}
+
+.student-name {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #3b4d6b;
+    letter-spacing: -0.02em;
+}
+
+.submission-date {
+    font-size: 0.9rem;
     font-weight: 600;
-    border: 1px solid transparent;
+    color: #8c98a9;
 }
 
-.badge-success-soft {
-    background-color: #f4fff8;
-    color: #2e8555;
-    border-color: #cce9d6;
+.border-bottom-light {
+    border-bottom: 1px solid #f0f2f5;
 }
 
-.badge-warning-soft {
-    background-color: #fffaf0;
-    color: #c05621;
-    border-color: #feebc8;
+.detail-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #8c98a9;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
-.badge-danger-soft {
-    background-color: #fff5f5;
-    color: #c53030;
-    border-color: #fed7d7;
+.artwork-description-box {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.25rem;
+}
+
+.description-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #5c6873;
+    font-weight: 500;
+}
+
+.btn-action {
+    height: 44px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-passed {
+    border-color: #10b981 !important;
+    color: #10b981 !important;
+}
+
+.btn-passed:hover {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+}
+
+.btn-failed {
+    border-color: #e53e3e !important;
+    color: #e53e3e !important;
+}
+
+.btn-failed:hover {
+    background-color: #e53e3e !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(229, 62, 62, 0.2);
+}
+
+.status-badge-sm {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.72rem;
 }
 
 .transition-width {
@@ -284,27 +402,16 @@ export default {
         opacity: 0;
         transform: translateX(20px);
     }
-
     to {
         opacity: 1;
         transform: translateX(0);
     }
 }
 
-.tracking-wide {
-    letter-spacing: 0.5px;
-}
-
-.assignment-table-card,
-.preview-card {
+.assignment-table-card {
     border-radius: 12px;
     border: 1px solid #eef0f3;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-}
-
-.rounded-top {
-    border-top-left-radius: 12px !important;
-    border-top-right-radius: 12px !important;
 }
 
 .custom-table th {

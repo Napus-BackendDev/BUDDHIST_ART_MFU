@@ -12,14 +12,25 @@
           </p>
         </div>
       </div>
-      <div v-if="showCreateButton" class="header-actions mt-3 mt-sm-0">
+      <div class="header-actions mt-3 mt-sm-0 d-flex">
         <CButton 
+          v-if="showExportButton"
+          color="info" 
+          variant="outline"
+          class="px-4 py-2 mr-2 shadow-sm rounded-pill font-weight-bold d-flex align-items-center btn-export"
+          @click="$emit('export')"
+        >
+          <CIcon name="cil-cloud-download" class="mr-2" />
+          Export Excel
+        </CButton>
+        <CButton 
+          v-if="showCreateButton"
           color="primary" 
           class="px-4 py-2 shadow-sm rounded-pill font-weight-bold d-flex align-items-center"
           @click="$emit('create')"
         >
           <CIcon name="cil-plus" class="mr-2" />
-          Create Order
+          {{ createButtonText || 'Create' }}
         </CButton>
       </div>
     </div>
@@ -47,6 +58,14 @@ export default {
       default: ''
     },
     showCreateButton: {
+      type: Boolean,
+      default: false
+    },
+    createButtonText: {
+      type: String,
+      default: ''
+    },
+    showExportButton: {
       type: Boolean,
       default: false
     }
@@ -109,6 +128,10 @@ export default {
   max-width: 800px;
   font-weight: 400;
   line-height: 1.4;
+}
+
+.btn-export {
+  border-width: 1.5px;
 }
 
 @media (max-width: 768px) {

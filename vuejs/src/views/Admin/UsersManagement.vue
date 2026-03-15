@@ -1,260 +1,153 @@
 <template>
-    <div>
-        <!-- Toolbar Section (Search, Filters, Add User) -->
-        <!-- No Header Title as requested -->
-        <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
-            <!-- Left side Search -->
-            <div class="search-wrapper">
-                <CIcon name="cilMagnifyingGlass" class="search-icon" />
-                <CInput class="m-0 custom-search-cinput" placeholder="Search users by name or email..." />
-            </div>
+    <div class="users-management-dashboard">
+        <HeaderHero 
+            title="User Management" 
+            description="Manage system users, roles, and permissions effectively. Support for manual entry and bulk import." 
+            createButtonText="Create User"
+            icon="cil-people"
+            :showCreateButton="true"
+            :showExportButton="true"
+            @create="showChoiceModal = true"
+            @export="exportToExcel"
+        />
 
-            <!-- Right side controls -->
-            <div class="d-flex align-items-center gap-3">
-                <!-- Role Filter -->
-                <div class="filter-wrapper mr-3 d-flex align-items-center justify-content-between px-3">
-                    <span class="mr-2 text-dark font-weight-bold" style="font-size: 0.95rem;">Role: All</span>
-                    <CIcon name="cil-filter" class="text-muted" style="width: 16px; height: 16px;" />
-                </div>
+        <UserWidget />
 
-                <!-- Status Filter -->
-                <div class="filter-wrapper mr-3 d-flex align-items-center justify-content-between px-3">
-                    <span class="mr-2 text-dark font-weight-bold" style="font-size: 0.95rem;">Status: All</span>
-                    <CIcon name="cil-filter" class="text-muted" style="width: 16px; height: 16px;" />
-                </div>
+        <UserFilter v-model="filters" />
 
-                <!-- Add New User Dropdown (Manual / Upload) -->
-                <CDropdown class="mr-3 font-weight-bold custom-import-dropdown" placement="bottom-end" :caret="false">
-                    <template #toggler-content>
-                        <CIcon name="cil-user-plus" class="mr-2" style="width: 18px; height: 18px; color: #344054;" />
-                        <span style="color: #344054; font-size: 0.95rem;">Add New User</span>
-                        <CIcon name="cil-chevron-bottom" class="ml-2 mt-1"
-                            style="width: 12px; height: 12px; color: #344054;" />
-                    </template>
-                    <CDropdownItem @click="showManualImportModal = true">
-                        <CIcon name="cil-keyboard" class="mr-2 text-muted" /> Add Manually
-                    </CDropdownItem>
-                    <CDropdownItem @click="triggerFileUpload">
-                        <CIcon name="cil-file" class="mr-2 text-muted" /> Import File (.csv, .xlsx)
-                    </CDropdownItem>
-                </CDropdown>
-                <!-- Hidden File Input for Uploading -->
-                <input type="file" ref="fileInput" class="d-none"
-                    accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-                    @change="handleFileUpload">
+        <UsersTable 
+            ref="usersTable" 
+            :filters="filters" 
+            @view="handleViewUser"
+            @edit="handleEditUser"
+        />
 
-                <!-- Export Excel Button -->
-                <CButton class="font-weight-bold custom-export-btn d-flex align-items-center" @click="exportToExcel">
-                    <CIcon name="cil-layers" class="mr-2" style="width: 18px; height: 18px;" /> Export
-                </CButton>
-            </div>
-        </div>
+        <!-- Choice Modal -->
+        <UserCreateChoiceModal 
+            :show.sync="showChoiceModal"
+            @manual="handleManualChoice"
+            @import="handleFileUpload"
+        />
 
-        <!-- Dynamic Data Table component -->
-        <UsersTable ref="usersTable" />
+        <UserCreateModal 
+            :show.sync="showManualImportModal"
+            @save="handleSaveUser"
+        />
 
-        <!-- Manual Import Modal -->
-        <CModal :show.sync="showManualImportModal" title="Add New User Manually" color="dark">
-            <p class="text-muted">Fill out the fields below to add a new system user.</p>
-            <CForm>
-                <CInput label="StudentId" v-model="form.studentId" placeholder="e.g. 66xxxxxxxx" />
-                <CInput label="Full Name TH" v-model="form.nameTh" placeholder="e.g. John Doe" />
-                <CInput label="Full Name EN" v-model="form.nameEn" placeholder="e.g. John Doe" />
-                <CInput label="Email Address" v-model="form.email" type="email" placeholder="e.g. john@example.com" />
-                <CInput label="Telephone" v-model="form.telephone" type="email" placeholder="e.g. john@example.com" />
-                <CInput label="StudentEmail" v-model="form.studentEmail" type="email"
-                    placeholder="e.g. john@example.com" />
-                <CInput label="PersonalEmail" v-model="form.personalEmail" type="email"
-                    placeholder="e.g. john@example.com" />
-                <CSelect label="Role" v-model="form.role" :options="['Admin', 'Customer']" />
-                <CInput label="Password" v-model="form.password" type="password"
-                    placeholder="Enter temporary password" />
-            </CForm>
-            <template #footer>
-                <CButton color="secondary" @click="showManualImportModal = false">Cancel</CButton>
-                <CButton color="dark" @click="submitManualImport">Save User</CButton>
-            </template>
-        </CModal>
+        <!-- View User Modal -->
+        <UserViewModal 
+            :show.sync="showViewModal"
+            :user="selectedUser"
+            @edit="handleEditUser"
+        />
+
+        <!-- Edit User Modal -->
+        <UserEditModal 
+            :show.sync="showEditModal"
+            :user="selectedUser"
+            @save="handleUpdateUser"
+        />
     </div>
 </template>
 
 <script>
 import * as XLSX from 'xlsx';
 import UsersTable from './components/table/UsersTable.vue';
+import UserWidget from './components/widget/UserWidget.vue';
+import UserFilter from './components/filter/UserFilter.vue';
+import HeaderHero from './components/HeaderHero.vue';
+import UserCreateChoiceModal from './components/modal/user/UserCreateChoiceModal.vue';
+import UserCreateModal from './components/modal/user/UserCreateModal.vue';
+import UserViewModal from './components/modal/user/UserViewModal.vue';
+import UserEditModal from './components/modal/user/UserEditModal.vue';
 
 export default {
     name: 'UsersManagement',
     components: {
-        UsersTable
+        UsersTable,
+        UserWidget,
+        UserFilter,
+        HeaderHero,
+        UserCreateChoiceModal,
+        UserCreateModal,
+        UserViewModal,
+        UserEditModal
     },
     data() {
         return {
+            showChoiceModal: false,
             showManualImportModal: false,
-            form: {
-                studentId: '',
-                nameTh: '',
-                nameEn: '',
-                email: '',
-                telephone: '',
-                studentEmail: '',
-                personalEmail: '',
-                role: 'Customer',
-                password: ''
+            showViewModal: false,
+            showEditModal: false,
+            selectedUser: null,
+            filters: {
+                search: '',
+                role: 'All Roles',
+                status: 'All Status'
             }
         }
     },
     methods: {
-        triggerFileUpload() {
-            this.$refs.fileInput.click();
+        handleViewUser(user) {
+            this.selectedUser = user;
+            this.showViewModal = true;
         },
-        handleFileUpload(event) {
-            const file = event.target.files[0];
+        handleEditUser(user) {
+            this.selectedUser = user;
+            this.showViewModal = false;
+            this.showEditModal = true;
+        },
+        handleUpdateUser(userData) {
+            console.log("Updating user:", userData);
+            alert("User updated successfully (Mock)!");
+            this.showEditModal = false;
+        },
+        handleManualChoice() {
+            this.showChoiceModal = false;
+            this.showManualImportModal = true;
+        },
+        handleFileUpload(file) {
             if (!file) return;
-
             alert(`Simulating import user data for: ${file.name}`);
-            // Reset input so the same file could be selected again if needed
-            event.target.value = '';
         },
-        submitManualImport() {
-            try {
-                const payload = {
-                    studentId: this.form.studentId,
-                    image: "",
-                    name: [{ key: "th", value: this.form.nameTh }, { key: "en", value: this.form.nameEn }],
-                    contact: { telephone: this.form.telephone, studentEmail: this.form.studentEmail, personalEmail: this.form.personalEmail },
-                    password: this.form.password,
-                    status: this.form.status,
-                }
-                this.$store.dispatch("user/create", payload);
-                resetForm();
-                alert("User created successfully!");
-            } catch (error) {
-                console.error("Failed to create user:", error);
-                alert("Error: Something went wrong.");
-            }
-        },
-
-        resetForm() {
-            this.form = {
-                studentId: '', nameTh: '', nameEn: '', email: '',
-                telephone: '', studentEmail: '', personalEmail: '',
-                role: 'Customer', password: ''
-            };
+        handleSaveUser(userData) {
+            console.log("Saving new user:", userData);
+            alert("User created successfully (Mock)!");
             this.showManualImportModal = false;
         },
-
         exportToExcel() {
-            if (!this.$refs.usersTable || !this.$refs.usersTable.users) {
+            if (!this.$refs.usersTable || !this.$refs.usersTable.filteredUsers) {
                 console.error("Could not locate table data for export.");
                 return;
             }
-
-            const dataToExport = this.$refs.usersTable.users;
+            const dataToExport = this.$refs.usersTable.filteredUsers;
             if (dataToExport.length === 0) {
                 alert("No data available to export.");
                 return;
             }
-
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
-            XLSX.writeFile(workbook, `Users_Export.xlsx`);
+            XLSX.writeFile(workbook, `Users_Export_${new Date().toLocaleDateString()}.xlsx`);
         }
     }
 }
 </script>
 
 <style scoped>
-/* Toolbar elements */
-.filter-wrapper {
-    background-color: #ffffff;
-    border-radius: 12px;
+.users-management-dashboard {
+    padding-bottom: 2rem;
+}
+
+::v-deep .form-control {
+    border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 0 16px !important;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    min-width: 120px;
-    cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    padding: 0.6rem 1rem;
+    height: auto;
 }
 
-.filter-wrapper:hover {
-    background-color: #f8f9fa;
-}
-
-/* Import Dropdown */
-::v-deep .custom-import-dropdown .btn {
-    background-color: #ffffff !important;
-    color: #344054 !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 12px !important;
-    font-weight: 500;
-    height: 48px;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
-    transition: all 0.2s;
-}
-
-::v-deep .custom-import-dropdown .btn:hover {
-    background-color: #f8f9fa !important;
-}
-
-/* Export Button */
-.custom-export-btn {
-    background-color: #e06e64 !important;
-    /* Soft Red matching image */
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 12px !important;
-    font-weight: 600;
-    height: 48px;
-    padding: 0 24px;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(224, 110, 100, 0.2) !important;
-}
-
-.custom-export-btn:hover {
-    background-color: #cf5d54 !important;
-    transform: translateY(-1px);
-}
-
-/* Search Bar */
-.search-wrapper {
-    position: relative;
-    width: 320px;
-}
-
-.search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #a0aec0;
-    width: 18px;
-    height: 18px;
-    z-index: 10;
-}
-
-::v-deep .custom-search-cinput .form-group {
-    margin-bottom: 0 !important;
-}
-
-::v-deep .custom-search-cinput .form-control {
-    padding-left: 40px !important;
-    height: 48px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    font-size: 0.95rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-    transition: all 0.2s;
-}
-
-::v-deep .custom-search-cinput .form-control:focus {
-    border-color: #cbd5e0;
-    box-shadow: 0 0 0 3px rgba(226, 232, 240, 0.4);
+::v-deep .form-control:focus {
+    border-color: #321fdb;
+    box-shadow: 0 0 0 3px rgba(50, 31, 219, 0.1);
 }
 </style>

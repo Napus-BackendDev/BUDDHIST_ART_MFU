@@ -100,12 +100,6 @@ export default {
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Database',
-            to: '/admin/database',
-            icon: 'cil-settings'
-          },
-          {
-            _name: 'CSidebarNavItem',
             name: 'User Management',
             to: '/admin/users-management',
             icon: 'cil-people'

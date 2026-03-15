@@ -1,38 +1,54 @@
 <template>
-    <div>
-
-        <div class="filter-bar mb-4 d-flex justify-content-between align-items-center">
-            <!-- Search Input -->
-            <div class="search-wrapper">
-                <CIcon name="cilMagnifyingGlass" class="search-icon" />
-                <CInput class="m-0 w-100 custom-search-cinput" placeholder="Search submissions by title..." />
-            </div>
-
-            <!-- Right Actions -->
-            <div class="right-filters d-flex">
-                <CButton class="add-btn d-flex align-items-center" @click="addSubmission">
-                    <CIcon name="cil-plus" class="mr-2" /> Add Submission
-                </CButton>
-            </div>
-        </div>
-
-        <!-- DataTable Component -->
-        <SubmissionTable @view="handleView" @edit="handleEdit" @delete="handleDelete" />
+    <div class="submissions-dashboard">
+        <HeaderHero title="Submission Management" description="Track and manage all artwork submissions, student assignments, and digital portfolios." icon="cil-list":showCreateButton="true" createButtonText="Add Submission"@create="addSubmission" />
+        <SubmissionWidget />
+        <SubmissionFilter v-model="filters" />
+        <SubmissionTable :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
+        <SubmissionCreateModal :show.sync="showCreateModal" @save="handleSave" />
+        <SubmissionEditModal :show.sync="showEditModal" :submissionData="selectedSubmission" @update="handleUpdate" />
     </div>
 </template>
 
 <script>
 import SubmissionTable from './components/table/SubmissionTable.vue'
+import HeaderHero from './components/HeaderHero.vue'
+import SubmissionWidget from './components/widget/SubmissionWidget.vue'
+import SubmissionFilter from './components/filter/SubmissionFilter.vue'
+import SubmissionCreateModal from './components/modal/submission/SubmissionCreateModal.vue'
+import SubmissionEditModal from './components/modal/submission/SubmissionEditModal.vue'
 
 export default {
     name: 'Submissions',
     components: {
-        SubmissionTable
+        SubmissionTable,
+        HeaderHero,
+        SubmissionWidget,
+        SubmissionFilter,
+        SubmissionCreateModal,
+        SubmissionEditModal
+    },
+    data() {
+        return {
+            showCreateModal: false,
+            showEditModal: false,
+            selectedSubmission: null,
+            filters: {
+                search: '',
+                startDate: null,
+                endDate: null,
+                quickRange: 'All Time'
+            }
+        }
     },
     methods: {
         addSubmission() {
-            // Logic to add a new submission
-            console.log('Add new submission clicked');
+            this.showCreateModal = true;
+        },
+        handleSave(data) {
+            console.log('Submission data:', data);
+            // Simulation of success
+            alert('New submission portal created successfully!');
+            this.showCreateModal = false;
         },
         handleView(item) {
             console.log('Viewing item:', item);
@@ -40,7 +56,14 @@ export default {
         },
         handleEdit(item) {
             console.log('Editing item:', item);
-            // Open edit form or modal
+            this.selectedSubmission = item;
+            this.showEditModal = true;
+        },
+        handleUpdate(data) {
+            console.log('Update submission data:', data);
+            // Simulation of success
+            alert('Submission portal updated successfully!');
+            this.showEditModal = false;
         },
         handleDelete(item) {
             console.log('Deleting item:', item);
@@ -51,25 +74,12 @@ export default {
 </script>
 
 <style scoped>
+.submissions-dashboard {
+    padding-bottom: 2rem;
+}
+
 .filter-bar {
     width: 100%;
-}
-
-.add-btn {
-    background-color: #eb7a34;
-    border-color: #eb7a34;
-    color: #ffffff !important;
-    border-radius: 8px;
-    padding: 0.5rem 1.25rem;
-    font-weight: 600;
-    box-shadow: 0 2px 6px rgba(235, 122, 52, 0.3);
-    transition: all 0.2s;
-}
-
-.add-btn:hover {
-    background-color: #d66a26;
-    border-color: #d66a26;
-    color: #ffffff !important;
 }
 
 /* Base custom input wrapper styles */

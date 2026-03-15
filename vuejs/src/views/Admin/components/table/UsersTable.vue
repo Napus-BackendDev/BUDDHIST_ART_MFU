@@ -2,20 +2,27 @@
     <CCard class="database-table-card mb-4">
         <div>
             <!-- Main Data Table -->
-            <CDataTable :items="users" :fields="fields" class="custom-table mb-0" hover :border="false"
+            <CDataTable :items="filteredUsers" :fields="fields" class="custom-table mb-0" hover :border="false"
                 :striped="false">
+
+                <!-- ID Column -->
+                <template #id="{ item }">
+                    <td class="py-3">
+                        <span class="font-weight-bold" style="color: #4f5d73;">{{ item.id }}</span>
+                    </td>
+                </template>
 
                 <!-- User Name / Student ID Column -->
                 <template #name_student_id="{ item }">
-                    <td>
+                    <td class="py-3">
                         <div class="d-flex align-items-center">
-                            <div class="avatar-circle mr-3 display-5 font-weight-bold d-flex justify-content-center align-items-center"
+                            <div class="avatar-circle mr-3"
                                 :style="{ backgroundColor: getAvatarColor(item.name) }">
                                 {{ getInitials(item.name) }}
                             </div>
                             <div>
-                                <div class="font-weight-bold" style="color: #2c3e50;">{{ item.name }}</div>
-                                <div class="small text-muted">{{ item.student_id ? `ID: ${item.student_id}` : 'NoStudent ID' }}</div>
+                                <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ item.name }}</div>
+                                <div class="small text-muted font-weight-bold">{{ item.student_id ? `ID: ${item.student_id}` : 'No Student ID' }}</div>
                             </div>
                         </div>
                     </td>
@@ -23,46 +30,46 @@
 
                 <!-- Email Office / Personal Column -->
                 <template #email_details="{ item }">
-                    <td>
-                        <div style="color: #2c3e50;">{{ item.email_office || '-' }}</div>
-                        <div class="small text-muted">{{ item.email_personal || '-' }}</div>
+                    <td class="py-3">
+                        <div class="font-weight-bold" style="color: #4f5d73; font-size: 0.9rem;">{{ item.email_office || '-' }}</div>
+                        <div class="small text-muted font-weight-bold text-truncate" style="max-width: 180px;">{{ item.email_personal || '-' }}</div>
                     </td>
                 </template>
 
                 <!-- Tel / Role Column -->
                 <template #tel_role="{ item }">
-                    <td>
-                        <div class="font-weight-bold" style="color: #2c3e50;">{{ item.tel || '-' }}</div>
-                        <div class="small text-muted">{{ item.role }}</div>
+                    <td class="py-3">
+                        <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ item.tel || '-' }}</div>
+                        <div class="small text-muted font-weight-bold">{{ item.role }}</div>
                     </td>
                 </template>
 
                 <!-- Status Column -->
                 <template #status="{ item }">
-                    <td>
-                        <span :class="getStatusBadgeClass(item.status)" class="badge-custom">
+                    <td class="py-3">
+                        <div :class="['status-badge', getStatusBadge(item.status).class]">
+                            <CIcon :name="getStatusBadge(item.status).icon" size="sm" class="status-icon" />
                             {{ item.status }}
-                        </span>
+                        </div>
                     </td>
                 </template>
 
                 <!-- Actions Column -->
                 <template #actions="{ item }">
-                    <td class="text-right">
+                    <td class="text-right py-3 pr-4">
                         <div class="d-inline-flex align-items-center action-wrapper">
-                            <button class="action-btn icon-view" title="View" @click="handleView(item)">
+                            <button class="action-btn icon-view" v-c-tooltip="'View'" @click="handleView(item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit mx-2" title="Edit" @click="handleEdit(item)">
+                            <button class="action-btn icon-edit mx-2" v-c-tooltip="'Edit'" @click="handleEdit(item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger" title="Delete" @click="handleDelete(item)">
+                            <button class="action-btn icon-danger" v-c-tooltip="'Delete'" @click="handleDelete(item)">
                                 <CIcon name="cil-trash" size="lg" />
                             </button>
                         </div>
                     </td>
                 </template>
-
             </CDataTable>
         </div>
 
@@ -75,44 +82,25 @@
             </div>
         </CCardFooter>
 
-        <!-- Internal Modals for Actions -->
-        <CModal :show.sync="showViewModal" title="View User Detail" color="info">
-            <pre v-if="selectedItem" class="bg-light p-3 rounded" style="white-space: pre-wrap;">{{ JSON.stringify(selectedItem,
-                null, 2) }}</pre>
-            <template #footer>
-                <CButton color="secondary" @click="showViewModal = false">Close</CButton>
-            </template>
-        </CModal>
-
-        <CModal :show.sync="showEditModal" title="Edit User" color="primary">
-            <div v-if="selectedItem">
-                <CForm>
-                    <CInput label="Full Name" :value="selectedItem.name" />
-                    <CInput label="Email Address" type="email" :value="selectedItem.email" />
-                    <CSelect label="Role" :value="selectedItem.role"
-                        :options="['Admin', 'Developer', 'Evaluator', 'Customer']" />
-                    <CSelect label="Status" :value="selectedItem.status"
-                        :options="['Active', 'Inactive', 'Suspended']" />
-                </CForm>
-            </div>
-            <template #footer>
-                <CButton color="secondary" @click="showEditModal = false">Cancel</CButton>
-                <CButton color="primary" @click="saveEdit">Save Changes</CButton>
-            </template>
-        </CModal>
-
+        <!-- Modals removed - events are now handled by parent -->
     </CCard>
 </template>
 
 <script>
 export default {
     name: 'UsersTable',
+    props: {
+        filters: {
+            type: Object,
+            default: () => ({
+                search: '',
+                role: 'All Roles',
+                status: 'All Status'
+            })
+        }
+    },
     data() {
         return {
-            showViewModal: false,
-            showEditModal: false,
-            selectedItem: null,
-
             // Fields Definition
             fields: [
                 { key: 'id', label: 'USER ID', _classes: 'border-top-0 border-bottom w-10' },
@@ -125,11 +113,74 @@ export default {
 
             // Mock Data
             users: [
-                { id: 'USR-001', name: 'Albus Dumbledore', student_id: '6450001', email_office: 'office@hogwarts.edu', email_personal: 'albus@gmail.com', tel: '081-234-5678', role: 'Admin', status: 'Active' },
-                { id: 'USR-002', name: 'Harry Potter', student_id: '6450002', email_office: 'harry.p@student.edu', email_personal: 'harry@gmail.com', tel: '089-876-5432', role: 'Customer', status: 'Inactive' },
-                { id: 'USR-003', name: 'Hermione Granger', student_id: '6450003', email_office: 'h.granger@dev.org', email_personal: 'hermione@gmail.com', tel: '090-111-2222', role: 'Developer', status: 'Active' },
-                { id: 'USR-004', name: 'Severus Snape', student_id: '6450004', email_office: 'snape@evaluators.net', email_personal: 'severus@yahoo.com', tel: '061-555-4444', role: 'Evaluator', status: 'Suspended' }
+                { 
+                    id: 'USR-001', 
+                    name: 'Albus Dumbledore', 
+                    nameEn: 'Albus Dumbledore',
+                    nameTh: 'อัลบัส ดัมเบิลดอร์',
+                    student_id: '6450001', 
+                    email_office: 'office@hogwarts.edu', 
+                    email_personal: 'albus@gmail.com', 
+                    tel: '081-234-5678', 
+                    role: 'Admin', 
+                    status: 'Active',
+                    joinedDate: 'Jan 15, 2024'
+                },
+                { 
+                    id: 'USR-002', 
+                    name: 'Harry Potter', 
+                    nameEn: 'Harry Potter',
+                    nameTh: 'แฮร์รี่ พอตเตอร์',
+                    student_id: '6450002', 
+                    email_office: 'harry.p@student.edu', 
+                    email_personal: 'harry@gmail.com', 
+                    tel: '089-876-5432', 
+                    role: 'Customer', 
+                    status: 'Inactive',
+                    joinedDate: 'Feb 10, 2024'
+                },
+                { 
+                    id: 'USR-003', 
+                    name: 'Hermione Granger', 
+                    nameEn: 'Hermione Granger',
+                    nameTh: 'เฮอร์ไมโอนี่ เกรนเจอร์',
+                    student_id: '6450003', 
+                    email_office: 'h.granger@dev.org', 
+                    email_personal: 'hermione@gmail.com', 
+                    tel: '090-111-2222', 
+                    role: 'Developer', 
+                    status: 'Active',
+                    joinedDate: 'Mar 05, 2024'
+                },
+                { 
+                    id: 'USR-004', 
+                    name: 'Severus Snape', 
+                    nameEn: 'Severus Snape',
+                    nameTh: 'เซเวอรัส สเนป',
+                    student_id: '6450004', 
+                    email_office: 'snape@evaluators.net', 
+                    email_personal: 'severus@yahoo.com', 
+                    tel: '061-555-4444', 
+                    role: 'Evaluator', 
+                    status: 'Suspended',
+                    joinedDate: 'Apr 20, 2024'
+                }
             ]
+        }
+    },
+    computed: {
+        filteredUsers() {
+            return this.users.filter(user => {
+                const searchMatch = !this.filters.search || 
+                    user.name.toLowerCase().includes(this.filters.search.toLowerCase()) ||
+                    (user.student_id && user.student_id.toLowerCase().includes(this.filters.search.toLowerCase())) ||
+                    user.email_office.toLowerCase().includes(this.filters.search.toLowerCase());
+                
+                const roleMatch = this.filters.role === 'All Roles' || user.role === this.filters.role;
+                const statusMatch = this.filters.status === 'All Status' || user.status === this.filters.status;
+
+                return searchMatch && roleMatch && statusMatch;
+            });
         }
     },
     methods: {
@@ -146,32 +197,21 @@ export default {
             }
             return colors[Math.abs(hash) % colors.length];
         },
-        getStatusBadgeClass(status) {
-            const successStatus = ['Active'];
-            const warningStatus = ['Inactive'];
-            const dangerStatus = ['Suspended'];
-
-            if (successStatus.includes(status)) return 'badge-success-soft';
-            if (warningStatus.includes(status)) return 'badge-warning-soft';
-            if (dangerStatus.includes(status)) return 'badge-danger-soft';
-            return 'badge-secondary-soft';
+        getStatusBadge(status) {
+            if (status === 'Active') return { class: 'badge-passed', icon: 'cil-check-circle' };
+            if (status === 'Suspended') return { class: 'badge-fail', icon: 'cil-x-circle' };
+            return { class: 'badge-pending', icon: 'cil-clock' }; // Inactive
         },
         handleView(item) {
-            this.selectedItem = item;
-            this.showViewModal = true;
+            this.$emit('view', item);
         },
         handleEdit(item) {
-            this.selectedItem = Object.assign({}, item); // copy
-            this.showEditModal = true;
+            this.$emit('edit', item);
         },
         handleDelete(item) {
             if (confirm(`Are you sure you want to delete user ${item.name}?`)) {
                 alert(`Deleted user: ${item.name}`);
             }
-        },
-        saveEdit() {
-            alert(`Saved changes for user: ${this.selectedItem.name}`);
-            this.showEditModal = false;
         }
     }
 }
@@ -198,7 +238,7 @@ export default {
     padding: 1.25rem 1.5rem;
     vertical-align: middle;
     border-bottom: 1px solid #f0f1f5;
-    color: #172b4d;
+    color: #4f5d73;
 }
 
 .custom-table tr:last-child td {
@@ -207,48 +247,58 @@ export default {
 
 /* Avatar */
 .avatar-circle {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     color: #ffffff;
-    font-size: 1rem;
-    flex-shrink: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Badges */
-.badge-custom {
-    padding: 0.4em 0.8em;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.85rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
-.badge-success-soft {
-    background-color: #e6f6ed;
-    color: #27a768;
+.status-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
 }
 
-.badge-warning-soft {
-    background-color: #fff8e6;
-    color: #e6a23c;
+.badge-passed {
+    color: #38a169;
+    background-color: #f0fff4;
+    border: 1px solid rgba(56, 161, 105, 0.4);
 }
 
-.badge-danger-soft {
-    background-color: #fff5f5;
+.badge-pending {
+    color: #d69e2e;
+    background-color: #fffaf0;
+    border: 1px solid rgba(214, 158, 46, 0.4);
+}
+
+.badge-fail {
     color: #e53e3e;
-}
-
-.badge-secondary-soft {
-    background-color: #f1f3f5;
-    color: #6c757d;
+    background-color: #fff5f5;
+    border: 1px solid rgba(229, 62, 62, 0.4);
 }
 
 /* Footer Pagination */
 .pagination-footer {
     border-top: 1px solid #f0f1f5 !important;
     margin: 0 1.5rem;
-    padding-left: 0;
-    padding-right: 0;
 }
 
 .btn-pagination {
@@ -268,62 +318,36 @@ export default {
 
 .btn-pagination:disabled {
     opacity: 0.6;
-    background-color: #ffffff;
-}
-
-.rounded-bottom {
-    border-bottom-left-radius: 12px !important;
-    border-bottom-right-radius: 12px !important;
 }
 
 /* Action Buttons */
 .action-btn {
     background: transparent;
     border: none;
-    padding: 6px;
+    padding: 8px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
+    transition: all 0.2s;
     outline: none;
-    opacity: 0;
 }
 
-::v-deep .custom-table tbody tr:hover .action-btn {
-    opacity: 1;
+.icon-view { color: #a0aec0; }
+.icon-edit { color: #4299e1; }
+.icon-danger { color: #e53e3e; }
+
+.action-btn:hover {
+    transform: scale(1.15);
+    background-color: #f8f9fa;
 }
 
 ::v-deep tr:hover td {
     background-color: #f8f9fa;
 }
 
-.action-btn:hover {
-    transform: scale(1.15);
-}
-
-.icon-danger {
-    color: #e53e3e;
-}
-
-.icon-danger:hover {
-    background-color: #ffdddd;
-}
-
-.icon-view {
-    color: #a0aec0;
-}
-
-.icon-view:hover {
-    background-color: #f1f9ff;
-}
-
-.icon-edit {
-    color: #4299e1;
-}
-
-.icon-edit:hover {
-    background-color: #ebf8ff;
+::v-deep .custom-table th {
+    border-bottom: 2px solid #f1f5f9;
 }
 </style>
