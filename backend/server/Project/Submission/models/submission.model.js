@@ -4,23 +4,33 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var objsSchema = new Schema({
-    image           : {type: String, default: null},
-    title           : [{
-        key            : {type: String, default: null},
-        value          : {type: String, default: null},
+    title: [{
+        key: { type: String, default: null },
+        value: { type: String, default: null },
     }],
-    description     : [{
-        key            : {type: String, default: null},
-        value          : {type: String, default: null},
-    }],
-    maxRound        : { type: Number, default: 5, min: 1 },
-    controll        : [{
-        key            : [{
-            key           : {type: String, default: null},
-            value         : {type: String, default: null}
+    artist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    assignments: [{
+        title: [{
+            key: { type: String, default: null },
+            value: { type: String, default: null },
         }],
-        value          : [{type: mongoose.Schema.Types.ObjectId, ref: "Homework"}],
+        create: {
+            startAt: { type: Date, default: Date.now },
+            endAt: { type: Date, default: Date.now },
+        },
+        artworks: [{
+            image: { type: String, default: null },
+            owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status' },
+            create: {
+                at: { type: Date, default: Date.now },
+            },
+        }],
     }],
-});
+    create: {
+        startAt: { type: Date, default: Date.now },
+        endAt: { type: Date, default: Date.now },
+    },
+}, { timestamps: true });
 
 module.exports = mongoose.model('Submission', objsSchema, 'Submission');

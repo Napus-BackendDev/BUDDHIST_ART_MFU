@@ -38,8 +38,9 @@ exports.onUpload = async function (request, response) {
     try {
         let query = {};
         query._id = new mongo.ObjectId(request.body._id);
+        const imagePath = `${request.protocol}://${request.get('host')}/uploads/news/${request.file.filename}`;
 
-        const doc = await New.onUpdate(query, { image: request.file?.path }, [] , "image");
+        const doc = await New.onUpdate(query, { image: imagePath }, [], "image");
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         console.log(err);
