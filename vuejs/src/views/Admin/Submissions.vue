@@ -1,7 +1,7 @@
 <template>
     <div class="submissions-dashboard">
-        <HeaderHero title="Submission Management" description="Track and manage all artwork submissions, student assignments, and digital portfolios." icon="cil-list":showCreateButton="true" createButtonText="Add Submission"@create="addSubmission" />
-        <SubmissionWidget />
+        <HeaderHero title="Submission Management" description="Track and manage all artwork submissions, student assignments, and digital portfolios." icon="cil-list" :showCreateButton="true" createButtonText="Add Submission" @create="addSubmission" />
+        <SubmissionWidget v-model="filters.quickRange" />
         <SubmissionFilter v-model="filters" />
         <SubmissionTable :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
         <SubmissionCreateModal :show.sync="showCreateModal" @save="handleSave" />
@@ -40,34 +40,44 @@ export default {
             }
         }
     },
+    created() {
+        this.fetchSubmissions();
+    },
     methods: {
+        fetchSubmissions() {
+            this.$store.dispatch('submission/get', {});
+        },
         addSubmission() {
             this.showCreateModal = true;
         },
         handleSave(data) {
-            console.log('Submission data:', data);
-            // Simulation of success
-            alert('New submission portal created successfully!');
-            this.showCreateModal = false;
+            this.$store.dispatch('submission/create', data)
+                .then(() => {
+                    this.fetchSubmissions();
+                    this.showCreateModal = false;
+                });
         },
         handleView(item) {
-            console.log('Viewing item:', item);
-            this.$router.push({ name: 'SubmissionsDetail', params: { id: item.id } });
+            this.$router.push({ name: 'SubmissionsDetail', params: { id: item._id } });
         },
         handleEdit(item) {
-            console.log('Editing item:', item);
             this.selectedSubmission = item;
             this.showEditModal = true;
         },
         handleUpdate(data) {
-            console.log('Update submission data:', data);
-            // Simulation of success
-            alert('Submission portal updated successfully!');
-            this.showEditModal = false;
+            this.$store.dispatch('submission/update', data)
+                .then(() => {
+                    this.fetchSubmissions();
+                    this.showEditModal = false;
+                });
         },
         handleDelete(item) {
-            console.log('Deleting item:', item);
-            // Confirm and delete
+            if (confirm('Are you sure you want to delete this submission?')) {
+                this.$store.dispatch('submission/delete', { _id: item._id })
+                    .then(() => {
+                        this.fetchSubmissions();
+                    });
+            }
         }
     }
 }

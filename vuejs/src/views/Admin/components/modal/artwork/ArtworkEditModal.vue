@@ -81,13 +81,16 @@
                             <div v-if="showArtistDropdown" class="artist-results-list shadow-lg">
                                 <div 
                                     v-for="artist in filteredArtists" 
-                                    :key="artist" 
+                                    :key="artist._id" 
                                     class="artist-result-item"
-                                    :class="{ 'active': form.artist === artist }"
+                                    :class="{ 'active': form.artist === artist._id }"
                                     @mousedown="selectArtist(artist)"
                                 >
-                                    {{ artist }}
-                                    <CIcon v-if="form.artist === artist" name="cil-check" class="ml-auto text-blue" size="sm" />
+                                    <div class="d-flex flex-column">
+                                        <span class="artist-name">{{ getArtistName(artist) }}</span>
+                                        <span class="artist-id text-muted extra-small">ID: {{ artist.studentId || 'N/A' }}</span>
+                                    </div>
+                                    <CIcon v-if="form.artist === artist._id" name="cil-check" class="ml-auto text-blue" size="sm" />
                                 </div>
                                 <div v-if="filteredArtists.length === 0" class="artist-result-item text-muted">
                                     No artists found
@@ -102,14 +105,19 @@
                         <CDropdown :caret="false" class="w-100">
                             <template #toggler>
                                 <button class="custom-select-btn">
-                                    <span class="text-dark">{{ form.category || 'Select Category' }}</span>
+                                    <span class="text-dark">{{ selectedCategoryName }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </button>
                             </template>
-                            <CDropdownItem @click="form.category = 'Painting'">Painting</CDropdownItem>
-                            <CDropdownItem @click="form.category = 'Sculpture'">Sculpture</CDropdownItem>
-                            <CDropdownItem @click="form.category = 'Digital Art'">Digital Art</CDropdownItem>
-                            <CDropdownItem @click="form.category = 'Photography'">Photography</CDropdownItem>
+                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                                <CDropdownItem 
+                                    v-for="cat in categories" 
+                                    :key="cat._id" 
+                                    @click="form.category = cat._id"
+                                >
+                                    {{ getName('en', cat) }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -129,18 +137,23 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Status</label>
+                        <label class="form-label">Sale Status</label>
                         <CDropdown :caret="false" class="w-100">
                             <template #toggler>
                                 <button class="custom-select-btn">
-                                    <span class="text-dark">{{ form.status || 'Select Status' }}</span>
+                                    <span class="text-dark">{{ selectedSaleStatusName }}</span>
                                     <CIcon name="cil-filter" class="dropdown-icon" />
                                 </button>
                             </template>
-                            <CDropdownItem @click="form.status = 'Available'">Available</CDropdownItem>
-                            <CDropdownItem @click="form.status = 'Update'">Update</CDropdownItem>
-                            <CDropdownItem @click="form.status = 'Sold Out'">Sold Out</CDropdownItem>
-                            <CDropdownItem @click="form.status = 'Archived'">Archived</CDropdownItem>
+                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                                <CDropdownItem 
+                                    v-for="status in saleStatuses" 
+                                    :key="status._id" 
+                                    @click="form.status.sale = status._id"
+                                >
+                                    {{ getName('en', status) }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -229,6 +242,8 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 export default {
     name: 'ArtworkEditModal',
     props: {
@@ -243,17 +258,8 @@ export default {
     },
     data() {
         return {
-            artists: [
-                'Somsak K.',
-                'Elena G.',
-                'Davide B.',
-                'Sarah L.',
-                'Mike R.',
-                'Ananda S.',
-                'Malee W.',
-                'Jiro K.',
-                'Panya T.'
-            ],
+            categories: [],
+            statuses: [],
             imagePreview: null,
             artistSearchQuery: '',
             showArtistDropdown: false,
@@ -261,14 +267,20 @@ export default {
                 id: null,
                 title: '',
                 artist: '',
-                category: 'Painting',
+                category: '',
                 technique: '',
                 price: '',
                 description: '',
-                status: 'Available',
+                status: {
+                    approval: '',
+                    sale: ''
+                },
                 image: null
             }
         }
+    },
+    async created() {
+        await this.fetchInitialData();
     },
     watch: {
         artwork: {
@@ -286,34 +298,116 @@ export default {
         }
     },
     computed: {
+        ...mapGetters({
+            allUsers: 'user/user'
+        }),
         isFormValid() {
             return this.form.title.trim() !== '' && 
-                   (this.form.artist.trim() !== '' || this.artistSearchQuery.trim() !== '') && 
+                   this.form.artist !== '' && 
                    this.form.price !== '' && 
                    this.imagePreview !== null;
         },
         filteredArtists() {
-            if (!this.artistSearchQuery) return this.artists;
-            return this.artists.filter(artist => 
-                artist.toLowerCase().includes(this.artistSearchQuery.toLowerCase())
-            );
+            if (!this.allUsers) return [];
+            const q = this.artistSearchQuery.toLowerCase();
+            return this.allUsers.filter(artist => {
+                const name = this.getArtistName(artist).toLowerCase();
+                return name.includes(q);
+            });
+        },
+        saleStatuses() {
+            if (!this.statuses) return [];
+            return this.statuses.filter(s => {
+                const groupName = s.group ? this.getName('en', s.group).trim() : '';
+                return groupName === 'Sale Status';
+            });
+        },
+        approvalStatuses() {
+            if (!this.statuses) return [];
+            return this.statuses.filter(s => {
+                const groupName = s.group ? this.getName('en', s.group).trim() : '';
+                return groupName === 'Show Status';
+            });
+        },
+        selectedCategoryName() {
+            const cat = this.categories.find(c => c._id === this.form.category);
+            return cat ? this.getName('en', cat) : 'Select Category';
+        },
+        selectedSaleStatusName() {
+            const status = this.statuses.find(s => s._id === this.form.status.sale);
+            return status ? this.getName('en', status) : 'Select Sale Status';
+        },
+        selectedApprovalStatusName() {
+            const status = this.statuses.find(s => s._id === this.form.status.approval);
+            return status ? this.getName('en', status) : 'Select Approval Status';
         }
     },
     methods: {
+        async fetchInitialData() {
+            try {
+                this.$store.dispatch('user/get', {});
+
+                const categories = await this.$store.dispatch('artwork/category', { method: 'get' });
+                console.log('--- Edit Artwork Categories ---', categories);
+                this.categories = categories || [];
+
+                await this.$store.dispatch('setting/status/get');
+                this.statuses = this.$store.getters['setting/status/item'] || [];
+                console.log('--- Edit Artwork Statuses ---', this.statuses);
+                
+                if (this.artwork) {
+                    console.log('--- Populating Form with Artwork ---', this.artwork);
+                    this.populateForm(this.artwork);
+                }
+            } catch (error) {
+                console.error('Error fetching initial data:', error);
+            }
+        },
         populateForm(artwork) {
             this.form = {
-                id: artwork.id,
-                title: artwork.title,
-                artist: artwork.artist,
-                category: artwork.category,
-                technique: artwork.technique || '',
+                id: artwork._id,
+                title: this.getName('en', artwork),
+                artist: artwork.artist ? artwork.artist._id : '',
+                category: artwork.category ? artwork.category._id : '',
+                technique: this.getName('en', { title: artwork.technique }),
                 price: this.cleanPrice(artwork.price),
-                description: artwork.description || '',
-                status: artwork.status,
+                description: this.getName('en', { title: artwork.description }),
+                status: {
+                    approval: artwork.status?.approval?._id || '',
+                    sale: artwork.status?.sale?._id || ''
+                },
                 image: null
             };
-            this.artistSearchQuery = artwork.artist;
-            this.imagePreview = artwork.image || `https://via.placeholder.com/400/${artwork.imgBg}/${artwork.imgColor}?text=${artwork.thumbnail}`;
+            this.artistSearchQuery = artwork.artist ? this.getArtistDisplay(artwork.artist) : '';
+            this.imagePreview = artwork.image || null;
+        },
+        getName(lang, item) {
+            if (!item) return 'N/A';
+            if (typeof item === 'string') return item;
+            
+            const titleField = item.title || item.name || '';
+            if (typeof titleField === 'string' && titleField) return titleField;
+            
+            if (Array.isArray(titleField)) {
+                const nameObj = titleField.find(n => n.key === lang);
+                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
+                return nameObj ? nameObj.value : firstVal;
+            }
+            return 'N/A';
+        },
+        getArtistName(artist) {
+            if (!artist) return 'N/A';
+            if (Array.isArray(artist.name)) {
+                const nameObj = artist.name.find(n => n.key === 'en') || artist.name[0];
+                return nameObj ? nameObj.value : (artist.studentId || 'N/A');
+            }
+            return artist.studentId || 'N/A';
+        },
+        getArtistDisplay(artist) {
+            if (!artist) return 'N/A';
+            const name = this.getArtistName(artist);
+            const id = artist.studentId ? ` (${artist.studentId})` : '';
+            return name + id;
         },
         cleanPrice(price) {
             if (!price) return '';
@@ -338,7 +432,6 @@ export default {
         },
         handleArtistSearch() {
             this.showArtistDropdown = true;
-            this.form.artist = this.artistSearchQuery;
         },
         handleArtistBlur() {
             setTimeout(() => {
@@ -346,8 +439,8 @@ export default {
             }, 200);
         },
         selectArtist(artist) {
-            this.form.artist = artist;
-            this.artistSearchQuery = artist;
+            this.form.artist = artist._id;
+            this.artistSearchQuery = this.getArtistDisplay(artist);
             this.showArtistDropdown = false;
         },
         toggleArtistDropdown() {
@@ -377,10 +470,19 @@ export default {
         handleSave() {
             if (!this.isFormValid) return;
             
-            this.$emit('save', { 
-                ...this.form, 
-                imagePreview: this.imagePreview
-            });
+            const payload = {
+                _id: this.form.id,
+                title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
+                description: [{ key: 'en', value: this.form.description }, { key: 'th', value: this.form.description }],
+                artist: this.form.artist,
+                category: this.form.category,
+                technique: [{ key: 'en', value: this.form.technique }, { key: 'th', value: this.form.technique }],
+                price: parseFloat(this.form.price),
+                status: this.form.status,
+                _image: this.form.image
+            };
+
+            this.$emit('save', payload);
             this.$emit('update:show', false);
         }
     }

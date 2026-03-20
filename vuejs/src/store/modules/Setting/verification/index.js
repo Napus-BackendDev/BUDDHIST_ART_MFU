@@ -22,28 +22,28 @@ const module = {
 
     actions: {
         get({commit}, data) {
-            Service.verification('get', {}, {})
+            return Service.settings('get', 'verification', data)
                 .then((response) => {
-                    store.commit("setting/verification/item", response.data.data)
+                    commit("item", response.data.data)
                 }).catch((err) => {
             });
         },
         post({commit}, data) {
-            Service.verification('post', data, {})
+            return Service.settings('post', 'verification', data)
                 .then((response) => {
 
                 }).catch((err) => {
             });
         },
         put({commit}, data) {
-            Service.verification('put', data, {})
+            return Service.settings('put', 'verification', data)
                 .then((response) => {
 
                 }).catch((err) => {
             });
         },
         delete({commit}, data) {
-            Service.verification('delete', data, {})
+            return Service.settings('delete', 'verification', data)
                 .then((response) => {
 
                 }).catch((err) => {

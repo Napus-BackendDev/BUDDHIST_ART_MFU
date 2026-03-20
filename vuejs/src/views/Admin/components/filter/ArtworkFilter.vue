@@ -46,7 +46,7 @@
                         <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Available')">Available</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Sold Out')">Sold Out</CDropdownItem>
-                        <CDropdownItem @click="updateFilter('status', 'Archived')">Archived</CDropdownItem>
+                        <CDropdownItem @click="updateFilter('status', 'Rejected')">Rejected</CDropdownItem>
                     </CDropdown>
                 </CCol>
 

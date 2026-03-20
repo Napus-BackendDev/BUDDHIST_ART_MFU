@@ -159,4 +159,87 @@
 //    padding-right: 0;
 //    padding-bottom: 0;
 //  }
-//}
+// }
+
+// ================================
+// Global Table & Pagination Styles
+// ================================
+
+.btn-pill-pagination {
+    background-color: #3b3dfa !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    border-radius: 50px !important;
+    padding: 0.6rem 1.4rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 6px rgba(59, 61, 250, 0.2) !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+
+    &:hover:not(:disabled) {
+        background-color: #2d2fcc !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 12px rgba(59, 61, 250, 0.3) !important;
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0) !important;
+    }
+
+    &:disabled {
+        opacity: 0.4 !important;
+        background-color: #a0aec0 !important;
+        box-shadow: none !important;
+        cursor: not-allowed !important;
+    }
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 1rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+
+    .status-icon {
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+    }
+}
+
+.custom-table {
+    th {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #7a8aa3;
+        padding: 1.25rem 1.5rem;
+        border-color: #f0f1f5;
+        background-color: #ffffff;
+    }
+    td {
+        padding: 1.25rem 1.5rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f1f5;
+        color: #172b4d;
+    }
+    tr:last-child td {
+        border-bottom: none;
+    }
+    tr:hover td {
+        background-color: #f8f9fa;
+    }
+}
+
+.pagination-footer {
+    border-top: 1px solid #f0f1f5 !important;
+    padding: 1.5rem 0;
+}

@@ -26,7 +26,16 @@ exports.onQuerys = async function (request, response) {
 
 exports.onCreate = async function (request, response) {
   try {
-    const doc = await Artwork.onCreate(request.body);
+    const data = { ...request.body };
+    // Clean up empty strings for ObjectId fields to allow schema defaults to work
+    if (data.status) {
+      if (data.status.approval === "") delete data.status.approval;
+      if (data.status.sale === "") delete data.status.sale;
+    }
+    if (data.category === "") delete data.category;
+    if (data.artist === "") delete data.artist;
+
+    const doc = await Artwork.onCreate(data);
     return ResMessage.sendResponse(response, 0, 20000, doc);
   } catch (err) {
     console.log(err);
@@ -53,7 +62,16 @@ exports.onUpdate = async function (request, response) {
     let query = {};
     query._id = new mongo.ObjectId(request.body._id);
 
-    const doc = await Artwork.onUpdate(query, request.body);
+    const data = { ...request.body };
+    // Clean up empty strings for ObjectId fields to allow schema defaults/nulls to work
+    if (data.status) {
+      if (data.status.approval === "") delete data.status.approval;
+      if (data.status.sale === "") delete data.status.sale;
+    }
+    if (data.category === "") delete data.category;
+    if (data.artist === "") delete data.artist;
+
+    const doc = await Artwork.onUpdate(query, data);
     return ResMessage.sendResponse(response, 0, 20000, doc);
   } catch (err) {
     console.error(err);

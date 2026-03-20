@@ -29,15 +29,25 @@
                 <CCol md="5" class="mb-4 mb-md-0">
                     <div class="artwork-image-view rounded-xl overflow-hidden shadow-sm border">
                         <img 
-                            :src="artwork.image || `https://via.placeholder.com/400/${artwork.imgBg}/${artwork.imgColor}?text=${artwork.thumbnail}`" 
+                            :src="artwork.image || `https://via.placeholder.com/400/e2e8f0/808080?text=${getName('en', artwork).charAt(0)}`" 
                             class="w-100 h-100 object-fit-contain bg-white" 
+                            :alt="getName('en', artwork)"
                         />
                     </div>
-                    <div class="mt-3 text-center">
-                        <CBadge :class="['status-badge-lg px-4 py-2', getStatusClass(artwork.status)]">
-                            <CIcon :name="getStatusIcon(artwork.status)" size="sm" class="mr-2" />
-                            {{ artwork.status }}
-                        </CBadge>
+                    <div class="mt-4 d-flex flex-wrap align-items-center justify-content-center status-container">
+                            <span class="status-label-text mr-2">Approval:</span>
+                            <CBadge :class="['status-badge-lg px-3 py-2', getStatusInfo(artwork).approval.class]">
+                                <CIcon :name="getStatusInfo(artwork).approval.icon" size="sm" class="status-icon-lg" />
+                                {{ getStatusInfo(artwork).approval.label }}
+                            </CBadge>
+                        </div>
+                        <div class="mb-2 d-flex align-items-center">
+                            <span class="status-label-text mr-2">Sale:</span>
+                            <CBadge :class="['status-badge-lg px-3 py-2', getStatusInfo(artwork).sale.class]">
+                                <CIcon :name="getStatusInfo(artwork).sale.icon" size="sm" class="status-icon-lg" />
+                                {{ getStatusInfo(artwork).sale.label }}
+                            </CBadge>
+                        </div>
                     </div>
                 </CCol>
 
@@ -45,7 +55,7 @@
                 <CCol md="7">
                     <div class="view-group mb-4">
                         <label class="view-label">Artwork Title</label>
-                        <h3 class="view-value-title font-weight-bold">{{ artwork.title }}</h3>
+                        <h3 class="view-value-title font-weight-bold">{{ getName('en', artwork) }}</h3>
                     </div>
 
                     <CRow class="mb-4">
@@ -53,15 +63,22 @@
                             <div class="view-group">
                                 <label class="view-label">Artist</label>
                                 <div class="d-flex align-items-center">
-                                    <div class="artist-avatar-sm mr-2">{{ getInitials(artwork.artist) }}</div>
-                                    <div class="view-value font-weight-bold text-dark">{{ artwork.artist }}</div>
+                                    <div class="artist-avatar-sm mr-2" :style="{ backgroundColor: getAvatarColor(artwork.artist) }">
+                                        {{ getInitials(artwork.artist) }}
+                                    </div>
+                                    <div class="view-value font-weight-bold text-dark">
+                                        {{ artwork.artist ? getName('en', artwork.artist) : 'N/A' }}
+                                        <div v-if="artwork.artist && artwork.artist.studentId" class="small text-muted">ID: {{ artwork.artist.studentId }}</div>
+                                    </div>
                                 </div>
                             </div>
                         </CCol>
                         <CCol sm="6">
                             <div class="view-group">
                                 <label class="view-label">Category</label>
-                                <div class="view-value font-weight-bold text-dark">{{ artwork.category }}</div>
+                                <div class="view-value font-weight-bold text-dark">
+                                    {{ artwork.category ? getName('en', artwork.category) : 'N/A' }}
+                                </div>
                             </div>
                         </CCol>
                     </CRow>
@@ -70,13 +87,15 @@
                         <CCol sm="6">
                             <div class="view-group">
                                 <label class="view-label">Technique</label>
-                                <div class="view-value text-muted">{{ artwork.technique || artwork.category }}</div>
+                                <div class="view-value text-muted">
+                                    {{ artwork.technique ? getName('en', artwork.technique) : 'N/A' }}
+                                </div>
                             </div>
                         </CCol>
                         <CCol sm="6">
                             <div class="view-group">
-                                <label class="view-label">Price</label>
-                                <div class="view-value-price font-weight-bold h4 mb-0 text-blue">
+                                <label class="view-label">Price / Value</label>
+                                <div class="view-value-price font-weight-bold h4 mb-0 text-primary">
                                     ฿ {{ formatPrice(artwork.price) }}
                                 </div>
                             </div>
@@ -86,7 +105,7 @@
                     <div class="view-group">
                         <label class="view-label">Description</label>
                         <p class="view-description text-muted">
-                            {{ artwork.description || 'No additional description provided for this artwork.' }}
+                            {{ artwork.description && artwork.description.length > 0 ? getName('en', artwork.description) : 'No additional description provided for this artwork.' }}
                         </p>
                     </div>
                 </CCol>
@@ -128,37 +147,85 @@ export default {
         }
     },
     methods: {
-        getInitials(name) {
+        getName(lang, item) {
+            if (!item) return '';
+            
+            // 1. If item itself is a string
+            if (typeof item === 'string') return item;
+            
+            // 2. If item is the array itself
+            if (Array.isArray(item)) {
+                const target = item.find(n => n.key === lang) || item[0];
+                return target ? target.value : '';
+            }
+            
+            // 3. If item is an object with title/name/key properties
+            const field = item.title || item.name || item.key;
+            if (field) {
+                if (typeof field === 'string') return field;
+                if (Array.isArray(field)) {
+                    const target = field.find(n => n.key === lang) || field[0];
+                    return target ? target.value : '';
+                }
+            }
+            
+            // 4. Default if nothing matches but item is an object
+            if (typeof item === 'object') {
+                return item.value || '';
+            }
+            
+            return '';
+        },
+        getInitials(artist) {
+            const name = this.getName('en', artist);
             if (!name) return '??';
             return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         },
+        getAvatarColor(artist) {
+            const colors = ['#e06e64', '#4299e1', '#48bb78', '#ed8936', '#9f7aea', '#a0aec0'];
+            const name = this.getName('en', artist);
+            if (!name) return colors[0];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return colors[Math.abs(hash) % colors.length];
+        },
         formatPrice(value) {
-            if (!value) return '0.00';
-            // Extract numbers if there's already a symbol
-            const cleanValue = String(value).replace(/[^0-9.]/g, '');
-            if (!cleanValue) return '0.00';
-            return parseFloat(cleanValue).toLocaleString('en-US', {
+            if (value === undefined || value === null) return '0.00';
+            const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+            return isNaN(num) ? '0.00' : num.toLocaleString('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
         },
-        getStatusIcon(status) {
-            switch(status) {
-                case 'Completed': return 'cil-check-circle';
-                case 'Pending': return 'cil-clock';
-                case 'Cancelled': return 'cil-x-circle';
-                case 'Update': return 'cil-sync';
-                default: return 'cil-circle';
+        getStatusInfo(item) {
+            const defaultStatus = { label: 'N/A', class: 'status-pending', icon: 'cil-question-mark' };
+            if (!item || !item.status) return { approval: defaultStatus, sale: defaultStatus };
+            
+            // Approval Status Logic - Directly passing populated status object
+            const appLabel = item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
+            let approval = { ...defaultStatus, label: appLabel };
+            
+            switch (appLabel) {
+                case 'Approved': approval = { label: 'Approved', class: 'status-completed', icon: 'cil-check-circle' }; break;
+                case 'Rejected': approval = { label: 'Rejected', class: 'status-cancelled', icon: 'cil-ban' }; break;
+                case 'Revised': approval = { label: 'Needs Revision', class: 'status-update', icon: 'cil-reload' }; break;
+                default: approval = { label: appLabel, class: 'status-pending', icon: 'cil-clock' };
             }
-        },
-        getStatusClass(status) {
-            switch(status) {
-                case 'Completed': return 'status-completed';
-                case 'Pending': return 'status-pending';
-                case 'Cancelled': return 'status-cancelled';
-                case 'Update': return 'status-update';
-                default: return '';
+
+            // Sale Status Logic - Directly passing populated status object
+            const saleLabel = item.status.sale ? this.getName('en', item.status.sale) : 'Not for Sale';
+            let sale = { ...defaultStatus, label: saleLabel };
+
+            switch (saleLabel) {
+                case 'Available': sale = { label: 'Available', class: 'status-completed', icon: 'cil-cart' }; break;
+                case 'Sold Out': sale = { label: 'Sold Out', class: 'status-cancelled', icon: 'cil-lock-locked' }; break;
+                case 'Exhibition': sale = { label: 'In Exhibition', class: 'status-update', icon: 'cil-tv' }; break;
+                default: sale = { label: saleLabel, class: 'status-pending', icon: 'cil-tag' };
             }
+
+            return { approval, sale };
         }
     }
 }
@@ -258,11 +325,30 @@ export default {
     border-radius: 50px;
     font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     letter-spacing: 0.5px;
-    padding: 0.5rem 1.25rem !important;
+    padding: 0.5rem 1.75rem !important;
     border-width: 1px;
     border-style: solid;
+    transition: all 0.2s;
+}
+
+.status-label-text {
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #64748b;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
+.status-icon-lg {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+.status-container {
+    padding: 4px;
 }
 
 .status-completed {

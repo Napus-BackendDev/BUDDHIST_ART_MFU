@@ -1,8 +1,8 @@
 <template>
     <CRow class="mb-4">
         <!-- Total Submitted -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card">
+        <CCol sm="6" lg="3" @click="$emit('input', 'All Statuses')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'All Statuses' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Total Submitted</div>
@@ -16,8 +16,8 @@
         </CCol>
 
         <!-- Passed -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Passed')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Passed' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Passed</div>
@@ -31,8 +31,8 @@
         </CCol>
 
         <!-- Pending Review -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Pending')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Pending' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Pending Review</div>
@@ -46,8 +46,8 @@
         </CCol>
 
         <!-- Failed -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Fail')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Fail' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Failed</div>
@@ -64,7 +64,13 @@
 
 <script>
 export default {
-    name: 'AssignmentWidget'
+    name: 'AssignmentWidget',
+    props: {
+        value: {
+            type: String,
+            default: 'All Statuses'
+        }
+    }
 }
 </script>
 
@@ -76,13 +82,19 @@ export default {
     transition: all 0.3s ease;
     height: 100%;
     margin-bottom: 0;
-    cursor: default;
+    cursor: pointer;
     user-select: none;
 }
 
 .widget-card:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     transform: translateY(-2px);
+}
+
+.active-widget {
+    border-color: #321fdb !important;
+    background-color: #f0f4ff !important;
+    box-shadow: 0 6px 16px rgba(50, 31, 219, 0.1) !important;
 }
 
 .widget-title {

@@ -78,12 +78,12 @@
                                 <div class="avatar-stack mr-2">
                                     <div 
                                         v-for="(student, idx) in selectedStudentDetails.slice(0, 5)" 
-                                        :key="student.id"
+                                        :key="student._id"
                                         class="avatar-preview-sm"
-                                        :style="{ backgroundColor: getAvatarColor(student.name), zIndex: 10 - idx }"
-                                        v-c-tooltip="student.name"
+                                        :style="{ backgroundColor: getAvatarColor(getStudentName(student)), zIndex: 10 - idx }"
+                                        v-c-tooltip="getStudentName(student)"
                                     >
-                                        {{ getInitials(student.name) }}
+                                        {{ getInitials(getStudentName(student)) }}
                                     </div>
                                     <div v-if="selectedStudents.length > 5" class="avatar-more-sm">
                                         +{{ selectedStudents.length - 5 }}
@@ -98,13 +98,13 @@
                         <div class="d-flex flex-wrap py-1 px-1">
                             <div 
                                 v-for="student in selectedStudentDetails" 
-                                :key="'sel-' + student.id"
+                                :key="'sel-' + student._id"
                                 class="selected-tag mr-2 mb-2 d-flex align-items-center"
                             >
-                                <div class="avatar-xs mr-2" :style="{ backgroundColor: getAvatarColor(student.name) }">
-                                    {{ getInitials(student.name) }}
+                                <div class="avatar-xs mr-2" :style="{ backgroundColor: getAvatarColor(getStudentName(student)) }">
+                                    {{ getInitials(getStudentName(student)) }}
                                 </div>
-                                <span class="tag-name mr-2 text-truncate">{{ student.name }}</span>
+                                <span class="tag-name mr-2 text-truncate">{{ getStudentName(student) }}</span>
                                 <button class="btn-remove-tag" @click="toggleStudent(student)">
                                     <CIcon name="cil-x" size="custom-sm" />
                                 </button>
@@ -136,21 +136,21 @@
                 <div class="student-list-container">
                     <div 
                         v-for="student in filteredStudents" 
-                        :key="student.id"
+                        :key="student._id"
                         class="student-item"
-                        :class="{ 'selected': isSelected(student.id) }"
+                        :class="{ 'selected': isSelected(student._id) }"
                         @click="toggleStudent(student)"
                     >
                         <div class="d-flex align-items-center">
-                            <div class="check-box-custom mr-3" :class="{ 'checked': isSelected(student.id) }">
-                                <CIcon v-if="isSelected(student.id)" name="cil-check" size="sm" />
+                            <div class="check-box-custom mr-3" :class="{ 'checked': isSelected(student._id) }">
+                                <CIcon v-if="isSelected(student._id)" name="cil-check" size="sm" />
                             </div>
-                            <div class="avatar-sm mr-3" :style="{ backgroundColor: getAvatarColor(student.name) }">
-                                {{ getInitials(student.name) }}
+                            <div class="avatar-sm mr-3" :style="{ backgroundColor: getAvatarColor(getStudentName(student)) }">
+                                {{ getInitials(getStudentName(student)) }}
                             </div>
                             <div>
-                                <div class="student-name-text">{{ student.name }}</div>
-                                <div class="student-id-text">ID: {{ student.student_id }}</div>
+                                <div class="student-name-text">{{ getStudentName(student) }}</div>
+                                <div class="student-id-text">ID: {{ student.studentId }}</div>
                             </div>
                         </div>
                     </div>
@@ -177,7 +177,7 @@
                 </CButton>
             </div>
         </template>
-    </CModal>
+</CModal>
 </template>
 
 <script>
@@ -212,7 +212,7 @@ export default {
             handler(newVal) {
                 if (newVal && newVal.length > 0 && this.selectedStudents.length === 0) {
                     // Default to all enrolled students being targeted
-                    this.selectedStudents = newVal.map(s => s.id);
+                    this.selectedStudents = newVal.map(s => s._id);
                 }
             }
         }
@@ -224,35 +224,42 @@ export default {
         filteredStudents() {
             if (!this.studentSearch) return this.enrolledStudents;
             const q = this.studentSearch.toLowerCase();
-            return this.enrolledStudents.filter(s => 
-                s.name.toLowerCase().includes(q) || 
-                s.student_id.toLowerCase().includes(q)
-            );
+            return this.enrolledStudents.filter(s => {
+                const name = this.getStudentName(s).toLowerCase();
+                const studentId = (s.username || '').toLowerCase();
+                return name.includes(q) || studentId.includes(q);
+            });
         },
         allSelected() {
-            return this.selectedStudents.length === this.enrolledStudents.length;
+            return this.enrolledStudents && this.selectedStudents.length === this.enrolledStudents.length;
         },
         selectedStudentDetails() {
-            return this.enrolledStudents.filter(s => this.selectedStudents.includes(s.id));
+            if (!this.enrolledStudents) return [];
+            return this.enrolledStudents.filter(s => this.selectedStudents.includes(s._id));
         }
     },
     methods: {
+        getStudentName(student) {
+            if (!student || !student.name) return 'N/A';
+            const nameObj = student.name.find(n => n.key === 'en') || student.name[0];
+            return nameObj ? nameObj.value : 'N/A';
+        },
         isSelected(id) {
             return this.selectedStudents.includes(id);
         },
         toggleStudent(student) {
-            const index = this.selectedStudents.indexOf(student.id);
+            const index = this.selectedStudents.indexOf(student._id);
             if (index > -1) {
                 this.selectedStudents.splice(index, 1);
             } else {
-                this.selectedStudents.push(student.id);
+                this.selectedStudents.push(student._id);
             }
         },
         toggleSelectAll() {
             if (this.allSelected) {
                 this.selectedStudents = [];
             } else {
-                this.selectedStudents = this.enrolledStudents.map(s => s.id);
+                this.selectedStudents = this.enrolledStudents.map(s => s._id);
             }
         },
         getInitials(name) {
@@ -269,7 +276,9 @@ export default {
         handleSave() {
             if (!this.isFormValid) return;
             this.$emit('save', { 
-                ...this.form, 
+                title: this.form.title, // Parent will wrap this
+                startDateTime: this.form.startDateTime,
+                endDateTime: this.form.endDateTime,
                 selectedStudents: this.selectedStudents 
             });
             this.resetForm();
@@ -281,7 +290,7 @@ export default {
                 endDateTime: '',
                 description: ''
             };
-            this.selectedStudents = this.enrolledStudents.map(s => s.id);
+            this.selectedStudents = this.enrolledStudents.map(s => s._id);
             this.studentSearch = '';
         }
     }

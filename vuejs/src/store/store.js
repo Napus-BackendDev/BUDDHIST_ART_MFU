@@ -4,6 +4,16 @@ Vue.use(Vuex);
 
 import Cart from "@/store/modules/Cart/index";
 import User from "@/store/modules/User/index";
+import Artwork from "@/store/modules/Artwork/index";
+import Submission from "@/store/modules/Submission/index";
+import Order from "@/store/modules/Order/index";
+import News from "@/store/modules/News/index";
+import Setting from "@/store/modules/Setting/index";
+import organization from "@/store/modules/organization/index";
+import Authentication from "@/store/modules/Authentication/index";
+import Accounts from "@/store/modules/Accounts/index";
+import Dialog from "@/store/modules/Dialog/index";
+import Payments from "@/store/modules/Payments/index";
 
 
 
@@ -38,5 +48,15 @@ export default new Vuex.Store({
   modules: {
     cart: Cart,
     user: User,
+    artwork: Artwork,
+    submission: Submission,
+    order: Order,
+    news: News,
+    setting: Setting,
+    organization: organization,
+    auth: Authentication,
+    account: Accounts,
+    dialog: Dialog,
+    payment: Payments
   }
 });

@@ -1,12 +1,12 @@
 <template>
     <CRow class="mb-4">
         <!-- Total Submissions -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card">
+        <CCol sm="6" lg="3" @click="$emit('input', 'All Time')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'All Time' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Total Submissions</div>
-                        <div class="widget-value">1,284</div>
+                        <div class="widget-value">{{ totalSubmissions }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
                         <CIcon name="cil-list" size="xl" />
@@ -16,12 +16,12 @@
         </CCol>
 
         <!-- Active Assignments -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card">
+        <CCol sm="6" lg="3" @click="$emit('input', 'All Time')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': false }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Assignments</div>
-                        <div class="widget-value">24</div>
+                        <div class="widget-value text-green">{{ totalAssignments }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
                         <CIcon name="cil-task" size="xl" />
@@ -31,12 +31,12 @@
         </CCol>
 
         <!-- Students -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card">
+        <CCol sm="6" lg="3" @click="$emit('input', 'All Time')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': false }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Students</div>
-                        <div class="widget-value">458</div>
+                        <div class="widget-value text-orange">{{ totalStudents }}</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">
                         <CIcon name="cil-people" size="xl" />
@@ -46,12 +46,12 @@
         </CCol>
 
         <!-- New Submissions -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Today')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Today' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">New Today</div>
-                        <div class="widget-value">15</div>
+                        <div class="widget-value text-purple">{{ newTodayCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-purple-light text-purple">
                         <CIcon name="cil-bell" size="xl" />
@@ -63,8 +63,44 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+import moment from 'moment'
+
 export default {
-    name: 'SubmissionWidget'
+    name: 'SubmissionWidget',
+    props: {
+        value: {
+            type: String,
+            default: 'All Time'
+        }
+    },
+    computed: {
+        ...mapGetters({
+            submissions: 'submission/submissions'
+        }),
+        totalSubmissions() {
+            return this.submissions ? this.submissions.length : 0;
+        },
+        totalAssignments() {
+            if (!this.submissions) return 0;
+            return this.submissions.reduce((acc, curr) => acc + (curr.assignments ? curr.assignments.length : 0), 0);
+        },
+        totalStudents() {
+            if (!this.submissions) return 0;
+            const studentIds = new Set();
+            this.submissions.forEach(sub => {
+                if (sub.artist) {
+                    sub.artist.forEach(id => studentIds.add(id.toString()));
+                }
+            });
+            return studentIds.size;
+        },
+        newTodayCount() {
+            if (!this.submissions) return 0;
+            const today = moment().startOf('day');
+            return this.submissions.filter(sub => moment(sub.createdAt).isSameOrAfter(today)).length;
+        }
+    }
 }
 </script>
 
@@ -83,6 +119,12 @@ export default {
 .widget-card:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     transform: translateY(-2px);
+}
+
+.active-widget {
+    border-color: #321fdb !important;
+    background-color: #f0f4ff !important;
+    box-shadow: 0 6px 16px rgba(50, 31, 219, 0.1) !important;
 }
 
 .widget-title {

@@ -54,13 +54,13 @@ export default {
             case 'exp':
                 return instance.post("/api/v1/user/explorers", data);
             case 'get':
-                return instance.get("/api/v1/user", { params: data });
+                return instance.get("/api/v1/user");
             case 'post':
                 return instance.post("/api/v1/user", data);
             case 'put':
                 return instance.put("/api/v1/user", data);
             case 'delete':
-                return instance.delete("/api/v1/user", { data });
+                return instance.delete("/api/v1/user", { data: data });
             case 'get-by-id':
                 return instance.get("/api/v1/user", { params: data });
             case 'upload':
@@ -77,17 +77,21 @@ export default {
     artwork(method, data, configs) {
         switch (method) {
             case 'exp':
-                return instance.post("/api/v1/artwork/explorers", data);
+                return instance.post("/api/v1/artwork/explore", data);
             case 'get':
-                return instance.get("/api/v1/artwork", { params: data });
+                return instance.get("/api/v1/artwork");
             case 'post':
                 return instance.post("/api/v1/artwork", data);
             case 'put':
                 return instance.put("/api/v1/artwork", data);
             case 'delete':
-                return instance.delete("/api/v1/artwork/" + data._id);
+                return instance.delete("/api/v1/artwork", { data: data });
             case 'get-by-id':
-                return instance.get("/api/v1/artwork/" + data);
+                return instance.post("/api/v1/artwork/explore", { _id: data });
+            case 'category':
+                return instance[data.method]("/api/v1/artwork/category", data.data);
+            case 'presentation':
+                return instance[data.method]("/api/v1/artwork/presentation", data.data);
             case 'upload':
                 return instance.put("/api/v1/artwork/upload", data, {
                     headers: {
@@ -102,13 +106,15 @@ export default {
     order(method, data, configs) {
         switch (method) {
             case 'get':
-                return instance.get("/api/v1/order", { params: data });
+                return instance.get("/api/v1/order");
             case 'post':
                 return instance.post("/api/v1/order", data);
             case 'put':
                 return instance.put("/api/v1/order", data);
             case 'delete':
                 return instance.delete("/api/v1/order", { data: data });
+            case 'exp':
+                return instance.post("/api/v1/order/explore", data);
             default:
                 break;
         }
@@ -117,7 +123,7 @@ export default {
     donation(method, data, configs) {
         switch (method) {
             case 'get':
-                return instance.get("/api/v1/donation", { params: data });
+                return instance.get("/api/v1/donation");
             case 'post':
                 return instance.post("/api/v1/donation", data);
             case 'put':
@@ -132,7 +138,9 @@ export default {
     news(method, data, configs) {
         switch (method) {
             case 'get':
-                return instance.get("/api/v1/new", { params: data });
+                return instance.get("/api/v1/new");
+            case 'exp':
+                return instance.post("/api/v1/new/explore", data);
             case 'post':
                 return instance.post("/api/v1/new", data);
             case 'put':
@@ -153,7 +161,9 @@ export default {
     submission(method, data, configs) {
         switch (method) {
             case 'get':
-                return instance.get("/api/v1/submission", { params: data });
+                return instance.get("/api/v1/submission");
+            case 'exp':
+                return instance.post("/api/v1/submission/explore", data);
             case 'post':
                 return instance.post("/api/v1/submission", data);
             case 'put':
@@ -164,4 +174,79 @@ export default {
                 break;
         }
     },
+
+    settings(method, service, data) {
+        // service can be: message, group, status, verification
+        const path = `/api/v1/settings/${service}`;
+        switch (method) {
+            case 'get':
+                return instance.get(path, { params: data });
+            case 'post':
+                return instance.post(path, data);
+            case 'put':
+                return instance.put(path, data);
+            case 'delete':
+                return instance.delete(path, { data: data });
+            default:
+                break;
+        }
+    },
+
+    payment(method, data, configs) {
+        switch (method) {
+            case 'explorers-transaction':
+                return instance.post("/api/v1/order/explorers-transaction", data);
+            default:
+                break;
+        }
+    },
+
+    members(method, data, configs) {
+        switch (method) {
+            case 'exp':
+                return instance.post("/api/v1/user/explorers", data);
+            default:
+                break;
+        }
+    },
+
+    organization(method, data, configs) {
+        switch (method) {
+            case 'explorers':
+                return instance.post("/api/v1/organization/explorers", data);
+            default:
+                break;
+        }
+    },
+
+    agencies(method, data, configs) {
+        switch (method) {
+            case 'explorers':
+                return instance.post("/api/v1/agencies/explorers", data);
+            default:
+                break;
+        }
+    },
+
+    department(method, data, configs) {
+        switch (method) {
+            case 'explorers':
+                return instance.post("/api/v1/department/explorers", data);
+            default:
+                break;
+        }
+    },
+
+    authen(method, data, configs) {
+        switch (method) {
+            case 'sign-in':
+                return instance.post("/api/v1/user/auth/sign-in", data);
+            case '2fa':
+                return instance.post("/api/v1/user/auth/2fa", data);
+            case '2fa-send':
+                return instance.post("/api/v1/user/auth/2fa-send", data);
+            default:
+                break;
+        }
+    }
 }

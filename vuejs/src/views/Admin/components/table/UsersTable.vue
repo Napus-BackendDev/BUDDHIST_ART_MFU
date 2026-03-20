@@ -8,7 +8,7 @@
                 <!-- ID Column -->
                 <template #id="{ item }">
                     <td class="py-3">
-                        <span class="font-weight-bold" style="color: #4f5d73;">{{ item.id }}</span>
+                        <span class="font-weight-bold" style="color: #4f5d73;">{{ item.studentId || 'N/A' }}</span>
                     </td>
                 </template>
 
@@ -17,12 +17,12 @@
                     <td class="py-3">
                         <div class="d-flex align-items-center">
                             <div class="avatar-circle mr-3"
-                                :style="{ backgroundColor: getAvatarColor(item.name) }">
-                                {{ getInitials(item.name) }}
+                                :style="{ backgroundColor: getAvatarColor(getName(item, 'en') || getName(item, 'th')) }">
+                                {{ getInitials(getName(item, 'en') || getName(item, 'th')) }}
                             </div>
                             <div>
-                                <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ item.name }}</div>
-                                <div class="small text-muted font-weight-bold">{{ item.student_id ? `ID: ${item.student_id}` : 'No Student ID' }}</div>
+                                <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ getName(item, 'en') || getName(item, 'th') }}</div>
+                                <div class="small text-muted font-weight-bold">{{ item.studentId ? `ID: ${item.studentId}` : 'No Student ID' }}</div>
                             </div>
                         </div>
                     </td>
@@ -31,25 +31,25 @@
                 <!-- Email Office / Personal Column -->
                 <template #email_details="{ item }">
                     <td class="py-3">
-                        <div class="font-weight-bold" style="color: #4f5d73; font-size: 0.9rem;">{{ item.email_office || '-' }}</div>
-                        <div class="small text-muted font-weight-bold text-truncate" style="max-width: 180px;">{{ item.email_personal || '-' }}</div>
+                        <div class="font-weight-bold" style="color: #4f5d73; font-size: 0.9rem;">{{ (item.contact && item.contact.studentEmail) || '-' }}</div>
+                        <div class="small text-muted font-weight-bold text-truncate" style="max-width: 180px;">{{ (item.contact && item.contact.personalEmail) || '-' }}</div>
                     </td>
                 </template>
 
                 <!-- Tel / Role Column -->
                 <template #tel_role="{ item }">
                     <td class="py-3">
-                        <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ item.tel || '-' }}</div>
-                        <div class="small text-muted font-weight-bold">{{ item.role }}</div>
+                        <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ (item.contact && item.contact.telephone) || '-' }}</div>
+                        <div class="small text-muted font-weight-bold">{{ item.role || 'User' }}</div>
                     </td>
                 </template>
 
                 <!-- Status Column -->
                 <template #status="{ item }">
                     <td class="py-3">
-                        <div :class="['status-badge', getStatusBadge(item.status).class]">
-                            <CIcon :name="getStatusBadge(item.status).icon" size="sm" class="status-icon" />
-                            {{ item.status }}
+                        <div :class="['status-badge', getStatusBadge(item.status || 'Active').class]">
+                            <CIcon :name="getStatusBadge(item.status || 'Active').icon" size="sm" class="status-icon" />
+                            {{ item.status || 'Active' }}
                         </div>
                     </td>
                 </template>
@@ -75,10 +75,14 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ users.length }} users</div>
+            <div class="text-muted text-sm">Showing {{ filteredUsers.length }} users</div>
             <div class="pagination-buttons">
-                <CButton color="light" class="btn-pagination mr-2" disabled>Previous</CButton>
-                <CButton color="light" class="btn-pagination">Next</CButton>
+                <CButton class="btn-pill-pagination mr-2" :disabled="true">
+                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
+                </CButton>
+                <CButton class="btn-pill-pagination">
+                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
+                </CButton>
             </div>
         </CCardFooter>
 
@@ -87,6 +91,8 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 export default {
     name: 'UsersTable',
     props: {
@@ -109,72 +115,25 @@ export default {
                 { key: 'tel_role', label: 'TEL / ROLE', _classes: 'border-top-0 border-bottom w-20' },
                 { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom w-10' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right w-5' }
-            ],
-
-            // Mock Data
-            users: [
-                { 
-                    id: 'USR-001', 
-                    name: 'Albus Dumbledore', 
-                    nameEn: 'Albus Dumbledore',
-                    nameTh: 'อัลบัส ดัมเบิลดอร์',
-                    student_id: '6450001', 
-                    email_office: 'office@hogwarts.edu', 
-                    email_personal: 'albus@gmail.com', 
-                    tel: '081-234-5678', 
-                    role: 'Admin', 
-                    status: 'Active',
-                    joinedDate: 'Jan 15, 2024'
-                },
-                { 
-                    id: 'USR-002', 
-                    name: 'Harry Potter', 
-                    nameEn: 'Harry Potter',
-                    nameTh: 'แฮร์รี่ พอตเตอร์',
-                    student_id: '6450002', 
-                    email_office: 'harry.p@student.edu', 
-                    email_personal: 'harry@gmail.com', 
-                    tel: '089-876-5432', 
-                    role: 'Customer', 
-                    status: 'Inactive',
-                    joinedDate: 'Feb 10, 2024'
-                },
-                { 
-                    id: 'USR-003', 
-                    name: 'Hermione Granger', 
-                    nameEn: 'Hermione Granger',
-                    nameTh: 'เฮอร์ไมโอนี่ เกรนเจอร์',
-                    student_id: '6450003', 
-                    email_office: 'h.granger@dev.org', 
-                    email_personal: 'hermione@gmail.com', 
-                    tel: '090-111-2222', 
-                    role: 'Developer', 
-                    status: 'Active',
-                    joinedDate: 'Mar 05, 2024'
-                },
-                { 
-                    id: 'USR-004', 
-                    name: 'Severus Snape', 
-                    nameEn: 'Severus Snape',
-                    nameTh: 'เซเวอรัส สเนป',
-                    student_id: '6450004', 
-                    email_office: 'snape@evaluators.net', 
-                    email_personal: 'severus@yahoo.com', 
-                    tel: '061-555-4444', 
-                    role: 'Evaluator', 
-                    status: 'Suspended',
-                    joinedDate: 'Apr 20, 2024'
-                }
             ]
         }
     },
     computed: {
+        ...mapGetters({
+            users: 'user/user'
+        }),
         filteredUsers() {
+            if (!this.users) return [];
             return this.users.filter(user => {
+                const name = (this.getName(user, 'en') || this.getName(user, 'th') || '').toLowerCase();
+                const email = ((user.contact && user.contact.studentEmail) || '').toLowerCase();
+                const studentId = (user.studentId || '').toLowerCase();
+                const search = this.filters.search.toLowerCase();
+
                 const searchMatch = !this.filters.search || 
-                    user.name.toLowerCase().includes(this.filters.search.toLowerCase()) ||
-                    (user.student_id && user.student_id.toLowerCase().includes(this.filters.search.toLowerCase())) ||
-                    user.email_office.toLowerCase().includes(this.filters.search.toLowerCase());
+                    name.includes(search) ||
+                    studentId.includes(search) ||
+                    email.includes(search);
                 
                 const roleMatch = this.filters.role === 'All Roles' || user.role === this.filters.role;
                 const statusMatch = this.filters.status === 'All Status' || user.status === this.filters.status;
@@ -209,9 +168,18 @@ export default {
             this.$emit('edit', item);
         },
         handleDelete(item) {
-            if (confirm(`Are you sure you want to delete user ${item.name}?`)) {
-                alert(`Deleted user: ${item.name}`);
+            if (confirm(`Are you sure you want to delete user ${this.getName(item, 'en') || this.getName(item, 'th')}?`)) {
+                this.$emit('delete', item);
             }
+        },
+        getName(user, lang) {
+            if (!user || !user.name) return '';
+            if (typeof user.name === 'string') return user.name;
+            if (Array.isArray(user.name)) {
+                const nameObj = user.name.find(n => n.key === lang);
+                return nameObj ? nameObj.value : (user.name[0] ? user.name[0].value : '');
+            }
+            return '';
         }
     }
 }

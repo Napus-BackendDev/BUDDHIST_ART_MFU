@@ -7,36 +7,42 @@
                 :striped="false">
                 <template #thumbnail="{ item }">
                     <td>
-                        <div class="thumbnail-wrapper">
-                            <img :src="`https://via.placeholder.com/40/${item.imgBg}/${item.imgColor}?text=${item.thumbnail}`"
-                                :alt="item.title" class="thumbnail-img">
+                        <div class="thumbnail-wrapper clickable" @click="zoomImg(item.image)">
+                            <img :src="item.image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName('en', item).charAt(0)}`"
+                                :alt="getName('en', item)" class="thumbnail-img">
+                             <div class="zoom-overlay">
+                                <CIcon name="cil-search" />
+                             </div>
                         </div>
                     </td>
                 </template>
                 <template #title="{ item }">
-                    <td class="font-weight-bold text-dark">{{ item.title }}</td>
+                    <td class="font-weight-bold text-dark">{{ getName('en', item) }}</td>
                 </template>
                 <template #artist="{ item }">
-                    <td class="text-muted">{{ item.artist }}</td>
+                    <td class="text-muted">
+                        <div class="artist-name">{{ item.artist ? getName('en', item.artist) : 'N/A' }}</div>
+                        <div v-if="item.artist && item.artist.studentId" class="artist-id mt-1">ID: {{ item.artist.studentId }}</div>
+                    </td>
                 </template>
                 <template #createdAt="{ item }">
-                    <td class="text-muted text-sm">{{ item.createdAt }}</td>
+                    <td class="text-muted text-sm">{{ formatDate(item.createdAt) }}</td>
                 </template>
                 <template #category="{ item }">
                     <td>
-                        <span class="category-pill">{{ item.category }}</span>
+                        <span class="category-pill">{{ item.category ? getName('en', item.category) : 'N/A' }}</span>
                     </td>
                 </template>
                 <template #status="{ item }">
                     <td>
-                        <div :class="['status-badge', item.statusClass]">
-                            <CIcon :name="item.statusIcon" size="sm" class="status-icon" /> {{ item.status }}
+                        <div :class="['status-badge', getStatusInfo(item).class]">
+                            <CIcon :name="getStatusInfo(item).icon" size="sm" class="status-icon" /> {{ getStatusInfo(item).label }}
                         </div>
                     </td>
                 </template>
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="item.status === 'Pending' || item.status === 'Update'" class="d-inline-flex align-items-center">
+                        <div v-if="getStatusInfo(item).label === 'Pending' || getStatusInfo(item).label === 'Revised'" class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
                                 v-c-tooltip="'ดูรายละเอียด'"
@@ -54,12 +60,14 @@
                             <button 
                                 class="action-btn icon-success mx-2" 
                                 v-c-tooltip="'อนุมัติ'"
+                                @click="onApprove(item)"
                             >
                                 <CIcon name="cil-check" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-danger" 
                                 v-c-tooltip="'ปฏิเสธ'"
+                                @click="onReject(item)"
                             >
                                 <CIcon name="cil-x" size="lg" />
                             </button>
@@ -96,13 +104,39 @@
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
             <div class="text-muted text-sm">Showing {{ filteredItems.length }} of {{ items.length }} artworks</div>
             <div class="pagination-buttons">
-                <CButton color="light" class="btn-pagination mr-2" disabled>Previous</CButton>
-                <CButton color="light" class="btn-pagination">Next</CButton>
+                <CButton class="btn-pill-pagination mr-2" :disabled="true">
+                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
+                </CButton>
+                <CButton class="btn-pill-pagination">
+                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
+                </CButton>
             </div>
         </CCardFooter>
     </CCard>
-    </CCol>
-        </CRow>
+
+        <!-- Image Zoom Modal -->
+        <CModal 
+            :show.sync="showZoomModal"
+            centered 
+            size="xl" 
+            class="zoom-modal"
+            hide-footer
+            @update:show="showZoomModal = $event"
+        >
+            <template #header>
+                <div class="w-100 d-flex justify-content-between align-items-center">
+                    <h5 class="modal-title py-0">Zoom Artwork Image</h5>
+                    <CButton close @click="showZoomModal = false" />
+                </div>
+            </template>
+            <div class="zoom-content position-relative">
+                <div class="text-center">
+                    <img :src="zoomImageUrl" class="zoomed-image shadow-lg" alt="Full Preview">
+                </div>
+            </div>
+        </CModal>
+        </CCol>
+    </CRow>
 </template>
 
 <script>
@@ -112,6 +146,10 @@ import * as XLSX from 'xlsx';
 export default {
     name: 'AdminTable',
     props: {
+        items: {
+            type: Array,
+            default: () => []
+        },
         filters: {
             type: Object,
             default: () => ({
@@ -123,6 +161,8 @@ export default {
     },
     data() {
         return {
+            showZoomModal: false,
+            zoomImageUrl: '',
             fields: [
                 { key: 'thumbnail', label: 'THUMBNAIL', _classes: 'border-top-0 border-bottom' },
                 { key: 'title', label: 'ARTWORK TITLE', _classes: 'border-top-0 border-bottom' },
@@ -131,35 +171,32 @@ export default {
                 { key: 'category', label: 'CATEGORY', _classes: 'border-top-0 border-bottom' },
                 { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
-            items: [
-                { thumbnail: 'S', imgBg: 'e2e8f0', imgColor: '808080', title: 'Sunset Blues', artist: 'Jane Doe', createdAt: 'Oct 24, 2023', category: 'Painting', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' },
-                { thumbnail: 'A', imgBg: 'cbd5e0', imgColor: '808080', title: 'Abstract #44', artist: 'Mike Smith', createdAt: 'Oct 23, 2023', category: 'Digital', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' },
-                { thumbnail: 'U', imgBg: 'a0aec0', imgColor: 'ffffff', title: 'Urban Chaos', artist: 'Sarah Lee', createdAt: 'Oct 22, 2023', category: 'Photography', status: 'Completed', statusIcon: 'cil-check', statusClass: 'badge-completed' },
-                { thumbnail: 'R', imgBg: 'e2e8f0', imgColor: '3b82f6', title: 'Riverside Walk', artist: 'Alex J.', createdAt: 'Oct 21, 2023', category: 'Painting', status: 'Update', statusIcon: 'cil-sync', statusClass: 'badge-update' },
-                { thumbnail: 'M', imgBg: '2d3748', imgColor: 'ffffff', title: 'Mountain Mist', artist: 'John Art', createdAt: 'Oct 21, 2023', category: 'Painting', status: 'Cancelled', statusIcon: 'cil-x', statusClass: 'badge-cancelled' },
-                { thumbnail: 'G', imgBg: 'edf2f7', imgColor: '808080', title: 'Golden Hour', artist: 'Emily Rose', createdAt: 'Oct 20, 2023', category: 'Sculpture', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' }
             ]
         }
     },
     computed: {
         filteredItems() {
             return this.items.filter(item => {
+                const title = this.getName('en', item).toLowerCase();
+                const artist = (item.artist ? this.getName('en', item.artist) : '').toLowerCase();
+                
                 // Search Filter
                 const searchMatch = !this.filters.search || 
-                    item.title.toLowerCase().includes(this.filters.search.toLowerCase()) ||
-                    item.artist.toLowerCase().includes(this.filters.search.toLowerCase());
+                    title.includes(this.filters.search.toLowerCase()) ||
+                    artist.includes(this.filters.search.toLowerCase());
 
                 // Category Filter
-                const categoryMatch = this.filters.category === 'All Categories' || item.category === this.filters.category;
+                const categoryName = item.category ? this.getName('en', item.category) : 'N/A';
+                const categoryMatch = this.filters.category === 'All Categories' || categoryName === this.filters.category;
 
                 // Status Filter
-                const statusMatch = this.filters.status === 'All Status' || item.status === this.filters.status;
+                const statusInfo = this.getStatusInfo(item);
+                const statusMatch = this.filters.status === 'All Status' || statusInfo.label === this.filters.status;
 
                 // Date Filter
                 let dateMatch = true;
                 if (this.filters.startDate || this.filters.endDate) {
-                    const itemDate = moment(item.createdAt, 'MMM DD, YYYY');
+                    const itemDate = moment(item.createdAt);
                     if (this.filters.startDate) {
                         dateMatch = dateMatch && itemDate.isSameOrAfter(moment(this.filters.startDate).startOf('day'));
                     }
@@ -176,29 +213,68 @@ export default {
         onView(item) {
             this.$emit('view', item);
         },
+        zoomImg(url) {
+            if (!url) return;
+            this.zoomImageUrl = url;
+            this.showZoomModal = true;
+        },
+        onApprove(item) {
+            this.$emit('approve', item);
+        },
+        onReject(item) {
+            this.$emit('reject', item);
+        },
         onEdit(item) {
             this.$emit('edit', item);
         },
         onDelete(item) {
-            if (confirm(`Are you sure you want to delete "${item.title}"? This action cannot be undone.`)) {
-                this.items = this.items.filter(i => i !== item);
-                // In a real app, this would be an API call
-                this.$store.commit('dialog/showToast', {
-                    title: 'Deleted',
-                    message: `"${item.title}" has been removed.`,
-                    variant: 'info'
-                });
+            if (confirm(`Are you sure you want to delete "${this.getName('en', item)}"? This action cannot be undone.`)) {
+                this.$emit('delete', item);
+            }
+        },
+        getName(lang, item) {
+            if (!item) return 'N/A';
+            if (typeof item === 'string') return item;
+            
+            const titleField = item.title || item.name || '';
+            if (typeof titleField === 'string' && titleField) return titleField;
+            
+            if (Array.isArray(titleField)) {
+                const nameObj = titleField.find(n => n.key === lang);
+                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
+                return nameObj ? nameObj.value : firstVal;
+            }
+            return 'N/A';
+        },
+        formatDate(date) {
+            if (!date) return 'N/A';
+            return moment(date).format('MMM DD, YYYY');
+        },
+        getStatusInfo(item) {
+            // Approval status mapping
+            const approvalStatus = item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
+            
+            switch (approvalStatus) {
+                case 'Approved':
+                    return { label: 'Approved', class: 'badge-completed', icon: 'cil-check' };
+                case 'Rejected':
+                    return { label: 'Rejected', class: 'badge-cancelled', icon: 'cil-x' };
+                case 'Revised':
+                    return { label: 'Revised', class: 'badge-update', icon: 'cil-sync' };
+                case 'Pending':
+                default:
+                    return { label: 'Pending', class: 'badge-pending', icon: 'cil-clock' };
             }
         },
         exportExcel() {
             const dataToExport = this.filteredItems.map(item => ({
-                'ID': item.id,
-                'Title': item.title,
-                'Artist': item.artist,
-                'Category': item.category,
+                'ID': item._id,
+                'Title': this.getName('en', item),
+                'Artist': item.artist ? this.getName('en', item.artist) : 'N/A',
+                'Category': item.category ? this.getName('en', item.category) : 'N/A',
                 'Price': item.price,
-                'Status': item.status,
-                'Created At': item.createdAt
+                'Status': this.getStatusInfo(item).label,
+                'Created At': this.formatDate(item.createdAt)
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -253,6 +329,17 @@ export default {
     font-size: 0.9rem;
 }
 
+.artist-name {
+    color: #4a5568;
+    font-weight: 600;
+}
+
+.artist-id {
+    font-size: 0.75rem;
+    color: #718096;
+    letter-spacing: 0.2px;
+}
+
 .thumbnail-wrapper {
     width: 44px;
     height: 44px;
@@ -266,6 +353,60 @@ export default {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.clickable {
+    cursor: pointer;
+    position: relative;
+}
+
+.clickable:hover .thumbnail-img {
+    transform: scale(1.1);
+}
+
+.zoom-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.clickable:hover .zoom-overlay {
+    opacity: 1;
+}
+
+.zoom-content {
+    background: transparent;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.zoomed-image {
+    width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+/* Custom Modal Tweaks for Zoom */
+.zoom-modal >>> .modal-content {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.zoom-modal >>> .modal-body {
+    padding: 1.5rem; /* Give some nice breathing room */
 }
 
 .category-pill {
@@ -328,24 +469,36 @@ export default {
     padding-right: 0;
 }
 
-.btn-pagination {
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #4a5568;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    transition: all 0.2s;
+.btn-pill-pagination {
+    background-color: #3b3dfa; /* Your reference image purple */
+    border: none;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 50px; /* Full pill shape */
+    padding: 0.6rem 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px rgba(59, 61, 250, 0.2);
 }
 
-.btn-pagination:hover:not(:disabled) {
-    background-color: #f7fafc;
-    color: #1a202c;
+.btn-pill-pagination:hover:not(:disabled) {
+    background-color: #2d2fcc;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(59, 61, 250, 0.3);
+    color: #ffffff;
 }
 
-.btn-pagination:disabled {
-    opacity: 0.6;
-    background-color: #ffffff;
+.btn-pill-pagination:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-pill-pagination:disabled {
+    opacity: 0.4;
+    background-color: #a0aec0;
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
 .rounded-bottom {

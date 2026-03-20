@@ -11,7 +11,7 @@
             @export="exportToExcel"
         />
 
-        <UserWidget />
+        <UserWidget v-model="filters.status" :currentRole.sync="filters.role" />
 
         <UserFilter v-model="filters" />
 
@@ -20,6 +20,7 @@
             :filters="filters" 
             @view="handleViewUser"
             @edit="handleEditUser"
+            @delete="handleDeleteUser"
         />
 
         <!-- Choice Modal -->
@@ -87,7 +88,13 @@ export default {
             }
         }
     },
+    created() {
+        this.fetchUsers();
+    },
     methods: {
+        fetchUsers() {
+            this.$store.dispatch('user/get', {});
+        },
         handleViewUser(user) {
             this.selectedUser = user;
             this.showViewModal = true;
@@ -98,9 +105,17 @@ export default {
             this.showEditModal = true;
         },
         handleUpdateUser(userData) {
-            console.log("Updating user:", userData);
-            alert("User updated successfully (Mock)!");
-            this.showEditModal = false;
+            this.$store.dispatch('user/update', userData)
+                .then(() => {
+                    this.fetchUsers();
+                    this.showEditModal = false;
+                });
+        },
+        handleDeleteUser(user) {
+            this.$store.dispatch('user/delete', { _id: user._id })
+                .then(() => {
+                    this.fetchUsers();
+                });
         },
         handleManualChoice() {
             this.showChoiceModal = false;
@@ -108,12 +123,14 @@ export default {
         },
         handleFileUpload(file) {
             if (!file) return;
-            alert(`Simulating import user data for: ${file.name}`);
+            // Future implementation for excel import
         },
         handleSaveUser(userData) {
-            console.log("Saving new user:", userData);
-            alert("User created successfully (Mock)!");
-            this.showManualImportModal = false;
+            this.$store.dispatch('user/create', userData)
+                .then(() => {
+                    this.fetchUsers();
+                    this.showManualImportModal = false;
+                });
         },
         exportToExcel() {
             if (!this.$refs.usersTable || !this.$refs.usersTable.filteredUsers) {

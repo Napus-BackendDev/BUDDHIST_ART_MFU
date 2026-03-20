@@ -113,8 +113,12 @@
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
             <div class="text-muted text-sm">Showing {{ currentItems.length }} {{ currentTab.toLowerCase() }}</div>
             <div class="pagination-buttons">
-                <CButton color="light" class="btn-pagination mr-2" disabled>Previous</CButton>
-                <CButton color="light" class="btn-pagination">Next</CButton>
+                <CButton class="btn-pill-pagination mr-2" :disabled="true">
+                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
+                </CButton>
+                <CButton class="btn-pill-pagination">
+                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
+                </CButton>
             </div>
         </CCardFooter>
 

@@ -5,22 +5,23 @@
                 :striped="false">
 
                 <template #assignmentTitle="{ item }">
-                    <td class="font-weight-bold text-dark">{{ item.assignmentTitle }}</td>
+                    <td class="font-weight-bold text-dark">{{ getName('en', item) }}</td>
                 </template>
 
                 <template #status="{ item }">
                     <td>
-                        <div :class="['status-badge', item.statusClass]">
-                            <CIcon :name="item.statusIcon" size="sm" class="status-icon" /> {{ item.status }}
+                        <div v-if="item.create" :class="['status-badge', moment(item.create.endAt).isBefore(moment()) ? 'badge-closed' : 'badge-in-progress']">
+                            <CIcon :name="moment(item.create.endAt).isBefore(moment()) ? 'cil-lock-locked' : 'cil-history'" size="sm" class="status-icon" /> 
+                            {{ moment(item.create.endAt).isBefore(moment()) ? 'Closed' : 'In Progress' }}
                         </div>
                     </td>
                 </template>
 
                 <template #datetime="{ item }">
                     <td style="white-space: nowrap;">
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center" v-if="item.create">
                             <CIcon name="cil-calendar" class="mr-2 text-muted" size="sm" />
-                            <span class="text-muted date-text-sm">{{ formatDate(item.from) }} &ndash; {{ formatDate(item.to) }}</span>
+                            <span class="text-muted date-text-sm">{{ formatDate(item.create.startAt) }} &ndash; {{ formatDate(item.create.endAt) }}</span>
                         </div>
                     </td>
                 </template>
@@ -30,13 +31,13 @@
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1 mr-3">
                                 <CProgress 
-                                    :value="Math.round((item.submitted / item.totalStudents) * 100)" 
-                                    :color="getProgressColor(Math.round((item.submitted / item.totalStudents) * 100))" 
+                                    :value="getEffectiveTotalStudents(item) > 0 ? Math.round(((item.artworks ? item.artworks.length : 0) / getEffectiveTotalStudents(item)) * 100) : 0" 
+                                    :color="getProgressColor(getEffectiveTotalStudents(item) > 0 ? Math.round(((item.artworks ? item.artworks.length : 0) / getEffectiveTotalStudents(item)) * 100) : 0)" 
                                     height="6px" 
                                     class="progress-premium"
                                 />
                             </div>
-                            <span class="progress-label">{{ Math.round((item.submitted / item.totalStudents) * 100) }}%</span>
+                            <span class="progress-label">{{ getEffectiveTotalStudents(item) > 0 ? Math.round(((item.artworks ? item.artworks.length : 0) / getEffectiveTotalStudents(item)) * 100) : 0 }}%</span>
                         </div>
                     </td>
                 </template>
@@ -45,27 +46,27 @@
                     <td>
                         <div class="d-flex align-items-center">
                             <!-- Finish -->
-                            <div v-if="item.finish !== undefined" class="status-display-item mr-4">
+                            <div class="status-display-item mr-4">
                                 <div class="status-box bg-success-premium">
                                     <CIcon name="cil-check" size="lg" />
                                 </div>
-                                <span class="status-count ml-2">{{ item.finish }}</span>
+                                <span class="status-count ml-2">{{ getResponStats(item).finish }}</span>
                             </div>
                             
                             <!-- Pending -->
-                            <div v-if="item.pending !== undefined" class="status-display-item mr-4">
+                            <div class="status-display-item mr-4">
                                 <div class="status-box bg-warning-premium text-dark-blue">
                                     <CIcon name="cil-clock" size="lg" />
                                 </div>
-                                <span class="status-count ml-2">{{ item.pending }}</span>
+                                <span class="status-count ml-2">{{ getResponStats(item).pending }}</span>
                             </div>
 
                             <!-- Error -->
-                            <div v-if="item.error !== undefined" class="status-display-item">
+                            <div class="status-display-item">
                                 <div class="status-box bg-danger-premium">
                                     <CIcon name="cil-warning" size="lg" />
                                 </div>
-                                <span class="status-count ml-2">{{ item.error }}</span>
+                                <span class="status-count ml-2">{{ getResponStats(item).error }}</span>
                             </div>
                         </div>
                     </td>
@@ -105,8 +106,12 @@
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
             <div class="text-muted text-sm">Showing {{ items.length }} of {{ items.length }} assignments</div>
             <div class="pagination-buttons">
-                <CButton color="light" class="btn-pagination mr-2" disabled>Previous</CButton>
-                <CButton color="light" class="btn-pagination">Next</CButton>
+                <CButton class="btn-pill-pagination mr-2" :disabled="true">
+                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
+                </CButton>
+                <CButton class="btn-pill-pagination">
+                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
+                </CButton>
             </div>
         </CCardFooter>
     </CCard>
@@ -118,6 +123,14 @@ import moment from 'moment'
 export default {
     name: 'SubmissionDetailTable',
     props: {
+        items: {
+            type: Array,
+            default: () => []
+        },
+        totalStudents: {
+            type: Number,
+            default: 0
+        },
         filters: {
             type: Object,
             default: () => ({
@@ -135,97 +148,70 @@ export default {
                 { key: 'submission', label: 'SUBMISSION', _classes: 'border-top-0 border-bottom' },
                 { key: 'respon', label: 'RESPOND', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
-            items: [
-                { 
-                    id: 1, 
-                    assignmentTitle: 'Sketch 1: Basic Shapes', 
-                    status: 'In Progress',
-                    statusClass: 'badge-in-progress',
-                    statusIcon: 'cil-history',
-                    from: new Date(2023, 9, 24, 10, 0), 
-                    to: new Date(2023, 9, 31, 23, 59), 
-                    deadline: new Date(2023, 9, 31, 23, 59), 
-                    submitted: 40, 
-                    totalStudents: 45,
-                    finish: 35,
-                    pending: 5,
-                    error: 0
-                },
-                { 
-                    id: 2, 
-                    assignmentTitle: 'Sketch 2: Perspective', 
-                    status: 'Closed',
-                    statusClass: 'badge-closed',
-                    statusIcon: 'cil-lock-locked',
-                    from: new Date(2023, 10, 2, 9, 30), 
-                    to: new Date(2023, 10, 9, 23, 59), 
-                    deadline: new Date(2023, 10, 9, 23, 59), 
-                    submitted: 35, 
-                    totalStudents: 45,
-                    finish: 30,
-                    pending: 5,
-                    error: 0
-                },
-                { 
-                    id: 3, 
-                    assignmentTitle: 'Midterm Draft Review', 
-                    status: 'Closed',
-                    statusClass: 'badge-closed',
-                    statusIcon: 'cil-lock-locked',
-                    from: new Date(2023, 10, 14, 14, 0), 
-                    to: new Date(2023, 10, 20, 23, 59), 
-                    deadline: new Date(2023, 10, 20, 23, 59), 
-                    submitted: 45, 
-                    totalStudents: 45,
-                    finish: 45,
-                    pending: 0,
-                    error: 0
-                },
-                { 
-                    id: 4, 
-                    assignmentTitle: 'Final Presentation', 
-                    status: 'In Progress',
-                    statusClass: 'badge-in-progress',
-                    statusIcon: 'cil-history',
-                    from: new Date(2023, 11, 1, 8, 0), 
-                    to: new Date(2023, 11, 15, 23, 59), 
-                    deadline: new Date(2023, 11, 15, 23, 59), 
-                    submitted: 10, 
-                    totalStudents: 45,
-                    finish: 5,
-                    pending: 4,
-                    error: 1
-                }
             ]
         }
     },
     methods: {
         formatDate(date) {
+            if (!date) return 'N/A';
             return moment(date).format('MMM DD, YYYY')
+        },
+        moment(arg) {
+            return moment(arg);
         },
         getProgressColor(progress) {
             if (progress >= 100) return 'success'
             if (progress > 70) return 'info'
             if (progress > 30) return 'warning'
             return 'danger'
+        },
+        getEffectiveTotalStudents(item) {
+            if (item && item.artist && item.artist.length > 0) return item.artist.length;
+            return this.totalStudents;
+        },
+        getName(lang, item) {
+            if (!item || !item.title) return 'N/A';
+            if (typeof item.title === 'string') return item.title;
+            if (Array.isArray(item.title)) {
+                const nameObj = item.title.find(n => n.key === lang);
+                return nameObj ? nameObj.value : (item.title[0] ? item.title[0].value : 'N/A');
+            }
+            return 'N/A';
+        },
+        getResponStats(item) {
+            const artworks = item.artworks || [];
+            return {
+                finish: artworks.filter(a => a.status === 'Approved').length, // Assuming status names
+                pending: artworks.filter(a => a.status === 'Pending').length,
+                error: artworks.filter(a => a.status === 'Rejected').length
+            };
         }
     },
     computed: {
         filteredItems() {
-            return this.items.filter(item => {
+            return (this.items || []).filter(item => {
+                const title = (this.getName('en', item) || this.getName('th', item) || '').toLowerCase();
                 const searchMatch = !this.filters.search || 
-                    item.assignmentTitle.toLowerCase().includes(this.filters.search.toLowerCase());
+                    title.includes(this.filters.search.toLowerCase());
                 
-                const statusMatch = this.filters.status === 'All Status' || 
-                    item.status === this.filters.status;
+                // Status logic can be refined based on dates
+                const now = moment();
+                const isClosed = item.create && item.create.endAt && moment(item.create.endAt).isBefore(now);
+                const status = isClosed ? 'Closed' : 'In Progress';
+
+                const statusMatch = this.filters.status === 'All Status' || status === this.filters.status;
 
                 let dateMatch = true;
                 if (this.filters.startDate && this.filters.endDate) {
-                    const assignmentDate = moment(item.from).startOf('day');
-                    const start = moment(this.filters.startDate).startOf('day');
-                    const end = moment(this.filters.endDate).endOf('day');
-                    dateMatch = assignmentDate.isBetween(start, end, null, '[]');
+                    const startAt = (item.create && item.create.startAt) ? item.create.startAt : null;
+                    if (startAt) {
+                        const assignmentDate = moment(startAt).startOf('day');
+                        const start = moment(this.filters.startDate).startOf('day');
+                        const end = moment(this.filters.endDate).endOf('day');
+                        dateMatch = assignmentDate.isBetween(start, end, null, '[]');
+                    } else {
+                        dateMatch = false;
+                    }
                 }
 
                 return searchMatch && statusMatch && dateMatch;

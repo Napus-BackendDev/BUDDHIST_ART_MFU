@@ -184,7 +184,21 @@ export default {
     methods: {
         handleSave() {
             if (!this.isFormValid) return;
-            this.$emit('save', { ...this.form });
+            const payload = {
+                studentId: this.form.studentId,
+                role: this.form.role,
+                name: [
+                    { key: 'th', value: this.form.nameTh },
+                    { key: 'en', value: this.form.nameEn }
+                ],
+                contact: {
+                    studentEmail: this.form.email,
+                    personalEmail: this.form.personalEmail,
+                    telephone: this.form.telephone
+                },
+                password: this.form.password
+            };
+            this.$emit('save', payload);
             this.resetForm();
         },
         resetForm() {

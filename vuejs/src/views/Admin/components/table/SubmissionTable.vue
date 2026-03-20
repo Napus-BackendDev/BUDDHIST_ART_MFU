@@ -5,16 +5,16 @@
                 :striped="false">
 
                 <template #title="{ item }">
-                    <td class="font-weight-bold text-dark">{{ item.title }}</td>
+                    <td class="font-weight-bold text-dark">{{ getName('en', item) }}</td>
                 </template>
 
                 <template #totalStudent="{ item }">
-                    <td class="text-muted">{{ item.totalStudent }} Students</td>
+                    <td class="text-muted">{{ getTotalStudents(item) }} Students</td>
                 </template>
 
                 <template #subAssignment="{ item }">
                     <td>
-                        <CBadge color="info" class="p-2 pill-badge">{{ item.subAssignment }} Tasks</CBadge>
+                        <CBadge color="info" class="p-2 pill-badge">{{ getAssignmentCount(item) }} Tasks</CBadge>
                     </td>
                 </template>
 
@@ -23,22 +23,25 @@
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1 mr-3">
                                 <CProgress 
-                                    :value="item.progress" 
-                                    :color="getProgressColor(item.progress)" 
+                                    :value="calculateProgress(item)" 
+                                    :color="getProgressColor(calculateProgress(item))" 
                                     height="6px" 
                                     class="progress-premium"
                                 />
                             </div>
-                            <span class="progress-label">{{ item.progress }}%</span>
+                            <span class="progress-label">{{ calculateProgress(item) }}%</span>
                         </div>
                     </td>
                 </template>
 
                 <template #dueDate="{ item }">
                     <td style="white-space: nowrap;">
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center" v-if="item.create">
                             <CIcon name="cil-calendar" class="mr-2 text-muted" size="sm" />
-                            <span class="text-muted date-text-sm">{{ formatDate(item.startDate) }} &ndash; {{ formatDate(item.dueDate) }}</span>
+                            <span class="text-muted date-text-sm">{{ formatDate(item.create.startAt) }} &ndash; {{ formatDate(item.create.endAt) }}</span>
+                        </div>
+                        <div class="d-flex align-items-center" v-else>
+                            <span class="text-muted date-text-sm">N/A</span>
                         </div>
                     </td>
                 </template>
@@ -75,10 +78,14 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ items.length }} of {{ items.length }} submissions</div>
+            <div class="text-muted text-sm">Showing {{ filteredItems.length }} of {{ filteredItems.length }} submissions</div>
             <div class="pagination-buttons">
-                <CButton color="light" class="btn-pagination mr-2" disabled>Previous</CButton>
-                <CButton color="light" class="btn-pagination">Next</CButton>
+                <CButton class="btn-pill-pagination mr-2" :disabled="true">
+                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
+                </CButton>
+                <CButton class="btn-pill-pagination">
+                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
+                </CButton>
             </div>
         </CCardFooter>
     </CCard>
@@ -86,6 +93,7 @@
 
 <script>
 import moment from 'moment'
+import { mapGetters } from 'vuex'
 
 export default {
     name: 'SubmissionTable',
@@ -109,72 +117,62 @@ export default {
                 { key: 'progress', label: 'PROGRESS', _classes: 'border-top-0 border-bottom' },
                 { key: 'dueDate', label: 'DATE & TIME', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
-            items: [
-                { 
-                    id: 1, 
-                    title: 'Midterm Art Project', 
-                    totalStudent: 45, 
-                    subAssignment: 3, 
-                    progress: 85, 
-                    startDate: '2024-04-01', 
-                    dueDate: '2024-04-20', 
-                    date: new Date(),
-                    selectedStudents: ['USR-001', 'USR-002', 'USR-003'],
-                    assignments: [
-                        { id: 101, title: 'Sketch 1: Research', startDateTime: '2024-04-01T08:00', endDateTime: '2024-04-05T17:00' },
-                        { id: 102, title: 'Sketch 2: Draft', startDateTime: '2024-04-06T08:00', endDateTime: '2024-04-10T17:00' },
-                        { id: 103, title: 'Final Painting', startDateTime: '2024-04-11T08:00', endDateTime: '2024-04-20T23:59' }
-                    ]
-                },
-                { 
-                    id: 2, 
-                    title: 'Final Sculpture Exhibition', 
-                    totalStudent: 30, 
-                    subAssignment: 1, 
-                    progress: 45, 
-                    startDate: '2024-05-01', 
-                    dueDate: '2024-05-15', 
-                    date: new Date(),
-                    selectedStudents: ['USR-004', 'USR-005'],
-                    assignments: [
-                        { id: 201, title: 'Concept Proposal', startDateTime: '2024-05-01T08:00', endDateTime: '2024-05-15T17:00' }
-                    ]
-                },
-                { 
-                    id: 3, 
-                    title: 'Weekly Sketchbook - Week 1', 
-                    totalStudent: 50, 
-                    subAssignment: 0, 
-                    progress: 100, 
-                    startDate: '2024-01-15', 
-                    dueDate: '2024-02-01', 
-                    date: new Date(),
-                    selectedStudents: ['USR-001', 'USR-002', 'USR-003', 'USR-004', 'USR-005', 'USR-006', 'USR-007'],
-                    assignments: []
-                }
             ]
         }
     },
     methods: {
         formatDate(date) {
+            if (!date) return 'N/A';
             return moment(date).format('MMM DD, YYYY')
+        },
+        moment(arg) {
+            return moment(arg);
         },
         getProgressColor(progress) {
             if (progress === 100) return 'success'
             if (progress > 70) return 'info'
             if (progress > 30) return 'warning'
             return 'danger'
+        },
+        getName(lang, item) {
+            if (!item || !item.title) return 'N/A';
+            if (typeof item.title === 'string') return item.title;
+            if (Array.isArray(item.title)) {
+                const nameObj = item.title.find(n => n.key === lang);
+                return nameObj ? nameObj.value : (item.title[0] ? item.title[0].value : 'N/A');
+            }
+            return 'N/A';
+        },
+        getTotalStudents(item) {
+            return item.artist ? item.artist.length : 0;
+        },
+        getAssignmentCount(item) {
+            return item.assignments ? item.assignments.length : 0;
+        },
+        calculateProgress(item) {
+            if (!item.assignments || item.assignments.length === 0 || !item.artist || item.artist.length === 0) return 0;
+            const totalPossible = item.assignments.length * item.artist.length;
+            let totalSubmitted = 0;
+            item.assignments.forEach(assign => {
+                totalSubmitted += assign.artworks ? assign.artworks.length : 0;
+            });
+            return Math.round((totalSubmitted / totalPossible) * 100);
         }
     },
     computed: {
+        ...mapGetters({
+            submissions: 'submission/submissions'
+        }),
         filteredItems() {
-            return this.items.filter(item => {
-                const matchesSearch = item.title.toLowerCase().includes(this.filters.search.toLowerCase())
+            if (!this.submissions) return [];
+            return this.submissions.filter(item => {
+                const title = (this.getName('en', item) || this.getName('th', item) || '').toLowerCase();
+                const matchesSearch = title.includes(this.filters.search.toLowerCase())
                 
                 let matchesDate = true
                 if (this.filters.startDate || this.filters.endDate) {
-                    const itemDate = new Date(item.date)
+                    const startAt = (item.create && item.create.startAt) ? item.create.startAt : item.createdAt;
+                    const itemDate = new Date(startAt);
                     if (this.filters.startDate && itemDate < this.filters.startDate) matchesDate = false
                     if (this.filters.endDate && itemDate > this.filters.endDate) matchesDate = false
                 }

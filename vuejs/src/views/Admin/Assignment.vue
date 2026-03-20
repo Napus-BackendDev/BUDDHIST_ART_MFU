@@ -2,7 +2,7 @@
     <div>
         <!-- Back Button -->
         <div class="mb-3">
-            <CLink :to="{ name: 'SubmissionsDetail', params: { id: $route.params.id || 1 } }" class="back-link d-inline-flex align-items-center text-muted">
+            <CLink :to="{ name: 'SubmissionsDetail', params: { id: $route.params.submissionId } }" class="back-link d-inline-flex align-items-center text-muted">
                 <CIcon name="cil-arrow-left" class="mr-2" />
                 <span class="font-weight-bold">Back to detail</span>
             </CLink>
@@ -16,7 +16,7 @@
             :showExportButton="true" 
             @export="handleExport"
         />
-        <AssignmentWidget />
+        <AssignmentWidget v-model="filters.status" />
         <AssignmentFilter v-model="filters" />
         <AssignmentTable :filters="filters" />
     </div>

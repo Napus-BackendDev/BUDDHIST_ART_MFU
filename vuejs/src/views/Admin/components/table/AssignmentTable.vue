@@ -42,11 +42,9 @@
                         <!-- Deadline Column -->
                         <template #deadline="{ item }">
                             <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                <div v-if="item.on_time" class="status-badge badge-passed">
-                                    <CIcon name="cil-check" size="sm" class="status-icon" /> On Time
-                                </div>
-                                <div v-else class="status-badge badge-fail">
-                                    <CIcon name="cil-warning" size="sm" class="status-icon" /> Late
+                                <div :class="['status-badge', item.on_time ? 'badge-passed' : 'badge-fail']">
+                                    <CIcon :name="item.on_time ? 'cil-check' : 'cil-warning'" size="sm" class="status-icon" />
+                                    {{ item.on_time ? 'On Time' : 'Late' }}
                                 </div>
                             </td>
                         </template>
@@ -57,8 +55,12 @@
                     class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
                     <div class="text-muted text-sm">Showing {{ items.length }} of {{ items.length }} submissions</div>
                     <div class="pagination-buttons">
-                        <CButton color="light" class="btn-pagination mr-2" disabled>Previous</CButton>
-                        <CButton color="light" class="btn-pagination">Next</CButton>
+                        <CButton class="btn-pill-pagination mr-2" :disabled="true">
+                            <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
+                        </CButton>
+                        <CButton class="btn-pill-pagination">
+                            Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
+                        </CButton>
                     </div>
                 </CCardFooter>
             </CCard>
@@ -250,7 +252,8 @@ export default {
         getStatusBadge(status) {
             if (status === 'Passed') return { class: 'badge-passed', icon: 'cil-check-circle' };
             if (status === 'Fail') return { class: 'badge-fail', icon: 'cil-x-circle' };
-            return { class: 'badge-pending', icon: 'cil-clock' }; // Pending
+            if (status === 'Pending') return { class: 'badge-pending', icon: 'cil-clock' };
+            return { class: 'badge-in-progress', icon: 'cil-history' };
         }
     }
 }
@@ -470,6 +473,55 @@ export default {
 .rounded-bottom {
     border-bottom-left-radius: 12px !important;
     border-bottom-right-radius: 12px !important;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 1rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.status-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+}
+
+.badge-passed {
+    color: #38a169;
+    background-color: #f0fff4;
+    border: 1px solid rgba(56, 161, 105, 0.4);
+}
+
+.badge-pending {
+    color: #d69e2e;
+    background-color: #fffaf0;
+    border: 1px solid rgba(214, 158, 46, 0.4);
+}
+
+.badge-fail {
+    color: #e53e3e;
+    background-color: #fff5f5;
+    border: 1px solid rgba(229, 62, 62, 0.4);
+}
+
+.badge-in-progress {
+    color: #3182ce;
+    background-color: #ebf8ff;
+    border: 1px solid rgba(49, 130, 206, 0.4);
+}
+
+.text-dark-blue {
+    color: #2c3e50 !important;
+}
+
+.deadline-container {
+    line-height: 1.2;
 }
 
 ::v-deep .table td {

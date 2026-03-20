@@ -196,21 +196,46 @@ export default {
     },
     methods: {
         initForm() {
+            const getNameFromML = (lang) => {
+                if (!this.user || !this.user.name) return '';
+                if (typeof this.user.name === 'string') return lang === 'en' ? this.user.name : '';
+                if (Array.isArray(this.user.name)) {
+                    const obj = this.user.name.find(n => n.key === lang);
+                    return obj ? obj.value : '';
+                }
+                return '';
+            };
+
             this.form = {
-                id: this.user.id,
-                studentId: this.user.studentId || this.user.student_id || '',
+                _id: this.user._id,
+                studentId: this.user.studentId || '',
                 role: this.user.role || 'Customer',
                 status: this.user.status || 'Active',
-                nameTh: this.user.nameTh || this.user.name || '',
-                nameEn: this.user.nameEn || this.user.name || '',
-                email: this.user.email || this.user.email_office || '',
-                personalEmail: this.user.personalEmail || this.user.email_personal || '',
-                telephone: this.user.telephone || this.user.tel || ''
+                nameTh: getNameFromML('th'),
+                nameEn: getNameFromML('en'),
+                email: (this.user.contact && this.user.contact.studentEmail) || '',
+                personalEmail: (this.user.contact && this.user.contact.personalEmail) || '',
+                telephone: (this.user.contact && this.user.contact.telephone) || ''
             };
         },
         handleSave() {
             if (!this.isFormValid) return;
-            this.$emit('save', { ...this.form });
+            const payload = {
+                _id: this.form._id,
+                studentId: this.form.studentId,
+                role: this.form.role,
+                status: this.form.status,
+                name: [
+                    { key: 'th', value: this.form.nameTh },
+                    { key: 'en', value: this.form.nameEn }
+                ],
+                contact: {
+                    studentEmail: this.form.email,
+                    personalEmail: this.form.personalEmail,
+                    telephone: this.form.telephone
+                }
+            };
+            this.$emit('save', payload);
             this.$emit('update:show', false);
         },
         getStatusDotClass(status) {

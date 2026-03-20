@@ -16,39 +16,42 @@ const ServerModule = {
     },
 
     actions: {
-        explore({ commit }, data) {
-            Service.user('exp', data, {})
+        get({ commit }, data) {
+            return Service.user('get', data, {})
                 .then((response) => {
-                    store.commit("user/user", response.data.data);
-                }).catch((err) => {
+                    commit("user", response.data.data);
+                    return response.data.data;
+                });
+        },
+        explore({ commit }, data) {
+            return Service.user('exp', data, {})
+                .then((response) => {
+                    commit("user", response.data.data);
+                    return response.data.data;
                 });
         },
         create({ commit }, data) {
-            Service.user('post', data, {})
+            return Service.user('post', data, {})
                 .then((response) => {
-                    store.commit("user/user", response.data.data);
-                }).catch((err) => {
+                    return response.data;
                 });
         },
         update({ commit }, data) {
-            Service.user('put', data, {})
+            return Service.user('put', data, {})
                 .then((response) => {
-                    store.commit("user/user", response.data.data);
-                }).catch((err) => {
+                    return response.data;
                 });
         },
         delete({ commit }, data) {
-            Service.user('delete', data, {})
+            return Service.user('delete', data, {})
                 .then((response) => {
-                    store.commit("user/user", response.data.data);
-                }).catch((err) => {
+                    return response.data;
                 });
         },
         upload({ commit }, data) {
-            Service.user('upload', data, {})
+            return Service.user('upload', data, {})
                 .then((response) => {
-                    store.commit("user/user", response.data.data);
-                }).catch((err) => {
+                    return response.data;
                 });
         }
     },

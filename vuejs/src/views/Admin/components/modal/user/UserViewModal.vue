@@ -29,14 +29,14 @@
                 <CCol md="4" class="mb-4 mb-md-0">
                     <div class="user-profile-card rounded-xl overflow-hidden shadow-sm border p-4 text-center bg-light-gradient">
                         <div class="avatar-large mx-auto mb-3 shadow-sm">
-                            <span v-if="!user.avatar">{{ getInitials(user.nameEn || user.name) }}</span>
+                            <span v-if="!user.avatar">{{ getInitials(getName('en') || getName('th')) }}</span>
                             <img v-else :src="user.avatar" class="w-100 h-100 object-fit-cover" />
                         </div>
-                        <h4 class="font-weight-bold text-dark mb-1">{{ user.nameEn || user.name }}</h4>
-                        <p class="text-muted small mb-3">{{ user.email }}</p>
-                        <CBadge :class="['status-badge-lg px-4 py-2', getStatusClass(user.status)]">
-                            <CIcon :name="getStatusIcon(user.status)" size="sm" class="mr-2" />
-                            {{ user.status }}
+                        <h4 class="font-weight-bold text-dark mb-1">{{ getName('en') || getName('th') || 'N/A' }}</h4>
+                        <p class="text-muted small mb-3">{{ (user.contact && user.contact.studentEmail) || 'No Email' }}</p>
+                        <CBadge :class="['status-badge-lg px-4 py-2', getStatusClass(user.status || 'Active')]">
+                            <CIcon :name="getStatusIcon(user.status || 'Active')" size="sm" class="mr-2" />
+                            {{ user.status || 'Active' }}
                         </CBadge>
                     </div>
                     
@@ -56,7 +56,7 @@
                             </div>
                             <div>
                                 <div class="text-label-xs">ACCOUNT ROLE</div>
-                                <div class="font-weight-bold text-dark">{{ user.role }}</div>
+                                <div class="font-weight-bold text-dark">{{ user.role || 'User' }}</div>
                             </div>
                         </div>
                     </div>
@@ -71,13 +71,13 @@
                             <CCol sm="6">
                                 <div class="info-group">
                                     <label class="info-label">Full Name (Thai)</label>
-                                    <div class="info-value">{{ user.nameTh || user.name || 'N/A' }}</div>
+                                    <div class="info-value">{{ getName('th') || 'N/A' }}</div>
                                 </div>
                             </CCol>
                             <CCol sm="6">
                                 <div class="info-group">
                                     <label class="info-label">Full Name (English)</label>
-                                    <div class="info-value">{{ user.nameEn || user.name || 'N/A' }}</div>
+                                    <div class="info-value">{{ getName('en') || 'N/A' }}</div>
                                 </div>
                             </CCol>
                         </CRow>
@@ -86,13 +86,13 @@
                             <CCol sm="6">
                                 <div class="info-group">
                                     <label class="info-label">Official Email</label>
-                                    <div class="info-value text-blue font-weight-600">{{ user.email }}</div>
+                                    <div class="info-value text-blue font-weight-600">{{ (user.contact && user.contact.studentEmail) || 'N/A' }}</div>
                                 </div>
                             </CCol>
                             <CCol sm="6">
                                 <div class="info-group">
                                     <label class="info-label">Personal Email</label>
-                                    <div class="info-value">{{ user.personalEmail || 'Not Provided' }}</div>
+                                    <div class="info-value">{{ (user.contact && user.contact.personalEmail) || 'Not Provided' }}</div>
                                 </div>
                             </CCol>
                         </CRow>
@@ -101,13 +101,13 @@
                             <CCol sm="6">
                                 <div class="info-group">
                                     <label class="info-label">Telephone</label>
-                                    <div class="info-value">{{ user.telephone || 'N/A' }}</div>
+                                    <div class="info-value">{{ (user.contact && user.contact.telephone) || 'N/A' }}</div>
                                 </div>
                             </CCol>
                             <CCol sm="6">
                                 <div class="info-group">
-                                    <label class="info-label">Joined Date</label>
-                                    <div class="info-value">{{ user.joinedDate || 'Standard System' }}</div>
+                                    <label class="info-label">Member Since</label>
+                                    <div class="info-value">{{ user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A' }}</div>
                                 </div>
                             </CCol>
                         </CRow>
@@ -194,6 +194,15 @@ export default {
                 case 'Suspended': return 'status-suspended';
                 default: return '';
             }
+        },
+        getName(lang) {
+            if (!this.user || !this.user.name) return '';
+            if (typeof this.user.name === 'string') return this.user.name;
+            if (Array.isArray(this.user.name)) {
+                const nameObj = this.user.name.find(n => n.key === lang);
+                return nameObj ? nameObj.value : (this.user.name[0] ? this.user.name[0].value : '');
+            }
+            return '';
         }
     }
 }

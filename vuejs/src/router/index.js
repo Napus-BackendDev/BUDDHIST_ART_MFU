@@ -111,7 +111,7 @@ export default new Router({
                     component: SubmissionsDetail
                 },
                 {
-                    path: 'submissions/assignment/:id',
+                    path: 'submissions/:submissionId/assignment/:id',
                     name: 'Assignment',
                     component: Assignment
                 },

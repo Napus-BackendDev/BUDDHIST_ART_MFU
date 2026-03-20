@@ -1,7 +1,7 @@
 <template>
     <div>
         <HeaderHero title="Order Management" description="Overview and track all customer orders, payments and fulfillment statuses in real-time." icon="cil-cart" :showCreateButton="true" :showExportButton="true" createButtonText="Create Order" @create="onCreateOrder" @export="handleExport" />
-        <OrderWidget @filter-status="filters.status = $event" />
+        <OrderWidget v-model="filters.status" />
         <OrderFilter v-model="filters" />
         <OrderTable ref="orderTable" :filters="filters" @view-order="onViewOrder" @edit-order="onEditOrder"/>
         <OrderCreateModal :show.sync="showCreateModal" @save="handleSaveOrder" />

@@ -1,5 +1,5 @@
 <template>
-    <div class="submissions-detail-dashboard">
+    <div class="submissions-detail-dashboard" v-if="submission">
         <!-- Back Button -->
         <div class="mb-3">
             <CLink :to="{ name: 'Submissions' }" class="back-link d-inline-flex align-items-center text-muted">
@@ -8,21 +8,12 @@
             </CLink>
         </div>
 
-        <HeaderHero 
-            title="Midterm Art Project" 
-            description="Managing assignments and tracking student progress for 45 students." 
-            icon="cil-list"
-            :showCreateButton="true"
-            createButtonText="Create Assignment"
-            :showExportButton="true"
-            @create="addAssignment"
-            @export="handleExport"
-        />
-        <SubmissionDetailWidget />
+        <HeaderHero :title="getName('en', submission)" :description="`Managing assignments and tracking progress for ${submission.artist ? submission.artist.length : 0} students.`" icon="cil-list":showCreateButton="true"createButtonText="Create Assignment":showExportButton="true"@create="addAssignment"@export="handleExport"/>
+        <SubmissionDetailWidget :submission="submission" v-model="filters.status" />
         <SubmissionDetailFilter v-model="filters" @create="addAssignment" />
-        <SubmissionDetailTable :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
-        <AssignmentCreateModal :show.sync="showAssignmentModal" :enrolledStudents="mockEnrolledStudents" @save="handleAssignmentSave" />
-        <AssignmentEditModal :show.sync="showEditAssignmentModal" :assignmentData="selectedAssignment" :enrolledStudents="mockEnrolledStudents" @update="handleAssignmentUpdate" />
+        <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
+        <AssignmentCreateModal :show.sync="showAssignmentModal" :enrolledStudents="submission.artist || []" @save="handleAssignmentSave" />
+        <AssignmentEditModal :show.sync="showEditAssignmentModal" :assignmentData="selectedAssignment" :enrolledStudents="submission.artist || []" @update="handleAssignmentUpdate" />
     </div>
 </template>
 
@@ -66,39 +57,98 @@ export default {
             ]
         }
     },
+    created() {
+        this.fetchSubmission();
+    },
+    computed: {
+        submission() {
+            return this.$store.getters['submission/submissions'].find(s => s._id === this.$route.params.id);
+        }
+    },
     methods: {
+        fetchSubmission() {
+            // Already fetched in parent or can fetch specifically if needed
+            this.$store.dispatch('submission/get', { _id: this.$route.params.id });
+        },
+        getName(lang, item) {
+            if (!item || !item.title) return 'N/A';
+            if (typeof item.title === 'string') return item.title;
+            if (Array.isArray(item.title)) {
+                const nameObj = item.title.find(n => n.key === lang);
+                return nameObj ? nameObj.value : (item.title[0] ? item.title[0].value : 'N/A');
+            }
+            return 'N/A';
+        },
         addAssignment() {
             this.showAssignmentModal = true;
         },
         handleAssignmentSave(data) {
-            console.log('New assignment task created:', data);
-            alert('New assignment task created successfully!');
-            this.showAssignmentModal = false;
+            const updatedSubmission = { ...this.submission };
+            if (!updatedSubmission.assignments) updatedSubmission.assignments = [];
+            
+            updatedSubmission.assignments.push({
+                title: [
+                    { key: 'en', value: data.title },
+                    { key: 'th', value: data.title }
+                ],
+                artist: data.selectedStudents || [],
+                create: {
+                    startAt: data.startDateTime,
+                    endAt: data.endDateTime
+                }
+            });
+
+            this.$store.dispatch('submission/update', updatedSubmission)
+                .then(() => {
+                    this.fetchSubmission();
+                    this.showAssignmentModal = false;
+                });
         },
         handleView(item) {
-            console.log('Viewing assignment item:', item);
-            this.$router.push({ name: 'Assignment', params: { id: item.id } });
+            this.$router.push({ 
+                name: 'Assignment', 
+                params: { 
+                    submissionId: this.$route.params.id,
+                    id: item._id 
+                } 
+            });
         },
         handleEdit(item) {
-            console.log('Editing assignment item:', item);
             this.selectedAssignment = item;
             this.showEditAssignmentModal = true;
         },
         handleAssignmentUpdate(data) {
-            console.log('Assignment task updated:', data);
-            alert('Assignment task updated successfully!');
-            this.showEditAssignmentModal = false;
+            const updatedSubmission = { ...this.submission };
+            const index = updatedSubmission.assignments.findIndex(a => a._id === data._id);
+            if (index !== -1) {
+                // Merge data, preserving artworks and other fields not in the edit modal
+                updatedSubmission.assignments[index] = {
+                    ...updatedSubmission.assignments[index],
+                    title: data.title,
+                    artist: data.selectedStudents || [],
+                    create: data.create
+                };
+
+                this.$store.dispatch('submission/update', updatedSubmission)
+                    .then(() => {
+                        this.fetchSubmission();
+                        this.showEditAssignmentModal = false;
+                    });
+            }
         },
         handleDelete(item) {
-            console.log('Deleting item:', item);
-            // Confirm and delete
+            if (confirm('Are you sure you want to delete this assignment?')) {
+                const updatedSubmission = { ...this.submission };
+                updatedSubmission.assignments = updatedSubmission.assignments.filter(a => a._id !== item._id);
+                
+                this.$store.dispatch('submission/update', updatedSubmission)
+                    .then(() => {
+                        this.fetchSubmission();
+                    });
+            }
         },
         handleExport() {
-            if (this.$refs.detailTable) {
-                // Assuming SubmissionDetailTable has an export method or logic
-                console.log('Exporting data...');
-                // In a real scenario, you'd call a method on the table ref or use a utility
-            }
+            // Logic for export
         }
     }
 }

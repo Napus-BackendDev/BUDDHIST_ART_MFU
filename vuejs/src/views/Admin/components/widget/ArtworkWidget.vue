@@ -1,12 +1,12 @@
 <template>
     <CRow class="mb-4">
         <!-- Total Artworks -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card" @click="$emit('filter-status', 'All')">
+        <CCol sm="6" lg="3" @click="$emit('input', 'All Status')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'All Status' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Total Artworks</div>
-                        <div class="widget-value">458</div>
+                        <div class="widget-value">{{ totalArtworks }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
                         <CIcon name="cil-paint" size="xl" />
@@ -15,13 +15,13 @@
             </CCard>
         </CCol>
 
-        <!-- Completed -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card" @click="$emit('filter-status', 'Completed')">
+        <!-- Available -->
+        <CCol sm="6" lg="3" @click="$emit('input', 'Available')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Available' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Completed</div>
-                        <div class="widget-value">312</div>
+                        <div class="widget-title">Available</div>
+                        <div class="widget-value text-success">{{ availableCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
                         <CIcon name="cil-check-circle" size="xl" />
@@ -30,28 +30,28 @@
             </CCard>
         </CCol>
 
-        <!-- Pending -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card" @click="$emit('filter-status', 'Pending')">
+        <!-- Sold Out -->
+        <CCol sm="6" lg="3" @click="$emit('input', 'Sold Out')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Sold Out' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Pending</div>
-                        <div class="widget-value">124</div>
+                        <div class="widget-title">Sold Out</div>
+                        <div class="widget-value text-orange">{{ soldCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">
-                        <CIcon name="cil-clock" size="xl" />
+                        <CIcon name="cil-cart" size="xl" />
                     </div>
                 </CCardBody>
             </CCard>
         </CCol>
 
-        <!-- Update Status -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card" @click="$emit('filter-status', 'Update')">
+        <!-- Rejected/Archived -->
+        <CCol sm="6" lg="3" @click="$emit('input', 'Rejected')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Rejected' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Update</div>
-                        <div class="widget-value">22</div>
+                        <div class="widget-title">Rejected</div>
+                        <div class="widget-value text-blue">{{ archivedCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
                         <CIcon name="cil-sync" size="xl" />
@@ -64,7 +64,38 @@
 
 <script>
 export default {
-    name: 'ArtworkWidget'
+    name: 'ArtworkWidget',
+    props: {
+        value: {
+            type: String,
+            default: 'All Status'
+        },
+        items: {
+            type: Array,
+            default: () => []
+        }
+    },
+    computed: {
+        totalArtworks() {
+            return this.items.length;
+        },
+        availableCount() {
+            return this.items.filter(item => 
+                item.status && item.status.sale && item.status.sale.name === 'Available'
+            ).length;
+        },
+        soldCount() {
+            return this.items.filter(item => 
+                item.status && item.status.sale && item.status.sale.name === 'Sold Out'
+            ).length;
+        },
+        archivedCount() {
+            // Mapping Archived to Rejected for now, or some other logic
+            return this.items.filter(item => 
+                item.status && item.status.approval && item.status.approval.name === 'Rejected'
+            ).length;
+        }
+    }
 }
 </script>
 
@@ -83,6 +114,12 @@ export default {
 .widget-card:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     transform: translateY(-2px);
+}
+
+.active-widget {
+    border-color: #3b82f6 !important;
+    background-color: #f0f4ff !important;
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.1) !important;
 }
 
 .widget-title {

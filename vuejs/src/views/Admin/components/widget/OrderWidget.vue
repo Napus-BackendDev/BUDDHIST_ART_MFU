@@ -1,12 +1,12 @@
 <template>
     <CRow class="mb-4">
         <!-- Total Orders -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card" @click="$emit('filter-status', 'All Status')">
+        <CCol sm="6" lg="3" @click="$emit('input', 'All Status')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'All Status' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Total Orders</div>
-                        <div class="widget-value">1,240</div>
+                        <div class="widget-value text-blue">1,240</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
                         <CIcon name="cil-cart" size="xl" />
@@ -16,12 +16,12 @@
         </CCol>
 
         <!-- Completed Orders -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card" @click="$emit('filter-status', 'Completed')">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Completed')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Completed' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Completed</div>
-                        <div class="widget-value">856</div>
+                        <div class="widget-value text-green">856</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
                         <CIcon name="cil-check-circle" size="xl" />
@@ -31,12 +31,12 @@
         </CCol>
 
         <!-- Pending Orders -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card" @click="$emit('filter-status', 'Pending')">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Pending')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Pending' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Pending</div>
-                        <div class="widget-value">42</div>
+                        <div class="widget-value text-orange">42</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">
                         <CIcon name="cil-clock" size="xl" />
@@ -46,12 +46,12 @@
         </CCol>
 
         <!-- Cancelled Orders -->
-        <CCol sm="6" lg="3">
-            <CCard class="widget-card" @click="$emit('filter-status', 'Cancelled')">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Cancelled')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Cancelled' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Cancelled</div>
-                        <div class="widget-value">12</div>
+                        <div class="widget-value text-red">12</div>
                     </div>
                     <div class="icon-wrapper bg-red-light text-red">
                         <CIcon name="cil-x-circle" size="xl" />
@@ -64,7 +64,13 @@
 
 <script>
 export default {
-    name: 'OrderWidget'
+    name: 'OrderWidget',
+    props: {
+        value: {
+            type: String,
+            default: 'All Status'
+        }
+    }
 }
 </script>
 
@@ -83,6 +89,12 @@ export default {
 .widget-card:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     transform: translateY(-2px);
+}
+
+.active-widget {
+    border-color: #3f6ad8 !important;
+    background-color: #f0f4ff !important;
+    box-shadow: 0 6px 16px rgba(63, 106, 216, 0.1) !important;
 }
 
 .widget-title {

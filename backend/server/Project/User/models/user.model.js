@@ -10,6 +10,8 @@ var objsSchema = new Schema({
         key: { type: String, default: null },
         value: { type: String, default: null },
     }], 
+    role: { type: String , default: null},
+    bio: { type: String, default: null},
     contact: {
         telephone: { type: String, default: null },
         studentEmail: { type: String, default: null, required: true, unique: true },
