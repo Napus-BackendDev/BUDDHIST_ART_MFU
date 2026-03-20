@@ -35,6 +35,7 @@
                         />
                     </div>
                     <div class="mt-4 d-flex flex-wrap align-items-center justify-content-center status-container">
+                        <div class="mr-4 mb-2 d-flex align-items-center">
                             <span class="status-label-text mr-2">Approval:</span>
                             <CBadge :class="['status-badge-lg px-3 py-2', getStatusInfo(artwork).approval.class]">
                                 <CIcon :name="getStatusInfo(artwork).approval.icon" size="sm" class="status-icon-lg" />
