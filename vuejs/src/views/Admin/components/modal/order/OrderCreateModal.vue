@@ -27,12 +27,24 @@
         <div class="px-3 py-2">
             <!-- Customer Info Row -->
             <CRow>
-                <CCol md="6">
+                <CCol>
                     <div class="form-group-custom">
                         <label class="form-label">Customer Name</label>
                         <CInput 
-                            v-model="form.customer" 
+                            v-model="form.contact.name" 
                             placeholder="e.g. Alice Johnson" 
+                            class="custom-input"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+            <CRow>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Email Address</label>
+                        <CInput 
+                            v-model="form.contact.email" 
+                            placeholder="e.g. alice@example.com" 
                             class="custom-input"
                         />
                     </div>
@@ -41,7 +53,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">Phone Number</label>
                         <CInput 
-                            v-model="form.phone" 
+                            v-model="form.contact.telephone" 
                             placeholder="e.g. 081-234-5678" 
                             class="custom-input"
                         />
@@ -49,46 +61,33 @@
                 </CCol>
             </CRow>
 
-            <!-- Order Info Row -->
+            <!-- Address Row -->
             <CRow>
-                <CCol md="6">
+                <CCol>
                     <div class="form-group-custom">
-                        <label class="form-label">Purchase Date</label>
-                        <div class="input-group-custom">
-                            <CInput 
-                                type="date"
-                                v-model="form.date" 
-                                class="custom-input w-100" 
-                            />
-                        </div>
-                    </div>
-                </CCol>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Total Price</label>
-                        <div class="input-group-custom">
-                            <span class="currency-prefix">฿</span>
-                            <CInput 
-                                type="number"
-                                v-model="form.amount" 
-                                placeholder="0.00" 
-                                class="custom-input-with-prefix"
-                                readonly
-                            />
-                        </div>
+                        <label class="form-label">Billing Address</label>
+                        <CTextarea 
+                            v-model="form.address.bill" 
+                            placeholder="Billing address..." 
+                            rows="2"
+                            class="custom-textarea"
+                        />
                     </div>
                 </CCol>
             </CRow>
-
-            <!-- Address Row -->
             <CRow>
-                <CCol md="12">
+                <CCol>
                     <div class="form-group-custom">
-                        <label class="form-label">Delivery Address</label>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label">Shipping Address</label> 
+                            <CLink @click="copyBillingToShipping" class="small font-weight-bold text-blue" style="cursor: pointer; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">
+                                Same as billing
+                            </CLink>
+                        </div>
                         <CTextarea 
-                            v-model="form.address" 
-                            placeholder="Street, City, Province, Postal Code..." 
-                            rows="3"
+                            v-model="form.address.shipping" 
+                            placeholder="Shipping address..." 
+                            rows="2"
                             class="custom-textarea"
                         />
                     </div>
@@ -97,53 +96,94 @@
 
             <!-- Artwork Selection Section -->
             <div class="artwork-selection-section mt-3">
-                <label class="form-label">Search & Add Artworks</label>
-                <div class="search-box-container mb-3">
-                    <div class="search-input-wrapper-limited">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Search & Add Artworks</label>
+                    <div class="total-price-indicator" v-if="form.artworks.length > 0">
+                        <span class="text-muted small">Total:</span>
+                        <span class="font-weight-bold ml-1">฿ {{ formatPrice(totalAmount) }}</span>
+                    </div>
+                </div>
+                
+                <div class="search-box-container position-relative mb-3">
+                    <div class="search-input-wrapper-limited position-relative">
                         <CInput 
                             v-model="artworkSearchQuery" 
                             placeholder="Search by artwork title or artist..." 
-                            class="custom-input-search"
-                            @input="handleArtworkSearch"
+                            class="custom-input-search mb-0"
                         />
+                        <button 
+                            v-if="artworkSearchQuery" 
+                            class="search-clear-btn" 
+                            @click="artworkSearchQuery = ''"
+                        >
+                            <CIcon name="cil-x" size="sm" />
+                        </button>
                     </div>
                     
                     <!-- Search Results Dropdown -->
-                    <div v-if="searchResults.length > 0" class="search-results-dropdown shadow-lg">
-                        <div 
-                            v-for="art in searchResults" 
-                            :key="art.id" 
-                            class="search-result-item d-flex align-items-center p-2"
-                            @click="selectArtwork(art)"
-                        >
-                            <img :src="art.image" class="result-thumb mr-3" />
-                            <div class="flex-grow-1">
-                                <div class="font-weight-bold text-dark">{{ art.title }}</div>
-                                <div class="text-muted small">{{ art.artist }}</div>
+                    <div v-if="artworkSearchQuery.length >= 2" class="search-results-dropdown shadow-lg">
+                        <div v-if="searchResults.length > 0">
+                            <div 
+                                v-for="art in searchResults" 
+                                :key="art._id" 
+                                class="search-result-item d-flex align-items-center p-2"
+                                @click="selectArtwork(art)"
+                            >
+                                <img :src="art.image || `https://via.placeholder.com/40/eee/888?text=${getName('en', art).charAt(0)}`" class="result-thumb mr-3" />
+                                <div class="flex-grow-1">
+                                    <div class="font-weight-bold text-dark">{{ getName('en', art) }}</div>
+                                    <div class="text-muted small">{{ art.artist ? getName('en', art.artist) : 'N/A' }}</div>
+                                </div>
+                                <div class="mr-3 font-weight-bold text-blue">฿ {{ formatPrice(art.price) }}</div>
+                                <CButton color="primary" variant="ghost" size="sm" class="rounded-pill">
+                                    <CIcon name="cil-plus" />
+                                </CButton>
                             </div>
-                            <CButton color="primary" variant="ghost" size="sm" class="rounded-pill">
-                                <CIcon name="cil-plus" />
-                            </CButton>
+                        </div>
+                        <div v-else class="p-4 text-center text-muted">
+                            <CIcon name="cil-search" size="xl" class="mb-2 d-block mx-auto opacity-50" />
+                            No artworks found for "{{ artworkSearchQuery }}"
                         </div>
                     </div>
                 </div>
 
                 <!-- Selected Artworks List -->
-                <div v-if="form.artworks.length > 0" class="selected-artworks-list border rounded p-3 bg-light">
-                    <div v-for="(art, index) in form.artworks" :key="index" class="selected-art-item d-flex align-items-center mb-2 last-child-mb-0 bg-white p-2 rounded shadow-sm">
+                <div v-if="form.artworks.length > 0" class="selected-artworks-list border rounded-lg p-3 bg-light-blue shadow-sm-inset">
+                    <div v-for="(art, index) in form.artworks" :key="art._id" class="selected-art-item d-flex align-items-center mb-2 bg-white p-2 rounded-lg shadow-sm">
                         <img :src="art.image" class="selected-thumb mr-3" />
                         <div class="flex-grow-1">
-                            <div class="font-weight-bold text-dark">{{ art.title }}</div>
-                            <div class="text-muted small">{{ art.artist }}</div>
+                            <div class="font-weight-bold text-dark">{{ getName('en', art) }}</div>
+                            <div class="text-muted small">{{ art.artist ? getName('en', art.artist) : 'N/A' }}</div>
                         </div>
-                        <CButton color="danger" variant="ghost" size="sm" @click="removeArtwork(index)">
+                        <div class="mr-3 font-weight-bold text-blue">฿ {{ formatPrice(art.price) }}</div>
+                        <CButton color="danger" variant="ghost" size="sm" @click="removeArtwork(index)" class="btn-remove">
                             <CIcon name="cil-trash" />
                         </CButton>
                     </div>
                 </div>
-                <div v-else class="empty-artworks-placeholder text-center py-4 border rounded border-dashed">
+                <div v-else class="empty-artworks-placeholder text-center py-4 border rounded-lg border-dashed">
                     <CIcon name="cil-image" size="xl" class="text-muted mb-2 d-block mx-auto" />
                     <span class="text-muted">No artworks added yet</span>
+                </div>
+            </div>
+
+            <!-- Proof of Payment Row -->
+            <div class="form-group-custom mt-4">
+                <label class="form-label">Proof of Payment (Optional)</label>
+                <div class="upload-container">
+                    <div v-if="!imagePreview" class="upload-area" @click="$refs.fileInput.click()">
+                        <CIcon name="cil-cloud-upload" size="xl" class="text-blue mb-2" />
+                        <div class="upload-text">Click or drag receipt here</div>
+                        <div class="upload-hint text-muted small">PNG, JPG, PDF (Max 2MB)</div>
+                    </div>
+                    <div v-else class="preview-area position-relative">
+                        <img :src="imagePreview" alt="Payment Proof" class="preview-img img-fluid rounded-lg">
+                        <div class="preview-overlay d-flex align-items-center justify-content-center">
+                            <CButton color="light" class="rounded-pill mx-1" @click="$refs.fileInput.click()">Change</CButton>
+                            <CButton color="danger" class="rounded-pill mx-1" @click="removeImage">Remove</CButton>
+                        </div>
+                    </div>
+                    <input type="file" ref="fileInput" class="d-none" @change="handleImageUpload" accept="image/*">
                 </div>
             </div>
         </div>
@@ -161,9 +201,9 @@
                     color="primary" 
                     @click="handleSave"
                     class="btn-create-order"
-                    :disabled="form.artworks.length === 0"
+                    :disabled="form.artworks.length === 0 || !form.contact.name"
                 >
-                    Create Order
+                    <CIcon name="cil-save" class="mr-2" /> Create Order
                 </CButton>
             </div>
         </template>
@@ -183,87 +223,136 @@ export default {
         return {
             artworkSearchQuery: '',
             searchResults: [],
-            // Mock Artwork Data for Search
-            mockArtworks: [
-                { id: 1, title: 'Morning Haze', artist: 'Elena G.', price: 4500, image: 'https://via.placeholder.com/80/2d3748/ffffff?text=MH' },
-                { id: 2, title: 'City Lights', artist: 'Davide B.', price: 12500, image: 'https://via.placeholder.com/80/e2e8f0/808080?text=CL' },
-                { id: 3, title: 'Ocean Blue', artist: 'Sarah L.', price: 8500, image: 'https://via.placeholder.com/80/cbd5e0/808080?text=OB' },
-                { id: 4, title: 'Forest Path', artist: 'Mike R.', price: 3200, image: 'https://via.placeholder.com/80/a0aec0/ffffff?text=FP' },
-                { id: 5, title: 'Golden Buddha', artist: 'Ananda S.', price: 15000, image: 'https://via.placeholder.com/80/ecc94b/ffffff?text=GB' },
-                { id: 6, title: 'Lotus Serenity', artist: 'Malee W.', price: 5500, image: 'https://via.placeholder.com/80/fbb6ce/ffffff?text=LS' },
-                { id: 7, title: 'Deep Meditation', artist: 'Somsak K.', price: 18000, image: 'https://via.placeholder.com/80/4a5568/ffffff?text=DM' },
-                { id: 8, title: 'Temple Sunset', artist: 'Elena G.', price: 7200, image: 'https://via.placeholder.com/80/ed8936/ffffff?text=TS' },
-                { id: 9, title: 'Abstract Zen', artist: 'Jiro K.', price: 9800, image: 'https://via.placeholder.com/80/2d3748/ffffff?text=AZ' },
-                { id: 10, title: 'River of Life', artist: 'Sarah L.', price: 4200, image: 'https://via.placeholder.com/80/4299e1/ffffff?text=RL' },
-                { id: 11, title: 'Ancestral Spirit', artist: 'Panya T.', price: 25000, image: 'https://via.placeholder.com/80/744210/ffffff?text=AS' },
-                { id: 12, title: 'Ethereal Soul', artist: 'Malee W.', price: 6800, image: 'https://via.placeholder.com/80/9f7aea/ffffff?text=ES' },
-                { id: 13, title: 'Wisdom Tree', artist: 'Ananda S.', price: 11000, image: 'https://via.placeholder.com/80/48bb78/ffffff?text=WT' },
-                { id: 14, title: 'Sacred Mandala', artist: 'Somsak K.', price: 13500, image: 'https://via.placeholder.com/80/f6ad55/ffffff?text=SM' },
-                { id: 15, title: 'Infinity Silence', artist: 'Jiro K.', price: 8900, image: 'https://via.placeholder.com/80/edf2f7/2d3748?text=IS' }
-            ],
+            imagePreview: null,
+            imageFile: null,
             form: {
-                customer: '',
-                phone: '',
-                address: '',
-                amount: 0,
-                date: new Date().toISOString().split('T')[0],
-                artworks: []
+                contact: {
+                    name: '',
+                    email: '',
+                    telephone: ''
+                },
+                address: {
+                    bill: '',
+                    shipping: ''
+                },
+                artworks: [], // Objects for UI
+                _image: null // For backend
             }
         }
     },
     watch: {
-        'form.artworks': {
-            handler(newVal) {
-                this.form.amount = newVal.reduce((sum, art) => sum + art.price, 0)
-            },
-            deep: true
+        show(val) {
+            if (val) {
+                this.resetForm();
+                if (this.allArtworks.length === 0) {
+                    this.$store.dispatch('artwork/get');
+                }
+            }
+        },
+        artworkSearchQuery(val) {
+            if (val.length < 2) {
+                this.searchResults = [];
+                return;
+            }
+            const query = val.toLowerCase();
+            this.searchResults = this.allArtworks.filter(art => {
+                const title = this.getName('en', art).toLowerCase();
+                const artist = art.artist ? this.getName('en', art.artist).toLowerCase() : '';
+                return title.includes(query) || artist.includes(query);
+            }).slice(0, 5);
+        }
+    },
+    computed: {
+        allArtworks() {
+            return this.$store.getters['artwork/artworks'] || [];
+        },
+        totalAmount() {
+            return this.form.artworks.reduce((sum, art) => sum + (parseFloat(art.price) || 0), 0);
         }
     },
     methods: {
-        handleArtworkSearch() {
-            if (this.artworkSearchQuery.length < 2) {
-                this.searchResults = []
-                return
+        getName(lang, item) {
+            if (!item) return 'N/A';
+            if (typeof item === 'string') return item;
+            
+            const titleField = item.title || item.name || '';
+            if (typeof titleField === 'string' && titleField) return titleField;
+            
+            if (Array.isArray(titleField)) {
+                const nameObj = titleField.find(n => n.key === lang);
+                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
+                return nameObj ? nameObj.value : firstVal;
             }
-            this.searchResults = this.mockArtworks.filter(art => 
-                art.title.toLowerCase().includes(this.artworkSearchQuery.toLowerCase()) ||
-                art.artist.toLowerCase().includes(this.artworkSearchQuery.toLowerCase())
-            )
+            return 'N/A';
+        },
+        formatPrice(value) {
+            if (value === undefined || value === null) return '0.00';
+            return parseFloat(value).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         },
         selectArtwork(art) {
-            // Check if already added
-            if (this.form.artworks.find(a => a.id === art.id)) {
-                this.artworkSearchQuery = ''
-                this.searchResults = []
-                return
+            if (this.form.artworks.find(a => a._id === art._id)) {
+                this.artworkSearchQuery = '';
+                return;
             }
-            this.form.artworks.push({ ...art })
-            this.artworkSearchQuery = ''
-            this.searchResults = []
+            this.form.artworks.push({ ...art });
+            this.artworkSearchQuery = '';
         },
         removeArtwork(index) {
             this.form.artworks.splice(index, 1)
         },
+        copyBillingToShipping() {
+            this.form.address.shipping = this.form.address.bill;
+        },
+        handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Image size exceeds 2MB limit.');
+                    return;
+                }
+                this.imageFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.imagePreview = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        },
+        removeImage() {
+            this.imagePreview = null;
+            this.imageFile = null;
+            this.$refs.fileInput.value = '';
+        },
         handleSave() {
-            if (!this.form.customer || this.form.artworks.length === 0) {
-                alert('Please fill in customer name and add at least one artwork')
-                return
+            if (!this.form.contact.name || this.form.artworks.length === 0) {
+                return;
             }
             
-            this.$emit('save', { ...this.form })
-            this.resetForm()
+            const submitData = {
+                contact: { ...this.form.contact },
+                address: { ...this.form.address },
+                artwork: this.form.artworks.map(a => a._id),
+                _image: this.imageFile
+            };
+            
+            this.$emit('save', submitData);
+            this.resetForm();
         },
         resetForm() {
             this.form = {
-                customer: '',
-                phone: '',
-                address: '',
-                amount: 0,
-                date: new Date().toISOString().split('T')[0],
-                artworks: []
-            }
-            this.artworkSearchQuery = ''
-            this.searchResults = []
+                contact: { name: '', email: '', telephone: '' },
+                address: { bill: '', shipping: '' },
+                artworks: [],
+                _image: null
+            };
+            this.imagePreview = null;
+            this.imageFile = null;
+            this.artworkSearchQuery = '';
+            this.searchResults = [];
+            if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         }
     }
 }
@@ -280,7 +369,7 @@ export default {
     font-weight: 800;
     text-transform: uppercase;
     color: #64748b;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     letter-spacing: 0.05em;
 }
 
@@ -289,17 +378,12 @@ export default {
 .custom-textarea ::v-deep .form-control {
     border-radius: 12px;
     border: 1px solid #f1f5f9;
-    padding: 1rem 1.25rem;
+    padding: 0.8rem 1rem;
     height: auto;
-    font-size: 1rem;
+    font-size: 0.95rem;
     transition: all 0.2s ease;
     background-color: #f8fafc;
     color: #1e293b;
-}
-
-.custom-input ::v-deep .form-control::placeholder,
-.custom-textarea ::v-deep .form-control::placeholder {
-    color: #94a3b8;
 }
 
 .custom-input ::v-deep .form-control:focus,
@@ -310,63 +394,46 @@ export default {
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05);
 }
 
-.input-group-custom {
-    position: relative;
+/* Search Dropdown */
+.search-input-wrapper-limited {
+    max-width: 400px;
 }
 
-.currency-prefix {
+.search-clear-btn {
     position: absolute;
-    left: 16px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    font-weight: 500;
-    color: #1e293b;
-    z-index: 5;
-    font-size: 1.1rem;
-    line-height: 1;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    z-index: 2;
 }
 
-.custom-input-with-prefix ::v-deep .form-control {
-    border-radius: 12px;
-    border: 1px solid #f1f5f9;
-    padding: 1rem 2.5rem !important;
-    height: auto;
-    font-size: 1rem;
-    background-color: #f8fafc;
-}
-
-.custom-input-with-prefix ::v-deep .form-control[readonly] {
-    background-color: #f1f5f9 !important;
-    cursor: default;
-    color: #64748b;
-    font-weight: 700;
-}
-
-.input-icon-right {
-    position: absolute;
-    right: 16px;
-    color: #64748b;
-    width: 18px;
-    pointer-events: none;
-}
-
-/* Artwork Selection UI */
-.search-input-wrapper-limited {
-    max-width: 320px;
+.search-clear-btn:hover {
+    color: #ef4444;
 }
 
 .search-results-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
-    right: 0;
+    width: 100%;
+    max-width: 400px;
     background: white;
-    z-index: 100;
+    z-index: 1000;
     border-radius: 12px;
     margin-top: 8px;
-    max-height: 250px;
+    max-height: 300px;
     overflow-y: auto;
     border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .search-result-item {
@@ -386,43 +453,78 @@ export default {
     object-fit: cover;
 }
 
+/* Selected Artworks */
+.bg-light-blue {
+    background-color: #f1f5ff;
+}
+
+.shadow-sm-inset {
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+}
+
 .selected-art-item {
-    transition: all 0.2s;
-    border: 1px solid #f1f5f9;
+    border: 1px solid #e2e8f0;
 }
 
 .selected-thumb {
-    width: 50px;
-    height: 50px;
-    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
     object-fit: cover;
 }
 
-.last-child-mb-0:last-child {
-    margin-bottom: 0 !important;
+.btn-remove {
+    opacity: 0.6;
+}
+.btn-remove:hover {
+    opacity: 1;
 }
 
-.border-dashed {
-    border-style: dashed !important;
-    border-width: 1px !important;
-    border-color: #e2e8f0 !important;
+/* Upload Style */
+.upload-area {
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
     background-color: #f8fafc;
-    min-height: 180px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
 }
 
-.empty-artworks-placeholder span {
-    color: #94a3b8;
-    font-size: 1.1rem;
+.upload-area:hover {
+    border-color: #3b82f6;
+    background-color: #f0f7ff;
 }
 
-/* Header & Modal Stying */
+.preview-area {
+    text-align: center;
+}
+
+.preview-img {
+    max-height: 200px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.2s;
+    border-radius: 12px;
+}
+
+.preview-area:hover .preview-overlay {
+    opacity: 1;
+}
+
+/* Modal Styling */
 .icon-square {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -445,37 +547,6 @@ export default {
     transition: color 0.2s;
 }
 
-.close-btn:hover {
-    color: #64748b;
-}
-
-::v-deep .modal-content {
-    border-radius: 20px;
-    border: none;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-}
-
-::v-deep .modal-header {
-    border-bottom: 1px solid #f1f5f9;
-    padding: 1.5rem 2rem;
-}
-
-::v-deep .modal-footer {
-    border-top: 1px solid #f1f5f9;
-    padding: 1.5rem 2.5rem;
-}
-
-.btn-cancel {
-    color: #94a3b8 !important;
-    font-weight: 600;
-    font-size: 1rem;
-}
-
-.btn-cancel:hover {
-    color: #64748b !important;
-    background: transparent !important;
-}
-
 .btn-create-order {
     background-color: #3b82f6 !important;
     border-color: #3b82f6 !important;
@@ -483,12 +554,16 @@ export default {
     border-radius: 30px !important;
     padding: 0.8rem 2.5rem !important;
     font-weight: 600 !important;
-    font-size: 1rem;
     box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
 }
 
-.btn-create-order:hover {
-    background-color: #2563eb !important;
-    transform: translateY(-1px);
+::v-deep .modal-content {
+    border-radius: 20px;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+    border-width: 2px !important;
+    border-color: #e2e8f0 !important;
 }
 </style>

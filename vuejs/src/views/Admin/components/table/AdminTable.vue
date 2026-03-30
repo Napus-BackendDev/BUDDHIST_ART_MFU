@@ -252,12 +252,14 @@ export default {
         },
         getStatusInfo(item) {
             // Approval status mapping
-            const approvalStatus = item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
+            const approval = item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
             
-            switch (approvalStatus) {
+            switch (approval) {
                 case 'Approved':
+                case 'Success':
                     return { label: 'Approved', class: 'badge-completed', icon: 'cil-check' };
                 case 'Rejected':
+                case 'Cancelled':
                     return { label: 'Rejected', class: 'badge-cancelled', icon: 'cil-x' };
                 case 'Revised':
                     return { label: 'Revised', class: 'badge-update', icon: 'cil-sync' };

@@ -7,7 +7,7 @@ const LoginModule = {
     state: {
         isSignIn:false,
         is2FA:false,
-        userId:"66d1491da8ecd8d7d08981c2"
+        userId: "69b6fa8106450177a0874a87"
 
     },
 
@@ -42,30 +42,47 @@ const LoginModule = {
 
         singIn({commit}, data) {
             store.commit("dialog/loading",true)
-            Service.authen("sign-in",data)
+            return Service.authen("sign-in",data)
                 .then((response) => {
+                    store.commit("dialog/loading",false)
+                    const user = response.data.data;
+                    const role = user.role || 'Customer';
+                    
+                    // Store user data
+                    localStorage.setItem('objs', JSON.stringify({
+                        xAccessToken: response.data.token || response.data.data.token,
+                        accounts: user._id,
+                        role: role
+                    }));
 
-                    // store.commit("auth/isSignIn",false)
-                    // var objs = JSON.stringify(response.data.data)
-                    // localStorage.setItem('objs',objs);
-                    //
-                    // store.dispatch("auth/supportReload",{})
-                    // store.commit("dialog/loading",false)
-                    //
-                    //
-                    // router.push('/estimate/yourself');
+                    store.commit("auth/isSignIn", false); // Close modal if used as modal
+                    store.commit("auth/userId", user._id);
+
+                    // Redirection Logic
+                    if (role === 'Admin') {
+                        router.push('/admin');
+                    } else if (role === 'Artist' || role === 'Evaluator') {
+                        router.push('/artist/dashboard');
+                    } else {
+                        router.push('/artworks');
+                    }
+                    
+                    return response;
                 })
                 .catch((err) => {
                     store.commit("dialog/loading",false)
-
                     var dialog = {
-                        message: "Username และ Password ไม่ถูกต้อง",
+                        message: "Username หรือ Password ไม่ถูกต้อง",
                         code:"40100",
                         number :"1",
                         status:true
                     }
                     store.commit("dialog/dialog",dialog)
+                    throw err;
                 });
+        },
+        onLogin({dispatch}, data) {
+            return dispatch('singIn', data);
         },
 
 

@@ -47,9 +47,9 @@ export default {
             ],
             prices: [
                 { value: 'All Prices', label: 'All Prices' },
-                { value: 'Under $500', label: 'Under $500' },
-                { value: '$500 - $1000', label: '$500 - $1000' },
-                { value: 'Over $1000', label: 'Over $1000' }
+                { value: 'Under ฿500', label: 'Under ฿500' },
+                { value: '฿500 - ฿1000', label: '฿500 - ฿1000' },
+                { value: 'Over ฿1000', label: 'Over ฿1000' }
             ],
             sorts: [
                 { value: 'Newest', label: 'Newest' },

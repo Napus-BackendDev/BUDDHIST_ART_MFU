@@ -5,7 +5,7 @@
             <CCardBody class="p-4">
                 <h5 class="font-weight-bold mb-4">Order Summary</h5>
 
-                <div v-for="(item, index) in cartItems" :key="index" class="d-flex mb-4">
+                <div v-for="(item, index) in cartItems" :key="item._id" class="d-flex mb-4">
                     <img :src="item.image" class="rounded mr-3 shadow-sm"
                         style="width: 80px; height: 80px; object-fit: cover;">
                     <div class="w-100">
@@ -16,7 +16,7 @@
                         <small class="text-muted d-block mb-2">{{ item.artist }}</small>
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">Qty {{ item.quantity }}</small>
-                            <CLink href="#" @click.prevent="removeItem(item.id)"
+                            <CLink href="#" @click.prevent="removeItem(item._id)"
                                 class="text-danger small text-decoration-none d-flex align-items-center">
                                 <CIcon name="cil-trash" size="sm" class="mr-1" /> Remove
                             </CLink>

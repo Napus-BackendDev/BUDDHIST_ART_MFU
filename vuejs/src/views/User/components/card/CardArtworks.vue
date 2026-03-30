@@ -1,41 +1,51 @@
 <template>
     <div v-if="artworks.length > 0">
         <CRow>
-            <CCol md="4" class="mb-4" v-for="(art, index) in artworks" :key="index">
+            <CCol class="col-custom-grid mb-5" v-for="(art, index) in artworks" :key="index">
                 <CCard class="h-100 border-0 shadow-sm artwork-card cursor-pointer"
-                    style="border-radius: 20px; overflow: hidden;" @click="getDetail(art.id)">
-                    <div class="card-img-wrapper position-relative" style="height: 400px;">
-                        <div class="position-absolute top-0 left-0 m-4 px-3 py-1 bg-light rounded-pill shadow-sm text-uppercase font-weight-bold"
-                            style="font-size: 0.75rem; letter-spacing: 1px; z-index: 1;">
-                            {{ art.category }}
+                    style="border-radius: 20px; overflow: hidden;" @click="getDetail(art._id)">
+                    <div class="card-img-wrapper position-relative">
+                        <div class="position-absolute top-0 left-0 m-4 px-3 py-1 bg-white rounded-pill shadow-sm text-uppercase font-weight-bold cat-badge"
+                            style="font-size: 0.7rem; letter-spacing: 0.5px; z-index: 1; color: #3b82f6;">
+                            {{ art.category ? getName('en', art.category) : 'Artwork' }}
                         </div>
-                        <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${art.image})` }">
+                        <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${art.image || 'https://via.placeholder.com/800x800?text=No+Image'})` }">
                         </div>
                     </div>
-                    <CCardBody class="p-4 bg-white position-relative">
-                        <h4 class="font-weight-bold mb-1" style="color: #1a202c;">{{ art.title }}</h4>
-                        <p class="text-muted mb-3">by {{ art.artist }}</p>
-                        <h4 class="font-weight-bold" style="color: #E55B5B;">{{ art.price }}</h4>
+                    <CCardBody class="p-4 bg-white position-relative card-body-custom">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="font-weight-bold art-title mb-0">{{ getName('en', art) }}</h5>
+                        </div>
+                        <p class="text-muted art-subtitle mb-3">by {{ art.artist ? getName('en', art.artist) : 'Unknown Artist' }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="font-weight-bold price-text mb-0">฿ {{ formatPrice(art.price) }}</h4>
+                            <div v-if="art.status && art.status.sale" class="sale-status-dot" :title="getName('en', art.status.sale)">
+                                <span :class="['dot', art.status.sale.title === 'Sold Out' ? 'dot-sold' : 'dot-available']"></span>
+                                <span class="small text-muted ml-1">{{ getName('en', art.status.sale) }}</span>
+                            </div>
+                        </div>
 
-                        <!-- Hover Add Button -->
-                        <div class="add-cart-btn shadow-sm" @click.stop="addToCart(art)">
+                        <!-- Hover Add/Remove Button (Only if available) -->
+                        <div v-if="isAvailable(art) && !isInCart(art._id)" class="add-cart-btn shadow-sm" @click.stop="addToCart(art)">
                             <CIcon name="cil-plus" size="lg" />
+                        </div>
+                        <div v-else-if="isInCart(art._id)" class="add-cart-btn shadow-sm bg-danger" style="opacity: 1; transform: translateY(0); cursor: pointer;" 
+                            title="Remove from collection" @click.stop="addToCart(art)">
+                            <CIcon name="cil-check" size="lg" />
                         </div>
                     </CCardBody>
                 </CCard>
             </CCol>
         </CRow>
     </div>
-    <div v-else class="text-center py-5">
-        <CIcon name="cil-image-broken" size="3xl" class="text-muted mb-3" />
-        <h4 class="text-muted">No artworks found.</h4>
-        <p class="text-muted">Try adjusting your search or filters to find what you're looking for.</p>
+    <div v-else class="text-center py-5 no-results-box bg-light rounded-xl mt-4">
+        <CIcon name="cil-brush" size="3xl" class="text-muted mb-3 opacity-30" />
+        <h4 class="text-muted font-weight-bold">No Artworks Found</h4>
+        <p class="text-muted max-w-lg mx-auto">We couldn't find any artworks matching your current criteria. Try resetting your search or adjusting the filters.</p>
     </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-
 export default {
     name: 'CardArtworks',
     props: {
@@ -44,69 +54,170 @@ export default {
             default: () => []
         }
     },
-    computed: {
-        ...mapGetters('cart', ['cartItems', 'cartTotal', 'cartCount'])
-    },
     methods: {
         getDetail(id) {
-            this.$router.push(`/artworks/${id}`);
+            this.$router.push(`/artwork/${id}`);
         },
         addToCart(art) {
-            this.$store.dispatch('cart/addToCart', art);
+            if (this.isInCart(art._id)) {
+                // Toggle OFF: Remove from cart
+                this.$store.dispatch('cart/removeFromCart', art._id);
+                this.$store.commit('dialog/showToast', {
+                    title: 'Removed',
+                    message: `${this.getName('en', art)} removed from cart`,
+                    variant: 'info'
+                });
+                return;
+            }
+
+            // Toggle ON: Add to cart
+            this.$store.dispatch('cart/addToCart', {
+                _id: art._id,
+                title: this.getName('en', art),
+                price: art.price,
+                image: art.image,
+                artist: art.artist ? this.getName('en', art.artist) : 'N/A'
+            });
+            
+            // Show toast
+            this.$store.commit('dialog/showToast', {
+                title: 'Success',
+                message: `${this.getName('en', art)} added to cart`,
+                variant: 'success'
+            });
+
+            // Open the cart sidebar globally via Vuex
+            this.$store.dispatch('cart/setShowCart', true);
+        },
+        getName(lang, item) {
+            if (!item) return '';
+            if (typeof item === 'string') return item;
+            
+            const titleField = item.title || item.name || '';
+            if (typeof titleField === 'string' && titleField) return titleField;
+            
+            if (Array.isArray(titleField)) {
+                const nameObj = titleField.find(n => n.key === lang);
+                return nameObj ? nameObj.value : (titleField[0] ? titleField[0].value : '');
+            }
+            return '';
+        },
+        formatPrice(value) {
+            if (value === undefined || value === null) return '0.00';
+            return parseFloat(value).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        },
+        isAvailable(art) {
+            if (!art || !art.status || !art.status.sale) return true;
+            return this.getName('en', art.status.sale) !== 'Sold Out';
+        },
+        isInCart(id) {
+            return this.$store.getters['cart/isInCart'](id);
         }
     }
 }
 </script>
 
 <style scoped>
-.artworks-page {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
 .artwork-card {
-    transition: transform 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transform-origin: center;
 }
 
 .artwork-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-img-wrapper {
+    height: 420px;
+}
+
+@media (min-width: 992px) {
+    .card-img-wrapper {
+        height: 380px;
+    }
+}
+
+.col-custom-grid {
+    flex: 0 0 100%;
+    max-width: 100%;
+    padding: 0 10px;
+}
+
+@media (min-width: 576px) {
+    .col-custom-grid {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+
+@media (min-width: 768px) {
+    .col-custom-grid {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+}
+
+@media (min-width: 992px) {
+    .col-custom-grid {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
 }
 
 .card-img-bg {
     background-size: cover;
     background-position: center;
-    transition: transform 0.5s ease;
+    transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .artwork-card:hover .card-img-bg {
-    transform: scale(1.1);
+    transform: scale(1.05);
+}
+
+.art-title {
+    color: #1e293b;
+    font-size: 1.15rem;
+}
+
+.art-subtitle {
+    font-size: 0.9rem;
+}
+
+.price-text {
+    color: #3b82f6;
+    letter-spacing: -0.5px;
+}
+
+.cat-badge {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .add-cart-btn {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background-color: white;
+    background-color: #3b82f6;
     display: flex;
     align-items: center;
     justify-content: center;
     position: absolute;
-    right: 20px;
-    top: 20px;
-    bottom: auto;
+    right: 24px;
+    bottom: 24px;
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     cursor: pointer;
-    color: #2c3e50;
-    border: 1px solid #edf2f7;
+    color: white;
     z-index: 2;
 }
 
 .add-cart-btn:hover {
-    background-color: #E55B5B;
-    color: white;
-    border-color: #E55B5B;
-    box-shadow: 0 4px 6px rgba(229, 91, 91, 0.3);
+    background-color: #2563eb;
+    transform: scale(1.1);
 }
 
 .artwork-card:hover .add-cart-btn {
@@ -114,7 +225,37 @@ export default {
     transform: translateY(0);
 }
 
-.cursor-pointer {
-    cursor: pointer;
+.sale-status-dot {
+    display: flex;
+    align-items: center;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.dot-available {
+    background-color: #10b981;
+}
+
+.dot-sold {
+    background-color: #ef4444;
+}
+
+.no-results-box {
+    border: 2px dashed #e2e8f0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.rounded-xl {
+    border-radius: 24px;
+}
+
+.max-w-lg {
+    max-width: 32rem;
 }
 </style>

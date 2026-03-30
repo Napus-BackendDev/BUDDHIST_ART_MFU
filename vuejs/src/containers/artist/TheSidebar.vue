@@ -35,7 +35,7 @@
 </template>
 
 <script>
-import nav from './_nav'
+import nav from '../_nav'
 // import TheSidebarProfile from "@/projects/components/Util/TheSidebarProfile";
 export default {
   name: 'TheSidebar',
@@ -62,56 +62,36 @@ export default {
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Overview',
-            to: '/admin',
-            icon: 'cil-window-restore'
-          },
-          {
-            _name: 'CSidebarNavTitle',
-            _children: ['Operations']
+            name: 'Profile',
+            to: '/artist/profile',
+            icon: 'cil-user'
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Orders',
-            to: '/admin/orders',
+            name: 'Artwork',
+            to: '/artist/artwork',
+            icon: 'cil-paint'
+          },
+          {
+            _name: 'CSidebarNavItem',
+            name: 'Order',
+            to: '/artist/order',
             icon: 'cil-cart'
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Artworks',
-            to: '/admin/artworks',
-            icon: 'cil-paint' // Defaulting to generic art-like or use cil-notes if it's missing
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: 'Submissions',
-            to: '/admin/submissions',
+            name: 'Submission',
+            to: '/artist/submission',
             icon: 'cil-cloud-upload'
           },
           {
-            _name: 'CSidebarNavItem',
-            name: 'Certification',
-            to: '/admin/certification',
-            icon: 'cil-task'
-          },
-          {
-            _name: 'CSidebarNavTitle',
-            _children: ['Data Center']
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: 'User Management',
-            to: '/admin/users-management',
-            icon: 'cil-people'
-          },
-          {
             _name: 'CSidebarNavDivider',
-            _classes: 'mt-auto' // This pushes everything below it to the bottom if the flex container allows
+            _classes: 'mt-auto' 
           },
           {
             _name: 'CSidebarNavItem',
             name: 'Sign Out',
-            to: '/', // Assuming /login is the path
+            to: '/login', 
             icon: 'cil-account-logout'
           }
         ]

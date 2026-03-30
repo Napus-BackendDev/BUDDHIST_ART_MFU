@@ -1,5 +1,5 @@
 <template>
-  <CCard class="mb-4 border-0 shadow-sm">
+  <CCard class="mb-4 border-0 shadow-sm admin-filter-card">
     <CCardBody class="p-4">
       <CRow class="align-items-end">
         <!-- Search Field -->
@@ -19,16 +19,18 @@
         <!-- Status Filter -->
         <CCol lg="2" md="4" class="mb-3 mb-lg-0">
           <label class="filter-label">Status</label>
-          <CDropdown :caret="false" class="w-100">
+          <CDropdown :caret="false" class="w-100 custom-add-dropdown">
             <template #toggler>
-              <button class="filter-select-btn">
+              <CButton type="button" class="filter-select-btn">
                 <span class="text-truncate mr-2">{{ value.status }}</span>
                 <CIcon name="cil-filter" class="filter-icon-small" />
-              </button>
+              </CButton>
             </template>
+            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
             <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
             <CDropdownItem @click="updateFilter('status', 'In Progress')">In Progress</CDropdownItem>
             <CDropdownItem @click="updateFilter('status', 'Closed')">Closed</CDropdownItem>
+            </CDropdownMenu>
           </CDropdown>
         </CCol>
 
@@ -151,6 +153,16 @@ export default {
 </script>
 
 <style scoped>
+.admin-filter-card {
+  position: relative !important;
+  z-index: 5 !important;
+  overflow: visible !important;
+}
+
+.custom-add-dropdown {
+  position: relative !important;
+}
+
 .filter-label {
   display: block;
   font-size: 0.7rem;
@@ -315,5 +327,17 @@ export default {
   background: #ffffff !important;
   color: #321fdb !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+::v-deep .dropdown-menu {
+  border-radius: 10px !important;
+  border: 1px solid #eef0f3 !important;
+  box-shadow: 0 8px 24px rgba(149, 157, 165, 0.2) !important;
+  padding: 8px !important;
+  min-width: 180px !important;
+  z-index: 1000 !important;
+  transform: none !important;
+  top: 100% !important;
+  left: 0 !important;
 }
 </style>

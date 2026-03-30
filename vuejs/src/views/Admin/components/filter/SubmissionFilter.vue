@@ -1,5 +1,5 @@
 <template>
-    <CCard class="mb-4 border-0 shadow-sm">
+    <CCard class="mb-4 border-0 shadow-sm admin-filter-card">
         <CCardBody class="p-4">
             <CRow class="align-items-end">
                 <!-- Search Field -->
@@ -135,6 +135,12 @@ export default {
 </script>
 
 <style scoped>
+.admin-filter-card {
+    position: relative !important;
+    z-index: 5 !important;
+    overflow: visible !important;
+}
+
 .filter-label {
     display: block;
     font-size: 0.7rem;

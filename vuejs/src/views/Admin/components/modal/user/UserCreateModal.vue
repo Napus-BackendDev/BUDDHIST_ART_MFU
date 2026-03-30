@@ -42,14 +42,36 @@
                         <CDropdown :caret="false" class="w-100">
                             <template #toggler>
                                 <button class="custom-select-btn">
-                                    <span class="text-dark">{{ form.role || 'Select Role' }}</span>
+                                    <span class="text-dark">{{ form.roleName || 'Select Role' }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </button>
                             </template>
-                            <CDropdownItem @click="form.role = 'Admin'">Admin</CDropdownItem>
-                            <CDropdownItem @click="form.role = 'Developer'">Developer</CDropdownItem>
-                            <CDropdownItem @click="form.role = 'Evaluator'">Evaluator</CDropdownItem>
-                            <CDropdownItem @click="form.role = 'Customer'">Customer</CDropdownItem>
+                            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                                <CDropdownItem v-for="r in roles" :key="r._id" @click="form.roleId = r._id; form.roleName = r.name">
+                                    {{ r.name }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
+                        </CDropdown>
+                    </div>
+                </CCol>
+            </CRow>
+
+            <CRow>
+                <CCol md="12" v-if="form.roleName === 'Artist'">
+                    <div class="form-group-custom">
+                        <label class="form-label">Account Status</label>
+                        <CDropdown :caret="false" class="w-100">
+                            <template #toggler>
+                                <button class="custom-select-btn">
+                                    <span class="text-dark">{{ form.statusName || 'Select Status' }}</span>
+                                    <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
+                                </button>
+                            </template>
+                            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                                <CDropdownItem v-for="s in statuses" :key="s._id" @click="form.statusId = s._id; form.statusName = s.name">
+                                    {{ s.name }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -160,13 +182,24 @@ export default {
         show: {
             type: Boolean,
             default: false
+        },
+        roles: {
+            type: Array,
+            default: () => []
+        },
+        statuses: {
+            type: Array,
+            default: () => []
         }
     },
     data() {
         return {
             form: {
                 studentId: '',
-                role: 'Customer',
+                roleId: '',
+                roleName: '',
+                statusId: '',
+                statusName: '',
                 nameTh: '',
                 nameEn: '',
                 email: '',
@@ -178,7 +211,11 @@ export default {
     },
     computed: {
         isFormValid() {
-            return this.form.studentId && this.form.nameEn && this.form.email && this.form.password;
+            const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.form.email && this.form.password;
+            if (this.form.roleName === 'Artist') {
+                return baseValid && this.form.statusId;
+            }
+            return baseValid;
         }
     },
     methods: {
@@ -186,7 +223,7 @@ export default {
             if (!this.isFormValid) return;
             const payload = {
                 studentId: this.form.studentId,
-                role: this.form.role,
+                role: this.form.roleId,
                 name: [
                     { key: 'th', value: this.form.nameTh },
                     { key: 'en', value: this.form.nameEn }
@@ -196,15 +233,23 @@ export default {
                     personalEmail: this.form.personalEmail,
                     telephone: this.form.telephone
                 },
+                status: this.form.statusId || null,
                 password: this.form.password
             };
+
+            console.log('--- Creating New User ---');
+            console.log('Payload:', payload);
+
             this.$emit('save', payload);
             this.resetForm();
         },
         resetForm() {
             this.form = {
                 studentId: '',
-                role: 'Customer',
+                roleId: '',
+                roleName: '',
+                statusId: '',
+                statusName: '',
                 nameTh: '',
                 nameEn: '',
                 email: '',

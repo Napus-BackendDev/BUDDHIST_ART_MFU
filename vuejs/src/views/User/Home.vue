@@ -2,10 +2,9 @@
     <div class="user-landing">
 
         <!-- News Section (Carousel) -->
-        <!-- Ideally this would be a separate component, but putting here for simplicity as per previous request -->
         <div class="news-section">
             <CCarousel arrows indicators animate height="500px">
-                <CCarouselItem v-for="(item, index) in newsItems" :key="index">
+                <CCarouselItem v-for="(item, index) in newsItems" :key="item._id">
                     <div class="d-flex align-items-center justify-content-center h-100 news-slide">
                         <CContainer class="d-flex align-items-center h-100">
                             <CRow class="w-100 align-items-center">
@@ -13,10 +12,10 @@
                                     <span class="badge badge-pill badge-light text-uppercase px-3 py-2 mb-3"
                                         style="color: #E55B5B; font-weight: bold; letter-spacing: 1px;">{{ item.tag
                                         }}</span>
-                                    <h1 class="display-3 font-weight-bold mb-3">{{ item.title }}</h1>
+                                    <h1 class="display-4 font-weight-bold mb-3">{{ item.title }}</h1>
                                     <p class="lead mb-4">{{ item.description }}</p>
                                     <CButton color="light" shape="pill" size="lg"
-                                        class="font-weight-bold px-4 text-danger" @click="explore(item.id)">
+                                        class="font-weight-bold px-4 text-danger shadow hover-scale" @click="explore(item._id)">
                                         Explore Collection
                                         <CIcon name="cil-arrow-right" class="ml-2" />
                                     </CButton>
@@ -35,26 +34,26 @@
         <!-- Home Section (Hero) -->
         <div class="home-section d-flex align-items-center justify-content-center text-center">
             <CContainer>
-                <h1 class="display-3 font-weight-bold mb-4" style="color: #2c3e50;">
+                <h1 class="display-3 font-weight-bold mb-4 animate-up" style="color: #2c3e50;">
                     Art that speaks to <span style="color: #E55B5B;">your soul.</span>
                 </h1>
-                <p class="lead text-muted mb-5 mx-auto" style="max-width: 700px;">
+                <p class="lead text-muted mb-5 mx-auto animate-up delay-1" style="max-width: 700px;">
                     Discover curated collections from emerging artists worldwide. Reliable shipping, authenticated
                     works, and a seamless buying experience.
                 </p>
-                <div class="mb-5">
+                <div class="mb-5 animate-up delay-2">
                     <CButton color="danger" size="lg" shape="pill" class="px-5 py-3 mr-3 font-weight-bold shadow-sm"
-                        style="background-color: #E55B5B; border: none;">Start Collecting
+                        style="background-color: #E55B5B; border: none;" @click="$router.push({ name: 'Artworks' })">Start Collecting
                         <CIcon name="cil-arrow-right" class="ml-2" />
                     </CButton>
-                    <CButton color="white" size="lg" shape="pill" class="px-5 py-3 font-weight-bold shadow-sm"
-                        style="color: #2c3e50;">View Gallery</CButton>
+                    <CButton color="white" size="lg" shape="pill" class="px-5 py-3 font-weight-bold shadow-sm border"
+                        style="color: #2c3e50;" @click="$router.push({ name: 'Artworks' })">View Gallery</CButton>
                 </div>
 
                 <!-- Features -->
-                <CRow class="mt-5 pt-4">
+                <CRow class="mt-5 pt-4 animate-up delay-3">
                     <CCol md="4" class="mb-4">
-                        <CCard class="h-100 border-0 shadow-sm py-4">
+                        <CCard class="h-100 border-0 shadow-sm py-4 feature-card">
                             <CCardBody>
                                 <div class="mb-3 text-warning">
                                     <CIcon name="cil-shield-alt" size="3xl" />
@@ -66,7 +65,7 @@
                         </CCard>
                     </CCol>
                     <CCol md="4" class="mb-4">
-                        <CCard class="h-100 border-0 shadow-sm py-4">
+                        <CCard class="h-100 border-0 shadow-sm py-4 feature-card">
                             <CCardBody>
                                 <div class="mb-3 text-danger">
                                     <CIcon name="cil-truck" size="3xl" />
@@ -78,7 +77,7 @@
                         </CCard>
                     </CCol>
                     <CCol md="4" class="mb-4">
-                        <CCard class="h-100 border-0 shadow-sm py-4">
+                        <CCard class="h-100 border-0 shadow-sm py-4 feature-card">
                             <CCardBody>
                                 <div class="mb-3 text-success">
                                     <CIcon name="cil-loop-circular" size="3xl" />
@@ -96,19 +95,40 @@
         <!-- Featured Collection Section -->
         <div class="featured-section py-5">
             <CContainer>
-                <FilterArtworksHome @category-changed="cat => selectedCategory = cat" />
+                <div class="text-center mb-5">
+                    <h2 class="display-4 font-weight-bold">Featured Collection</h2>
+                    <div class="title-underline mx-auto mt-2"></div>
+                </div>
 
-                <CardArtworks :artworks="filteredArtworks" />
+                <div v-if="loading" class="text-center py-5">
+                    <CSpinner color="danger" variant="grow" />
+                    <p class="mt-3 text-muted">Loading masterpiece collection...</p>
+                </div>
+                <template v-else>
+                    <FilterArtworksHome @category-changed="cat => selectedCategory = cat" />
+                    <CardArtworks :artworks="filteredArtworks" />
+                    
+                    <div v-if="filteredArtworks.length === 0" class="text-center py-5">
+                        <CIcon name="cil-search" size="4xl" class="text-muted mb-3" />
+                        <p class="text-muted">No artworks found in this category yet.</p>
+                    </div>
+
+                    <div class="text-center mt-5">
+                        <CButton color="danger" variant="outline" shape="pill" size="lg" class="px-5 font-weight-bold" 
+                            @click="$router.push({ name: 'Artworks' })">
+                            View All Masterpieces
+                        </CButton>
+                    </div>
+                </template>
             </CContainer>
         </div>
-
-
     </div>
 </template>
 
 <script>
 import CardArtworks from './components/card/CardArtworks.vue'
 import FilterArtworksHome from './components/filter/FilterArtworksHome.vue'
+
 export default {
     name: 'UserIndex',
     components: {
@@ -117,75 +137,25 @@ export default {
     },
     data() {
         return {
+            loading: true,
             selectedCategory: 'All',
-            artworks: [
-                {
-                    id: 101,
-                    category: 'Painting',
-                    title: 'Abstract Harmonies',
-                    artist: 'Elena Void',
-                    price: '$450',
-                    image: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
-                },
-                {
-                    id: 102,
-                    category: 'Digital',
-                    title: 'Geometric Dreams',
-                    artist: 'Marcus Lines',
-                    price: '$320',
-                    image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
-                },
-                {
-                    id: 103,
-                    category: 'Sculpture',
-                    title: 'White Silence',
-                    artist: 'Sarah Stone',
-                    price: '$890',
-                    image: 'https://images.unsplash.com/photo-1544531586-fde5298cdd40?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
-                },
-                // Add more if needed, but 3 is good for row
-                {
-                    id: 104,
-                    category: 'Drawing',
-                    title: 'Charcoal Study',
-                    artist: 'David Sketch',
-                    price: '$150',
-                    image: 'https://images.unsplash.com/photo-1627916962770-3882aee0287d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
-                },
-                {
-                    id: 105,
-                    category: 'Painting',
-                    title: 'Red Emotion',
-                    artist: 'Elena Void',
-                    price: '$500',
-                    image: 'https://images.unsplash.com/photo-1579783902614-a3fb39279c0f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
-                },
-                {
-                    id: 106,
-                    category: 'Digital',
-                    title: 'Neon Nights',
-                    artist: 'Cyber Artist',
-                    price: '$280',
-                    image: 'https://images.unsplash.com/photo-1563089145-599997674d42?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
-                }
-            ],
             newsItems: [
                 {
-                    id: 1,
+                    _id: 1,
                     tag: 'Curated Collection',
                     title: 'Summer Solstice',
                     description: 'Discover exclusive pieces inspired by the warmth and vibrancy of summer. Hand-picked by our expert curators.',
                     image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1951&q=80'
                 },
                 {
-                    id: 2,
+                    _id: 2,
                     tag: 'New Arrivals',
                     title: 'Modern Abstract',
                     description: 'Explore our latest collection of modern abstract art, featuring bold colors and unique shapes.',
                     image: 'https://images.unsplash.com/photo-1549490349-8643362247b5?ixlib=rb-1.2.1&auto=format&fit=crop&w=934&q=80'
                 },
                 {
-                    id: 3,
+                    _id: 3,
                     tag: 'Featured Artist',
                     title: 'Somsak Chaiya',
                     description: 'A deep dive into the traditional Buddhist art techniques preserved by Master Somsak.',
@@ -195,19 +165,65 @@ export default {
         }
     },
     computed: {
+        allArtworks() {
+            return this.$store.getters['artwork/artworks'] || [];
+        },
         filteredArtworks() {
-            if (this.selectedCategory === 'All') {
-                return this.artworks.slice(0, 6);
+            // Only show approved artworks on home side
+            let result = this.allArtworks.filter(art => {
+                const status = this.getStatusLabel(art);
+                return ['Approved', 'Success'].includes(status);
+            });
+
+            // Category Filter
+            if (this.selectedCategory !== 'All') {
+                result = result.filter(art => {
+                    if (!art.category) return false;
+                    const catName = this.getName('en', art.category);
+                    return catName === this.selectedCategory;
+                });
             }
-            return this.artworks.filter(art => art.category === this.selectedCategory);
+            
+            // Limit to 6 on home page
+            return result.slice(0, 6);
         }
     },
     methods: {
+        async fetchArtworks() {
+            this.loading = true;
+            try {
+                await this.$store.dispatch('artwork/get');
+            } catch (error) {
+                console.error('Error fetching home artworks:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+        getStatusLabel(art) {
+            if (!art || !art.status || !art.status.approval) return 'Pending';
+            return this.getName('en', art.status.approval);
+        },
+        getName(lang, item, field = 'title') {
+            if (!item) return '';
+            if (typeof item === 'string') return item;
+            
+            const dataField = item[field] || item['name'] || '';
+            if (typeof dataField === 'string' && dataField) return dataField;
+            
+            if (Array.isArray(dataField)) {
+                const obj = dataField.find(n => n.key === lang);
+                return obj ? obj.value : (dataField[0] ? dataField[0].value : '');
+            }
+            return '';
+        },
         explore(id) {
             if (id) {
-                this.$router.push({ name: 'ArtworkDetail', params: { id: id } });
+                this.$router.push({ name: 'Artworks' });
             }
         }
+    },
+    mounted() {
+        this.fetchArtworks();
     }
 }
 </script>
@@ -220,58 +236,27 @@ export default {
 
 .home-section {
     padding: 6rem 0;
-    /* Light warm gradient */
     background: linear-gradient(to bottom, #FFFFFF 0%, #FFF5F5 100%);
     min-height: 80vh;
-    /* Adjust as needed */
 }
 
-/* Enhancing Card Hover */
-.home-section .card {
+.feature-card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.home-section .card:hover {
+.feature-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
 }
 
-
-
-/* Featured Section Styles */
 .featured-section {
     background-color: #f8f9fa;
-    /* Slight off-white to distinguish from hero */
 }
 
-.artwork-card {
-    transition: transform 0.3s ease;
-}
-
-.artwork-card:hover {
-    transform: translateY(-5px);
-}
-
-.card-img-bg {
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.5s ease;
-}
-
-.artwork-card:hover .card-img-bg {
-    transform: scale(1.1);
-}
-
-/* News Section Styles */
 .news-section {
     position: relative;
-    /* Use the reddish gradient from the design */
     background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
-    padding: 4rem 0;
-}
-
-.news-slide {
-    width: 100%;
+    padding: 0;
 }
 
 .image-card {
@@ -280,69 +265,31 @@ export default {
     background-size: cover;
     background-position: center;
     border-radius: 20px;
-    transition: transform 0.3s;
 }
 
-.image-card:hover {
-    transform: scale(1.02);
+.title-underline {
+    width: 80px;
+    height: 4px;
+    background: #E55B5B;
+    border-radius: 2px;
 }
 
-/* Customize Carousel Indicators/Arrows if needed to match design perfectly */
-.add-cart-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    bottom: auto;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
-    color: #2c3e50;
-    border: 1px solid #edf2f7;
+.animate-up {
+    animation: fadeInUp 0.8s ease backwards;
 }
 
-.add-cart-btn:hover {
-    background-color: #E55B5B;
-    color: white;
-    border-color: #E55B5B;
-    box-shadow: 0 4px 6px rgba(229, 91, 91, 0.3);
-}
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.4s; }
+.delay-3 { animation-delay: 0.6s; }
 
-.artwork-card:hover .add-cart-btn {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-::v-deep .carousel-control-prev-icon,
-::v-deep .carousel-control-next-icon {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    padding: 25px;
-    background-size: 50% 50%;
-}
-
-::v-deep .carousel-indicators li {
-    background-color: rgba(255, 255, 255, 0.5);
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin: 0 5px;
-}
-
-::v-deep .carousel-indicators .active {
-    background-color: #fff;
-    width: 25px;
-    border-radius: 10px;
-}
-
-.cursor-pointer {
-    cursor: pointer;
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>

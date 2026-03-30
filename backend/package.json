@@ -11,7 +11,8 @@
     "serve:prod": "node -r dotenv/config server.js dotenv_config_path=.env.prod",
     "seed:settings": "node scripts/seedSettings.js",
     "seed:category": "node scripts/seedCategories.js",
-    "seed:all": "npm run seed:settings && npm run seed:category"
+    "seed:role": "node scripts/seedRoles.js",
+    "seed:all": "npm run seed:settings && npm run seed:category && npm run seed:role"
   },
   "keywords": [],
   "author": "",

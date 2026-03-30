@@ -86,6 +86,8 @@ export default {
 <style scoped>
 .submissions-dashboard {
     padding-bottom: 2rem;
+    position: relative;
+    overflow: visible !important;
 }
 
 .filter-bar {

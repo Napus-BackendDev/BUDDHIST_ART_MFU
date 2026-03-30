@@ -1,6 +1,6 @@
 <template>
     <CRow>
-        <CCol md="4" class="mb-5" v-for="news in newsList" :key="news.id">
+        <CCol md="4" class="mb-5" v-for="news in newsList" :key="news._id">
             <CCard class="news-card h-100 border-0">
                 <!-- Image with Badge -->
                 <div class="position-relative mb-3 rounded-lg overflow-hidden card-img-container">

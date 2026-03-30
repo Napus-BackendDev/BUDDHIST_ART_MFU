@@ -10,9 +10,9 @@
       class="ml-3 d-md-down-none"
       @click="$store.commit('toggleSidebarDesktop')"
     />
-    <CHeaderBrand class="mx-auto d-lg-none w-100 bg-danger" to="/">
-<!--      <img src="@/assets/logo.svg" height="48"/>-->
-      <label class="font-weight-bold h4 mt-1 text-white">MFU Smart Campus</label>
+    <CHeaderBrand class="mx-auto d-lg-none w-100 bg-danger d-flex align-items-center justify-content-center" to="/">
+      <img src="@/assets/logo.svg" height="35" class="mr-2">
+      <label class="font-weight-bold h5 mt-2 text-white">Buddhist Art MFU</label>
     </CHeaderBrand>
     <CHeaderNav class="d-md-down-none mr-auto">
 <!--      <CHeaderNavItem class="px-3">-->

@@ -155,6 +155,12 @@ export default {
 </script>
 
 <style scoped>
+.submissions-detail-dashboard {
+    position: relative;
+    overflow: visible !important;
+    padding-bottom: 2rem;
+}
+
 .back-link {
     text-decoration: none;
     font-size: 0.9rem;

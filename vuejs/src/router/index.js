@@ -4,6 +4,7 @@ import Router from 'vue-router'
 // Containers
 const TheContainerUser = () => import('@/containers/TheContainer_User')
 const TheContainerAdmin = () => import('@/containers/TheContainer_Admin')
+const TheContainerArttist = () => import('@/containers/TheContainer_Arttist')
 
 // Views User
 const Home = () => import('@/views/User/Home')
@@ -25,8 +26,12 @@ const Certification = () => import('@/views/Admin/Certification')
 const CreateCertification = () => import('@/views/Admin/CreateCertification')
 const UsersManagement = () => import('@/views/Admin/UsersManagement')
 
+// View Artist
+const ArtistDashboard = () => import('@/views/Artist/Dashboard.vue')
+const ArtistProfile = () => import('@/views/Artist/Profile.vue')
+
 // View Page
-const Login = () => import('@/views/page/Login')
+const Login = () => import('@/views/page/Login.vue')
 // const Register = () => import('@/views/page/Register')
 // const Page404 = () => import('@/views/page/Page404')
 // const Page500 = () => import('@/views/page/Page500')
@@ -134,6 +139,23 @@ export default new Router({
                     path: 'users-management',
                     name: 'UsersManagement',
                     component: UsersManagement
+                }
+            ]
+        },
+        {
+            path: '/artist',
+            name: 'Artist',
+            component: TheContainerArttist,
+            children: [
+                {
+                    path: 'dashboard',
+                    name: 'ArtistDashboard',
+                    component: ArtistDashboard
+                },
+                {
+                    path: 'profile',
+                    name: 'ArtistProfile',
+                    component: ArtistProfile
                 }
             ]
         },

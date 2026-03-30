@@ -52,7 +52,18 @@ async function seedSettings() {
             ]
         });
 
-        console.log(`Groups created: ${saleGroup.title[0].value}, ${showGroup.title[0].value}`);
+        const studentGroup = await Group.create({
+            title: [
+                { key: 'en', value: 'Student Group' },
+                { key: 'th', value: 'กลุ่มนักศึกษา' }
+            ],
+            description: [
+                { key: 'en', value: 'Categories for students' },
+                { key: 'th', value: 'หมวดหมู่สำหรับนักศึกษา' }
+            ]
+        });
+
+        console.log(`Groups created: ${saleGroup.title[0].value}, ${showGroup.title[0].value}, ${studentGroup.title[0].value}`);
 
         // 3. Create Statuses
         console.log('Seeding Statuses...');
@@ -93,7 +104,19 @@ async function seedSettings() {
             }
         ];
 
-        await Status.insertMany([...saleStatuses, ...showStatuses]);
+        // Student Statuses
+        const studentStatuses = [
+            {
+                title: [{ key: 'en', value: 'NewStudent' }, { key: 'th', value: 'นักศึกษาใหม่' }],
+                group: studentGroup._id
+            },
+            {
+                title: [{ key: 'en', value: 'OldStudent' }, { key: 'th', value: 'นักศึกษาเก่า' }],
+                group: studentGroup._id
+            }
+        ];
+
+        await Status.insertMany([...saleStatuses, ...showStatuses, ...studentStatuses]);
         console.log('All statuses seeded successfully!');
 
     } catch (error) {

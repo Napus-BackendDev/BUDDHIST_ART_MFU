@@ -14,12 +14,15 @@
                         <CIcon name="cil-file" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">{{ order.id || 'Order Details' }}</h5>
+                        <h5 class="modal-title font-weight-bold" v-if="order && order._id">
+                            ORD-{{ order._id.substring(order._id.length - 8).toUpperCase() }}
+                        </h5>
+                        <h5 class="modal-title font-weight-bold" v-else>Order Details</h5>
                         <div class="d-flex align-items-center mt-1">
-                            <div :class="['status-badge-small mr-2', order.statusClass]">
-                                {{ order.status }}
+                            <div :class="['status-badge-small mr-2', getStatusInfo(order).class]">
+                                {{ getStatusInfo(order).label }}
                             </div>
-                            <span class="text-muted small">{{ order.datetime }}</span>
+                            <span class="text-muted small">{{ formatDate(order.createdAt) }}</span>
                         </div>
                     </div>
                 </div>
@@ -37,21 +40,35 @@
                     <CCol md="6">
                         <div class="info-item">
                             <span class="info-label">Customer Name</span>
-                            <div class="info-value">{{ order.customer }}</div>
+                            <div class="info-value">{{ order.contact ? order.contact.name : 'N/A' }}</div>
                         </div>
                     </CCol>
                     <CCol md="6">
                         <div class="info-item">
                             <span class="info-label">Phone Number</span>
-                            <div class="info-value">{{ order.phone || '081-XXX-XXXX' }}</div>
+                            <div class="info-value">{{ order.contact ? order.contact.telephone : 'N/A' }}</div>
                         </div>
                     </CCol>
                 </CRow>
                 <CRow class="mt-3">
                     <CCol md="12">
                         <div class="info-item">
-                            <span class="info-label">Delivery Address</span>
-                            <div class="info-value address-value">{{ order.address || 'Not provided' }}</div>
+                            <span class="info-label">Email Address</span>
+                            <div class="info-value">{{ order.contact ? order.contact.email : 'N/A' }}</div>
+                        </div>
+                    </CCol>
+                </CRow>
+                <CRow class="mt-3">
+                    <CCol md="6">
+                        <div class="info-item">
+                            <span class="info-label">Billing Address</span>
+                            <div class="info-value address-value">{{ order.address && order.address.bill ? order.address.bill : 'Not provided' }}</div>
+                        </div>
+                    </CCol>
+                    <CCol md="6">
+                        <div class="info-item">
+                            <span class="info-label">Shipping Address</span>
+                            <div class="info-value address-value">{{ order.address && order.address.shipping ? order.address.shipping : 'Not provided' }}</div>
                         </div>
                     </CCol>
                 </CRow>
@@ -65,43 +82,40 @@
                     <h6 class="section-title mb-0">Purchased Artworks</h6>
                     <div class="total-price-display">
                         <span class="text-muted mr-2">Total Amount:</span>
-                        <span class="price-value">฿ {{ order.amount || '0' }}</span>
+                        <span class="price-value">฿ {{ totalAmount }}</span>
                     </div>
                 </div>
                 
                 <div class="artworks-list-container">
-                    <!-- Artwork Item -->
-                    <div v-if="order.artworks && order.artworks.length > 0">
+                    <div v-if="order.artwork && order.artwork.length > 0">
                         <div 
-                            v-for="art in order.artworks" 
-                            :key="art.id" 
+                            v-for="art in order.artwork" 
+                            :key="art._id" 
                             class="selected-art-item d-flex align-items-center p-3 mb-2 rounded-lg bg-light"
                         >
-                            <img :src="art.image" :alt="art.title" class="selected-thumb mr-3">
+                            <img :src="art.image || `https://via.placeholder.com/54/eee/888?text=${getName('en', art).charAt(0)}`" :alt="getName('en', art)" class="selected-thumb mr-3">
                             <div class="flex-grow-1">
-                                <div class="font-weight-bold text-dark">{{ art.title }}</div>
-                                <div class="text-muted small">{{ art.artist }}</div>
+                                <div class="font-weight-bold text-dark">{{ getName('en', art) }}</div>
+                                <div class="text-muted small">
+                                    {{ art.artist ? getName('en', art.artist) : 'Unknown Artist' }}
+                                </div>
                             </div>
                             <div class="text-right">
-                                <div class="font-weight-bold text-blue">฿ {{ art.price }}</div>
+                                <div class="font-weight-bold text-blue">฿ {{ formatPrice(art.price) }}</div>
                             </div>
                         </div>
                     </div>
-                    <!-- Fallback for mock data that doesn't have artwork array yet -->
-                    <div v-else class="selected-art-item d-flex align-items-center p-3 mb-2 rounded-lg bg-light">
-                        <div class="thumbnail-wrapper-view mr-3">
-                            <div :style="`background-color: #${order.imgBg || 'eee'}; color: #${order.imgColor || '888'}`" class="thumb-placeholder-view">
-                                {{ order.thumbnail || 'A' }}
-                            </div>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="font-weight-bold text-dark">{{ order.artwork }}</div>
-                            <div class="text-muted small">{{ order.artist }}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-weight-bold text-blue">฿ {{ order.amount ? order.amount.replace('$', '').replace(',', '') : '0' }}</div>
-                        </div>
+                    <div v-else class="text-center py-4 text-muted border rounded-lg bg-light italic">
+                        No artworks associated with this order.
                     </div>
+                </div>
+            </div>
+
+            <!-- Proof of Payment (Image) -->
+            <div class="mt-4" v-if="order.image">
+                <h6 class="section-title mb-3">Proof of Payment</h6>
+                <div class="payment-proof-container">
+                    <img :src="order.image" alt="Payment Proof" class="payment-proof-img img-fluid rounded-lg">
                 </div>
             </div>
         </div>
@@ -121,6 +135,8 @@
 </template>
 
 <script>
+import moment from 'moment';
+
 export default {
     name: 'OrderViewModal',
     props: {
@@ -131,6 +147,59 @@ export default {
         order: {
             type: Object,
             default: () => ({})
+        }
+    },
+    computed: {
+        totalAmount() {
+            if (!this.order || !this.order.artwork) return '0.00';
+            const total = this.order.artwork.reduce((sum, art) => sum + (parseFloat(art.price) || 0), 0);
+            return this.formatPrice(total);
+        }
+    },
+    methods: {
+        getName(lang, item) {
+            if (!item) return '';
+            if (typeof item === 'string') return item;
+            if (Array.isArray(item)) {
+                const target = item.find(n => n.key === lang) || item[0];
+                return target ? target.value : '';
+            }
+            const field = item.title || item.name || item.key;
+            if (field) {
+                if (typeof field === 'string') return field;
+                if (Array.isArray(field)) {
+                    const target = field.find(n => n.key === lang) || field[0];
+                    return target ? target.value : '';
+                }
+            }
+            return item.value || '';
+        },
+        formatDate(date) {
+            if (!date) return 'N/A';
+            return moment(date).format('MMM DD, YYYY hh:mm A');
+        },
+        formatPrice(value) {
+            if (value === undefined || value === null) return '0.00';
+            const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+            return isNaN(num) ? '0.00' : num.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        },
+        getStatusInfo() {
+            if (!this.order || !this.order.status) return { label: 'Pending', class: 'badge-pending' };
+            const status = this.getName('en', this.order.status);
+            switch (status) {
+                case 'Completed':
+                case 'Success':
+                case 'Approved':
+                    return { label: 'Completed', class: 'badge-completed' };
+                case 'Cancelled':
+                case 'Rejected':
+                    return { label: 'Cancelled', class: 'badge-cancelled' };
+                default:
+                    return { label: status || 'Pending', class: 'badge-pending' };
+            }
         }
     }
 }
@@ -171,6 +240,7 @@ export default {
     padding: 1rem;
     border-radius: 12px;
     border: 1px solid #f1f5f9;
+    min-height: 80px;
 }
 
 .section-divider {
@@ -198,21 +268,18 @@ export default {
     object-fit: cover;
 }
 
-.thumbnail-wrapper-view {
-    width: 54px;
-    height: 54px;
-    border-radius: 10px;
-    overflow: hidden;
+.payment-proof-container {
+    background-color: #f8fafc;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
 }
 
-.thumb-placeholder-view {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 1.2rem;
+.payment-proof-img {
+    max-height: 400px;
+    object-fit: contain;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 /* Status Badges */

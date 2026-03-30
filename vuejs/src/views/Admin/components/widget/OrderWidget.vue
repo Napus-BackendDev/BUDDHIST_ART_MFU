@@ -6,7 +6,7 @@
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Total Orders</div>
-                        <div class="widget-value text-blue">1,240</div>
+                        <div class="widget-value text-blue">{{ counts.total }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
                         <CIcon name="cil-cart" size="xl" />
@@ -21,7 +21,7 @@
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Completed</div>
-                        <div class="widget-value text-green">856</div>
+                        <div class="widget-value text-green">{{ counts.completed }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
                         <CIcon name="cil-check-circle" size="xl" />
@@ -36,7 +36,7 @@
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Pending</div>
-                        <div class="widget-value text-orange">42</div>
+                        <div class="widget-value text-orange">{{ counts.pending }}</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">
                         <CIcon name="cil-clock" size="xl" />
@@ -51,7 +51,7 @@
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Cancelled</div>
-                        <div class="widget-value text-red">12</div>
+                        <div class="widget-value text-red">{{ counts.cancelled }}</div>
                     </div>
                     <div class="icon-wrapper bg-red-light text-red">
                         <CIcon name="cil-x-circle" size="xl" />
@@ -59,6 +59,7 @@
                 </CCardBody>
             </CCard>
         </CCol>
+
     </CRow>
 </template>
 
@@ -69,6 +70,54 @@ export default {
         value: {
             type: String,
             default: 'All Status'
+        },
+        orders: {
+            type: Array,
+            default: () => []
+        }
+    },
+    computed: {
+        counts() {
+            const counts = {
+                total: this.orders.length,
+                completed: 0,
+                pending: 0,
+                cancelled: 0
+            };
+
+            this.orders.forEach(order => {
+                const label = this.getStatusLabel(order);
+                if (label === 'Completed') counts.completed++;
+                else if (label === 'Pending') counts.pending++;
+                else if (label === 'Cancelled') counts.cancelled++;
+            });
+
+            return counts;
+        }
+    },
+    methods: {
+        getStatusLabel(order) {
+            if (!order || !order.status) return 'Pending';
+            
+            let status = '';
+            if (typeof order.status === 'string') {
+                status = order.status;
+            } else if (order.status.title) {
+                const enStatus = order.status.title.find(t => t.key === 'en');
+                status = enStatus ? enStatus.value : '';
+            }
+
+            switch (status) {
+                case 'Completed':
+                case 'Success':
+                case 'Approved':
+                    return 'Completed';
+                case 'Cancelled':
+                case 'Rejected':
+                    return 'Cancelled';
+                default:
+                    return 'Pending';
+            }
         }
     }
 }

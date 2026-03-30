@@ -1,8 +1,12 @@
 <template>
     <div>
-        <CHeader fixed with-subheader class="px-3" style="height: 80px; align-items: center; background-color: white;">
-            <CHeaderBrand class="mr-auto" to="/">
-                <h2 style="color: #E55B5B; font-weight: bold; margin: 0;">Artsy.</h2>
+        <CHeader fixed with-subheader class="px-3 glass-morphism" style="height: 64px; align-items: center;">
+            <CHeaderBrand class="mr-auto d-flex align-items-center text-decoration-none" to="/">
+                <img src="@/assets/logo.svg" height="40" class="mr-3 brand-logo-img">
+                <div class="d-flex flex-column brand-text-container">
+                    <span class="brand-main-text">Buddhist Art MFU</span>
+                    <span class="brand-sub-text">พุทธศิลป์</span>
+                </div>
             </CHeaderBrand>
 
             <CHeaderNav class="d-md-down-none mx-auto">
@@ -27,7 +31,7 @@
                     <span class="font-weight-bold" style="color: #E55B5B; cursor: pointer;">EN</span>
                 </CHeaderNavItem>
                 <CHeaderNavItem class="px-3">
-                    <div class="position-relative" style="cursor: pointer;" @click="showCart = true">
+                    <div class="position-relative" style="cursor: pointer;" @click="setShowCart(true)">
                         <CIcon name="cil-basket" size="xl" style="color: #2c3e50;" />
                         <!-- Badge (Optional, hidden if 0 or dependent on state) -->
                         <span v-if="cartCount > 0" class="badge badge-pill badge-danger position-absolute"
@@ -43,13 +47,13 @@
         </CHeader>
 
         <!-- Cart Sidebar Overlay -->
-        <div class="cart-backdrop" v-if="showCart" @click="showCart = false"></div>
+        <div class="cart-backdrop" v-if="isCartOpen" @click="setShowCart(false)"></div>
 
         <!-- Cart Sidebar -->
-        <div class="cart-sidebar bg-white shadow-lg" :class="{ 'open': showCart }">
+        <div class="cart-sidebar bg-white shadow-lg" :class="{ 'open': isCartOpen }">
             <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
                 <h5 class="font-weight-bold m-0">Your Cart ({{ cartCount }})</h5>
-                <button type="button" class="close" @click="showCart = false" style="outline: none;">
+                <button type="button" class="close" @click="setShowCart(false)" style="outline: none;">
                     <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span>
                 </button>
             </div>
@@ -71,7 +75,7 @@
 
             <div v-else class="cart-body d-flex flex-column h-100">
                 <div class="flex-grow-1 overflow-auto p-3">
-                    <div v-for="item in cartItems" :key="item.id"
+                    <div v-for="item in cartItems" :key="item._id"
                         class="d-flex align-items-center mb-3 pb-3 border-bottom">
                         <div class="mr-3"
                             style="width: 60px; height: 60px; background-size: cover; background-position: center; border-radius: 8px;"
@@ -83,7 +87,7 @@
                             <p class="text-muted small mb-0">{{ item.price }} x {{ item.quantity }}</p>
                         </div>
                         <div class="text-right">
-                            <button class="btn btn-sm text-danger" @click="removeFromCart(item.id)">
+                            <button class="btn btn-sm text-danger" @click="removeFromCart(item._id)">
                                 <CIcon name="cil-trash" />
                             </button>
                         </div>
@@ -95,7 +99,7 @@
                         <span class="font-weight-bold h5 mb-0">${{ cartTotal.toLocaleString() }}</span>
                     </div>
                     <CButton block color="danger" shape="pill" class="font-weight-bold py-2 shadow-sm"
-                        @click="$router.push('/payment'); showCart = false;">
+                        @click="$router.push('/payment'); setShowCart(false);">
                         Checkout
                     </CButton>
                 </div>
@@ -109,18 +113,13 @@ import { mapGetters, mapActions } from 'vuex';
 
 export default {
     name: 'TheHeaderUser',
-    data() {
-        return {
-            showCart: false
-        }
-    },
     computed: {
-        ...mapGetters('cart', ['cartItems', 'cartCount', 'cartTotal'])
+        ...mapGetters('cart', ['cartItems', 'cartCount', 'cartTotal', 'isCartOpen'])
     },
     methods: {
-        ...mapActions('cart', ['removeFromCart']),
+        ...mapActions('cart', ['removeFromCart', 'setShowCart']),
         startShopping() {
-            this.showCart = false;
+            this.setShowCart(false);
             this.$router.push('/artworks');
         }
     }
@@ -161,5 +160,24 @@ export default {
         width: 100%;
         right: -100%;
     }
+}
+
+.brand-main-text {
+    color: #3c4b64; 
+    font-weight: 800; 
+    font-size: 1.25rem; 
+    line-height: 1.1;
+    letter-spacing: -0.2px;
+}
+
+.brand-sub-text {
+    color: #ac1515; 
+    font-weight: 700; 
+    font-size: 0.85rem;
+    margin-top: -1px;
+}
+
+.brand-logo-img {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="assignment-dashboard">
         <!-- Back Button -->
         <div class="mb-3">
             <CLink :to="{ name: 'SubmissionsDetail', params: { id: $route.params.submissionId } }" class="back-link d-inline-flex align-items-center text-muted">
@@ -70,5 +70,11 @@ export default {
     color: #172b4d !important;
     text-decoration: none;
     transform: translateX(-4px);
+}
+
+.assignment-dashboard {
+    position: relative;
+    overflow: visible !important;
+    padding-bottom: 2rem;
 }
 </style>

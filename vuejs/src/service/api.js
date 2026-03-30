@@ -115,6 +115,12 @@ export default {
                 return instance.delete("/api/v1/order", { data: data });
             case 'exp':
                 return instance.post("/api/v1/order/explore", data);
+            case 'upload':
+                return instance.put("/api/v1/order/upload", data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
             default:
                 break;
         }
@@ -176,7 +182,7 @@ export default {
     },
 
     settings(method, service, data) {
-        // service can be: message, group, status, verification
+        // service can be: message, group, status, verification, role
         const path = `/api/v1/settings/${service}`;
         switch (method) {
             case 'get':
@@ -187,9 +193,15 @@ export default {
                 return instance.put(path, data);
             case 'delete':
                 return instance.delete(path, { data: data });
+            case 'exp':
+                return instance.post(`${path}/explore`, data);
             default:
                 break;
         }
+    },
+
+    roles(method, data, configs) {
+        return this.settings(method, 'role', data);
     },
 
     payment(method, data, configs) {

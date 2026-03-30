@@ -19,35 +19,40 @@
         <!-- Role Filter -->
         <CCol lg="3" md="6" class="mb-3 mb-lg-0">
           <label class="filter-label">Role</label>
-          <CDropdown :caret="false" class="w-100">
+          <CDropdown :caret="false" class="w-100 custom-add-dropdown">
             <template #toggler>
-              <button class="filter-select-btn">
+              <CButton type="button" class="filter-select-btn shadow-none">
                 <span class="text-truncate mr-2">{{ value.role }}</span>
                 <CIcon name="cil-user" class="filter-icon-small" />
-              </button>
+              </CButton>
             </template>
-            <CDropdownItem @click="updateFilter('role', 'All Roles')">All Roles</CDropdownItem>
-            <CDropdownItem @click="updateFilter('role', 'Admin')">Admin</CDropdownItem>
-            <CDropdownItem @click="updateFilter('role', 'Developer')">Developer</CDropdownItem>
-            <CDropdownItem @click="updateFilter('role', 'Evaluator')">Evaluator</CDropdownItem>
-            <CDropdownItem @click="updateFilter('role', 'Customer')">Customer</CDropdownItem>
+            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+              <CDropdownItem @click="updateFilter('role', 'All Roles')">All Roles</CDropdownItem>
+              <CDropdownItem v-for="r in roles" :key="r._id" @click="updateFilter('role', r.name)">
+                {{ r.name }}
+              </CDropdownItem>
+              <CDropdownItem v-if="roles.length === 0" disabled class="small text-muted">No Roles Available</CDropdownItem>
+            </CDropdownMenu>
           </CDropdown>
         </CCol>
 
         <!-- Status Filter -->
         <CCol lg="3" md="6" class="mb-3 mb-lg-0">
           <label class="filter-label">Status</label>
-          <CDropdown :caret="false" class="w-100">
+          <CDropdown :caret="false" class="w-100 custom-add-dropdown">
             <template #toggler>
-              <button class="filter-select-btn">
+              <CButton type="button" class="filter-select-btn shadow-none">
                 <span class="text-truncate mr-2">{{ value.status }}</span>
                 <CIcon name="cil-filter" class="filter-icon-small" />
-              </button>
+              </CButton>
             </template>
-            <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
-            <CDropdownItem @click="updateFilter('status', 'Active')">Active</CDropdownItem>
-            <CDropdownItem @click="updateFilter('status', 'Inactive')">Inactive</CDropdownItem>
-            <CDropdownItem @click="updateFilter('status', 'Suspended')">Suspended</CDropdownItem>
+            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+              <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
+              <CDropdownItem v-for="s in statuses" :key="s._id" @click="updateFilter('status', s.name)">
+                {{ s.name }}
+              </CDropdownItem>
+              <CDropdownItem v-if="statuses.length === 0" disabled class="small text-muted">No Status Available</CDropdownItem>
+            </CDropdownMenu>
           </CDropdown>
         </CCol>
       </CRow>
@@ -62,6 +67,14 @@ export default {
     value: {
       type: Object,
       required: true
+    },
+    roles: {
+      type: Array,
+      default: () => []
+    },
+    statuses: {
+      type: Array,
+      default: () => []
     }
   },
   methods: {
@@ -77,6 +90,13 @@ export default {
 .user-filter-card {
   border-radius: 12px;
   background-color: #ffffff;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 5 !important; /* Above table, below modals */
+}
+
+.custom-add-dropdown {
+  position: relative !important;
 }
 
 .filter-label {
@@ -194,11 +214,15 @@ export default {
   color: #2c3e50;
 }
 
-::v-deep .custom-add-dropdown .dropdown-menu {
-  border-radius: 10px;
-  border: 1px solid #eef0f3;
-  box-shadow: 0 8px 24px rgba(149, 157, 165, 0.2);
-  padding: 8px;
-  min-width: 180px;
+::v-deep .dropdown-menu {
+  border-radius: 10px !important;
+  border: 1px solid #eef0f3 !important;
+  box-shadow: 0 8px 24px rgba(149, 157, 165, 0.2) !important;
+  padding: 8px !important;
+  min-width: 180px !important;
+  z-index: 1000 !important; /* Above table, below modals */
+  transform: none !important; /* Prevent CoreUI from shifting it weirdly */
+  top: 100% !important;
+  left: 0 !important;
 }
 </style>

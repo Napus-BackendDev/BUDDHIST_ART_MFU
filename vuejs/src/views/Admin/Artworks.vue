@@ -249,5 +249,7 @@ export default {
 <style scoped>
 .artworks-dashboard {
     padding-bottom: 2rem;
+    position: relative;
+    overflow: visible !important;
 }
 </style>

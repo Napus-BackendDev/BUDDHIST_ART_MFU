@@ -42,14 +42,15 @@
                         <CDropdown :caret="false" class="w-100">
                             <template #toggler>
                                 <button class="custom-select-btn">
-                                    <span class="text-dark">{{ form.role || 'Select Role' }}</span>
+                                    <span class="text-dark">{{ form.roleName || 'Select Role' }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </button>
                             </template>
-                            <CDropdownItem @click="form.role = 'Admin'">Admin</CDropdownItem>
-                            <CDropdownItem @click="form.role = 'Developer'">Developer</CDropdownItem>
-                            <CDropdownItem @click="form.role = 'Evaluator'">Evaluator</CDropdownItem>
-                            <CDropdownItem @click="form.role = 'Customer'">Customer</CDropdownItem>
+                            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                                <CDropdownItem v-for="r in roles" :key="r._id" @click="form.roleId = r._id; form.roleName = r.name">
+                                    {{ r.name }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -64,15 +65,20 @@
                             <template #toggler>
                                 <button class="custom-select-btn">
                                     <div class="d-flex align-items-center">
-                                        <div :class="['status-dot mr-2', getStatusDotClass(form.status)]"></div>
-                                        <span class="text-dark">{{ form.status || 'Select Status' }}</span>
+                                        <div :class="['status-dot mr-2', getStatusDotClass(form.statusName)]"></div>
+                                        <span class="text-dark">{{ form.statusName || 'Select Status' }}</span>
                                     </div>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </button>
                             </template>
-                            <CDropdownItem @click="form.status = 'Active'">Active</CDropdownItem>
-                            <CDropdownItem @click="form.status = 'Inactive'">Inactive</CDropdownItem>
-                            <CDropdownItem @click="form.status = 'Suspended'">Suspended</CDropdownItem>
+                            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                                <CDropdownItem v-for="s in statuses" :key="s._id" @click="form.statusId = s._id; form.statusName = s.name">
+                                    <div class="d-flex align-items-center">
+                                        <div :class="['status-dot mr-2', getStatusDotClass(s.name)]"></div>
+                                        {{ s.name }}
+                                    </div>
+                                </CDropdownItem>
+                            </CDropdownMenu>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -175,6 +181,14 @@ export default {
         user: {
             type: Object,
             default: () => null
+        },
+        roles: {
+            type: Array,
+            default: () => []
+        },
+        statuses: {
+            type: Array,
+            default: () => []
         }
     },
     data() {
@@ -191,7 +205,7 @@ export default {
     },
     computed: {
         isFormValid() {
-            return this.form && this.form.studentId && this.form.nameEn && this.form.email;
+            return this.form && this.form.studentId && this.form.roleId && this.form.statusId && this.form.nameEn && this.form.email;
         }
     },
     methods: {
@@ -206,11 +220,52 @@ export default {
                 return '';
             };
 
+            const getRoleInfo = () => {
+                const role = this.user.role;
+                if (!role) return { id: '', name: '' };
+                
+                // If role is an object with _id (populated)
+                if (typeof role === 'object' && role._id) {
+                    const titleEn = role.title && Array.isArray(role.title) ? role.title.find(t => t.key === 'en') : null;
+                    const name = titleEn ? titleEn.value : (role.title && role.title[0] ? role.title[0].value : 'Unknown');
+                    return { id: role._id, name };
+                }
+                
+                // If role is an ID string or Name string
+                const found = this.roles.find(r => r._id === role || r.name === role);
+                if (found) return { id: found._id, name: found.name };
+                
+                return { id: role, name: role }; // Fallback
+            };
+
+            const getStatusInfo = () => {
+                const status = this.user.status;
+                if (!status) return { id: '', name: '' };
+                
+                // If status is an object with _id (populated)
+                if (typeof status === 'object' && status._id) {
+                    const titleEn = status.title && Array.isArray(status.title) ? status.title.find(t => t.key === 'en') : null;
+                    const name = titleEn ? titleEn.value : (status.title && status.title[0] ? status.title[0].value : 'Unknown');
+                    return { id: status._id, name };
+                }
+                
+                // If status is an ID string or Name string, find it in the statuses prop
+                const found = this.statuses.find(s => s._id === status || s.name === status);
+                if (found) return { id: found._id, name: found.name };
+                
+                return { id: status, name: status }; // Fallback
+            };
+
+            const roleInfo = getRoleInfo();
+            const statusInfo = getStatusInfo();
+
             this.form = {
                 _id: this.user._id,
                 studentId: this.user.studentId || '',
-                role: this.user.role || 'Customer',
-                status: this.user.status || 'Active',
+                roleId: roleInfo.id,
+                roleName: roleInfo.name,
+                statusId: statusInfo.id,
+                statusName: statusInfo.name,
                 nameTh: getNameFromML('th'),
                 nameEn: getNameFromML('en'),
                 email: (this.user.contact && this.user.contact.studentEmail) || '',
@@ -220,11 +275,12 @@ export default {
         },
         handleSave() {
             if (!this.isFormValid) return;
+            
             const payload = {
                 _id: this.form._id,
                 studentId: this.form.studentId,
-                role: this.form.role,
-                status: this.form.status,
+                role: this.form.roleId, // Always send ObjectID
+                status: this.form.statusId || null, // Always send ObjectID or null
                 name: [
                     { key: 'th', value: this.form.nameTh },
                     { key: 'en', value: this.form.nameEn }
@@ -235,6 +291,10 @@ export default {
                     telephone: this.form.telephone
                 }
             };
+
+            console.log('--- Saving User Data ---');
+            console.log('Payload:', payload);
+
             this.$emit('save', payload);
             this.$emit('update:show', false);
         },

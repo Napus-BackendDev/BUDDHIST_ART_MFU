@@ -5,8 +5,8 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'All Status' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Total Artworks</div>
-                        <div class="widget-value">{{ totalArtworks }}</div>
+                        <div class="widget-title">Total Artwork</div>
+                        <div class="widget-value text-blue">{{ counts.total }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
                         <CIcon name="cil-paint" size="xl" />
@@ -15,13 +15,13 @@
             </CCard>
         </CCol>
 
-        <!-- Available -->
-        <CCol sm="6" lg="3" @click="$emit('input', 'Available')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': value === 'Available' }]">
+        <!-- Approved -->
+        <CCol sm="6" lg="3" @click="$emit('input', 'Approved')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Approved' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Available</div>
-                        <div class="widget-value text-success">{{ availableCount }}</div>
+                        <div class="widget-title">Approved</div>
+                        <div class="widget-value text-green">{{ counts.approved }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
                         <CIcon name="cil-check-circle" size="xl" />
@@ -30,35 +30,36 @@
             </CCard>
         </CCol>
 
-        <!-- Sold Out -->
-        <CCol sm="6" lg="3" @click="$emit('input', 'Sold Out')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': value === 'Sold Out' }]">
+        <!-- Pending -->
+        <CCol sm="6" lg="3" @click="$emit('input', 'Pending')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Pending' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Sold Out</div>
-                        <div class="widget-value text-orange">{{ soldCount }}</div>
+                        <div class="widget-title">Pending</div>
+                        <div class="widget-value text-orange">{{ counts.pending }}</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">
-                        <CIcon name="cil-cart" size="xl" />
+                        <CIcon name="cil-clock" size="xl" />
                     </div>
                 </CCardBody>
             </CCard>
         </CCol>
 
-        <!-- Rejected/Archived -->
+        <!-- Rejected -->
         <CCol sm="6" lg="3" @click="$emit('input', 'Rejected')" style="cursor: pointer;">
             <CCard :class="['widget-card', { 'active-widget': value === 'Rejected' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Rejected</div>
-                        <div class="widget-value text-blue">{{ archivedCount }}</div>
+                        <div class="widget-value text-red">{{ counts.rejected }}</div>
                     </div>
-                    <div class="icon-wrapper bg-blue-light text-blue">
-                        <CIcon name="cil-sync" size="xl" />
+                    <div class="icon-wrapper bg-red-light text-red">
+                        <CIcon name="cil-x-circle" size="xl" />
                     </div>
                 </CCardBody>
             </CCard>
         </CCol>
+
     </CRow>
 </template>
 
@@ -76,24 +77,46 @@ export default {
         }
     },
     computed: {
-        totalArtworks() {
-            return this.items.length;
-        },
-        availableCount() {
-            return this.items.filter(item => 
-                item.status && item.status.sale && item.status.sale.name === 'Available'
-            ).length;
-        },
-        soldCount() {
-            return this.items.filter(item => 
-                item.status && item.status.sale && item.status.sale.name === 'Sold Out'
-            ).length;
-        },
-        archivedCount() {
-            // Mapping Archived to Rejected for now, or some other logic
-            return this.items.filter(item => 
-                item.status && item.status.approval && item.status.approval.name === 'Rejected'
-            ).length;
+        counts() {
+            const counts = {
+                total: this.items.length,
+                approved: 0,
+                pending: 0,
+                rejected: 0
+            };
+
+            this.items.forEach(item => {
+                const label = this.getStatusLabel(item);
+                if (label === 'Approved') counts.approved++;
+                else if (label === 'Pending') counts.pending++;
+                else if (label === 'Rejected') counts.rejected++;
+            });
+
+            return counts;
+        }
+    },
+    methods: {
+        getStatusLabel(item) {
+            if (!item || !item.status || !item.status.approval) return 'Pending';
+            
+            const approval = item.status.approval;
+            let status = '';
+            
+            if (typeof approval === 'string') {
+                status = approval;
+            } else if (approval.title && Array.isArray(approval.title)) {
+                const enStatus = approval.title.find(t => t.key === 'en');
+                status = enStatus ? enStatus.value : (approval.title[0] ? approval.title[0].value : '');
+            } else if (approval.name) {
+                status = approval.name;
+            }
+
+            // Normalize
+            if (status === 'Approved' || status === 'Success') return 'Approved';
+            if (status === 'Rejected' || status === 'Cancelled') return 'Rejected';
+            if (status === 'Pending') return 'Pending';
+            
+            return 'Pending'; // Default
         }
     }
 }
@@ -168,10 +191,10 @@ export default {
     color: #f59e0b;
 }
 
-.bg-purple-light {
-    background-color: #f5f3ff;
+.bg-red-light {
+    background-color: #fff1f0;
 }
-.text-purple {
-    color: #8b5cf6;
+.text-red {
+    color: #e53935;
 }
 </style>

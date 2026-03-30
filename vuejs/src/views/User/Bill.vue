@@ -12,7 +12,7 @@
 
             <h2 class="font-weight-bold mb-3" style="color: #2c3e50;">Order Confirmed!</h2>
             <p class="text-muted mb-5">
-                Thank you for your purchase. Your order {{ order.id }} has been received and is being processed.
+                Thank you for your purchase. Your order {{ order._id }} has been received and is being processed.
             </p>
 
             <!-- Order Details Card -->
@@ -32,7 +32,7 @@
 
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted small">Order Number</span>
-                        <span class="font-weight-bold text-dark small">{{ order.id }}</span>
+                        <span class="font-weight-bold text-dark small">{{ order._id }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted small">Date</span>

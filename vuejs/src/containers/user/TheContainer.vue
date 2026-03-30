@@ -13,8 +13,6 @@
 
         </CWrapper>
         <CenterLoading />
-        <SignIn />
-        <TwoFA />
 
     </div>
 </template>

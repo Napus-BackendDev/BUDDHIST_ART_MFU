@@ -16,13 +16,10 @@
   ],
   "tags": [
     { "name": "User", "description": "Operations about users" },
-    { "name": "Order", "description": "Operations about orders" },
     { "name": "Artwork", "description": "Operations about artworks" },
-    { "name": "New", "description": "Operations about news/events" },
-    { "name": "Settings Status", "description": "Status configuration" },
-    { "name": "Settings Message", "description": "Message configuration" },
-    { "name": "Settings Group", "description": "Group configuration" },
-    { "name": "Settings Verification", "description": "Verification configuration" }
+    { "name": "Submission", "description": "Operations about artwork submissions" },
+    { "name": "Order", "description": "Operations about orders" },
+    { "name": "Settings", "description": "System configuration (Status, Group, Role, etc.)" }
   ],
   "paths": {
     "/user": {
@@ -94,143 +91,6 @@
         "responses": { "200": { "description": "OK" } }
       }
     },
-    "/order": {
-      "get": {
-        "tags": ["Order"],
-        "summary": "Get all orders",
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["Order"],
-        "summary": "Create new order",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/Order" }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      },
-      "put": {
-        "tags": ["Order"],
-        "summary": "Update order",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": { "_id": { "type": "string" } },
-                "allOf": [{ "$ref": "#/components/schemas/Order" }]
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      },
-      "delete": {
-        "tags": ["Order"],
-        "summary": "Delete order",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": { "_id": { "type": "string" } }
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/new": {
-      "get": {
-        "tags": ["New"],
-        "summary": "Get all news",
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["New"],
-        "summary": "Create new news",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/New" }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      },
-      "put": {
-        "tags": ["New"],
-        "summary": "Update news",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": { "_id": { "type": "string" } },
-                "allOf": [{ "$ref": "#/components/schemas/New" }]
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      },
-      "delete": {
-        "tags": ["New"],
-        "summary": "Delete news",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": { "_id": { "type": "string" } }
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/new/upload": {
-      "put": {
-        "tags": ["New"],
-        "summary": "Upload news image",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "_id": { "type": "string" },
-                  "image": { "type": "string", "format": "binary" }
-                }
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/new/explore": {
-      "post": {
-        "tags": ["New"],
-        "summary": "Explore news by ID",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": { "_id": { "type": "string" } }
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
     "/artwork": {
       "get": {
         "tags": ["Artwork"],
@@ -281,6 +141,13 @@
         "responses": { "200": { "description": "OK" } }
       }
     },
+    "/artwork/explore": {
+      "post": {
+        "tags": ["Artwork"],
+        "summary": "Explore artwork (Search/Filter)",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
     "/artwork/upload": {
       "put": {
         "tags": ["Artwork"],
@@ -301,101 +168,136 @@
         "responses": { "200": { "description": "OK" } }
       }
     },
-    "/artwork/explore": {
-      "post": {
+    "/artwork/category": {
+      "get": {
         "tags": ["Artwork"],
-        "summary": "Explore artwork by ID",
+        "summary": "Get artwork categories",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/submission": {
+      "get": {
+        "tags": ["Submission"],
+        "summary": "Get all submissions",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["Submission"],
+        "summary": "Create new submission",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Submission" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK" } }
+      },
+      "put": {
+        "tags": ["Submission"],
+        "summary": "Update submission",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": { "_id": { "type": "string" } }
+                "properties": { "_id": { "type": "string" } },
+                "allOf": [{ "$ref": "#/components/schemas/Submission" }]
               }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK" } }
+      },
+      "delete": {
+        "tags": ["Submission"],
+        "summary": "Delete submission",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/submission/explore": {
+      "post": {
+        "tags": ["Submission"],
+        "summary": "Explore submission by ID",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/order": {
+      "get": {
+        "tags": ["Order"],
+        "summary": "Get all orders",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["Order"],
+        "summary": "Create new order",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Order" }
             }
           }
         },
         "responses": { "200": { "description": "OK" } }
       }
     },
-    "/artwork/category": {
+    "/settings/group": {
       "get": {
-        "tags": ["Artwork"],
-        "summary": "Get categories",
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["Artwork"],
-        "summary": "Create category",
+        "tags": ["Settings"],
+        "summary": "Get all setting groups",
         "responses": { "200": { "description": "OK" } }
       }
     },
     "/settings/status": {
       "get": {
-        "tags": ["Settings Status"],
-        "summary": "Get all statuses",
+        "tags": ["Settings"],
+        "summary": "Get all setting statuses",
         "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["Settings Status"],
-        "summary": "Create status",
+      }
+    },
+    "/settings/role": {
+      "get": {
+        "tags": ["Settings"],
+        "summary": "Get all setting roles",
         "responses": { "200": { "description": "OK" } }
       }
     }
   },
   "components": {
     "schemas": {
+      "KeyValue": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string", "example": "en" },
+          "value": { "type": "string", "example": "English Content" }
+        }
+      },
       "User": {
         "type": "object",
         "properties": {
           "studentId": { "type": "string" },
-          "image": { "type": "string" },
+          "image": { "type": "string", "nullable": true },
           "name": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/KeyValue" }
           },
+          "role": { "type": "string", "description": "Role ObjectId" },
+          "bio": { "type": "string", "nullable": true },
           "contact": {
             "type": "object",
             "properties": {
-              "telephone": { "type": "string" },
+              "telephone": { "type": "string", "nullable": true },
               "studentEmail": { "type": "string" },
-              "personalEmail": { "type": "string" }
+              "personalEmail": { "type": "string", "nullable": true }
             }
           },
-          "password": { "type": "string" },
-          "status": { "type": "string" }
+          "status": { "type": "string", "description": "Status ObjectId" }
         }
       },
-      "Order": {
+      "Artwork": {
         "type": "object",
         "properties": {
-          "image": { "type": "string" },
-          "contact": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string" },
-              "telephone": { "type": "string" },
-              "email": { "type": "string" }
-            }
-          },
-          "address": {
-            "type": "object",
-            "properties": {
-              "bill": { "type": "string" },
-              "shipping": { "type": "string" }
-            }
-          },
-          "artwork": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "approvalStatus": { "type": "string" }
-        }
-      },
-      "New": {
-        "type": "object",
-        "properties": {
-          "image": { "type": "string" },
+          "image": { "type": "string", "nullable": true },
           "title": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/KeyValue" }
@@ -404,36 +306,88 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/KeyValue" }
           },
-          "location": { "type": "string" }
+          "artist": { "type": "string", "description": "User ObjectId" },
+          "technique": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/KeyValue" }
+          },
+          "price": { "type": "number", "default": 0 },
+          "category": { "type": "string", "description": "Category ObjectId" },
+          "status": {
+            "type": "object",
+            "properties": {
+              "approval": { "type": "string", "description": "Status ObjectId" },
+              "sale": { "type": "string", "description": "Status ObjectId" }
+            }
+          }
         }
       },
-      "Artwork": {
+      "Submission": {
         "type": "object",
         "properties": {
-          "code": { "type": "string" },
           "title": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/KeyValue" }
           },
-          "owner": { "type": "string" },
-          "size": { "type": "string" },
-          "technique": { "type": "string" },
-          "price": { "type": "number" },
-          "concept": {
+          "artist": { "type": "string", "description": "User ObjectId" },
+          "assignments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category": { "type": "string", "description": "Category ObjectId" },
+                "artworks": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "owner": { "type": "string", "description": "User ObjectId" },
+                      "status": { "type": "string", "description": "Status ObjectId" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "image": { "type": "string", "default": "" },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "nullable": true },
+              "telephone": { "type": "string", "nullable": true },
+              "email": { "type": "string", "nullable": true }
+            }
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "bill": { "type": "string", "nullable": true },
+              "shipping": { "type": "string", "nullable": true }
+            }
+          },
+          "artwork": {
+            "type": "array",
+            "items": { "type": "string", "description": "Artwork ObjectId" }
+          },
+          "status": { "type": "string", "description": "Status ObjectId" }
+        }
+      },
+      "Setting": {
+        "type": "object",
+        "properties": {
+          "title": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/KeyValue" }
           },
-          "category": { "type": "string" },
-          "presentation": { "type": "string" },
-          "approvalStatus": { "type": "string" },
-          "saleStatus": { "type": "string" }
-        }
-      },
-      "KeyValue": {
-        "type": "object",
-        "properties": {
-          "key": { "type": "string" },
-          "value": { "type": "string" }
+          "description": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/KeyValue" }
+          }
         }
       }
     }

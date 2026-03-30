@@ -16,6 +16,6 @@ var objsSchema = new Schema({
     },
     artwork: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artwork', default: null }],
     status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "689c04cb255db4e56aea88ef" },
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Order', objsSchema, 'Order');

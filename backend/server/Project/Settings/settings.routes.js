@@ -5,6 +5,7 @@ const message = require("./service/message");
 const group = require("./service/group");
 const status = require("./service/status");
 const verification = require("./service/verification");
+const role = require("./service/role");
 // const auth_message = require("./service/auth_message");
 // const Role = require("../Accounts/service/role");
 // const Authen_Type = require("../Accounts/service/authen_type");
@@ -46,10 +47,12 @@ router.delete("/verification", verification.onDelete);
 // router.put("/auth/message", auth_message.onUpdate);
 // router.delete("/auth/message", auth_message.onDelete);
 
-// router.get("/role", Role.onQuerys);
-// router.post("/role", Role.onCreate);
-// router.put("/role", Role.onUpdate);
-// router.delete("/role", Role.onDelete);
+
+router.get("/role", role.onQuerys);
+router.post("/role/explore", role.onQuerys);
+router.post("/role", role.onCreate);
+router.put("/role", role.onUpdate);
+router.delete("/role", role.onDelete);
 
 // router.get("/authen/type", Authen_Type.onQuerys);
 // router.post("/authen/type", Authen_Type.onCreate);

@@ -40,6 +40,12 @@ const OrderModule = {
         },
         delete({ commit }, data) {
             return Service.order('delete', data, {});
+        },
+        upload({ commit }, data) {
+            const formData = new FormData();
+            formData.append('_id', data._id);
+            formData.append('image', data.image);
+            return Service.order('upload', formData, {});
         }
     },
 

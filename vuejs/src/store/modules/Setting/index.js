@@ -2,7 +2,7 @@ import messages from "@/store/modules/Setting/messages/index";
 import status from "@/store/modules/Setting/status/index";
 import verification from  "@/store/modules/Setting/verification/index";
 import authen from  "@/store/modules/Setting/authen/index";
-
+import roles from "@/store/modules/Setting/roles";
 
 
 const module = {
@@ -11,7 +11,8 @@ const module = {
         messages,
         status,
         verification,
-        authen
+        authen,
+        roles
 
     },
     state: {

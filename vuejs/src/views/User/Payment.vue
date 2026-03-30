@@ -53,7 +53,7 @@ export default {
 
             // Create order object
             const order = {
-                id: 'ART-' + Math.floor(Math.random() * 10000),
+                _id: 'ART-' + Math.floor(Math.random() * 10000),
                 date: new Date().toLocaleDateString(),
                 items: this.cartItems,
                 paymentMethod: payload.paymentMethod,

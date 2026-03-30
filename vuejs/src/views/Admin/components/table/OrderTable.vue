@@ -5,63 +5,71 @@
                 :striped="false">
 
                 <template #id="{ item }">
-                    <td class="text-muted text-sm">{{ item.id }}</td>
+                    <td class="text-muted text-sm">{{ item._id.substring(item._id.length - 8).toUpperCase() }}</td>
                 </template>
 
                 <template #datetime="{ item }">
-                    <td class="text-muted text-sm">{{ item.datetime }}</td>
+                    <td class="text-muted text-sm">{{ formatDate(item.createdAt) }}</td>
                 </template>
 
                 <template #customer="{ item }">
-                    <td class="font-weight-bold text-dark">{{ item.customer }}</td>
+                    <td class="font-weight-bold text-dark">
+                        {{ item.contact ? item.contact.name : 'N/A' }}
+                        <div class="small text-muted">{{ item.contact ? item.contact.email : '' }}</div>
+                    </td>
                 </template>
 
                 <template #artwork="{ item }">
                     <td>
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center" v-if="item.artwork && item.artwork.length > 0">
                             <div class="thumbnail-wrapper mr-3">
-                                <img :src="`https://via.placeholder.com/40/${item.imgBg}/${item.imgColor}?text=${item.thumbnail}`"
-                                    :alt="item.artwork" class="thumbnail-img">
+                                <img :src="item.artwork[0].image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName('en', item.artwork[0]).charAt(0)}`"
+                                    :alt="getName('en', item.artwork[0])" class="thumbnail-img">
                             </div>
-                            <span class="font-weight-bold text-dark">{{ item.artwork }}</span>
+                            <span class="font-weight-bold text-dark">{{ getName('en', item.artwork[0]) }}</span>
                         </div>
+                        <div v-else class="text-muted small italic">No Artwork Associated</div>
                     </td>
                 </template>
 
                 <template #artist="{ item }">
-                    <td class="text-muted">{{ item.artist }}</td>
+                    <td class="text-muted">
+                        {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName('en', item.artwork[0].artist) : 'N/A' }}
+                    </td>
                 </template>
 
                 <template #amount="{ item }">
-                    <td class="font-weight-bold text-dark">{{ item.amount }}</td>
+                    <td class="font-weight-bold text-dark">
+                        ฿ {{ item.artwork && item.artwork[0] ? formatPrice(item.artwork[0].price) : '0.00' }}
+                    </td>
                 </template>
 
                 <template #status="{ item }">
                     <td>
-                        <div :class="['status-badge', item.statusClass]">
-                            <CIcon :name="item.statusIcon" size="sm" class="status-icon" /> {{ item.status }}
+                        <div :class="['status-badge', getStatusInfo(item).class]">
+                            <CIcon :name="getStatusInfo(item).icon" size="sm" class="status-icon" /> {{ getStatusInfo(item).label }}
                         </div>
                     </td>
                 </template>
 
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="item.status === 'Pending'" class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" title="View" @click="$emit('view-order', item)">
+                        <div v-if="getStatusInfo(item).label === 'Pending'" class="d-inline-flex align-items-center">
+                            <button class="action-btn icon-view" v-c-tooltip="'View Details'" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit ml-2" title="Edit" @click="$emit('edit-order', item)">
+                            <button class="action-btn icon-edit ml-2" v-c-tooltip="'Edit'" @click="$emit('edit-order', item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-success mx-2" title="Approve">
+                            <button class="action-btn icon-success mx-2" v-c-tooltip="'Approve'" @click="$emit('approve', item)">
                                 <CIcon name="cil-check" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger" title="Reject">
+                            <button class="action-btn icon-danger" v-c-tooltip="'Reject'" @click="$emit('reject', item)">
                                 <CIcon name="cil-x" size="lg" />
                             </button>
                         </div>
                         <div v-else class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" title="View" @click="$emit('view-order', item)">
+                            <button class="action-btn icon-view" v-c-tooltip="'View Details'" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                         </div>
@@ -72,7 +80,7 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ filteredItems.length }} of {{ items.length }} orders</div>
+            <div class="text-muted text-sm">Showing {{ filteredItems.length }} orders</div>
             <div class="pagination-buttons">
                 <CButton class="btn-pill-pagination mr-2" :disabled="true">
                     <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
@@ -92,6 +100,10 @@ import * as XLSX from 'xlsx';
 export default {
     name: 'OrderTable',
     props: {
+        items: {
+            type: Array,
+            default: () => []
+        },
         filters: {
             type: Object,
             default: () => ({
@@ -113,32 +125,30 @@ export default {
                 { key: 'amount', label: 'AMOUNT', _classes: 'border-top-0 border-bottom' },
                 { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
-            items: [
-                { id: '#ORD-7829', datetime: 'Oct 24, 2023 10:42 AM', customer: 'Alice Johnson', thumbnail: 'M', imgBg: '2d3748', imgColor: 'ffffff', artwork: 'Morning Haze', artist: 'Elena G.', amount: '$450.00', status: 'Completed', statusIcon: 'cil-check', statusClass: 'badge-completed' },
-                { id: '#ORD-7828', datetime: 'Oct 24, 2023 09:15 AM', customer: 'Robert Chen', thumbnail: 'C', imgBg: 'e2e8f0', imgColor: '808080', artwork: 'City Lights', artist: 'Davide B.', amount: '$1,200.00', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' },
-                { id: '#ORD-7827', datetime: 'Oct 23, 2023 04:30 PM', customer: 'Emma Wilson', thumbnail: 'O', imgBg: 'cbd5e0', imgColor: '808080', artwork: 'Ocean Blue', artist: 'Sarah L.', amount: '$850.00', status: 'Pending', statusIcon: 'cil-clock', statusClass: 'badge-pending' },
-                { id: '#ORD-7826', datetime: 'Oct 23, 2023 02:20 PM', customer: 'James Miller', thumbnail: 'F', imgBg: 'a0aec0', imgColor: 'ffffff', artwork: 'Forest Path', artist: 'Mike R.', amount: '$320.00', status: 'Completed', statusIcon: 'cil-check', statusClass: 'badge-completed' },
-                { id: '#ORD-7825', datetime: 'Oct 23, 2023 11:00 AM', customer: 'Sophia Davis', thumbnail: 'G', imgBg: 'edf2f7', imgColor: '808080', artwork: 'Geometric #5', artist: 'Alex T.', amount: '$2,100.00', status: 'Cancelled', statusIcon: 'cil-x', statusClass: 'badge-cancelled' }
             ]
         }
     },
     computed: {
         filteredItems() {
-            return this.items.filter(item => {
+            return (this.items || []).filter(item => {
+                const customer = (item.contact ? item.contact.name : '').toLowerCase();
+                const artwork = (item.artwork && item.artwork[0] ? this.getName('en', item.artwork[0]) : '').toLowerCase();
+                const orderId = (item._id || '').toLowerCase();
+
                 // Search Filter
                 const searchMatch = !this.filters.search || 
-                    item.id.toLowerCase().includes(this.filters.search.toLowerCase()) ||
-                    item.customer.toLowerCase().includes(this.filters.search.toLowerCase()) ||
-                    item.artwork.toLowerCase().includes(this.filters.search.toLowerCase());
+                    orderId.includes(this.filters.search.toLowerCase()) ||
+                    customer.includes(this.filters.search.toLowerCase()) ||
+                    artwork.includes(this.filters.search.toLowerCase());
 
                 // Status Filter
-                const statusMatch = this.filters.status === 'All Status' || item.status === this.filters.status;
+                const statusInfo = this.getStatusInfo(item);
+                const statusMatch = this.filters.status === 'All Status' || statusInfo.label === this.filters.status;
 
                 // Date Filter
                 let dateMatch = true;
                 if (this.filters.startDate && this.filters.endDate) {
-                    const itemDate = moment(item.datetime, 'MMM DD, YYYY hh:mm A');
+                    const itemDate = moment(item.createdAt);
                     const start = moment(this.filters.startDate).startOf('day');
                     const end = moment(this.filters.endDate).endOf('day');
                     dateMatch = itemDate.isBetween(start, end, null, '[]');
@@ -149,15 +159,58 @@ export default {
         }
     },
     methods: {
+        getName(lang, item) {
+            if (!item) return '';
+            if (typeof item === 'string') return item;
+            if (Array.isArray(item)) {
+                const target = item.find(n => n.key === lang) || item[0];
+                return target ? target.value : '';
+            }
+            const field = item.title || item.name || item.key;
+            if (field) {
+                if (typeof field === 'string') return field;
+                if (Array.isArray(field)) {
+                    const target = field.find(n => n.key === lang) || field[0];
+                    return target ? target.value : '';
+                }
+            }
+            return item.value || '';
+        },
+        formatDate(date) {
+            if (!date) return 'N/A';
+            return moment(date).format('MMM DD, YYYY hh:mm A');
+        },
+        formatPrice(value) {
+            if (value === undefined || value === null) return '0.00';
+            const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+            return isNaN(num) ? '0.00' : num.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        },
+        getStatusInfo(item) {
+            if (!item || !item.status) return { label: 'Pending', class: 'badge-pending', icon: 'cil-clock' };
+            const status = this.getName('en', item.status);
+            switch (status) {
+                case 'Completed':
+                case 'Success':
+                case 'Approved':
+                    return { label: 'Completed', class: 'badge-completed', icon: 'cil-check' };
+                case 'Cancelled':
+                case 'Rejected':
+                    return { label: 'Cancelled', class: 'badge-cancelled', icon: 'cil-x' };
+                default:
+                    return { label: status || 'Pending', class: 'badge-pending', icon: 'cil-clock' };
+            }
+        },
         exportExcel() {
             const dataToExport = this.filteredItems.map(item => ({
-                'Order ID': item.id,
-                'Date & Time': item.datetime,
-                'Customer': item.customer,
-                'Artwork': item.artwork,
-                'Artist': item.artist,
-                'Amount': item.amount,
-                'Status': item.status
+                'Order ID': item._id,
+                'Date & Time': this.formatDate(item.createdAt),
+                'Customer': item.contact ? item.contact.name : 'N/A',
+                'Artwork': item.artwork && item.artwork[0] ? this.getName('en', item.artwork[0]) : 'N/A',
+                'Amount': item.artwork && item.artwork[0] ? item.artwork[0].price : 0,
+                'Status': this.getStatusInfo(item).label
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -271,26 +324,6 @@ export default {
     padding-right: 0;
 }
 
-.btn-pagination {
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #4a5568;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    transition: all 0.2s;
-}
-
-.btn-pagination:hover:not(:disabled) {
-    background-color: #f7fafc;
-    color: #1a202c;
-}
-
-.btn-pagination:disabled {
-    opacity: 0.6;
-    background-color: #ffffff;
-}
-
 .rounded-bottom {
     border-bottom-left-radius: 12px !important;
     border-bottom-right-radius: 12px !important;
@@ -321,7 +354,6 @@ export default {
 
 .icon-success:hover {
     background-color: #f0fff4;
-    /* Light green bg */
 }
 
 .icon-danger {
@@ -330,7 +362,6 @@ export default {
 
 .icon-danger:hover {
     background-color: #ffdddd;
-    /* Light red bg */
 }
 
 .icon-view {
@@ -339,16 +370,13 @@ export default {
 
 .icon-view:hover {
     background-color: #f1f9ff;
-    /* Light gray bg */
 }
 
 .icon-edit {
     color: #4299e1;
-    /* A nice blue color for edit */
 }
 
 .icon-edit:hover {
     background-color: #ebf8ff;
-    /* Light blue bg */
 }
 </style>

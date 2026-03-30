@@ -32,7 +32,7 @@ export default {
         return {
             newsList: [
                 {
-                    id: 1,
+                    _id: 1,
                     category: 'Exhibition',
                     date: 'June 15, 2024',
                     author: 'Elena Rodriguez',
@@ -41,7 +41,7 @@ export default {
                     image: 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
                 },
                 {
-                    id: 2,
+                    _id: 2,
                     category: 'Interview',
                     date: 'May 28, 2024',
                     author: 'David Chen',
@@ -50,7 +50,7 @@ export default {
                     image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
                 },
                 {
-                    id: 3,
+                    _id: 3,
                     category: 'Trends',
                     date: 'May 10, 2024',
                     author: 'Marcus Thorne',

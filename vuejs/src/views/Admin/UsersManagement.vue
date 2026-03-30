@@ -13,7 +13,7 @@
 
         <UserWidget v-model="filters.status" :currentRole.sync="filters.role" />
 
-        <UserFilter v-model="filters" />
+        <UserFilter v-model="filters" :roles="roles" :statuses="studentStatuses" />
 
         <UsersTable 
             ref="usersTable" 
@@ -32,6 +32,8 @@
 
         <UserCreateModal 
             :show.sync="showManualImportModal"
+            :roles="roles"
+            :statuses="studentStatuses"
             @save="handleSaveUser"
         />
 
@@ -46,12 +48,15 @@
         <UserEditModal 
             :show.sync="showEditModal"
             :user="selectedUser"
+            :roles="roles"
+            :statuses="studentStatuses"
             @save="handleUpdateUser"
         />
     </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
 import * as XLSX from 'xlsx';
 import UsersTable from './components/table/UsersTable.vue';
 import UserWidget from './components/widget/UserWidget.vue';
@@ -88,12 +93,57 @@ export default {
             }
         }
     },
+    computed: {
+        ...mapGetters({
+            rawRoles: 'setting/roles/item',
+            isRolesReload: 'setting/roles/isReload',
+            rawStatuses: 'setting/status/item'
+        }),
+        roles() {
+            if (!this.rawRoles || !Array.isArray(this.rawRoles)) return [];
+            return this.rawRoles.map(r => {
+                if (!r.title || !Array.isArray(r.title)) return null;
+                const titleEn = r.title.find(t => t.key === 'en');
+                const name = titleEn ? titleEn.value : (r.title[0] ? r.title[0].value : 'Unknown');
+                return { _id: r._id, name };
+            }).filter(role => role && role.name !== 'Unknown' && role.name !== '');
+        },
+        studentStatuses() {
+            if (!this.rawStatuses || !Array.isArray(this.rawStatuses)) return [];
+            return this.rawStatuses.filter(s => {
+                if (!s.group || !s.group.title || !Array.isArray(s.group.title)) return false;
+                const groupTitleEn = s.group.title.find(t => t.key === 'en');
+                return groupTitleEn && groupTitleEn.value === 'Student Group';
+            }).map(s => {
+                if (!s.title || !Array.isArray(s.title)) return null;
+                const titleEn = s.title.find(t => t.key === 'en');
+                const name = titleEn ? titleEn.value : (s.title[0] ? s.title[0].value : 'Unknown');
+                return { _id: s._id, name };
+            }).filter(s => s && s.name !== 'Unknown');
+        }
+    },
+    watch: {
+        isRolesReload(val) {
+            if (val) {
+                this.fetchRoles();
+                this.$store.commit('setting/roles/isReload', false);
+            }
+        }
+    },
     created() {
         this.fetchUsers();
+        this.fetchRoles();
+        this.fetchStatuses();
     },
     methods: {
         fetchUsers() {
             this.$store.dispatch('user/get', {});
+        },
+        fetchRoles() {
+            this.$store.dispatch('setting/roles/config', {});
+        },
+        fetchStatuses() {
+            this.$store.dispatch('setting/status/get', {});
         },
         handleViewUser(user) {
             this.selectedUser = user;
@@ -154,6 +204,8 @@ export default {
 <style scoped>
 .users-management-dashboard {
     padding-bottom: 2rem;
+    position: relative;
+    overflow: visible !important;
 }
 
 ::v-deep .form-control {

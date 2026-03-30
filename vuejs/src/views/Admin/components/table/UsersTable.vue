@@ -40,16 +40,16 @@
                 <template #tel_role="{ item }">
                     <td class="py-3">
                         <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ (item.contact && item.contact.telephone) || '-' }}</div>
-                        <div class="small text-muted font-weight-bold">{{ item.role || 'User' }}</div>
+                        <div class="small text-muted font-weight-bold">{{ getRoleName(item.role) }}</div>
                     </td>
                 </template>
 
                 <!-- Status Column -->
                 <template #status="{ item }">
                     <td class="py-3">
-                        <div :class="['status-badge', getStatusBadge(item.status || 'Active').class]">
-                            <CIcon :name="getStatusBadge(item.status || 'Active').icon" size="sm" class="status-icon" />
-                            {{ item.status || 'Active' }}
+                        <div :class="['status-badge', getStatusBadge(item.status).class]">
+                            <CIcon :name="getStatusBadge(item.status).icon" size="sm" class="status-icon" />
+                            {{ getStatusName(item.status) }}
                         </div>
                     </td>
                 </template>
@@ -135,8 +135,8 @@ export default {
                     studentId.includes(search) ||
                     email.includes(search);
                 
-                const roleMatch = this.filters.role === 'All Roles' || user.role === this.filters.role;
-                const statusMatch = this.filters.status === 'All Status' || user.status === this.filters.status;
+                const roleMatch = this.filters.role === 'All Roles' || this.getRoleName(user.role) === this.filters.role;
+                const statusMatch = this.filters.status === 'All Status' || this.getStatusName(user.status) === this.filters.status;
 
                 return searchMatch && roleMatch && statusMatch;
             });
@@ -157,9 +157,12 @@ export default {
             return colors[Math.abs(hash) % colors.length];
         },
         getStatusBadge(status) {
-            if (status === 'Active') return { class: 'badge-passed', icon: 'cil-check-circle' };
-            if (status === 'Suspended') return { class: 'badge-fail', icon: 'cil-x-circle' };
-            return { class: 'badge-pending', icon: 'cil-clock' }; // Inactive
+            const name = this.getStatusName(status);
+            if (name === 'Admin') return { class: 'badge-admin', icon: 'cil-shield-check' };
+            if (name === 'Active' || name === 'NewStudent') return { class: 'badge-passed', icon: 'cil-check-circle' };
+            if (name === 'Suspended') return { class: 'badge-fail', icon: 'cil-x-circle' };
+            if (name === 'OldStudent') return { class: 'badge-secondary-status', icon: 'cil-clock' };
+            return { class: 'badge-pending', icon: 'cil-clock' }; // Inactive or others
         },
         handleView(item) {
             this.$emit('view', item);
@@ -180,6 +183,24 @@ export default {
                 return nameObj ? nameObj.value : (user.name[0] ? user.name[0].value : '');
             }
             return '';
+        },
+        getRoleName(role) {
+            if (!role) return 'User';
+            if (typeof role === 'string') return role;
+            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
+                const titleEn = role.title.find(t => t.key === 'en');
+                return titleEn ? titleEn.value : (role.title[0] ? role.title[0].value : 'Unknown');
+            }
+            return 'User';
+        },
+        getStatusName(status) {
+            if (!status) return 'Admin';
+            if (typeof status === 'string') return status;
+            if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
+                const titleEn = status.title.find(t => t.key === 'en');
+                return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Unknown');
+            }
+            return 'Admin';
         }
     }
 }
@@ -261,6 +282,18 @@ export default {
     color: #e53e3e;
     background-color: #fff5f5;
     border: 1px solid rgba(229, 62, 62, 0.4);
+}
+
+.badge-secondary-status {
+    color: #718096;
+    background-color: #f7fafc;
+    border: 1px solid rgba(113, 128, 150, 0.4);
+}
+
+.badge-admin {
+    color: #3182ce;
+    background-color: #ebf8ff;
+    border: 1px solid rgba(49, 130, 206, 0.4);
 }
 
 /* Footer Pagination */

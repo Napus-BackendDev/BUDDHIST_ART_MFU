@@ -57,10 +57,11 @@ exports.onUpdate = async function (request, response, next) {
     try {
 
         var query = {}
-        query._id = new mongo.ObjectId(request.body._id);
+        const { _id, ...updateData } = request.body;
+        query._id = new mongo.ObjectId(_id);
 
 
-        const doc = await Group.onUpdate(query,request.body);
+        const doc = await Group.onUpdate(query, updateData);
 
 
         var resData = await resMsg.onMessage_Response(0,20000)

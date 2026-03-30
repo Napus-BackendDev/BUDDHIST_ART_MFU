@@ -21,22 +21,21 @@ const ServerModule = {
         config({commit}, data) {
             Service.roles('exp', data, {})
                 .then((response) => {
-                    store.commit("roles/item", response.data.data)
+                    commit("item", response.data.data)
                 }).catch((err) => {
             });
         },
         create({commit}, data) {
             Service.roles('post', data, {})
                 .then((response) => {
-                    store.commit("roles/isReload", true)
-
+                    commit("isReload", true)
                 }).catch((err) => {
             });
         },
         update({commit}, data) {
             Service.roles('put', data, {})
                 .then((response) => {
-                    store.commit("roles/isReload", true)
+                    commit("isReload", true)
                 }).catch((err) => {
             });
         },
