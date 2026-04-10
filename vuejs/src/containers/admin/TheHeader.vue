@@ -70,10 +70,10 @@
 </template>
 
 <script>
-import TheHeaderDropdownAccnt from './TheHeaderDropdownAccnt'
-import TheHeaderDropdownNotif from './TheHeaderDropdownNotif'
-import TheHeaderDropdownTasks from './TheHeaderDropdownTasks'
-import TheHeaderDropdownMssgs from './TheHeaderDropdownMssgs'
+import TheHeaderDropdownAccnt from '../TheHeaderDropdownAccnt'
+import TheHeaderDropdownNotif from '../TheHeaderDropdownNotif'
+import TheHeaderDropdownTasks from '../TheHeaderDropdownTasks'
+import TheHeaderDropdownMssgs from '../TheHeaderDropdownMssgs'
 import {mapGetters} from "vuex";
 
 export default {

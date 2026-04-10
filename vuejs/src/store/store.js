@@ -14,6 +14,7 @@ import Authentication from "@/store/modules/Authentication/index";
 import Accounts from "@/store/modules/Accounts/index";
 import Dialog from "@/store/modules/Dialog/index";
 import Payments from "@/store/modules/Payments/index";
+import Dashboard from "@/store/modules/Dashboard/index";
 
 
 
@@ -57,6 +58,7 @@ export default new Vuex.Store({
     auth: Authentication,
     account: Accounts,
     dialog: Dialog,
-    payment: Payments
+    payment: Payments,
+    dashboard: Dashboard
   }
 });

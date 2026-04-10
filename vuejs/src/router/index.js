@@ -2,9 +2,9 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 // Containers
-const TheContainerUser = () => import('@/containers/TheContainer_User')
-const TheContainerAdmin = () => import('@/containers/TheContainer_Admin')
-const TheContainerArttist = () => import('@/containers/TheContainer_Arttist')
+const TheContainerUser = () => import('@/containers/user/TheContainer')
+const TheContainerAdmin = () => import('@/containers/admin/TheContainer')
+const TheContainerArtist = () => import('@/containers/artist/TheContainer')
 
 // Views User
 const Home = () => import('@/views/User/Home')
@@ -145,7 +145,7 @@ export default new Router({
         {
             path: '/artist',
             name: 'Artist',
-            component: TheContainerArttist,
+            component: TheContainerArtist,
             children: [
                 {
                     path: 'dashboard',

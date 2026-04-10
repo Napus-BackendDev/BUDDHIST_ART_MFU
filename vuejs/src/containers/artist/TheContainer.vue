@@ -24,10 +24,10 @@
 </template>
 
 <script>
-import TheSidebar from './TheSidebar_Artist'
-import TheHeader from './TheHeader_Artist'
-import TheFooter from './TheFooter'
-import TheAside from './TheAside'
+import TheSidebar from './TheSidebar'
+import TheHeader from './TheHeader'
+import TheFooter from '../admin/TheFooter'
+import TheAside from '../admin/TheAside'
 import {mapGetters} from "vuex";
 import store from "@/store/store";
 //
