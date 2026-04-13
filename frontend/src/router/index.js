@@ -27,8 +27,9 @@ const CreateCertification = () => import('@/views/Admin/CreateCertification')
 const UsersManagement = () => import('@/views/Admin/UsersManagement')
 
 // View Artist
-const ArtistDashboard = () => import('@/views/Artist/Dashboard.vue')
 const ArtistProfile = () => import('@/views/Artist/Profile.vue')
+const ArtistSubmissions = () => import('@/views/Artist/Submissions.vue')
+const ArtistSubmissionsDetail = () => import('@/views/Artist/SubmissionsDetail.vue')
 
 // View Page
 const Login = () => import('@/views/page/Login.vue')
@@ -146,16 +147,22 @@ export default new Router({
             path: '/artist',
             name: 'Artist',
             component: TheContainerArtist,
+            redirect: '/artist/submissions',
             children: [
-                {
-                    path: 'dashboard',
-                    name: 'ArtistDashboard',
-                    component: ArtistDashboard
-                },
                 {
                     path: 'profile',
                     name: 'ArtistProfile',
                     component: ArtistProfile
+                },
+                {
+                    path: 'submissions',
+                    name: 'ArtistSubmissions',
+                    component: ArtistSubmissions
+                },
+                {
+                    path: 'submissions/:id',
+                    name: 'ArtistSubmissionsDetail',
+                    component: ArtistSubmissionsDetail
                 }
             ]
         },

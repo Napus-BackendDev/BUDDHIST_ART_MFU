@@ -68,20 +68,8 @@ export default {
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Artwork',
-            to: '/artist/artwork',
-            icon: 'cil-paint'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: 'Order',
-            to: '/artist/order',
-            icon: 'cil-cart'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: 'Submission',
-            to: '/artist/submission',
+            name: 'Submissions',
+            to: '/artist/submissions',
             icon: 'cil-cloud-upload'
           },
           {

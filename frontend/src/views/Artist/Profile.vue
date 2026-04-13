@@ -2,21 +2,25 @@
   <div class="artist-profile-page" v-if="form">
     <ArtistProfileHeader :user="user" @edit="isEditing = true" />
 
-    <!-- Tabs Container -->
-    <CCard class="profile-tabs-card mx-3 mt-2 mb-5 border-0 shadow-sm rounded-xl overflow-hidden">
-      <CTabs variant="tabs" :active-tab="0" class="custom-profile-tabs pt-3 px-3">
-        <CTab title="Artworks" active class="py-4">
+    <!-- Artwork Portfolio Section -->
+    <CCard class="profile-portfolio-card mx-3 mt-4 mb-5 border-0 shadow-premium rounded-xl overflow-hidden">
+      <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
+        <div class="header-title-group mb-3 mb-md-0">
+          <h3 class="mb-1 font-weight-bold text-dark portfolio-title">My Artwork Portfolio</h3>
+          <p class="text-muted mb-0 portfolio-subtitle">Explore and manage your collection of digital and physical art pieces.</p>
+        </div>
+        <div class="header-actions-group">
+          <CButton color="primary" shape="pill" class="px-4 py-2 font-weight-bold shadow-sm btn-add-artwork" @click="handleAddNewArtwork">
+            <CIcon name="cil-plus" class="mr-2" /> Add New Artwork
+          </CButton>
+        </div>
+      </CCardHeader>
+      
+      <CCardBody class="p-4 p-md-5">
+        <div class="portfolio-grid-container">
           <ArtworkCard :artworks="artistArtworks" />
-        </CTab>
-        <CTab title="Submissions" class="py-4">
-          <SubmissionTable 
-            :filters="{ search: '', quickRange: 'All Time' }" 
-            @view="handleViewSubmission"
-            @edit="handleEditSubmission"
-            @delete="handleDeleteSubmission"
-          />
-        </CTab>
-      </CTabs>
+        </div>
+      </CCardBody>
     </CCard>
 
     <CModal
@@ -108,19 +112,32 @@
       </div>
 
       <template #footer>
-        <CButton @click="cancelEdit" color="secondary" variant="outline" shape="pill">Cancel</CButton>
-        <CButton @click="handleSave" color="primary" shape="pill" class="btn-save font-weight-bold px-4">
-          <CIcon name="cil-save" class="mr-2" /> Save Changes
-        </CButton>
+        <div class="d-flex w-100 justify-content-end p-2">
+          <CButton @click="cancelEdit" variant="outline" shape="pill" class="btn-modal-action mr-3">
+            Cancel
+          </CButton>
+          <CButton @click="handleSave" shape="pill" class="btn-modal-action btn-save-action font-weight-bold">
+            <CIcon name="cil-save" class="mr-2" /> Save Changes
+          </CButton>
+        </div>
       </template>
     </CModal>
+    
+    <!-- Artwork Creation Modal -->
+    <ArtworkCreateModal 
+      :show="showArtworkModal" 
+      :initialArtistId="userId"
+      @update:show="showArtworkModal = $event"
+      @save="handleArtworkSave"
+    />
   </div>
 </template>
 
 <script>
 import ArtistProfileHeader from './components/ArtistProfileHeader.vue'
-import ArtworkCard from '../User/components/card/CardArtworks.vue'
+import ArtworkCard from './components/card/CardArtworks.vue'
 import SubmissionTable from '../Admin/components/table/SubmissionTable.vue'
+import ArtworkCreateModal from './components/modal/ArtworkCreateModal.vue'
 import { mapGetters } from 'vuex';
 
 export default {
@@ -128,13 +145,15 @@ export default {
   components: {
     ArtistProfileHeader,
     ArtworkCard,
-    SubmissionTable
+    SubmissionTable,
+    ArtworkCreateModal
   },
   data() {
     return {
       form: null,
       loading: false,
       isEditing: false,
+      showArtworkModal: false,
       selectedFile: null
     }
   },
@@ -152,6 +171,7 @@ export default {
     artistArtworks() {
       if (!this.allArtworks) return [];
       return this.allArtworks.filter(art => {
+        console.log(art);
         if (!art.artist) return false;
         const id = typeof art.artist === 'object' ? art.artist._id : art.artist;
         return id === this.userId;
@@ -287,16 +307,58 @@ export default {
         console.error('Error updating profile:', error);
         alert('Failed to update profile.');
       }
+    },
+    handleAddNewArtwork() {
+      this.showArtworkModal = true;
+    },
+    async handleArtworkSave(payload) {
+      try {
+        this.loading = true;
+        
+        // Prepare FormData for multi-part upload
+        const formData = new FormData();
+        formData.append('title', JSON.stringify(payload.title));
+        formData.append('description', JSON.stringify(payload.description));
+        formData.append('technique', JSON.stringify(payload.technique));
+        formData.append('artist', payload.artist);
+        formData.append('category', payload.category);
+        formData.append('price', payload.price);
+        formData.append('status', JSON.stringify(payload.status));
+        
+        if (payload._image) {
+          formData.append('image', payload._image);
+        }
+
+        // Call artwork/upload action
+        await this.$store.dispatch('artwork/upload', formData);
+        
+        this.$store.commit('dialog/showToast', {
+          title: 'Success',
+          message: 'Artwork added to your portfolio successfully!',
+          variant: 'success'
+        });
+        
+        this.showArtworkModal = false;
+        
+        // Refresh artwork list
+        await this.$store.dispatch('artwork/get');
+        
+      } catch (error) {
+        console.error('Error creating artwork:', error);
+        this.$store.commit('dialog/showToast', {
+          title: 'Error',
+          message: 'Failed to add artwork. Please try again.',
+          variant: 'danger'
+        });
+      } finally {
+        this.loading = false;
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-.artist-profile-page {
-  padding-bottom: 5rem;
-}
-
 .shadow-premium {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02) !important;
 }
@@ -382,18 +444,37 @@ export default {
   text-transform: uppercase;
 }
 
-.btn-save {
-  background-color: #321fdb !important;
-  border: none !important;
-  color: white !important;
-  padding: 1rem 3.5rem !important;
-  font-size: 1rem !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+.btn-modal-action {
+  padding: 0.75rem 2.5rem !important;
+  font-size: 0.95rem !important;
+  min-width: 180px;
+  transition: all 0.3s ease;
+  border-width: 2px !important;
 }
 
-.btn-save:hover {
+.btn-modal-action:not(.btn-save-action) {
+  color: #8c1515 !important;
+  border-color: #8c1515 !important;
+  background-color: transparent !important;
+}
+
+.btn-modal-action:not(.btn-save-action):hover {
+  background-color: #fff1f1 !important;
   transform: translateY(-2px);
-  box-shadow: 0 15px 30px -10px rgba(50, 31, 219, 0.4) !important;
+}
+
+.btn-save-action {
+  background-color: #8c1515 !important;
+  border: 2px solid #8c1515 !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(140, 21, 21, 0.2) !important;
+}
+
+.btn-save-action:hover {
+  background-color: #701111 !important;
+  border-color: #701111 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(140, 21, 21, 0.3) !important;
 }
 
 /* Modal Specific Adjustments */
@@ -412,39 +493,49 @@ export default {
   }
 }
 
-/* Tabs Adjustments */
-.profile-tabs-card {
+/* Portfolio Section Styling */
+.profile-portfolio-card {
   z-index: 2;
   position: relative;
+  background-color: #ffffff;
+  border: 1px solid #f1f5f9 !important;
 }
 
-.custom-profile-tabs ::v-deep .nav-tabs {
-  border-bottom: 2px solid #f1f5f9;
+.portfolio-header {
+  border-bottom: none !important;
 }
 
-.custom-profile-tabs ::v-deep .nav-link {
-  color: #64748b;
-  font-weight: 600;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 1rem 1.5rem;
-  margin-bottom: -2px;
-  background: transparent;
+.portfolio-title {
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  color: #1e293b;
 }
 
-.custom-profile-tabs ::v-deep .nav-link:hover {
-  color: #321fdb;
+.portfolio-subtitle {
+  font-size: 0.95rem;
+  font-weight: 500;
+  max-width: 600px;
 }
 
-.custom-profile-tabs ::v-deep .nav-link.active {
-  color: #321fdb;
-  border-bottom: 2px solid #321fdb;
+.btn-add-artwork {
+  font-size: 0.9rem;
+  background-color: #8c1515 !important;
+  border: none !important;
+  transition: all 0.3s ease;
 }
 
-/* Override SubmissionTable inner card */
-.custom-profile-tabs ::v-deep .submission-table-card {
-  border: none;
-  box-shadow: none;
-  margin-top: 0;
+.btn-add-artwork:hover {
+  background-color: #2c1bbd;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(50, 31, 219, 0.2) !important;
+}
+
+.portfolio-grid-container {
+  min-height: 400px;
+}
+
+/* Override ArtworkCard default margins if needed */
+::v-deep .artwork-card {
+  margin-bottom: 2rem;
 }
 </style>
