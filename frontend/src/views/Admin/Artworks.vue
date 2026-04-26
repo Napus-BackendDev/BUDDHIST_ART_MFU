@@ -48,11 +48,13 @@ export default {
                 startDate: null,
                 endDate: null,
                 quickRange: 'All Time'
-            }
+            },
+            categories: []
         }
     },
     created() {
         this.fetchArtworks();
+        this.fetchCategories();
         this.$store.dispatch('setting/status/get');
         this.$store.dispatch('user/get', {}); // Fetch users to enable artist lookup during import
     },
@@ -67,6 +69,14 @@ export default {
                 await this.$store.dispatch('artwork/get');
             } catch (error) {
                 console.error('Error fetching artworks:', error);
+            }
+        },
+        async fetchCategories() {
+            try {
+                const response = await this.$store.dispatch('artwork/category', { method: 'get' });
+                this.categories = response || [];
+            } catch (error) {
+                console.error('Error fetching categories:', error);
             }
         },
         onAddArtwork() {
@@ -91,32 +101,71 @@ export default {
                         return;
                     }
 
-                    const mappedArtworks = results.map(row => ({
-                        title: [
-                            { key: 'th', value: row['ArtworkTitleThai'] || '' },
-                            { key: 'en', value: row['ArtworkTitleEng'] || '' }
-                        ],
-                        description: [
-                            { key: 'th', value: row['DescriptionThai'] || '' },
-                            { key: 'en', value: row['DescriptionEng'] || '' }
-                        ],
-                        technique: [
-                            { key: 'th', value: row['TechniqueThai'] || '' },
-                            { key: 'en', value: row['TechniqueEng'] || '' }
-                        ],
-                        size: [
-                            { key: 'th', value: row['SizeThai'] || '' },
-                            { key: 'en', value: row['SizeEng'] || '' }
-                        ],
-                        price: parseFloat(row['Price']) || 0,
-                        artist: this.findArtistId(row['ArtistID']),
-                        // Defaults as defined in model
-                        category: "69b917247aa08919285fb7ee", // Category ID
-                        status: {
-                            approval: "69677d4de5f76f7a8c42dbf6", // Pending
-                            sale: "69678075e5f76f7a8c42dc12" // Not for sale
-                        }
-                    })).filter(a => a.title[0].value || a.title[1].value);
+                    console.log('--- Raw Results from XLSX ---', results);
+                    console.log('--- Available Categories ---', this.categories);
+
+                    const mappedArtworks = results.map((row, index) => {
+                        // Find values by loose key matching (ignore case and spaces)
+                        const getValue = (targetKey) => {
+                            const target = targetKey.toLowerCase().replace(/\s/g, '');
+                            const foundKey = Object.keys(row).find(k => {
+                                const key = k.toLowerCase().replace(/\s/g, '');
+                                return key === target || key.includes(target) || target.includes(key);
+                            });
+                            return foundKey ? row[foundKey] : undefined;
+                        };
+
+                        const titleTh = getValue('ArtworkTitleThai') || '';
+                        const titleEn = getValue('ArtworkTitleEng') || '';
+                        const descTh = getValue('DescriptionThai') || '';
+                        const descEn = getValue('DescriptionEng') || '';
+                        const techTh = getValue('TechniqueThai') || '';
+                        const techEn = getValue('TechniqueEng') || '';
+                        const sizeTh = getValue('SizeThai') || '';
+                        const sizeEn = getValue('SizeEng') || '';
+                        const priceStr = getValue('Price') || '0';
+                        const categoryName = getValue('Category') || getValue('Catogory') || '';
+                        const artistStudentId = getValue('ArtistID') || '';
+
+                        // Handle price with commas
+                        const rawPrice = String(priceStr).replace(/,/g, '');
+                        const parsedPrice = parseFloat(rawPrice) || 0;
+                        
+                        const artistId = this.findArtistId(artistStudentId);
+                        const categoryId = this.findCategoryId(categoryName);
+
+                        console.log(`Row ${index + 1} Mapping:`, {
+                            title: titleTh || titleEn,
+                            artist: { studentId: artistStudentId, matchedId: artistId },
+                            category: { name: categoryName, matchedId: categoryId }
+                        });
+
+                        return {
+                            title: [
+                                { key: 'th', value: titleTh },
+                                { key: 'en', value: titleEn }
+                            ],
+                            description: [
+                                { key: 'th', value: descTh },
+                                { key: 'en', value: descEn }
+                            ],
+                            technique: [
+                                { key: 'th', value: techTh },
+                                { key: 'en', value: techEn }
+                            ],
+                            size: [
+                                { key: 'th', value: sizeTh },
+                                { key: 'en', value: sizeEn }
+                            ],
+                            price: parsedPrice,
+                            artist: artistId,
+                            category: categoryId,
+                            status: {
+                                approval: "69677d4de5f76f7a8c42dbf6", // Pending
+                                sale: "69678075e5f76f7a8c42dc12" // Not for sale
+                            }
+                        };
+                    }).filter(a => a.title[0].value || a.title[1].value);
 
                     if (mappedArtworks.length === 0) {
                         alert("No valid artwork data found. Please check column headers.");
@@ -205,11 +254,9 @@ export default {
         },
         async handleUpdateArtwork(artworkData) {
             try {
-                // 1. Update Artwork (PUT /api/v1/artwork)
                 console.log('--- Step 1: Updating Artwork Data ---', artworkData);
                 await this.$store.dispatch('artwork/update', artworkData);
 
-                // 2. Upload Image if new one present (PUT /api/v1/artwork/upload)
                 if (artworkData._image) {
                     console.log('--- Step 2: Uploading New Image for ID ---', artworkData._id);
                     const uploadFormData = new FormData();
@@ -307,6 +354,16 @@ export default {
             const users = this.$store.getters['user/user'] || [];
             const artist = users.find(u => u.studentId === String(studentId));
             return artist ? artist._id : null;
+        },
+        findCategoryId(categoryName) {
+            if (!categoryName) return "69b917247aa08919285fb7ee"; // Default ID
+            const cat = this.categories.find(c => {
+                const nameEn = this.getName('en', c).toLowerCase();
+                const nameTh = this.getName('th', c).toLowerCase();
+                const search = String(categoryName).trim().toLowerCase();
+                return nameEn === search || nameTh === search || nameEn.includes(search);
+            });
+            return cat ? cat._id : "69b917247aa08919285fb7ee";
         }
     }
 }

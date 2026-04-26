@@ -56,7 +56,8 @@
                 <CCol md="7">
                     <div class="view-group mb-4">
                         <label class="view-label">Artwork Title</label>
-                        <h3 class="view-value-title font-weight-bold">{{ getName('en', artwork) }}</h3>
+                        <h3 class="view-value-title font-weight-bold mb-1">{{ getName('en', artwork) }}</h3>
+                        <p class="view-value-thai text-muted mb-0">{{ getName('th', artwork) }}</p>
                     </div>
 
                     <CRow class="mb-4">
@@ -88,16 +89,22 @@
                         <CCol sm="6">
                             <div class="view-group">
                                 <label class="view-label">Technique</label>
+                                <div class="view-value text-muted mb-1">
+                                    <strong>EN:</strong> {{ artwork.technique ? getName('en', artwork.technique) : 'N/A' }}
+                                </div>
                                 <div class="view-value text-muted">
-                                    {{ artwork.technique ? getName('en', artwork.technique) : 'N/A' }}
+                                    <strong>TH:</strong> {{ artwork.technique ? getName('th', artwork.technique) : 'N/A' }}
                                 </div>
                             </div>
                         </CCol>
                         <CCol sm="6">
                             <div class="view-group">
                                 <label class="view-label">Size</label>
+                                <div class="view-value text-muted mb-1">
+                                    <strong>EN:</strong> {{ artwork.size ? getName('en', artwork.size) : 'N/A' }}
+                                </div>
                                 <div class="view-value text-muted">
-                                    {{ artwork.size ? getName('en', artwork.size) : 'N/A' }}
+                                    <strong>TH:</strong> {{ artwork.size ? getName('th', artwork.size) : 'N/A' }}
                                 </div>
                             </div>
                         </CCol>
@@ -110,10 +117,17 @@
                         </div>
                     </div>
 
-                    <div class="view-group">
-                        <label class="view-label">Description</label>
+                    <div class="view-group mb-4">
+                        <label class="view-label">Description (EN)</label>
                         <p class="view-description text-muted">
-                            {{ artwork.description && artwork.description.length > 0 ? getName('en', artwork.description) : 'No additional description provided for this artwork.' }}
+                            {{ artwork.description && artwork.description.length > 0 ? getName('en', artwork.description) : 'No English description provided.' }}
+                        </p>
+                    </div>
+
+                    <div class="view-group">
+                        <label class="view-label">Description (TH)</label>
+                        <p class="view-description text-muted">
+                            {{ artwork.description && artwork.description.length > 0 ? getName('th', artwork.description) : 'ไม่มีคำอธิบายภาษาไทย.' }}
                         </p>
                     </div>
                 </CCol>

@@ -3,8 +3,17 @@
             <CCol md="12">
     <CCard class="artwork-table-card mb-4">
         <div>
-            <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
-                :striped="false">
+            <CDataTable 
+                :items="filteredItems" 
+                :fields="fields" 
+                class="custom-table mb-0" 
+                hover 
+                :border="false"
+                :striped="false"
+                :items-per-page="10"
+                :active-page="activePage"
+                @page-change="pageChange"
+            >
                 <template #thumbnail="{ item }">
                     <td>
                         <div class="thumbnail-wrapper clickable" @click="zoomImg(item.image)">
@@ -25,8 +34,8 @@
                         <div v-if="item.artist && item.artist.studentId" class="artist-id mt-1">ID: {{ item.artist.studentId }}</div>
                     </td>
                 </template>
-                <template #createdAt="{ item }">
-                    <td class="text-muted text-sm">{{ formatDate(item.createdAt) }}</td>
+                <template #updatedAt="{ item }">
+                    <td class="text-muted text-sm">{{ formatDate(item.updatedAt) }}</td>
                 </template>
                 <template #category="{ item }">
                     <td>
@@ -102,15 +111,19 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ filteredItems.length }} of {{ items.length }} artworks</div>
-            <div class="pagination-buttons">
-                <CButton class="btn-pill-pagination mr-2" :disabled="true">
-                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
-                </CButton>
-                <CButton class="btn-pill-pagination">
-                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
-                </CButton>
+            <div class="text-muted text-sm" v-if="filteredItems.length > 0">
+                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} artworks
             </div>
+            <div class="text-muted text-sm" v-else>
+                Showing 0 artworks
+            </div>
+            <CPagination
+                :active-page.sync="activePage"
+                :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
+                size="sm"
+                align="end"
+                class="mb-0 pill-pagination"
+            />
         </CCardFooter>
     </CCard>
 
@@ -163,15 +176,24 @@ export default {
         return {
             showZoomModal: false,
             zoomImageUrl: '',
+            activePage: 1,
             fields: [
                 { key: 'thumbnail', label: 'THUMBNAIL', _classes: 'border-top-0 border-bottom' },
                 { key: 'title', label: 'ARTWORK TITLE', _classes: 'border-top-0 border-bottom' },
                 { key: 'artist', label: 'ARTIST', _classes: 'border-top-0 border-bottom' },
-                { key: 'createdAt', label: 'DATE CREATED', _classes: 'border-top-0 border-bottom' },
+                { key: 'updatedAt', label: 'LAST UPDATED', _classes: 'border-top-0 border-bottom' },
                 { key: 'category', label: 'CATEGORY', _classes: 'border-top-0 border-bottom' },
                 { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
             ]
+        }
+    },
+    watch: {
+        filters: {
+            handler() {
+                this.activePage = 1;
+            },
+            deep: true
         }
     },
     computed: {
@@ -249,6 +271,9 @@ export default {
         formatDate(date) {
             if (!date) return 'N/A';
             return moment(date).format('MMM DD, YYYY');
+        },
+        pageChange(val) {
+            this.activePage = val;
         },
         getStatusInfo(item) {
             // Approval status mapping
@@ -471,36 +496,32 @@ export default {
     padding-right: 0;
 }
 
-.btn-pill-pagination {
-    background-color: #3b3dfa; /* Your reference image purple */
+::v-deep .pill-pagination .page-item .page-link {
     border: none;
-    color: #ffffff;
-    font-weight: 700;
+    background-color: #f8f9fa;
+    color: #4a5568;
+    border-radius: 50px !important;
+    margin: 0 3px;
+    padding: 0.5rem 0.9rem;
+    font-weight: 600;
     font-size: 0.85rem;
-    border-radius: 50px; /* Full pill shape */
-    padding: 0.6rem 1.4rem;
-    display: inline-flex;
-    align-items: center;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 6px rgba(59, 61, 250, 0.2);
+    transition: all 0.2s;
 }
 
-.btn-pill-pagination:hover:not(:disabled) {
-    background-color: #2d2fcc;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(59, 61, 250, 0.3);
+::v-deep .pill-pagination .page-item.active .page-link {
+    background-color: #3b3dfa;
     color: #ffffff;
+    box-shadow: 0 4px 10px rgba(59, 61, 250, 0.3);
 }
 
-.btn-pill-pagination:active:not(:disabled) {
-    transform: translateY(0);
+::v-deep .pill-pagination .page-item .page-link:hover:not(.active) {
+    background-color: #eef0f3;
+    color: #3b3dfa;
 }
 
-.btn-pill-pagination:disabled {
-    opacity: 0.4;
-    background-color: #a0aec0;
-    box-shadow: none;
-    cursor: not-allowed;
+::v-deep .pill-pagination .page-item.disabled .page-link {
+    background-color: transparent;
+    opacity: 0.5;
 }
 
 .rounded-bottom {

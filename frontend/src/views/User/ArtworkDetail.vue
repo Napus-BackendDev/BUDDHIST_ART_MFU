@@ -12,9 +12,9 @@
 
             <template v-else-if="artwork && artwork._id">
                 <!-- Navigation -->
-                <div class="d-flex justify-content-between align-items-center mb-1 mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
                     <CLink @click="$router.push({ name: 'Artworks' })" class="back-link-premium">
-                        <CIcon name="cil-arrow-left" class="mr-2" />
+                        <CIcon name="cilArrowLeft" size="lg" class="mr-2" />
                         <span>Return to Gallery</span>
                     </CLink>
                     
@@ -29,8 +29,13 @@
                     <CCol lg="6" class="mb-4 mb-lg-0">
                         <div class="artwork-visual-container shadow-premium position-relative">
                             <!-- Category & Status -->
-                            <div class="artwork-image-wrapper">
+                            <div class="artwork-image-wrapper position-relative">
                                 <img :src="artwork.image" :alt="getName('en', artwork)" class="img-fluid main-artwork-img">
+                                
+                                <!-- Zoom Button -->
+                                <button v-if="!showZoomModal" class="btn-zoom-float shadow-lg" @click="zoomImg" title="Zoom Image">
+                                    <CIcon name="cilMagnifyingGlass" />
+                                </button>
                             </div>
                             <div v-if="isSoldOut" class="sold-out-badge-premium">
                                 <span>PRIVATE COLLECTION</span>
@@ -79,7 +84,7 @@
                                         <div class="spec-icon"><CIcon name="cil-resize-both" /></div>
                                         <div class="spec-text">
                                             <label>Size</label>
-                                            <span>{{ artwork.dimension || 'N/A' }}</span>
+                                            <span>{{ getName('en', artwork, 'size') || 'N/A' }}</span>
                                         </div>
                                     </div>
                                     <div class="spec-item">
@@ -109,18 +114,18 @@
                                         class="btn-purchase-premium shadow-lg mb-3"
                                         :style="isSoldOut || isPreview || isInCart ? 'background: #e2e8f0 !important; color: #94a3b8 !important;' : 'background: linear-gradient(135deg, #4a1d18, #612721); color: white !important;'"
                                         @click="addToCart">
-                                        <CIcon v-if="!isSoldOut && !isPreview && !isInCart" name="cil-cart" class="mr-2" />
-                                        <CIcon v-else-if="isSoldOut" name="cil-lock-locked" class="mr-2" />
-                                        <CIcon v-else-if="isInCart" name="cil-check" class="mr-2" />
+                                        <CIcon v-if="!isSoldOut && !isPreview && !isInCart" name="cilCart" size="xl" class="mr-3" />
+                                        <CIcon v-else-if="isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
+                                        <CIcon v-else-if="isInCart" name="cilCheck" size="xl" class="mr-3" />
                                         {{ getButtonText }}
                                     </CButton>
                                     
                                     <div class="d-flex align-items-center justify-content-between">
-                                        <CButton color="outline-dark" shape="pill" class="btn-action-secondary px-4 mr-2 flex-grow-1" @click="contactInquiry">
-                                            <CIcon name="cil-chat-bubble" class="mr-2" /> Inquiry
+                                        <CButton color="outline-dark" shape="pill" class="btn-action-secondary px-4 mr-2 flex-grow-1 d-flex align-items-center justify-content-center" @click="contactInquiry">
+                                            <CIcon name="cilChatBubble" class="mr-2" /> Inquiry
                                         </CButton>
-                                        <CButton color="outline-secondary" shape="pill" class="btn-action-icon" @click="shareArtwork">
-                                            <CIcon name="cil-share" />
+                                        <CButton color="outline-secondary" shape="pill" class="btn-action-icon d-flex align-items-center justify-content-center" @click="shareArtwork">
+                                            <CIcon name="cilShare" />
                                         </CButton>
                                     </div>
                                 </div>
@@ -139,6 +144,20 @@
                     Discover More Artworks
                 </CButton>
             </div>
+
+            <!-- Image Zoom Lightbox (Same style as NewsDetail.vue) -->
+            <div v-if="showZoomModal" class="lightbox-overlay" @click="showZoomModal = false">
+                <div class="lightbox-content" @click.stop>
+                    <img :src="artwork.image" :alt="getName('en', artwork)" class="img-fluid zoom-img-main shadow-lg">
+                    <div class="lightbox-caption text-center py-3">
+                        <h4 class="mb-1 text-white font-weight-bold">{{ getName('en', artwork) }}</h4>
+                        <p class="text-white-50 mb-0">{{ artwork.artist ? getName('en', artwork.artist) : 'Artist' }}</p>
+                    </div>
+                    <button class="lightbox-close-btn" @click="showZoomModal = false">
+                        <CIcon name="cilX" size="xl" />
+                    </button>
+                </div>
+            </div>
         </CContainer>
     </div>
 </template>
@@ -152,6 +171,7 @@ export default {
         return {
             loading: true,
             isPreview: false,
+            showZoomModal: false,
             artwork: {}
         }
     },
@@ -209,6 +229,11 @@ export default {
             if (status === 'Pending') return 'background: rgba(255, 165, 2, 0.1); color: #ffa502;';
             return 'background: rgba(255, 71, 87, 0.1); color: #ff4757;';
         },
+        zoomImg() {
+            if (this.artwork && this.artwork.image) {
+                this.showZoomModal = true;
+            }
+        },
         addToCart() {
             if (this.isPreview || this.isSoldOut) return;
             if (this.isInCart) {
@@ -263,6 +288,93 @@ export default {
 </script>
 
 <style scoped>
+.btn-zoom-float {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a1d18;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 5;
+    opacity: 0.8;
+}
+
+.btn-zoom-float:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    background: #4a1d18;
+    color: white;
+}
+
+/* Lightbox Styles (NewsDetail.vue style) */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeInOverlay 0.3s ease;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.zoom-img-main {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lightbox-caption {
+    width: 100%;
+    margin-top: 15px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.lightbox-close-btn {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.lightbox-close-btn:hover {
+    opacity: 1;
+    transform: rotate(90deg) scale(1.1);
+}
 
 .artwork-detail-page {
     padding-top: 0 !important;
