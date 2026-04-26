@@ -4,28 +4,30 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var objsSchema = new Schema({
-    code            : {type: String, default: null, unique: true, required: true},
-    image           : {type: String, default: ""},
-    title           : [{
-        key            : {type: String, default: null},
-        value          : {type: String, default: null},
+    image: { type: String, default: null },
+    title: [{
+        key: { type: String, default: null },
+        value: { type: String, default: null },
     }],
-    create          : {
-        by              : {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-        datetime        : {type: Date, default: Date.now},
-        updatedAt       : {type: Date, default: Date.now},
+    description: [{
+        key: { type: String, default: null },
+        value: { type: String, default: null },
+    }],
+    artist: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    technique: [{
+        key: { type: String, default: null },
+        value: { type: String, default: null }
+    }],
+    size: [{
+        key: { type: String, default: null },
+        value: { type: String, default: null }
+    }],
+    price: { type: Number, default: 0 },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: "69b917247aa08919285fb7ee" },
+    status: {
+        approval: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69677d4de5f76f7a8c42dbf6" }, // Pending 
+        sale: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69678075e5f76f7a8c42dc12" }, // Not for sale
     },
-    size            : {type: String, default: null},
-    technique       : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_technique', default: "689c04cb255db4e56aea88ef" },
-    price           : {type: Number, default: 0},
-    concept         : [{
-        key            : {type: String, default: null},
-        value          : {type: String, default: null},
-    }],
-    category        : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_category', default: "689c04cb255db4e56aea88ef" },
-    presentation    : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_presentation', default: "689c04cb255db4e56aea88ef" },
-    approvalStatus  : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "689c04cb255db4e56aea88ef" },
-    saleStatus      : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "689c04cb255db4e56aea88ef" },
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Artwork', objsSchema, 'Artwork');

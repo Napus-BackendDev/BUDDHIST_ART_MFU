@@ -16,7 +16,7 @@ const { corsOptions, ipCheckMiddleware } = require('../config/corsAndIP');
 const { limiter, blockMiddleware } = require('../config/rateLimit');
 
 // Import logger
-const  loggerMiddleware  = require('../config/logger');
+const loggerMiddleware = require('../config/logger');
 
 module.exports = function (app) {
 
@@ -46,8 +46,11 @@ module.exports = function (app) {
     app.use(xssFilter());
 
     app.use(sass({ src: "./sass", dest: "./public/css", debug: true, outputStyle: "compressed" }));
-    app.use(express.static(path.join(__dirname, "./public")));
+    app.use(express.static(path.join(__dirname, "../public")));
     app.use(express.static(path.join(__dirname, "../node_modules/bootstrap/dist")));
+
+    // Serve uploads folder directly if it exists, or aliased through public
+    app.use('/uploads', express.static(path.join(__dirname, "../public/data/uploads")));
 
     // การใช้งาน logger ใน Express
     // app.use(loggerMiddleware);

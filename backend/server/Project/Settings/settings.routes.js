@@ -2,8 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 const message = require("./service/message");
+const group = require("./service/group");
 const status = require("./service/status");
 const verification = require("./service/verification");
+const role = require("./service/role");
+const category = require("./service/category");
 // const auth_message = require("./service/auth_message");
 // const Role = require("../Accounts/service/role");
 // const Authen_Type = require("../Accounts/service/authen_type");
@@ -13,6 +16,11 @@ router.get("/message", message.onQuerys);
 router.post("/message", message.onCreate);
 router.put("/message", message.onUpdate);
 router.delete("/message", message.onDelete);
+
+router.get("/group", group.onQuerys);
+router.post("/group", group.onCreate);
+router.put("/group", group.onUpdate);
+router.delete("/group", group.onDelete);
 
 router.get("/status", status.onQuerys);
 router.post("/status", status.onCreate);
@@ -40,15 +48,22 @@ router.delete("/verification", verification.onDelete);
 // router.put("/auth/message", auth_message.onUpdate);
 // router.delete("/auth/message", auth_message.onDelete);
 
-// router.get("/role", Role.onQuerys);
-// router.post("/role", Role.onCreate);
-// router.put("/role", Role.onUpdate);
-// router.delete("/role", Role.onDelete);
+
+router.get("/role", role.onQuerys);
+router.post("/role/explore", role.onQuerys);
+router.post("/role", role.onCreate);
+router.put("/role", role.onUpdate);
+router.delete("/role", role.onDelete);
 
 // router.get("/authen/type", Authen_Type.onQuerys);
 // router.post("/authen/type", Authen_Type.onCreate);
 // router.put("/authen/type", Authen_Type.onUpdate);
 // router.delete("/authen/type", Authen_Type.onDelete);
 
+
+router.get("/category", category.onQuerys);
+router.post("/category", category.onCreate);
+router.put("/category", category.onUpdate);
+router.delete("/category", category.onDelete);
 
 module.exports = router;

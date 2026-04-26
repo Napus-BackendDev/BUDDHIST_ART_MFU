@@ -24,8 +24,21 @@ exports.onQuerys = async function (request, response) {
 
 exports.onCreate = async function (request, response) {
     try {
-
         const doc = await Order.onCreate(request.body);
+        return ResMessage.sendResponse(response, 0, 20000, doc);
+    } catch (err) {
+        console.log(err);
+        return ResMessage.sendResponse(response, 0, 40400);
+    }
+};
+
+exports.onUpload = async function (request, response) {
+    try {
+        let query = {};
+        query._id = new mongo.ObjectId(request.body._id);
+        const imagePath = `${request.protocol}://${request.get('host')}/uploads/order/${request.file.filename}`;
+
+        const doc = await Order.onUpdate(query, { image: imagePath }, [], "image");
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         console.log(err);

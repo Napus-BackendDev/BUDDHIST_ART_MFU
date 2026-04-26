@@ -1,20 +1,8 @@
 {
-    "openapi": "3.0.0",
-    "info": {
-    "title": "My API",
-        "version": "1.0.0",
-        "description": "API documentation"
-},
-    "paths": {
-        "/users": {
-            "get": {
-                "summary": "Get all Admin",
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                }
-            }
-        }
-    }
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Extended API Definitions",
+    "version": "1.0.0"
+  },
+  "paths": {}
 }
