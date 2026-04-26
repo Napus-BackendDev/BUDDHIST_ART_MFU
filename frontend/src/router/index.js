@@ -14,6 +14,8 @@ const Orders = () => import('@/views/User/Orders')
 const Payment = () => import('@/views/User/Payment')
 const Bill = () => import('@/views/User/Bill')
 const Artworks = () => import('@/views/User/Artworks')
+const About = () => import('@/views/User/About')
+const NewsDetail = () => import('@/views/User/NewsDetail')
 
 // View Admin
 const Overview = () => import('@/views/Admin/Overview')
@@ -25,6 +27,7 @@ const OrdersAdmin = () => import('@/views/Admin/Orders')
 const Certification = () => import('@/views/Admin/Certification')
 const CreateCertification = () => import('@/views/Admin/CreateCertification')
 const UsersManagement = () => import('@/views/Admin/UsersManagement')
+const NewsAdmin = () => import('@/views/Admin/News')
 
 // View Artist
 const ArtistProfile = () => import('@/views/Artist/Profile.vue')
@@ -88,6 +91,16 @@ export default new Router({
                     path: 'artworks',
                     name: 'Artworks',
                     component: Artworks
+                },
+                {
+                    path: 'about',
+                    name: 'About',
+                    component: About
+                },
+                {
+                    path: 'news/:id',
+                    name: 'NewsDetail',
+                    component: NewsDetail
                 }
             ]
         },
@@ -140,6 +153,11 @@ export default new Router({
                     path: 'users-management',
                     name: 'UsersManagement',
                     component: UsersManagement
+                },
+                {
+                    path: 'news',
+                    name: 'NewsAdmin',
+                    component: NewsAdmin
                 }
             ]
         },

@@ -2,8 +2,17 @@
     <CCard class="database-table-card mb-4">
         <div>
             <!-- Main Data Table -->
-            <CDataTable :items="filteredUsers" :fields="fields" class="custom-table mb-0" hover :border="false"
-                :striped="false">
+            <CDataTable 
+                :items="filteredUsers" 
+                :fields="fields" 
+                class="custom-table mb-0" 
+                hover 
+                :border="false"
+                :striped="false"
+                :items-per-page="10"
+                :active-page="activePage"
+                @page-change="pageChange"
+            >
 
                 <!-- ID Column -->
                 <template #id="{ item }">
@@ -75,15 +84,19 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ filteredUsers.length }} users</div>
-            <div class="pagination-buttons">
-                <CButton class="btn-pill-pagination mr-2" :disabled="true">
-                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
-                </CButton>
-                <CButton class="btn-pill-pagination">
-                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
-                </CButton>
+            <div class="text-muted text-sm" v-if="filteredUsers.length > 0">
+                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredUsers.length) }} of {{ filteredUsers.length }} users
             </div>
+            <div class="text-muted text-sm" v-else>
+                Showing 0 users
+            </div>
+            <CPagination
+                :active-page.sync="activePage"
+                :pages="Math.max(1, Math.ceil(filteredUsers.length / 10))"
+                size="sm"
+                align="end"
+                class="mb-0"
+            />
         </CCardFooter>
 
         <!-- Modals removed - events are now handled by parent -->
@@ -115,7 +128,16 @@ export default {
                 { key: 'tel_role', label: 'TEL / ROLE', _classes: 'border-top-0 border-bottom w-20' },
                 { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom w-10' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right w-5' }
-            ]
+            ],
+            activePage: 1
+        }
+    },
+    watch: {
+        'filters': {
+            handler() {
+                this.activePage = 1;
+            },
+            deep: true
         }
     },
     computed: {
@@ -201,6 +223,9 @@ export default {
                 return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Unknown');
             }
             return 'Admin';
+        },
+        pageChange(val) {
+            this.activePage = val;
         }
     }
 }

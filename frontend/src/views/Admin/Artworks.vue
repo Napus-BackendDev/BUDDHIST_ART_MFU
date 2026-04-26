@@ -5,7 +5,7 @@
         <ArtworkFilter v-model="filters" />
         <AdminTable ref="adminTable" :filters="filters" :items="artworks" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
         <ArtworkCreateModal :show.sync="showCreateModal" @save="handleSaveArtwork"/>
-        <ArtworkCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport"/>
+        <ArtworkCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @download-template="downloadTemplate"/>
         <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView"/>
         <ArtworkEditModal :show.sync="showEditModal" :artwork="selectedArtwork" @save="handleUpdateArtwork"/>
     </div>
@@ -54,6 +54,7 @@ export default {
     created() {
         this.fetchArtworks();
         this.$store.dispatch('setting/status/get');
+        this.$store.dispatch('user/get', {}); // Fetch users to enable artist lookup during import
     },
     computed: {
         artworks() {
@@ -78,26 +79,85 @@ export default {
         handleChoiceImport(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const results = XLSX.utils.sheet_to_json(worksheet);
-                
-                console.log('Imported Data:', results);
-                
-                // Show success toast or message
-                if (this.$store && this.$store.commit) {
-                    this.$store.commit('dialog/showToast', {
-                        title: 'Import Successful',
-                        message: `Successfully imported ${results.length} artworks.`,
-                        variant: 'success'
-                    });
-                } else {
-                    alert(`Imported ${results.length} artworks successfully (check console).`);
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const results = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (results.length === 0) {
+                        alert("The file is empty or invalid.");
+                        return;
+                    }
+
+                    const mappedArtworks = results.map(row => ({
+                        title: [
+                            { key: 'th', value: row['ArtworkTitleThai'] || '' },
+                            { key: 'en', value: row['ArtworkTitleEng'] || '' }
+                        ],
+                        description: [
+                            { key: 'th', value: row['DescriptionThai'] || '' },
+                            { key: 'en', value: row['DescriptionEng'] || '' }
+                        ],
+                        technique: [
+                            { key: 'th', value: row['TechniqueThai'] || '' },
+                            { key: 'en', value: row['TechniqueEng'] || '' }
+                        ],
+                        size: [
+                            { key: 'th', value: row['SizeThai'] || '' },
+                            { key: 'en', value: row['SizeEng'] || '' }
+                        ],
+                        price: parseFloat(row['Price']) || 0,
+                        artist: this.findArtistId(row['ArtistID']),
+                        // Defaults as defined in model
+                        category: "69b917247aa08919285fb7ee", // Category ID
+                        status: {
+                            approval: "69677d4de5f76f7a8c42dbf6", // Pending
+                            sale: "69678075e5f76f7a8c42dc12" // Not for sale
+                        }
+                    })).filter(a => a.title[0].value || a.title[1].value);
+
+                    if (mappedArtworks.length === 0) {
+                        alert("No valid artwork data found. Please check column headers.");
+                        return;
+                    }
+
+                    if (confirm(`Detected ${mappedArtworks.length} artworks. Proceed with bulk import?`)) {
+                        this.$store.dispatch('artwork/create', mappedArtworks)
+                            .then(() => {
+                                this.fetchArtworks();
+                                alert("Bulk import completed successfully!");
+                                this.showChoiceModal = false;
+                            })
+                            .catch(err => {
+                                console.error("Import error:", err);
+                                alert("Failed to import artworks. Please check data format.");
+                            });
+                    }
+                } catch (error) {
+                    console.error("File processing error:", error);
+                    alert("Error reading file.");
                 }
             };
             reader.readAsArrayBuffer(file);
+        },
+        downloadTemplate() {
+            const data = [
+                ["ArtworkTitleThai", "ArtworkTitleEng", "DescriptionThai", "DescriptionEng", "TechniqueThai", "TechniqueEng", "SizeThai", "SizeEng", "Price", "ArtistID"],
+                ["ภาพวาดพุทธศิลป์ตัวอย่าง", "Sample Buddhist Art", "คำอธิบายผลงานเบื้องต้น...", "Brief artwork description...", "สีน้ำมันบนผ้าใบ", "Oil on Canvas", "60x80 ซม.", "60x80 cm", "5500", "64XXXXXX"]
+            ];
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Artwork_Template");
+            
+            // Auto-width columns
+            const wscols = [
+                {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 10}, {wch: 15}
+            ];
+            worksheet['!cols'] = wscols;
+
+            XLSX.writeFile(workbook, "Artwork_Import_Template.xlsx");
         },
         async handleSaveArtwork(artworkData) {
             try {
@@ -241,6 +301,12 @@ export default {
             if (this.$refs.adminTable) {
                 this.$refs.adminTable.exportExcel();
             }
+        },
+        findArtistId(studentId) {
+            if (!studentId) return null;
+            const users = this.$store.getters['user/user'] || [];
+            const artist = users.find(u => u.studentId === String(studentId));
+            return artist ? artist._id : null;
         }
     }
 }

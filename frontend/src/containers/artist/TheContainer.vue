@@ -19,6 +19,7 @@
     <CenterLoading/>
     <SignIn/>
     <TwoFA/>
+    <DialogMessage/>
 
   </div>
 </template>

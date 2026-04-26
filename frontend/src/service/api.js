@@ -65,9 +65,7 @@ export default {
                 return instance.get("/api/v1/user", { params: data });
             case 'upload':
                 return instance.put("/api/v1/user/upload", data, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
+                    headers: { 'Content-Type': undefined }
                 });
             default:
                 break;
@@ -94,9 +92,7 @@ export default {
                 return instance[data.method]("/api/v1/artwork/presentation", data.data);
             case 'upload':
                 return instance.put("/api/v1/artwork/upload", data, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
+                    headers: { 'Content-Type': undefined }
                 });
             default:
                 break;
@@ -117,9 +113,7 @@ export default {
                 return instance.post("/api/v1/order/explore", data);
             case 'upload':
                 return instance.put("/api/v1/order/upload", data, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
+                    headers: { 'Content-Type': undefined }
                 });
             default:
                 break;
@@ -144,20 +138,20 @@ export default {
     news(method, data, configs) {
         switch (method) {
             case 'get':
-                return instance.get("/api/v1/new");
+                return instance.get("/api/v1/news");
+            case 'view':
+                return instance.get(`/api/v1/news/view/${data}`);
             case 'exp':
-                return instance.post("/api/v1/new/explore", data);
+                return instance.post("/api/v1/news/explore", data);
             case 'post':
-                return instance.post("/api/v1/new", data);
+                return instance.post("/api/v1/news", data);
             case 'put':
-                return instance.put("/api/v1/new", data);
+                return instance.put("/api/v1/news", data);
             case 'delete':
-                return instance.delete("/api/v1/new", { data: data });
+                return instance.delete("/api/v1/news", { data: data });
             case 'upload':
-                return instance.put("/api/v1/new/upload", data, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
+                return instance.post("/api/v1/news/upload", data, {
+                    headers: { 'Content-Type': undefined }
                 });
             default:
                 break;
@@ -176,6 +170,10 @@ export default {
                 return instance.put("/api/v1/submission", data);
             case 'delete':
                 return instance.delete("/api/v1/submission", { data: data });
+            case 'upload':
+                return instance.post("/api/v1/submission/upload", data, {
+                    headers: { 'Content-Type': undefined }
+                });
             default:
                 break;
         }

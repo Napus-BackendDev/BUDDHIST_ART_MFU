@@ -2,7 +2,6 @@
     <div class="payment-page bg-light min-vh-100 py-5">
         <CContainer>
 
-            <!-- Top Navigation -->
             <div class="mb-4">
                 <CLink href="#" @click.native.prevent="$router.go(-1)" class="text-muted small text-decoration-none">
                     <CIcon name="cil-arrow-left" size="sm" class="mr-1" /> Back to Shopping
@@ -45,32 +44,60 @@ export default {
         }
     },
     methods: {
-        handleConfirmPayment(payload) {
+        async handleConfirmPayment(payload) {
             if (this.cartItems.length === 0) {
                 alert('Your cart is empty!');
                 return;
             }
 
-            // Create order object
-            const order = {
-                _id: 'ART-' + Math.floor(Math.random() * 10000),
-                date: new Date().toLocaleDateString(),
-                items: this.cartItems,
-                paymentMethod: payload.paymentMethod,
-                subtotal: this.subtotal,
-                shipping: this.shippingCost,
-                total: this.total,
-                paymentProof: payload.paymentProofImage // In real app, upload file first and get URL
-            };
+            try {
+                // 1. Prepare order data for backend (matching Order model)
+                const orderData = {
+                    artwork: this.cartItems.map(item => item._id),
+                    contact: {
+                        name: `${payload.shippingForm.firstName} ${payload.shippingForm.lastName}`,
+                        telephone: payload.shippingForm.phone,
+                        email: payload.shippingForm.email
+                    },
+                    address: {
+                        shipping: `${payload.shippingForm.address}, ${payload.shippingForm.city}, ${payload.shippingForm.postalCode}`,
+                        bill: `${payload.shippingForm.address}, ${payload.shippingForm.city}, ${payload.shippingForm.postalCode}`
+                    }
+                };
 
-            // Save order to store for Bill page
-            this.$store.dispatch('cart/setLastOrder', order);
+                // 2. Create Order in Backend
+                const response = await this.$store.dispatch('order/create', orderData);
+                const createdOrder = response.data.data;
 
-            // Clear Cart
-            this.$store.dispatch('cart/clearCart');
+                // 3. Upload Payment Slip if provided
+                if (payload.paymentProofFile && createdOrder && createdOrder._id) {
+                    await this.$store.dispatch('order/upload', {
+                        _id: createdOrder._id,
+                        image: payload.paymentProofFile
+                    });
+                }
 
-            // Redirect to Bill page
-            this.$router.push('/bill');
+                // 4. Save to lastOrder for local Bill page display
+                const finalOrder = {
+                    ...createdOrder,
+                    _id: createdOrder._id || 'ART-' + Math.floor(Math.random() * 10000),
+                    date: new Date().toLocaleDateString(),
+                    items: this.cartItems,
+                    paymentMethod: payload.paymentMethod,
+                    subtotal: this.subtotal,
+                    shipping: this.shippingCost,
+                    total: this.total
+                };
+                this.$store.dispatch('cart/setLastOrder', finalOrder);
+
+                // 5. Clear Cart and Redirect
+                this.$store.dispatch('cart/clearCart');
+                this.$router.push('/bill');
+
+            } catch (error) {
+                console.error('Order creation failed:', error);
+                alert('เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
+            }
         }
     }
 }
@@ -78,7 +105,8 @@ export default {
 
 <style scoped>
 .payment-page {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-top: 0 !important;
+    margin-top: -2rem !important;
 }
 
 .step-badge {
@@ -99,10 +127,6 @@ export default {
 }
 
 /* Custom Input Styling */
-::v-deep .h-50-px {
-    height: 48px;
-}
-
 ::v-deep .form-control {
     background-color: #f8f9fa;
 }

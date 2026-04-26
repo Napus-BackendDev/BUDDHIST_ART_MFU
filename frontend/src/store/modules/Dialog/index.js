@@ -43,6 +43,13 @@ const DialogModule = {
             state.isCode = data
         },
 
+        showToast(state, data) {
+            // This can be used by a global Toast component or just to prevent Vuex errors
+            console.log("Toast:", data);
+            state.message = data.message;
+            // If the project uses a specific toast plugin, we could trigger it here
+        }
+
     },
 
     actions: {},

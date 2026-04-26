@@ -6,6 +6,7 @@ const userService = require("./service/user");
 
 router.get("", userService.onQuerys);
 router.post("/explore", userService.onQuery);
+router.post("/auth/sign-in", userService.onSignIn);
 router.post("", userService.onCreate);
 router.put("/upload", uploadImage("profile", "image"), userService.onUpload);
 router.put("", userService.onUpdate);

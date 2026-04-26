@@ -1,5 +1,5 @@
 <template>
-  <div class="artist-profile-header-container mx-3 mb-4 mt-4">
+  <div>
     <!-- Main Card with Glass effect -->
     <div class="profile-header-card shadow-premium overflow-hidden">
       
@@ -24,27 +24,18 @@
                 <img v-if="user && user.image" :src="user.image" class="avatar-image" />
                 <span v-else class="avatar-initials text-white">{{ initials }}</span>
                 
-                <!-- Verified Badge Overlay -->
-                <div class="verified-icon-floating shadow-sm">
-                  <CIcon name="cil-check-circle" size="sm" class="text-white" />
-                </div>
               </div>
             </div>
           </div>
           
           <!-- User Details Section -->
-          <div class="user-details-wrapper flex-grow-1 text-center text-md-left mb-3 mb-md-0 pb-1">
-            <div class="d-flex flex-column flex-md-row align-items-center mb-1">
+          <div class="user-details-wrapper flex-grow-1 text-center text-md-left mt-2 mb-3 mb-md-0 pb-1">
+            <div class="d-flex flex-column flex-md-row align-items-center mb-1 ">
               <h2 class="display-name font-weight-bold mb-0 mr-md-3">{{ nameEn }}</h2>
               <div class="status-pill-modern" :class="statusClass">
                 <span class="dot"></span>
                 <span class="status-text">{{ statusName }}</span>
               </div>
-            </div>
-            
-            <div class="username-handle mb-3">
-              <span class="handle-symbol text-muted mr-1">@</span>
-              <span class="handle-text font-weight-medium text-muted">{{ username }}</span>
             </div>
             
             <p class="profile-bio text-muted mb-0">

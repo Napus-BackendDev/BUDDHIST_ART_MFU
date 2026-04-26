@@ -86,20 +86,52 @@ export default {
             this.submitting = true;
             try {
                 // 1. Upload the artwork file first
-                const uploadRes = await this.$store.dispatch('artwork/upload', formData.image);
-                const imageUrl = uploadRes.data.data.url; // Assuming this structure
+                const uploadData = new FormData();
+                uploadData.append('image', formData.image);
+                
+                const uploadRes = await this.$store.dispatch('submission/upload', uploadData);
+                
+                let imageUrl = '';
+                if (uploadRes && uploadRes.data && uploadRes.data.data && uploadRes.data.data.url) {
+                    imageUrl = uploadRes.data.data.url;
+                } else {
+                    throw new Error('Failed to retrieve image URL from upload response');
+                }
 
-                // 2. Prepare the artwork object
+                // 2. Prepare the artwork object matching the backend schema
                 const newArtwork = {
                     title: [{ key: 'en', value: formData.title }, { key: 'th', value: formData.title }],
                     description: [{ key: 'en', value: formData.description }, { key: 'th', value: formData.description }],
+                    technique: [{ key: 'en', value: formData.technique }, { key: 'th', value: formData.technique }],
+                    size: [{ key: 'en', value: formData.size }, { key: 'th', value: formData.size }],
+                    price: parseFloat(formData.price) || 0,
+                    category: formData.category,
                     image: imageUrl,
-                    artist: this.$store.getters['Authentication/user']._id,
-                    status: 'Pending'
+                    owner: this.$store.getters['Authentication/user']._id,
+                    status: null, // Depending on backend defaults, usually null for new submission
+                    create: { at: new Date() }
                 };
 
-                // 3. Update the submission's assignment with the new artwork
-                const updatedSubmission = { ...this.submission };
+                // 3. Deep clone to avoid Vuex mutation errors
+                const updatedSubmission = JSON.parse(JSON.stringify(this.submission));
+                
+                // Unpopulate fields to prevent Mongoose cast errors on save
+                if (updatedSubmission.artist && updatedSubmission.artist.length > 0 && typeof updatedSubmission.artist[0] === 'object') {
+                    updatedSubmission.artist = updatedSubmission.artist.map(a => a._id);
+                }
+                
+                updatedSubmission.assignments.forEach(assignment => {
+                    if (assignment.artist && assignment.artist.length > 0 && typeof assignment.artist[0] === 'object') {
+                        assignment.artist = assignment.artist.map(a => a._id);
+                    }
+                    if (assignment.artworks) {
+                        assignment.artworks.forEach(aw => {
+                            if (aw.owner && typeof aw.owner === 'object') aw.owner = aw.owner._id;
+                            if (aw.status && typeof aw.status === 'object') aw.status = aw.status._id;
+                        });
+                    }
+                });
+
                 const assignmentIndex = updatedSubmission.assignments.findIndex(a => a._id === this.selectedAssignment._id);
                 
                 if (assignmentIndex !== -1) {

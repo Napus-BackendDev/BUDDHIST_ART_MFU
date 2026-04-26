@@ -1,9 +1,9 @@
 <template>
-  <div class="artist-profile-page" v-if="form">
+  <div v-if="form">
     <ArtistProfileHeader :user="user" @edit="isEditing = true" />
 
     <!-- Artwork Portfolio Section -->
-    <CCard class="profile-portfolio-card mx-3 mt-4 mb-5 border-0 shadow-premium rounded-xl overflow-hidden">
+    <CCard class="profile-portfolio-card mt-4 border-0 shadow-premium rounded-xl overflow-hidden">
       <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
         <div class="header-title-group mb-3 mb-md-0">
           <h3 class="mb-1 font-weight-bold text-dark portfolio-title">My Artwork Portfolio</h3>
@@ -18,7 +18,21 @@
       
       <CCardBody class="p-4 p-md-5">
         <div class="portfolio-grid-container">
-          <ArtworkCard :artworks="artistArtworks" />
+          <ArtworkCard 
+            :artworks="paginatedArtworks" 
+            @edit="handleEditArtwork"
+            @delete="handleDeleteArtwork"
+          />
+        </div>
+
+        <!-- Portfolio Pagination -->
+        <div v-if="totalArtworksPages > 1" class="d-flex justify-content-center mt-5 mb-2">
+          <CPagination
+            :active-page.sync="activePage"
+            :pages="totalArtworksPages"
+            align="center"
+            class="premium-pagination"
+          />
         </div>
       </CCardBody>
     </CCard>
@@ -43,7 +57,7 @@
                 <img v-if="form.image" :src="form.image" class="avatar-img" />
                 <span v-else class="avatar-initials">{{ initials }}</span>
               </div>
-              <CButton color="primary" variant="outline" shape="pill" class="btn-sm btn-upload mt-3 shadow-sm" @click="triggerUpload">
+              <CButton variant="outline" shape="pill" class="btn-sm btn-upload mt-3 shadow-sm" @click="triggerUpload">
                 <CIcon name="cil-camera" class="mr-2" /> Change Photo
               </CButton>
               <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept="image/*" />
@@ -53,12 +67,16 @@
             <p class="text-muted small mb-4">{{ studentId }}</p>
             
             <div class="text-left mt-4 border-top pt-4">
-              <label class="section-label mb-2">Biography</label>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="section-label mb-0">Biography</label>
+                <small class="text-muted">{{ form.bio ? form.bio.length : 0 }} / 200</small>
+              </div>
               <CTextarea 
                 v-model="form.bio"
                 placeholder="Tell us about yourself and your artistic style..."
                 class="bio-textarea"
                 rows="4"
+                maxlength="200"
               />
             </div>
           </CCardBody>
@@ -123,12 +141,19 @@
       </template>
     </CModal>
     
-    <!-- Artwork Creation Modal -->
     <ArtworkCreateModal 
       :show="showArtworkModal" 
       :initialArtistId="userId"
+      :loading="loading"
       @update:show="showArtworkModal = $event"
       @save="handleArtworkSave"
+    />
+
+    <ArtworkEditModal
+      :show="showEditModal"
+      :artwork="selectedArtwork"
+      @update:show="showEditModal = $event"
+      @save="handleArtworkUpdate"
     />
   </div>
 </template>
@@ -138,6 +163,7 @@ import ArtistProfileHeader from './components/ArtistProfileHeader.vue'
 import ArtworkCard from './components/card/CardArtworks.vue'
 import SubmissionTable from '../Admin/components/table/SubmissionTable.vue'
 import ArtworkCreateModal from './components/modal/ArtworkCreateModal.vue'
+import ArtworkEditModal from './components/modal/ArtworkEditModal.vue'
 import { mapGetters } from 'vuex';
 
 export default {
@@ -146,7 +172,8 @@ export default {
     ArtistProfileHeader,
     ArtworkCard,
     SubmissionTable,
-    ArtworkCreateModal
+    ArtworkCreateModal,
+    ArtworkEditModal
   },
   data() {
     return {
@@ -154,14 +181,20 @@ export default {
       loading: false,
       isEditing: false,
       showArtworkModal: false,
-      selectedFile: null
+      showEditModal: false,
+      selectedArtwork: null,
+      selectedFile: null,
+      artworkToDelete: null,
+      activePage: 1,
+      itemsPerPage: 8
     }
   },
   computed: {
     ...mapGetters({
       userId: 'auth/userId',
       users: 'user/user',
-      allArtworks: 'artwork/artworks'
+      allArtworks: 'artwork/artworks',
+      dialogCode: 'dialog/isCode'
     }),
     user() {
       // Find current user from the list
@@ -170,11 +203,38 @@ export default {
     },
     artistArtworks() {
       if (!this.allArtworks) return [];
-      return this.allArtworks.filter(art => {
-        console.log(art);
+      
+      // 1. Filter by artist ID
+      let filtered = this.allArtworks.filter(art => {
         if (!art.artist) return false;
         const id = typeof art.artist === 'object' ? art.artist._id : art.artist;
         return id === this.userId;
+      });
+
+      // 2. Sort by Priority and Date
+      return filtered.sort((a, b) => {
+        // Priority Score: Approved = 1, Others = 2, Pending = 3
+        const getPriority = (art) => {
+          const statusEn = art.status && art.status.approval 
+              ? this.getName('en', art.status.approval).toLowerCase() 
+              : (typeof art.status === 'string' ? art.status.toLowerCase() : '');
+          
+          if (statusEn.includes('approve') || statusEn.includes('accept')) return 1;
+          if (statusEn.includes('pending')) return 3;
+          return 2;
+        };
+
+        const priorityA = getPriority(a);
+        const priorityB = getPriority(b);
+
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+
+        // Within same priority group, sort by updatedAt desc (newest first)
+        const dateA = new Date(a.updatedAt || a.createdAt || 0);
+        const dateB = new Date(b.updatedAt || b.createdAt || 0);
+        return dateB - dateA;
       });
     },
     nameEn() {
@@ -186,6 +246,16 @@ export default {
     initials() {
       if (!this.nameEn) return 'A';
       return this.nameEn.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    },
+    totalArtworksPages() {
+      if (!this.artistArtworks) return 0;
+      return Math.ceil(this.artistArtworks.length / this.itemsPerPage);
+    },
+    paginatedArtworks() {
+      if (!this.artistArtworks) return [];
+      const start = (this.activePage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.artistArtworks.slice(start, end);
     }
   },
   async created() {
@@ -208,29 +278,79 @@ export default {
           });
       }
     },
+    handleEditArtwork(art) {
+      this.selectedArtwork = art;
+      this.showEditModal = true;
+    },
+    handleDeleteArtwork(art) {
+      this.artworkToDelete = art;
+      
+      // Reset dialog state
+      this.$store.commit('dialog/isCode', null);
+      
+      // Show confirmation dialog
+      this.$store.commit('dialog/dialog', {
+        title: 'Confirm Deletion',
+        message: `Are you sure you want to delete "${this.getName('en', art)}"? This action cannot be undone.`,
+        number: '001',
+        code: 'DELETE_ARTWORK',
+        status: true,
+        button: [
+          {
+            label: 'CANCEL',
+            icon: 'cil-ban',
+            color: 'secondary',
+            code: 'cancel'
+          },
+          {
+            label: 'DELETE',
+            icon: 'cil-trash',
+            color: 'danger',
+            code: 'confirm_delete'
+          }
+        ]
+      });
+    },
+    getName(lang, item) {
+      if (!item) return '';
+      if (typeof item === 'string') return item;
+      const titleField = item.title || item.name || '';
+      if (typeof titleField === 'string' && titleField) return titleField;
+      if (Array.isArray(titleField)) {
+        const obj = titleField.find(n => n.key === lang);
+        return obj ? obj.value : (titleField[0] ? titleField[0].value : '');
+      }
+      return '';
+    },
     async fetchProfile() {
       try {
-        await this.$store.dispatch('user/get', { _id: this.userId });
-        if (this.user) {
+        // Force refresh user list, or fetch specific user
+        const users = await this.$store.dispatch('user/get', {});
+        // Find the user directly from the fetched array to avoid reactivity timing issues
+        const currentUser = users ? users.find(u => u._id === this.userId) : null;
+        
+        if (currentUser) {
           const getName = (lang) => {
-            if (Array.isArray(this.user.name)) {
-              const obj = this.user.name.find(n => n.key === lang);
+            if (Array.isArray(currentUser.name)) {
+              const obj = currentUser.name.find(n => n.key === lang);
               return obj ? obj.value : '';
             }
             return '';
           };
           
           this.form = {
-            _id: this.user._id,
-            studentId: this.user.studentId,
-            image: this.user.image,
+            _id: currentUser._id,
+            studentId: currentUser.studentId,
+            image: currentUser.image,
             nameTh: getName('th'),
             nameEn: getName('en'),
-            email: this.user.contact ? this.user.contact.studentEmail : '',
-            personalEmail: this.user.contact ? this.user.contact.personalEmail : '',
-            telephone: this.user.contact ? this.user.contact.telephone : '',
-            bio: this.user.bio || ''
+            email: currentUser.contact ? currentUser.contact.studentEmail : '',
+            personalEmail: currentUser.contact ? currentUser.contact.personalEmail : '',
+            telephone: currentUser.contact ? currentUser.contact.telephone : '',
+            bio: currentUser.bio || ''
           };
+        } else {
+          console.error("Profile Error: User not found in database matching ID:", this.userId);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -315,22 +435,45 @@ export default {
       try {
         this.loading = true;
         
-        // Prepare FormData for multi-part upload
-        const formData = new FormData();
-        formData.append('title', JSON.stringify(payload.title));
-        formData.append('description', JSON.stringify(payload.description));
-        formData.append('technique', JSON.stringify(payload.technique));
-        formData.append('artist', payload.artist);
-        formData.append('category', payload.category);
-        formData.append('price', payload.price);
-        formData.append('status', JSON.stringify(payload.status));
-        
-        if (payload._image) {
-          formData.append('image', payload._image);
-        }
+        // --- STEP 1: CREATE ARTWORK RECORD (JSON) ---
+        // Prepare JSON payload for metadata creation
+        const createPayload = {
+          title: payload.title,
+          description: payload.description,
+          technique: payload.technique,
+          artist: payload.artist,
+          category: payload.category,
+          price: payload.price,
+          status: payload.status
+        };
 
-        // Call artwork/upload action
-        await this.$store.dispatch('artwork/upload', formData);
+        this.$store.commit('dialog/showToast', {
+          title: 'Processing',
+          message: 'Creating artwork record...',
+          variant: 'info'
+        });
+
+        const createResponse = await this.$store.dispatch('artwork/create', createPayload);
+        
+        // Extract the created ID (assuming backend returns { data: { data: { _id: ... } } })
+        const artworkId = createResponse.data.data._id;
+        
+        if (!artworkId) throw new Error('Failed to retrieve artwork ID');
+
+        // --- STEP 2: UPLOAD ARTWORK IMAGE (MULTIPART) ---
+        if (payload._image) {
+          this.$store.commit('dialog/showToast', {
+            title: 'Processing',
+            message: 'Uploading artwork image...',
+            variant: 'info'
+          });
+
+          const formData = new FormData();
+          formData.append('_id', artworkId);
+          formData.append('image', payload._image);
+
+          await this.$store.dispatch('artwork/upload', formData);
+        }
         
         this.$store.commit('dialog/showToast', {
           title: 'Success',
@@ -344,14 +487,119 @@ export default {
         await this.$store.dispatch('artwork/get');
         
       } catch (error) {
-        console.error('Error creating artwork:', error);
+        console.error('Error in artwork creation flow:', error);
+        
+        // Attempt to show more specific error if available from backend
+        const errorMessage = error.response && error.response.data && error.response.data.message
+          ? error.response.data.message
+          : 'Failed to add artwork. Please check your connection and try again.';
+
         this.$store.commit('dialog/showToast', {
           title: 'Error',
-          message: 'Failed to add artwork. Please try again.',
+          message: errorMessage,
           variant: 'danger'
         });
       } finally {
         this.loading = false;
+      }
+    },
+    async handleArtworkUpdate(payload) {
+      try {
+        this.loading = true;
+        
+        // --- STEP 1: UPDATE ARTWORK RECORD (JSON) ---
+        this.$store.commit('dialog/showToast', {
+          title: 'Processing',
+          message: 'Updating artwork details...',
+          variant: 'info'
+        });
+
+        const updatePayload = {
+          _id: payload._id,
+          title: payload.title,
+          description: payload.description,
+          technique: payload.technique,
+          artist: payload.artist,
+          category: payload.category,
+          price: payload.price,
+          status: payload.status
+        };
+
+        await this.$store.dispatch('artwork/update', updatePayload);
+        
+        // --- STEP 2: UPLOAD NEW IMAGE IF CHANGED ---
+        if (payload._image && payload._image instanceof File) {
+          this.$store.commit('dialog/showToast', {
+            title: 'Processing',
+            message: 'Uploading new artwork image...',
+            variant: 'info'
+          });
+
+          const formData = new FormData();
+          formData.append('_id', payload._id);
+          formData.append('image', payload._image);
+
+          await this.$store.dispatch('artwork/upload', formData);
+        }
+        
+        this.$store.commit('dialog/showToast', {
+          title: 'Success',
+          message: 'Artwork updated successfully!',
+          variant: 'success'
+        });
+        
+        this.showEditModal = false;
+        this.selectedArtwork = null;
+        
+        // Refresh artwork list
+        await this.$store.dispatch('artwork/get');
+        
+      } catch (error) {
+        console.error('Error in artwork update flow:', error);
+        
+        const errorMessage = error.response && error.response.data && error.response.data.message
+          ? error.response.data.message
+          : 'Failed to update artwork. Please try again.';
+
+        this.$store.commit('dialog/showToast', {
+          title: 'Error',
+          message: errorMessage,
+          variant: 'danger'
+        });
+      } finally {
+        this.loading = false;
+      }
+    }
+  },
+  watch: {
+    dialogCode(val) {
+      if (val === 'confirm_delete' && this.artworkToDelete) {
+        const artId = this.artworkToDelete._id;
+        
+        // Execute delete
+        this.$store.dispatch('artwork/delete', { _id: artId })
+          .then(() => {
+            this.$store.commit('dialog/showToast', {
+              title: 'Deleted',
+              message: 'Artwork has been removed from your portfolio.',
+              variant: 'success'
+            });
+            
+            // Refresh list
+            this.$store.dispatch('artwork/get');
+          })
+          .catch(err => {
+            console.error('Delete failed:', err);
+            this.$store.commit('dialog/showToast', {
+              title: 'Error',
+              message: 'Failed to delete artwork.',
+              variant: 'danger'
+            });
+          })
+          .finally(() => {
+            this.artworkToDelete = null;
+            this.$store.commit('dialog/isCode', null);
+          });
       }
     }
   }
@@ -399,6 +647,19 @@ export default {
   letter-spacing: -2px;
 }
 
+.btn-upload {
+  color: #8c1515 !important;
+  border-color: #8c1515 !important;
+  background-color: transparent !important;
+  font-weight: 600 !important;
+}
+
+.btn-upload:hover {
+  background-color: #fff1f1 !important;
+  color: #701111 !important;
+  border-color: #701111 !important;
+}
+
 /* Form Styles */
 .form-label {
   display: block;
@@ -411,8 +672,6 @@ export default {
 }
 
 .custom-input ::v-deep .form-control {
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
   padding: 0.85rem 1.25rem;
   height: auto;
   font-size: 1rem;
@@ -525,9 +784,9 @@ export default {
 }
 
 .btn-add-artwork:hover {
-  background-color: #2c1bbd;
+  background-color: #701111;
   transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(50, 31, 219, 0.2) !important;
+  box-shadow: 0 8px 15px rgba(140, 21, 21, 0.2) !important;
 }
 
 .portfolio-grid-container {
@@ -537,5 +796,34 @@ export default {
 /* Override ArtworkCard default margins if needed */
 ::v-deep .artwork-card {
   margin-bottom: 2rem;
+}
+
+/* Pagination Styling */
+.premium-pagination ::v-deep .page-link {
+  border: none;
+  background-color: #f8fafc;
+  color: #64748b;
+  margin: 0 4px;
+  border-radius: 8px !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  padding: 0.6rem 1rem;
+}
+
+.premium-pagination ::v-deep .page-item.active .page-link {
+  background-color: #8c1515 !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(140, 21, 21, 0.2);
+}
+
+.premium-pagination ::v-deep .page-link:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  transform: translateY(-2px);
+}
+
+.premium-pagination ::v-deep .page-item.disabled .page-link {
+  background-color: transparent;
+  opacity: 0.5;
 }
 </style>

@@ -37,6 +37,70 @@
                 </CCol>
             </CRow>
 
+            <!-- Category & Technique Row -->
+            <CRow>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">หมวดหมู่ (Category)</label>
+                        <CDropdown :caret="false" class="w-100">
+                            <template #toggler>
+                                <button class="custom-select-btn">
+                                    <span class="text-dark">{{ selectedCategoryName }}</span>
+                                    <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
+                                </button>
+                            </template>
+                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                                <CDropdownItem 
+                                    v-for="cat in categories" 
+                                    :key="cat._id" 
+                                    @click="form.category = cat._id"
+                                >
+                                    {{ getName('en', cat) }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
+                        </CDropdown>
+                    </div>
+                </CCol>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">เทคนิค (Technique)</label>
+                        <CInput 
+                            v-model="form.technique" 
+                            placeholder="เช่น สีน้ำมันบนผ้าใบ (Oil on Canvas)" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Size & Price Row -->
+            <CRow>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">ขนาด (Size)</label>
+                        <CInput 
+                            v-model="form.size" 
+                            placeholder="เช่น 60 x 80 cm" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">ราคา (Price)</label>
+                        <div class="input-group-custom">
+                            <span class="currency-prefix">฿</span>
+                            <CInput 
+                                type="number"
+                                v-model="form.price" 
+                                placeholder="0.00" 
+                                class="custom-input-with-prefix text-right mb-0"
+                            />
+                        </div>
+                    </div>
+                </CCol>
+            </CRow>
+
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
@@ -131,19 +195,60 @@ export default {
     data() {
         return {
             imagePreview: null,
+            categories: [],
             form: {
                 title: '',
                 description: '',
+                category: '',
+                technique: '',
+                size: '',
+                price: '',
                 image: null
             }
         }
     },
+    async created() {
+        this.fetchInitialData();
+    },
     computed: {
         isFormValid() {
-            return this.form.title.trim() !== '' && this.form.image !== null;
+            return this.form.title.trim() !== '' && 
+                   this.form.category !== '' &&
+                   this.form.technique.trim() !== '' &&
+                   this.form.size.trim() !== '' &&
+                   this.form.price !== '' &&
+                   this.form.image !== null;
+        },
+        selectedCategoryName() {
+            const cat = this.categories.find(c => c._id === this.form.category);
+            return cat ? this.getName('en', cat) : 'เลือกหมวดหมู่ (Select Category)';
         }
     },
     methods: {
+        async fetchInitialData() {
+            try {
+                // Fetch Categories for the dropdown
+                const categories = await this.$store.dispatch('artwork/category', { method: 'get' });
+                this.categories = categories || [];
+                if (this.categories.length > 0) this.form.category = this.categories[0]._id;
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        },
+        getName(lang, item) {
+            if (!item) return 'N/A';
+            if (typeof item === 'string') return item;
+            
+            const titleField = item.title || item.name || '';
+            if (typeof titleField === 'string' && titleField) return titleField;
+            
+            if (Array.isArray(titleField)) {
+                const nameObj = titleField.find(n => n.key === lang);
+                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
+                return nameObj ? nameObj.value : firstVal;
+            }
+            return 'N/A';
+        },
         handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -170,6 +275,10 @@ export default {
             this.form = {
                 title: '',
                 description: '',
+                category: this.categories.length > 0 ? this.categories[0]._id : '',
+                technique: '',
+                size: '',
+                price: '',
                 image: null
             };
             this.imagePreview = null;
@@ -218,6 +327,64 @@ export default {
     border-color: #48bb7833;
     background-color: #ffffff;
     box-shadow: 0 0 0 4px rgba(72, 187, 120, 0.05);
+}
+
+.input-group-custom {
+    position: relative;
+}
+
+.currency-prefix {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+    color: #1e293b;
+    z-index: 10;
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+.custom-input-with-prefix ::v-deep .form-control {
+    padding-left: 2.85rem !important;
+    height: 52px !important;
+    border-radius: 12px !important;
+    border: 1px solid #f1f5f9 !important;
+    background-color: #f8fafc !important;
+    font-size: 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.custom-input-with-prefix ::v-deep .form-control:focus {
+    background-color: #ffffff !important;
+    border-color: #3b82f633 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05) !important;
+}
+
+.custom-select-btn {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 0.85rem 1.25rem;
+    height: auto;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    outline: none;
+    cursor: pointer;
+}
+
+.custom-select-btn:hover {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+.dropdown-icon {
+    color: #94a3b8;
+    width: 14px;
 }
 
 /* File Upload Stying */

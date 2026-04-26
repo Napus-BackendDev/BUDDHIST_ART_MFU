@@ -131,11 +131,21 @@
                         <CInput 
                             v-model="form.technique" 
                             placeholder="e.g. Oil on Canvas" 
-                            class="custom-input"
+                            class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Size</label>
+                        <CInput 
+                            v-model="form.size" 
+                            placeholder="e.g. 100 x 150 cm" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+                <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Sale Status</label>
                         <CDropdown :caret="false" class="w-100">
@@ -269,6 +279,7 @@ export default {
                 artist: '',
                 category: '',
                 technique: '',
+                size: '',
                 price: '',
                 description: '',
                 status: {
@@ -370,6 +381,7 @@ export default {
                 artist: artwork.artist ? artwork.artist._id : '',
                 category: artwork.category ? artwork.category._id : '',
                 technique: this.getName('en', { title: artwork.technique }),
+                size: this.getName('en', { title: artwork.size }),
                 price: this.cleanPrice(artwork.price),
                 description: this.getName('en', { title: artwork.description }),
                 status: {
@@ -477,6 +489,7 @@ export default {
                 artist: this.form.artist,
                 category: this.form.category,
                 technique: [{ key: 'en', value: this.form.technique }, { key: 'th', value: this.form.technique }],
+                size: [{ key: 'en', value: this.form.size }, { key: 'th', value: this.form.size }],
                 price: parseFloat(this.form.price),
                 status: this.form.status,
                 _image: this.form.image

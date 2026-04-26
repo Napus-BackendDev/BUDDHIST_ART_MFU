@@ -5,39 +5,41 @@
         <CCard class="border-0 shadow-sm mb-4 rounded-lg overflow-hidden">
             <CCardHeader class="bg-white border-bottom-0 p-4" :class="{ 'cursor-pointer': currentStep === 2 }"
                 @click.native="currentStep = 1">
-                <h5 class="font-weight-bold mb-0" :class="currentStep === 1 ? 'text-dark' : 'text-muted'">
-                    <span class="step-badge mr-2" :class="{ 'bg-success': currentStep === 2 }">
-                        <CIcon name="cil-check" v-if="currentStep === 2" size="sm" />
-                        <span v-else>1</span>
-                    </span>
-                    Shipping Information
+                <h5 class="font-weight-bold mb-0 d-flex align-items-center" :class="currentStep === 1 ? 'text-dark' : 'text-muted'">
+                    <span class="step-badge mr-3" :class="{ 'bg-success text-white': currentStep === 2 }">1</span>
+                    <span>Shipping Information</span>
+                    <CIcon name="cil-check-circle" v-if="currentStep === 2" class="ml-auto text-success" size="xl" />
                 </h5>
             </CCardHeader>
             <CCardBody class="p-4 pt-0" v-show="currentStep === 1">
                 <CRow>
                     <CCol md="6" class="mb-3">
                         <label class="font-weight-bold small text-muted">First Name</label>
-                        <CInput placeholder="" class="bg-light border-0 shadow-none h-50-px" />
+                        <CInput v-model="form.firstName" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
                         <label class="font-weight-bold small text-muted">Last Name</label>
-                        <CInput placeholder="" class="bg-light border-0 shadow-none h-50-px" />
+                        <CInput v-model="form.lastName" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
-                    <CCol md="12" class="mb-3">
+                    <CCol md="6" class="mb-3">
                         <label class="font-weight-bold small text-muted">Email Address</label>
-                        <CInput placeholder="" class="bg-light border-0 shadow-none h-50-px" />
+                        <CInput v-model="form.email" placeholder="" class="bg-light border-0 shadow-none" />
+                    </CCol>
+                    <CCol md="6" class="mb-3">
+                        <label class="font-weight-bold small text-muted">Phone Number</label>
+                        <CInput v-model="form.phone" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="12" class="mb-3">
                         <label class="font-weight-bold small text-muted">Address</label>
-                        <CInput placeholder="" class="bg-light border-0 shadow-none h-50-px" />
+                        <CInput v-model="form.address" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
                         <label class="font-weight-bold small text-muted">City</label>
-                        <CInput placeholder="" class="bg-light border-0 shadow-none h-50-px" />
+                        <CInput v-model="form.city" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
                         <label class="font-weight-bold small text-muted">Postal Code</label>
-                        <CInput placeholder="" class="bg-light border-0 shadow-none h-50-px" />
+                        <CInput v-model="form.postalCode" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
                 </CRow>
 
@@ -51,9 +53,9 @@
         <!-- Step 2: Payment Method -->
         <CCard class="border-0 shadow-sm mb-4 rounded-lg">
             <CCardHeader class="bg-white border-bottom-0 p-4">
-                <h5 class="font-weight-bold mb-0" :class="currentStep === 2 ? 'text-dark' : 'text-muted'">
-                    <span class="step-badge mr-2" :class="{ 'bg-light text-muted': currentStep === 1 }">2</span> Payment
-                    Method
+                <h5 class="font-weight-bold mb-0 d-flex align-items-center" :class="currentStep === 2 ? 'text-dark' : 'text-muted'">
+                    <span class="step-badge mr-3" :class="{ 'bg-success text-white': false }">2</span>
+                    <span>Payment Method</span>
                 </h5>
             </CCardHeader>
             <CCardBody class="p-4 pt-0" v-show="currentStep === 2">
@@ -124,9 +126,7 @@
                         </div>
 
                         <div class="p-3 rounded-lg small border-0" style="background-color: #ebf8ff; color: #4a5568;">
-                            Please transfer the exact amount of <span class="font-weight-bold text-dark">$625</span> and
-                            upload your transaction
-                            slip below.
+                            กรุณาโอนเงินตามยอดที่ระบุ และ <strong>หลังโอนเงินกรุณา อัพ ใบเสร็จด้วยครับ</strong>
                         </div>
                     </div>
                 </div>
@@ -182,7 +182,16 @@ export default {
             paymentProofImage: null,
             paymentProofFile: null,
             paymentProofName: '',
-            paymentProofSize: ''
+            paymentProofSize: '',
+            form: {
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                address: '',
+                city: '',
+                postalCode: ''
+            }
         }
     },
     methods: {
@@ -226,11 +235,85 @@ export default {
             }
         },
         onConfirmPayment() {
+            // Basic validation
+            if (!this.form.firstName || !this.form.email || !this.form.address) {
+                alert('Please fill in all required shipping information.');
+                this.currentStep = 1;
+                return;
+            }
+
             this.$emit('confirm-payment', {
                 paymentMethod: this.paymentMethod,
-                paymentProofImage: this.paymentProofImage
+                paymentProofImage: this.paymentProofImage,
+                paymentProofFile: this.paymentProofFile,
+                shippingForm: this.form
             });
         }
     }
 }
 </script>
+
+<style scoped>
+.step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% !important;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.active-option {
+    border-color: #E55B5B !important;
+    background-color: #fff5f5 !important;
+}
+
+.radio-circle {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #adb5bd;
+    border-radius: 50%;
+    position: relative;
+}
+
+.radio-circle.active {
+    border-color: #E55B5B;
+}
+
+.radio-circle.active::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    background-color: #E55B5B;
+    border-radius: 50%;
+}
+
+.upload-area {
+    border: 2px dashed #dee2e6;
+    transition: all 0.2s;
+}
+
+.upload-area:hover {
+    border-color: #E55B5B;
+    background-color: #fcfcfc;
+}
+
+.qr-container {
+    background-color: #f8fafc;
+}
+
+.border-dashed {
+    border: 2px dashed #e2e8f0;
+}
+</style>

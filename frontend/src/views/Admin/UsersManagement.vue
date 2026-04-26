@@ -28,6 +28,7 @@
             :show.sync="showChoiceModal"
             @manual="handleManualChoice"
             @import="handleFileUpload"
+            @download-template="downloadTemplate"
         />
 
         <UserCreateModal 
@@ -173,7 +174,84 @@ export default {
         },
         handleFileUpload(file) {
             if (!file) return;
-            // Future implementation for excel import
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (jsonData.length === 0) {
+                        alert("The file is empty or invalid.");
+                        return;
+                    }
+
+                    // Find Default Role (Student) and Status
+                    const studentRole = this.roles.find(r => r.name.toLowerCase().includes('student')) || this.roles[0];
+                    const activeStatus = this.studentStatuses.find(s => s.name.toLowerCase().includes('active') || s.name.toLowerCase().includes('normal')) || this.studentStatuses[0];
+
+                    const mappedData = jsonData.map(row => {
+                        // Handle potential spaces in headers or different casings if necessary
+                        return {
+                            studentId: row['StudentID'] ? String(row['StudentID']) : '',
+                            name: [
+                                { key: 'th', value: row['UsernameThai'] || '' },
+                                { key: 'en', value: row['UsernameEng'] || '' }
+                            ],
+                            contact: {
+                                studentEmail: row['Official Email'] || '',
+                                personalEmail: row['Personal Email'] || '',
+                                telephone: row['Telephone'] ? String(row['Telephone']) : ''
+                            },
+                            password: String(row['Temporary Password'] || '123456'),
+                            role: studentRole ? studentRole._id : null,
+                            status: activeStatus ? activeStatus._id : null
+                        };
+                    }).filter(u => u.studentId && u.contact.studentEmail);
+
+                    if (mappedData.length === 0) {
+                        alert("No valid user data found. Please ensure you use the correct column headers:\nStudentID, UsernameThai, UsernameEng, Official Email, Personal Email, Telephone, Temporary Password");
+                        return;
+                    }
+
+                    if (confirm(`Detected ${mappedData.length} valid users. Proceed with bulk import?`)) {
+                        this.$store.dispatch('user/create', mappedData)
+                            .then(() => {
+                                alert("Bulk import completed successfully!");
+                                this.fetchUsers();
+                                this.showChoiceModal = false;
+                            })
+                            .catch(err => {
+                                console.error("Import error:", err);
+                                alert("Failed to import users. Check for duplicate Student IDs or Emails.");
+                            });
+                    }
+                } catch (error) {
+                    console.error("File processing error:", error);
+                    alert("Error reading file. Please use a valid .xlsx or .csv file.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        },
+        downloadTemplate() {
+            const data = [
+                ["StudentID", "UsernameThai", "UsernameEng", "Official Email", "Personal Email", "Telephone", "Temporary Password"],
+                ["64XXXXXX", "ตัวอย่าง ชื่อ-นามสกุล", "Sample Name", "sample.nam@lamduan.mfu.ac.th", "sample@gmail.com", "0812345678", "123456"]
+            ];
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+            
+            // Auto-width columns
+            const wscols = [
+                {wch: 15}, {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 15}, {wch: 20}
+            ];
+            worksheet['!cols'] = wscols;
+
+            XLSX.writeFile(workbook, "User_Import_Template.xlsx");
         },
         handleSaveUser(userData) {
             this.$store.dispatch('user/create', userData)
@@ -187,15 +265,76 @@ export default {
                 console.error("Could not locate table data for export.");
                 return;
             }
-            const dataToExport = this.$refs.usersTable.filteredUsers;
-            if (dataToExport.length === 0) {
+            
+            const users = this.$refs.usersTable.filteredUsers;
+            if (users.length === 0) {
                 alert("No data available to export.");
                 return;
             }
+
+            // Map users to a clean format for Excel
+            const dataToExport = users.map(user => {
+                const nameTh = this.formatUserName(user, 'th');
+                const nameEn = this.formatUserName(user, 'en');
+                
+                return {
+                    'Student ID': user.studentId || 'N/A',
+                    'Full Name (Thai)': nameTh,
+                    'Full Name (English)': nameEn,
+                    'Official Email': (user.contact && user.contact.studentEmail) || '-',
+                    'Personal Email': (user.contact && user.contact.personalEmail) || '-',
+                    'Telephone': (user.contact && user.contact.telephone) || '-',
+                    'Role': this.getRoleName(user.role),
+                    'Status': this.getStatusName(user.status)
+                };
+            });
+
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
-            XLSX.writeFile(workbook, `Users_Export_${new Date().toLocaleDateString()}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Users List");
+            
+            // Set column widths for better readability
+            const wscols = [
+                {wch: 15}, // Student ID
+                {wch: 25}, // Name Thai
+                {wch: 25}, // Name English
+                {wch: 30}, // Official Email
+                {wch: 30}, // Personal Email
+                {wch: 15}, // Telephone
+                {wch: 15}, // Role
+                {wch: 15}  // Status
+            ];
+            worksheet['!cols'] = wscols;
+
+            XLSX.writeFile(workbook, `Users_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+        },
+        // Helper methods for export mapping
+        formatUserName(user, lang) {
+            if (!user || !user.name) return '';
+            if (typeof user.name === 'string') return user.name;
+            if (Array.isArray(user.name)) {
+                const nameObj = user.name.find(n => n.key === lang);
+                return nameObj ? nameObj.value : (user.name[0] ? user.name[0].value : '');
+            }
+            return '';
+        },
+        getRoleName(role) {
+            if (!role) return 'User';
+            if (typeof role === 'string') return role;
+            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
+                const titleEn = role.title.find(t => t.key === 'en');
+                return titleEn ? titleEn.value : (role.title[0] ? role.title[0].value : 'Unknown');
+            }
+            return 'User';
+        },
+        getStatusName(status) {
+            if (!status) return 'Active';
+            if (typeof status === 'string') return status;
+            if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
+                const titleEn = status.title.find(t => t.key === 'en');
+                return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Unknown');
+            }
+            return 'Active';
         }
     }
 }

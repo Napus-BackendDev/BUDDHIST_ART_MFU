@@ -10,7 +10,7 @@
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <div class="icon-square bg-blue-light text-blue mr-3">
+                    <div class="icon-square bg-red-light text-red mr-3">
                         <CIcon name="cil-paint" size="lg" />
                     </div>
                     <div>
@@ -145,7 +145,7 @@
                             <label for="artwork-image-upload" class="file-upload-label w-100">
                                 <template v-if="!imagePreview">
                                     <div class="upload-placeholder py-4 text-center">
-                                        <CIcon name="cil-cloud-upload" size="xl" class="text-blue mb-2" />
+                                        <CIcon name="cil-cloud-upload" size="xl" class="text-red mb-2" />
                                         <div class="font-weight-bold">Click to upload image</div>
                                         <div class="text-muted small">PNG, JPG or JPEG (Max 5MB)</div>
                                     </div>
@@ -202,9 +202,10 @@
                     color="primary" 
                     @click="handleSave"
                     class="btn-create-artwork"
-                    :disabled="!isFormValid"
+                    :disabled="!isFormValid || loading"
                 >
-                    Create Artwork
+                    <CSpinner v-if="loading" size="sm" class="mr-2" />
+                    {{ loading ? 'บันทึกข้อมูล...' : 'สร้างผลงาน' }}
                 </CButton>
             </div>
         </template>
@@ -218,6 +219,10 @@ export default {
     name: 'ArtworkCreateModal',
     props: {
         show: {
+            type: Boolean,
+            default: false
+        },
+        loading: {
             type: Boolean,
             default: false
         },
@@ -443,15 +448,15 @@ export default {
             };
 
             this.$emit('save', payload);
-            this.resetForm();
+            // resetForm is now handled by the watch:show for a better UX (prevents clearing on error)
         },
         resetForm() {
-            const defaultSale = this.saleStatuses.find(s => s.name === 'Available');
-            const defaultApproval = this.approvalStatuses.find(s => s.name === 'Pending');
+            const defaultSale = this.saleStatuses.find(s => this.getName('en', s) === 'Available');
+            const defaultApproval = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
 
             this.form = {
                 title: '',
-                artist: '',
+                artist: this.initialArtistId || '',
                 category: this.categories.length > 0 ? this.categories[0]._id : '',
                 technique: '',
                 price: '',
@@ -465,6 +470,14 @@ export default {
             this.imagePreview = null;
             this.artistSearchQuery = '';
             this.showArtistDropdown = false;
+
+            // Re-set artist display if we have an initial ID
+            if (this.initialArtistId && this.allUsers) {
+                const artist = this.allUsers.find(u => u._id === this.initialArtistId);
+                if (artist) {
+                    this.artistSearchQuery = this.getArtistDisplay(artist);
+                }
+            }
         },
         formatPrice(value) {
             if (!value) return '0.00';
@@ -472,6 +485,16 @@ export default {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
+        }
+    },
+    watch: {
+        show(newVal) {
+            if (newVal) {
+                this.resetForm();
+                // We don't necessarily need to fetchInitialData every time
+                // since it's already in created(), but resetting the form
+                // ensures a clean state for the "Add New" action.
+            }
         }
     }
 }
@@ -511,9 +534,9 @@ export default {
 
 .custom-input ::v-deep .form-control:focus,
 .custom-textarea ::v-deep .form-control:focus {
-    border-color: #3b82f633;
+    border-color: #8c151533;
     background-color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05);
+    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05);
 }
 
 .input-group-custom {
@@ -635,8 +658,8 @@ export default {
 
 .custom-input-searchable ::v-deep .form-control:focus {
     background-color: #ffffff !important;
-    border-color: #3b82f633 !important;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05) !important;
+    border-color: #8c151533 !important;
+    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05) !important;
 }
 
 .artist-results-list {
@@ -667,7 +690,7 @@ export default {
 .artist-result-item:hover,
 .artist-result-item.active {
     background: #f1f5f9;
-    color: #3b82f6;
+    color: #8c1515;
     font-weight: 600;
 }
 
@@ -689,7 +712,7 @@ export default {
 }
 
 .file-upload-container:hover {
-    border-color: #3b82f6;
+    border-color: #8c1515;
     background-color: #f1f5f9;
 }
 
@@ -756,12 +779,12 @@ export default {
     justify-content: center;
 }
 
-.bg-blue-light {
-    background-color: #3b82f611;
+.bg-red-light {
+    background-color: #8c151511;
 }
 
-.text-blue {
-    color: #3b82f6;
+.text-red {
+    color: #8c1515;
 }
 
 .close-btn {
@@ -804,29 +827,29 @@ export default {
 }
 
 .btn-create-artwork {
-    background-color: #3b82f6 !important;
-    border-color: #3b82f6 !important;
+    background-color: #8c1515 !important;
+    border-color: #8c1515 !important;
     color: white !important;
     border-radius: 30px !important;
     padding: 0.8rem 2.5rem !important;
     font-weight: 600 !important;
     font-size: 1rem;
-    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 10px 15px -3px rgba(140, 21, 21, 0.2);
 }
 
 .btn-create-artwork:hover:not(:disabled) {
-    background-color: #2563eb !important;
+    background-color: #701111 !important;
     transform: translateY(-1px);
 }
 
 .btn-preview {
-    color: #3b82f6 !important;
+    color: #8c1515 !important;
     font-weight: 600;
     font-size: 1rem;
 }
 
 .btn-preview:hover:not(:disabled) {
-    background-color: #3b82f611 !important;
+    background-color: #8c151511 !important;
 }
 
 /* Artwork Preview Card */

@@ -20,6 +20,24 @@ var objsSchema = new Schema({
             endAt: { type: Date, default: Date.now },
         },
         artworks: [{
+            title: [{
+                key: { type: String, default: null },
+                value: { type: String, default: null },
+            }],
+            description: [{
+                key: { type: String, default: null },
+                value: { type: String, default: null },
+            }],
+            technique: [{
+                key: { type: String, default: null },
+                value: { type: String, default: null }
+            }],
+            size: [{
+                key: { type: String, default: null },
+                value: { type: String, default: null }
+            }],
+            price: { type: Number, default: 0 },
+            category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
             image: { type: String, default: null },
             owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
             status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status' },

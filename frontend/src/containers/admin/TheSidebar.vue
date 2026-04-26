@@ -95,6 +95,12 @@ export default {
             icon: 'cil-task'
           },
           {
+            _name: 'CSidebarNavItem',
+            name: 'News',
+            to: '/admin/news',
+            icon: 'cil-newspaper'
+          },
+          {
             _name: 'CSidebarNavTitle',
             _children: ['Data Center']
           },

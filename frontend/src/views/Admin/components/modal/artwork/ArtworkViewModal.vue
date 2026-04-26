@@ -95,13 +95,20 @@
                         </CCol>
                         <CCol sm="6">
                             <div class="view-group">
-                                <label class="view-label">Price / Value</label>
-                                <div class="view-value-price font-weight-bold h4 mb-0 text-primary">
-                                    ฿ {{ formatPrice(artwork.price) }}
+                                <label class="view-label">Size</label>
+                                <div class="view-value text-muted">
+                                    {{ artwork.size ? getName('en', artwork.size) : 'N/A' }}
                                 </div>
                             </div>
                         </CCol>
                     </CRow>
+
+                    <div class="view-group mb-4">
+                        <label class="view-label">Price / Value</label>
+                        <div class="view-value-price font-weight-bold h4 mb-0 text-primary">
+                            ฿ {{ formatPrice(artwork.price) }}
+                        </div>
+                    </div>
 
                     <div class="view-group">
                         <label class="view-label">Description</label>

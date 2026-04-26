@@ -6,6 +6,7 @@ const NewsModule = {
     state: {
         news: [],
         currentNews: null,
+        previewData: null,
     },
 
     mutations: {
@@ -14,6 +15,9 @@ const NewsModule = {
         },
         currentNews(state, obj) {
             state.currentNews = obj;
+        },
+        setPreviewData(state, obj) {
+            state.previewData = obj;
         }
     },
 
@@ -43,12 +47,16 @@ const NewsModule = {
         },
         upload({ commit }, data) {
             return Service.news('upload', data, {});
+        },
+        updateView({ commit }, id) {
+            return Service.news('view', id, {});
         }
     },
 
     getters: {
         news: state => state.news,
         currentNews: state => state.currentNews,
+        previewData: state => state.previewData,
     },
 };
 

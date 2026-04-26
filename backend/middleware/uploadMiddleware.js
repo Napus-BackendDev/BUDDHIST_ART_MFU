@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-module.exports = function uploadImage(folderType, fieldName = "image") {
+module.exports = function uploadImage(folderType, fieldName = "image", isMultiple = false, maxFiles = 10) {
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       let folderPath;
@@ -49,9 +49,7 @@ module.exports = function uploadImage(folderType, fieldName = "image") {
     fileSize: 5 * 1024 * 1024, // 5 MB
   };
 
-  return multer({
-    storage,
-    fileFilter,
-    limits,
-  }).single(fieldName);
+  return isMultiple 
+    ? multer({ storage, fileFilter, limits }).array(fieldName, maxFiles)
+    : multer({ storage, fileFilter, limits }).single(fieldName);
 };

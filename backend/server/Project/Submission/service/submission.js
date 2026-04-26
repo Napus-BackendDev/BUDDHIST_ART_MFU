@@ -57,3 +57,20 @@ exports.onDelete = async function (request, response) {
         return ResMessage.sendResponse(response, 0, 40400);
     }
 };
+
+exports.onUpload = async function (request, response) {
+    try {
+        if (!request.file && !request.files) {
+            return ResMessage.sendResponse(response, 0, 40400, "No file uploaded");
+        }
+        
+        let filename = request.file ? request.file.filename : request.files[0].filename;
+        const imagePath = `${request.protocol}://${request.get('host')}/data/uploads/submission/${filename}`;
+
+        // Return the url inside doc.url so the frontend can access uploadRes.data.data.url
+        return ResMessage.sendResponse(response, 0, 20000, { url: imagePath });
+    } catch (err) {
+        console.error("Upload Error:", err);
+        return ResMessage.sendResponse(response, 0, 40400);
+    }
+};

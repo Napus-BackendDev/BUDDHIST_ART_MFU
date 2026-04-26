@@ -224,7 +224,8 @@ export default {
 
 <style scoped>
 .track-order-page {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-top: 0 !important;
+    margin-top: -2rem !important;
 }
 
 .track-card {

@@ -18,6 +18,10 @@ var objsSchema = new Schema({
         key: { type: String, default: null },
         value: { type: String, default: null }
     }],
+    size: [{
+        key: { type: String, default: null },
+        value: { type: String, default: null }
+    }],
     price: { type: Number, default: 0 },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: "69b917247aa08919285fb7ee" },
     status: {

@@ -3,14 +3,13 @@
         <CWrapper>
             <TheHeaderUser />
             <div class="c-body">
-                <main>
+                <main class="c-main">
                     <transition name="fade">
                         <router-view></router-view>
                     </transition>
                 </main>
                 <TheFooterUser />
             </div>
-
         </CWrapper>
         <CenterLoading />
 
@@ -45,5 +44,17 @@ export default {
 .fade-enter,
 .fade-leave-to {
     opacity: 0;
+}
+
+/* Header Offset for Fixed Header */
+.c-body {
+    padding-top: 125px; /* Tier 1 (75px) + Tier 2 (50px) */
+    transition: padding-top 0.3s ease;
+}
+
+@media (max-width: 991.98px) {
+    .c-body {
+        padding-top: 75px; /* Only Tier 1 height on mobile */
+    }
 }
 </style>

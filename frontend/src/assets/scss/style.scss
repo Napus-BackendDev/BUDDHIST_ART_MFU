@@ -7,6 +7,15 @@
 // Import styles with default layout.
 @import "~@coreui/coreui-pro/scss/coreui";
 
+// Global Font override
+body {
+  font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Sarabun', sans-serif;
+}
+
 
 .card-header:not(.content-center) > .c-icon:first-child {
   margin-right: 0.1rem;

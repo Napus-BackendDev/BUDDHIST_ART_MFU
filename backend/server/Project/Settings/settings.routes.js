@@ -6,6 +6,7 @@ const group = require("./service/group");
 const status = require("./service/status");
 const verification = require("./service/verification");
 const role = require("./service/role");
+const category = require("./service/category");
 // const auth_message = require("./service/auth_message");
 // const Role = require("../Accounts/service/role");
 // const Authen_Type = require("../Accounts/service/authen_type");
@@ -59,5 +60,10 @@ router.delete("/role", role.onDelete);
 // router.put("/authen/type", Authen_Type.onUpdate);
 // router.delete("/authen/type", Authen_Type.onDelete);
 
+
+router.get("/category", category.onQuerys);
+router.post("/category", category.onCreate);
+router.put("/category", category.onUpdate);
+router.delete("/category", category.onDelete);
 
 module.exports = router;

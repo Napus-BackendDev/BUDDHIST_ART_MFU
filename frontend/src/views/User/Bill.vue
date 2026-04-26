@@ -51,10 +51,10 @@
                         <div class="w-100">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <div class="font-weight-bold text-dark small">{{ item.title }}</div>
-                                    <div class="text-muted" style="font-size: 0.75rem;">{{ item.artist }}</div>
+                                    <div class="font-weight-bold text-dark small">{{ getName('th', item.title) }}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;" v-if="item.artist">โดย {{ getName('th', item.artist) }}</div>
                                 </div>
-                                <div class="font-weight-bold text-danger">{{ item.price }} <span
+                                <div class="font-weight-bold text-danger">฿{{ formatPrice(item.price) }} <span
                                         class="text-muted small" v-if="item.quantity > 1">x{{ item.quantity }}</span>
                                 </div>
                             </div>
@@ -65,16 +65,16 @@
 
                     <div class="d-flex justify-content-between mb-2 text-muted small">
                         <span>Subtotal</span>
-                        <span class="font-weight-bold text-dark">${{ order.subtotal }}</span>
+                        <span class="font-weight-bold text-dark">฿{{ formatPrice(order.subtotal) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2 text-muted small">
                         <span>Shipping</span>
-                        <span class="font-weight-bold text-dark">${{ order.shipping }}</span>
+                        <span class="font-weight-bold text-dark">฿{{ formatPrice(order.shipping) }}</span>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                         <span class="font-weight-bold text-dark">Total Paid</span>
-                        <span class="font-weight-bold text-danger h5 mb-0">${{ order.total }}</span>
+                        <span class="font-weight-bold text-danger h5 mb-0">฿{{ formatPrice(order.total) }}</span>
                     </div>
                 </CCardBody>
             </CCard>
@@ -110,6 +110,30 @@ export default {
         downloadBilling() {
             // Logic for downloading billing
             console.log('Download Billing');
+        },
+        getName(lang, item) {
+            if (!item) return '';
+            if (typeof item === 'string') return item;
+            
+            if (Array.isArray(item)) {
+                let obj = item.find(n => n.key === lang);
+                if (!obj) obj = item.find(n => n.key === 'th');
+                return obj ? obj.value : (item[0] ? item[0].value : '');
+            }
+
+            const dataField = item.title || item.name || '';
+            if (typeof dataField === 'string' && dataField) return dataField;
+            
+            if (Array.isArray(dataField)) {
+                let obj = dataField.find(n => n.key === lang);
+                if (!obj) obj = dataField.find(n => n.key === 'th');
+                return obj ? obj.value : (dataField[0] ? dataField[0].value : '');
+            }
+            return '';
+        },
+        formatPrice(value) {
+            if (value === undefined || value === null) return '0';
+            return parseFloat(value).toLocaleString('en-US');
         }
     },
     mounted() {
@@ -123,6 +147,7 @@ export default {
 
 <style scoped>
 .bill-page {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-top: 0 !important;
+    margin-top: -2rem !important;
 }
 </style>

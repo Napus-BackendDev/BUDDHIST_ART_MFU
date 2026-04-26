@@ -1,76 +1,113 @@
 <template>
-    <div>
-        <CHeader fixed with-subheader class="px-3 glass-morphism" style="height: 64px; align-items: center;">
-            <CHeaderBrand class="mr-auto d-flex align-items-center text-decoration-none" to="/">
-                <img src="@/assets/logo.svg" height="40" class="mr-3 brand-logo-img">
-                <div class="d-flex flex-column brand-text-container">
-                    <span class="brand-main-text">Buddhist Art MFU</span>
-                    <span class="brand-sub-text">พุทธศิลป์</span>
+    <CHeader fixed with-subheader class="p-0 border-0 main-app-header">
+        <!-- Tier 1: Main Header (White) -->
+        <div class="header-top-tier bg-white w-100 d-flex align-items-center px-3" style="height: 75px;">
+            <CHeaderBrand class="d-flex align-items-center text-decoration-none brand-link-custom" to="/">
+                <img src="@/assets/icons/logo.png" height="55" class="mr-3 brand-logo-img">
+                <div class="brand-text-wrapper d-flex flex-column justify-content-center">
+                    <span class="brand-main-title">Buddhist Art MFU</span>
+                    <span class="brand-subtitle">พุทธศิลป์</span>
                 </div>
             </CHeaderBrand>
 
-            <CHeaderNav class="d-md-down-none mx-auto">
-                <CHeaderNavItem class="px-3">
-                    <CHeaderNavLink to="/artworks" class="text-dark font-weight-bold">Artwork</CHeaderNavLink>
-                </CHeaderNavItem>
-                <CHeaderNavItem class="px-3">
-                    <CHeaderNavLink to="/news" class="text-dark font-weight-bold">New</CHeaderNavLink>
-                </CHeaderNavItem>
-                <CHeaderNavItem class="px-3">
-                    <CHeaderNavLink to="/orders" class="text-dark font-weight-bold">Order</CHeaderNavLink>
-                </CHeaderNavItem>
-                <CHeaderNavItem class="px-3">
-                    <CHeaderNavLink to="/about" class="text-dark font-weight-bold">About Us</CHeaderNavLink>
-                </CHeaderNavItem>
-            </CHeaderNav>
-
-            <CHeaderNav class="ml-auto">
-                <CHeaderNavItem class="px-3 d-flex align-items-center d-md-down-none">
-                    <span class="font-weight-bold text-muted" style="cursor: pointer;">TH</span>
-                    <span class="mx-2 text-muted">/</span>
-                    <span class="font-weight-bold" style="color: #E55B5B; cursor: pointer;">EN</span>
-                </CHeaderNavItem>
-                <CHeaderNavItem class="px-3">
-                    <div class="position-relative" style="cursor: pointer;" @click="setShowCart(true)">
-                        <CIcon name="cil-basket" size="xl" style="color: #2c3e50;" />
-                        <!-- Badge (Optional, hidden if 0 or dependent on state) -->
-                        <span v-if="cartCount > 0" class="badge badge-pill badge-danger position-absolute"
-                            style="top: -5px; right: -5px;">{{ cartCount }}</span>
+            <CHeaderNav class="ml-auto d-flex align-items-center">
+                <CHeaderNavItem class="px-3 border-right language-switcher d-md-down-none">
+                    <div class="d-flex align-items-center text-dark" style="cursor: pointer;">
+                        <CIcon name="cil-globe-alt" size="lg" class="mr-2" />
+                        <span class="font-weight-bold">TH</span>
                     </div>
                 </CHeaderNavItem>
-                <CHeaderNavItem class="px-3 d-lg-none">
-                    <CToggler in-header class="d-lg-none ml-0" @click="$store.commit('toggleSidebarMobile')">
-                        <CIcon name="cil-menu" size="xl" style="color: #2c3e50;" />
+                
+                <CHeaderNavItem class="px-3">
+                    <div class="position-relative cart-trigger text-dark" style="cursor: pointer;" @click="setShowCart(true)">
+                        <CIcon name="cil-basket" size="xl" />
+                        <span v-if="cartCount > 0" class="badge badge-pill badge-danger cart-count-badge">
+                            {{ cartCount }}
+                        </span>
+                    </div>
+                </CHeaderNavItem>
+
+                <CHeaderNavItem class="px-2 d-lg-none">
+                    <CToggler in-header @click="mobileMenu = !mobileMenu">
+                        <CIcon name="cil-menu" size="xl" class="text-dark" />
                     </CToggler>
                 </CHeaderNavItem>
             </CHeaderNav>
-        </CHeader>
+        </div>
 
-        <!-- Cart Sidebar Overlay -->
+        <!-- Tier 2: Subheader (Burgundy Bar) -->
+        <div class="header-nav-tier w-100 d-none d-lg-flex" style="height: 50px; background-color: #612721;">
+            <CContainer fluid class="d-flex justify-content-center align-items-center h-100">
+                <CHeaderNav class="nav-links-container">
+                    <CHeaderNavItem class="px-4">
+                        <CHeaderNavLink to="/" exact class="nav-link-custom">หน้าหลัก</CHeaderNavLink>
+                    </CHeaderNavItem>
+                    <CHeaderNavItem class="px-4">
+                        <CHeaderNavLink to="/artworks" class="nav-link-custom">ผลงานศิลปะ</CHeaderNavLink>
+                    </CHeaderNavItem>
+                    <CHeaderNavItem class="px-4">
+                        <CHeaderNavLink to="/news" class="nav-link-custom">ข่าวสาร</CHeaderNavLink>
+                    </CHeaderNavItem>
+                    <CHeaderNavItem class="px-4">
+                        <CHeaderNavLink to="/about" class="nav-link-custom">เกี่ยวกับเรา</CHeaderNavLink>
+                    </CHeaderNavItem>
+                    <CHeaderNavItem class="px-4">
+                        <CHeaderNavLink to="/orders" class="nav-link-custom">เช็คคำสั่งซื้อ</CHeaderNavLink>
+                    </CHeaderNavItem>
+                </CHeaderNav>
+            </CContainer>
+        </div>
+
+        <!-- Mobile Navigation Overlay (Moved outside for cleaner DOM but stays in component) -->
+        <transition name="fade">
+            <div v-if="mobileMenu" class="mobile-nav-overlay d-lg-none" @click="mobileMenu = false">
+                <div class="mobile-menu-content bg-white p-4 h-100" @click.stop>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="m-0 font-weight-bold">Menu</h5>
+                        <button type="button" class="close" @click="mobileMenu = false">
+                            <CIcon name="cil-x" size="lg" />
+                        </button>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-4">
+                            <CHeaderNavLink to="/" exact class="text-dark h5 p-0" @click.native="mobileMenu = false">หน้าหลัก</CHeaderNavLink>
+                        </li>
+                        <li class="mb-4">
+                            <CHeaderNavLink to="/artworks" class="text-dark h5 p-0" @click.native="mobileMenu = false">ผลงานศิลปะ</CHeaderNavLink>
+                        </li>
+                        <li class="mb-4">
+                            <CHeaderNavLink to="/news" class="text-dark h5 p-0" @click.native="mobileMenu = false">ข่าวสาร</CHeaderNavLink>
+                        </li>
+                        <li class="mb-4">
+                            <CHeaderNavLink to="/about" class="text-dark h5 p-0" @click.native="mobileMenu = false">เกี่ยวกับเรา</CHeaderNavLink>
+                        </li>
+                        <li class="mb-4">
+                            <CHeaderNavLink to="/orders" class="text-dark h5 p-0" @click.native="mobileMenu = false">เช็คคำสั่งซื้อ</CHeaderNavLink>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </transition>
+
+        <!-- Cart Sidebar Overlay/Content -->
         <div class="cart-backdrop" v-if="isCartOpen" @click="setShowCart(false)"></div>
-
-        <!-- Cart Sidebar -->
         <div class="cart-sidebar bg-white shadow-lg" :class="{ 'open': isCartOpen }">
             <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-                <h5 class="font-weight-bold m-0">Your Cart ({{ cartCount }})</h5>
+                <h5 class="font-weight-bold m-0">Your Cart ({{ cartCount || 0 }})</h5>
                 <button type="button" class="close" @click="setShowCart(false)" style="outline: none;">
                     <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span>
                 </button>
             </div>
 
-            <div v-if="cartItems.length === 0"
+            <div v-if="!cartItems || cartItems.length === 0"
                 class="cart-body d-flex flex-column align-items-center justify-content-center h-100 p-4 text-center">
-                <div class="mb-3 p-3 bg-light rounded"
-                    style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
-                    <CIcon name="cil-basket" size="xl" class="text-muted"
-                        style="transform: scale(1.5); color: #adb5bd !important;" />
+                <div class="mb-4">
+                    <CIcon name="cil-basket" size="xl" class="text-muted" style="transform: scale(2);" />
                 </div>
-                <h5 class="font-weight-bold mb-2">Your cart is empty</h5>
-                <p class="text-muted small mb-4">Looks like you haven't added any art yet.</p>
-                <button class="btn btn-link text-danger font-weight-bold text-decoration-none p-0"
-                    @click="startShopping">
-                    Start Shopping
-                </button>
+                <h5 class="font-weight-bold mb-2">Cart is empty</h5>
+                <CButton color="danger" shape="pill" class="mt-3 px-4 font-weight-bold" @click="startShopping">
+                    Shop Now
+                </CButton>
             </div>
 
             <div v-else class="cart-body d-flex flex-column h-100">
@@ -78,34 +115,36 @@
                     <div v-for="item in cartItems" :key="item._id"
                         class="d-flex align-items-center mb-3 pb-3 border-bottom">
                         <div class="mr-3"
-                            style="width: 60px; height: 60px; background-size: cover; background-position: center; border-radius: 8px;"
+                            style="width: 70px; height: 70px; background-size: cover; background-position: center; border-radius: 8px;"
                             :style="{ backgroundImage: `url(${item.image})` }">
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="font-weight-bold mb-0 text-truncate" style="max-width: 180px;">{{ item.title }}
-                            </h6>
-                            <p class="text-muted small mb-0">{{ item.price }} x {{ item.quantity }}</p>
+                            <h6 class="font-weight-bold mb-0">{{ getName('th', item.title) }}</h6>
+                            <div class="text-muted small mb-1" v-if="item.artist">โดย {{ getName('th', item.artist) }}</div>
+                            <div class="font-weight-bold text-danger h6 mb-0">{{ formatPrice(item.price) }} บาท</div>
                         </div>
                         <div class="text-right">
-                            <button class="btn btn-sm text-danger" @click="removeFromCart(item._id)">
+                            <CButton size="sm" color="link" class="text-danger" @click="removeFromCart(item._id)">
                                 <CIcon name="cil-trash" />
-                            </button>
+                            </CButton>
                         </div>
                     </div>
                 </div>
-                <div class="p-4 bg-light border-top">
-                    <div class="d-flex justify-content-between mb-3">
-                        <span class="text-muted">Total</span>
-                        <span class="font-weight-bold h5 mb-0">${{ cartTotal.toLocaleString() }}</span>
+                <div class="p-4 bg-light border-top pb-5 mb-5">
+                    <div class="d-flex justify-content-between mb-3 text-dark align-items-center">
+                        <span class="h6 mb-0 font-weight-bold">Total</span>
+                        <span class="font-weight-bold h4 mb-0 text-danger">฿{{ (cartTotal || 0).toLocaleString() }}</span>
                     </div>
-                    <CButton block color="danger" shape="pill" class="font-weight-bold py-2 shadow-sm"
-                        @click="$router.push('/payment'); setShowCart(false);">
-                        Checkout
+                    <CButton block color="danger" size="lg" class="py-2 font-weight-bold shadow-sm mb-2" @click="$router.push('/payment'); setShowCart(false);">
+                        สั่งซื้อสินค้า
+                    </CButton>
+                    <CButton block color="outline-dark" size="md" class="py-2 font-weight-bold" @click="$router.push('/orders'); setShowCart(false);">
+                        <CIcon name="cil-list" class="mr-2" /> ประวัติการสั่งซื้อ
                     </CButton>
                 </div>
             </div>
         </div>
-    </div>
+    </CHeader>
 </template>
 
 <script>
@@ -113,6 +152,11 @@ import { mapGetters, mapActions } from 'vuex';
 
 export default {
     name: 'TheHeaderUser',
+    data() {
+        return {
+            mobileMenu: false
+        }
+    },
     computed: {
         ...mapGetters('cart', ['cartItems', 'cartCount', 'cartTotal', 'isCartOpen'])
     },
@@ -121,20 +165,133 @@ export default {
         startShopping() {
             this.setShowCart(false);
             this.$router.push('/artworks');
+        },
+        getName(lang, item) {
+            if (!item) return '';
+            if (typeof item === 'string') return item;
+            
+            if (Array.isArray(item)) {
+                let obj = item.find(n => n.key === lang);
+                if (!obj) obj = item.find(n => n.key === 'th');
+                return obj ? obj.value : (item[0] ? item[0].value : '');
+            }
+
+            const dataField = item.title || item.name || '';
+            if (typeof dataField === 'string' && dataField) return dataField;
+            
+            if (Array.isArray(dataField)) {
+                let obj = dataField.find(n => n.key === lang);
+                if (!obj) obj = dataField.find(n => n.key === 'th');
+                return obj ? obj.value : (dataField[0] ? dataField[0].value : '');
+            }
+            return '';
+        },
+        formatPrice(value) {
+            if (value === undefined || value === null) return '0';
+            return parseFloat(value).toLocaleString('en-US');
         }
     }
 }
 </script>
 
 <style scoped>
+/* Reset CHeader for custom branding height */
+.main-app-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    z-index: 1030 !important;
+}
+
+.c-header-brand.brand-link-custom {
+    text-decoration: none !important;
+    color: inherit !important;
+}
+
+.brand-main-title {
+    color: #3c4b64 !important; /* Charcoal */
+    text-decoration: none !important;
+    font-weight: 800;
+    font-size: 1.4rem;
+    line-height: 1;
+    border-bottom: 2px solid #3c4b64;
+    display: inline-block;
+}
+
+.brand-subtitle {
+    color: #612721 !important; /* Burgundy */
+    text-decoration: none !important;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-top: 4px;
+}
+
+.brand-logo-img {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+/* Burgundy Navigation Bar */
+.header-nav-tier {
+    z-index: 1020;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-link-custom {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 600 !important;
+    font-size: 1.05rem !important;
+    padding: 0 !important;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.nav-link-custom:hover, .nav-link-custom.c-active {
+    color: #ffffff !important;
+}
+
+.nav-link-custom.c-active::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #ffffff;
+    border-radius: 2px;
+}
+
+/* Utility styles */
+.cart-trigger {
+    transition: transform 0.2s ease;
+}
+
+.cart-trigger:hover {
+    transform: scale(1.1);
+}
+
+.cart-count-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #612721;
+    font-size: 0.75rem;
+    padding: 3px 6px;
+}
+
 .cart-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1040;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 2040;
     backdrop-filter: blur(2px);
 }
 
@@ -142,42 +299,39 @@ export default {
     position: fixed;
     top: 0;
     right: -400px;
-    /* Start off-screen */
     width: 400px;
     height: 100vh;
-    z-index: 1050;
-    transition: right 0.3s ease-in-out;
-    display: flex;
-    flex-direction: column;
+    z-index: 2050;
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cart-sidebar.open {
     right: 0;
 }
 
-@media (max-width: 576px) {
-    .cart-sidebar {
-        width: 100%;
-        right: -100%;
+.mobile-nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 3000;
+}
+
+.mobile-menu-content {
+    width: 300px;
+}
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter, .fade-leave-to { opacity: 0; }
+
+@media (max-width: 991.98px) {
+    .brand-main-title {
+        font-size: 1.25rem;
     }
-}
-
-.brand-main-text {
-    color: #3c4b64; 
-    font-weight: 800; 
-    font-size: 1.25rem; 
-    line-height: 1.1;
-    letter-spacing: -0.2px;
-}
-
-.brand-sub-text {
-    color: #ac1515; 
-    font-weight: 700; 
-    font-size: 0.85rem;
-    margin-top: -1px;
-}
-
-.brand-logo-img {
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    .brand-logo-img {
+        height: 55px;
+    }
 }
 </style>

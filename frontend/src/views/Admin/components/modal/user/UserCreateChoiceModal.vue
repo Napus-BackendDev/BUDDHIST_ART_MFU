@@ -66,7 +66,7 @@
 
         <template #footer>
             <div class="w-100 text-center py-2">
-                <span class="text-muted small">Need a template? <a href="#" class="font-weight-bold text-blue">Download User Import Template</a></span>
+                <span class="text-muted small">Need a template? <a href="javascript:void(0)" class="font-weight-bold text-blue" @click="$emit('download-template')">Download User Import Template</a></span>
             </div>
         </template>
     </CModal>

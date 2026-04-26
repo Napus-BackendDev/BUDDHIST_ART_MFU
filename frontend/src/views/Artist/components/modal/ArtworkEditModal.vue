@@ -10,7 +10,7 @@
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <div class="icon-square bg-blue-light text-blue mr-3">
+                    <div class="icon-square bg-red-light text-red mr-3">
                         <CIcon name="cil-pencil" size="lg" />
                     </div>
                     <div>
@@ -90,7 +90,7 @@
                                         <span class="artist-name">{{ getArtistName(artist) }}</span>
                                         <span class="artist-id text-muted extra-small">ID: {{ artist.studentId || 'N/A' }}</span>
                                     </div>
-                                    <CIcon v-if="form.artist === artist._id" name="cil-check" class="ml-auto text-blue" size="sm" />
+                                    <CIcon v-if="form.artist === artist._id" name="cil-check" class="ml-auto text-red" size="sm" />
                                 </div>
                                 <div v-if="filteredArtists.length === 0" class="artist-result-item text-muted">
                                     No artists found
@@ -175,7 +175,7 @@
                             <label for="artwork-image-edit-upload" class="file-upload-label w-100">
                                 <template v-if="!imagePreview">
                                     <div class="upload-placeholder py-4 text-center">
-                                        <CIcon name="cil-cloud-upload" size="xl" class="text-blue mb-2" />
+                                        <CIcon name="cil-cloud-upload" size="xl" class="text-red mb-2" />
                                         <div class="font-weight-bold">Click to upload image</div>
                                         <div class="text-muted small">PNG, JPG or JPEG (Max 5MB)</div>
                                     </div>
@@ -470,6 +470,12 @@ export default {
         handleSave() {
             if (!this.isFormValid) return;
             
+            // Find the "Pending" status to reset approval upon edit
+            const pendingStatus = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
+            if (pendingStatus) {
+                this.form.status.approval = pendingStatus._id;
+            }
+
             const payload = {
                 _id: this.form.id,
                 title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
@@ -519,9 +525,9 @@ export default {
 
 .custom-input ::v-deep .form-control:focus,
 .custom-textarea ::v-deep .form-control:focus {
-    border-color: #3b82f633;
+    border-color: #8c151533;
     background-color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05);
+    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05);
 }
 
 .input-group-custom {
@@ -547,6 +553,12 @@ export default {
     border: 1px solid #f1f5f9 !important;
     background-color: #f8fafc !important;
     font-size: 1rem !important;
+}
+
+.custom-input-with-prefix ::v-deep .form-control:focus {
+    background-color: #ffffff !important;
+    border-color: #8c151533 !important;
+    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05) !important;
 }
 
 .custom-select-btn {
@@ -630,6 +642,12 @@ export default {
     background-color: #f8fafc !important;
 }
 
+.custom-input-searchable ::v-deep .form-control:focus {
+    background-color: #ffffff !important;
+    border-color: #8c151533 !important;
+    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05) !important;
+}
+
 .artist-results-list {
     position: absolute;
     top: 100%;
@@ -658,7 +676,7 @@ export default {
 .artist-result-item:hover,
 .artist-result-item.active {
     background: #f1f5f9;
-    color: #3b82f6;
+    color: #8c1515;
     font-weight: 600;
 }
 
@@ -672,7 +690,7 @@ export default {
 }
 
 .file-upload-container:hover {
-    border-color: #3b82f6;
+    border-color: #8c1515;
     background-color: #f1f5f9;
 }
 
@@ -733,12 +751,12 @@ export default {
     justify-content: center;
 }
 
-.bg-blue-light {
-    background-color: #3b82f611;
+.bg-red-light {
+    background-color: #8c151511;
 }
 
-.text-blue {
-    color: #3b82f6;
+.text-red {
+    color: #8c1515;
 }
 
 .close-btn {
@@ -776,18 +794,18 @@ export default {
 }
 
 .btn-save-artwork {
-    background-color: #3b82f6 !important;
-    border-color: #3b82f6 !important;
+    background-color: #8c1515 !important;
+    border-color: #8c1515 !important;
     color: white !important;
     border-radius: 30px !important;
     padding: 0.8rem 2.5rem !important;
     font-weight: 600 !important;
     font-size: 1rem;
-    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 10px 15px -3px rgba(140, 21, 21, 0.2);
 }
 
 .btn-preview {
-    color: #3b82f6 !important;
+    color: #8c1515 !important;
     font-weight: 600;
     font-size: 1rem;
 }

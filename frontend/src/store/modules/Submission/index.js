@@ -40,6 +40,9 @@ const SubmissionModule = {
         },
         delete({ commit }, data) {
             return Service.submission('delete', data, {});
+        },
+        upload({ commit }, data) {
+            return Service.submission('upload', data, {});
         }
     },
 

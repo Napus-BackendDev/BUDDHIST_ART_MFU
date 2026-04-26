@@ -48,7 +48,16 @@ const LoginModule = {
                     const user = response.data.data;
                     const role = user.role || 'Customer';
                     
-                    // Store user data
+                    console.log("LOGIN SUCCESS! Received User:", user);
+                    
+                    if (!user._id) {
+                        console.error("CRITICAL ERROR: user._id is missing from backend response!");
+                    }
+                    
+                    // Clear any old corrupted state just to be safe
+                    localStorage.removeItem('objs');
+                    
+                    // Store user data properly
                     localStorage.setItem('objs', JSON.stringify({
                         xAccessToken: response.data.token || response.data.data.token,
                         accounts: user._id,
@@ -62,7 +71,7 @@ const LoginModule = {
                     if (role === 'Admin') {
                         router.push('/admin');
                     } else if (role === 'Artist' || role === 'Evaluator') {
-                        router.push('/artist/dashboard');
+                        router.push('/artist/profile');
                     } else {
                         router.push('/artworks');
                     }

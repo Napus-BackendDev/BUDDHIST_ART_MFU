@@ -13,7 +13,7 @@ module.exports = function (app) {
 
   // app.use(path + '/organization', organizationRoutes); // complete
 
-  app.use(path + '/new', newRoutes); // inprogress
+  app.use(path + '/news', newRoutes); // complete
   app.use(path + '/order', orderRoutes); // inprogress
   app.use(path + '/artwork', artworkRoutes); // inprogress
   app.use(path + '/settings', settingsRoutes); // inprogress

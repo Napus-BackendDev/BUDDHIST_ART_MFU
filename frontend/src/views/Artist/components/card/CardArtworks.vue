@@ -2,27 +2,43 @@
     <div v-if="artworks.length > 0">
         <CRow>
             <CCol class="col-custom-grid mb-5" v-for="(art, index) in artworks" :key="index">
-                <CCard class="h-100 border-0 shadow-sm artwork-card cursor-pointer"
+                <CCard 
+                    :class="['h-100 border-0 shadow-sm artwork-card cursor-pointer', { 'is-pending': isPending(art), 'is-rejected': isRejected(art) }]"
                     style="border-radius: 20px; overflow: hidden;" @click="getDetail(art._id)">
                     <div class="card-img-wrapper position-relative">
                         <!-- Badge Container (Top-Left Stack) -->
                         <div class="position-absolute d-flex flex-column align-items-start m-4" style="top: 0; left: 0; z-index: 1; gap: 8px;">
                             <!-- Category Badge -->
-                            <div class="px-3 py-1 bg-white rounded-pill shadow-sm text-uppercase font-weight-bold cat-badge"
-                                style="font-size: 0.7rem; letter-spacing: 0.5px; color: #3b82f6;">
+                            <div class="px-3 py-1 rounded-pill text-uppercase font-weight-bold cat-badge"
+                                style="font-size: 0.72rem; letter-spacing: 0.8px; color: white; border: 2px solid white;">
                                 {{ art.category ? getName(currentLocale, art.category) : 'Artwork' }}
                             </div>
                             
                             <!-- Status Badge -->
                             <div v-if="art.status && getStatusLabel(art)" 
-                                class="px-3 py-1 bg-white rounded-pill shadow-sm text-uppercase font-weight-bold status-badge"
+                                class="px-3 py-1 rounded-pill text-uppercase font-weight-bold status-badge shadow-lg"
                                 :class="getStatusClass(art)"
-                                style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                style="font-size: 0.72rem; letter-spacing: 0.8px; color: white; border: 2px solid white;">
                                 {{ getStatusLabel(art) }}
                             </div>
                         </div>
 
                         <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${art.image || 'https://via.placeholder.com/800x800?text=No+Image'})` }">
+                        </div>
+                        
+                        <!-- Status Overlays -->
+                        <div v-if="isPending(art)" class="status-overlay pending-overlay">
+                            <div class="status-content">
+                                <CIcon name="cil-clock" class="mb-2" size="xl" />
+                                <span class="font-weight-bold">Pending Review</span>
+                            </div>
+                        </div>
+
+                        <div v-if="isRejected(art)" class="status-overlay rejected-overlay">
+                            <div class="status-content">
+                                <CIcon name="cil-warning" class="mb-2" size="xl" />
+                                <span class="font-weight-bold">แก้ไข</span>
+                            </div>
                         </div>
                     </div>
                     <CCardBody class="p-4 bg-white position-relative card-body-custom">
@@ -38,13 +54,14 @@
                             </div>
                         </div>
 
-                        <!-- Hover Add/Remove Button (Only if available) -->
-                        <div v-if="isAvailable(art) && !isInCart(art._id)" class="add-cart-btn shadow-sm" @click.stop="addToCart(art)">
-                            <CIcon name="cil-plus" size="lg" />
-                        </div>
-                        <div v-else-if="isInCart(art._id)" class="add-cart-btn shadow-sm bg-danger" style="opacity: 1; transform: translateY(0); cursor: pointer;" 
-                            title="Remove from collection" @click.stop="addToCart(art)">
-                            <CIcon name="cil-check" size="lg" />
+                        <!-- Action Buttons (Edit/Delete) for Artist -->
+                        <div class="action-buttons-group">
+                            <div class="action-btn edit-btn shadow-sm" title="Edit Artwork" @click.stop="handleEdit(art)">
+                                <CIcon name="cil-pencil" />
+                            </div>
+                            <div class="action-btn delete-btn shadow-sm" title="Delete Artwork" @click.stop="handleDelete(art)">
+                                <CIcon name="cil-trash" />
+                            </div>
                         </div>
                     </CCardBody>
                 </CCard>
@@ -76,36 +93,11 @@ export default {
         getDetail(id) {
             this.$router.push(`/artwork/${id}`);
         },
-        addToCart(art) {
-            if (this.isInCart(art._id)) {
-                // Toggle OFF: Remove from cart
-                this.$store.dispatch('cart/removeFromCart', art._id);
-                this.$store.commit('dialog/showToast', {
-                    title: 'Removed',
-                    message: `${this.getName('en', art)} removed from cart`,
-                    variant: 'info'
-                });
-                return;
-            }
-
-            // Toggle ON: Add to cart
-            this.$store.dispatch('cart/addToCart', {
-                _id: art._id,
-                title: this.getName('en', art),
-                price: art.price,
-                image: art.image,
-                artist: art.artist ? this.getName('en', art.artist) : 'N/A'
-            });
-            
-            // Show toast
-            this.$store.commit('dialog/showToast', {
-                title: 'Success',
-                message: `${this.getName('en', art)} added to cart`,
-                variant: 'success'
-            });
-
-            // Open the cart sidebar globally via Vuex
-            this.$store.dispatch('cart/setShowCart', true);
+        handleEdit(art) {
+            this.$emit('edit', art);
+        },
+        handleDelete(art) {
+            this.$emit('delete', art);
         },
         getName(lang, item) {
             if (!item) return '';
@@ -160,6 +152,18 @@ export default {
             if (statusEn.includes('reject')) return 'badge-rejected';
             if (statusEn.includes('draft')) return 'badge-draft';
             return 'badge-info';
+        },
+        isPending(art) {
+            const statusEn = art.status && art.status.approval 
+                ? this.getName('en', art.status.approval).toLowerCase() 
+                : (typeof art.status === 'string' ? art.status.toLowerCase() : '');
+            return statusEn.includes('pending');
+        },
+        isRejected(art) {
+            const statusEn = art.status && art.status.approval 
+                ? this.getName('en', art.status.approval).toLowerCase() 
+                : (typeof art.status === 'string' ? art.status.toLowerCase() : '');
+            return statusEn.includes('reject');
         }
     }
 }
@@ -233,7 +237,7 @@ export default {
 }
 
 .price-text {
-    color: #3b82f6;
+    color: #8c1515;
     letter-spacing: -0.5px;
 }
 
@@ -241,33 +245,52 @@ export default {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-.add-cart-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background-color: #3b82f6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.action-buttons-group {
     position: absolute;
-    right: 24px;
-    bottom: 24px;
+    right: 20px;
+    bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateX(10px);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
-    color: white;
     z-index: 2;
 }
 
-.add-cart-btn:hover {
-    background-color: #2563eb;
+.artwork-card:hover .action-buttons-group {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.edit-btn {
+    background-color: #8c1515; /* Red */
+}
+
+.edit-btn:hover {
+    background-color: #701111;
     transform: scale(1.1);
 }
 
-.artwork-card:hover .add-cart-btn {
-    opacity: 1;
-    transform: translateY(0);
+.delete-btn {
+    background-color: #ef4444; /* Red */
+}
+
+.delete-btn:hover {
+    background-color: #dc2626;
+    transform: scale(1.1);
 }
 
 .sale-status-dot {
@@ -304,34 +327,95 @@ export default {
     max-width: 32rem;
 }
 
-/* Status Badge Themes */
+/* Ultra-Pop Status Badge Themes */
+.cat-badge {
+    background: linear-gradient(135deg, #8c1515 0%, #b91c1c 100%) !important;
+    box-shadow: 0 12px 24px -6px rgba(140, 21, 21, 0.5) !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 .status-badge {
-    background-color: #ffffff !important;
-    border: 1px solid #f1f5f9;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.artwork-card:hover .cat-badge,
+.artwork-card:hover .status-badge {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3) !important;
 }
 
 .badge-pending {
-    color: #f59e0b !important; /* Amber */
-    border-color: #fef3c7 !important;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    box-shadow: 0 12px 24px -6px rgba(245, 158, 11, 0.5) !important;
 }
 
 .badge-approved {
-    color: #10b981 !important; /* Green */
-    border-color: #d1fae5 !important;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    box-shadow: 0 12px 24px -6px rgba(16, 185, 129, 0.5) !important;
 }
 
 .badge-rejected {
-    color: #8c1515 !important; /* MFU Red */
-    border-color: #fee2e2 !important;
+    background: linear-gradient(135deg, #8c1515 0%, #b91c1c 100%) !important;
+    box-shadow: 0 12px 24px -6px rgba(140, 21, 21, 0.5) !important;
 }
 
 .badge-draft {
-    color: #64748b !important; /* Slate */
-    border-color: #f1f5f9 !important;
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+    box-shadow: 0 12px 24px -6px rgba(100, 116, 139, 0.5) !important;
 }
 
 .badge-info {
-    color: #3b82f6 !important; /* Blue */
-    border-color: #dbeafe !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Status Transition Overlays (Pending & Rejected) */
+.artwork-card.is-pending .card-img-bg,
+.artwork-card.is-rejected .card-img-bg {
+    filter: grayscale(100%) brightness(0.5);
+}
+
+.status-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.pending-overlay {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.rejected-overlay {
+    background: rgba(140, 21, 21, 0.6); /* MFU Red tint */
+}
+
+.status-content {
+    color: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    backdrop-filter: blur(4px);
+    padding: 1.5rem;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.artwork-card:hover .status-overlay {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.artwork-card.is-pending .art-title,
+.artwork-card.is-pending .price-text,
+.artwork-card.is-rejected .art-title,
+.artwork-card.is-rejected .price-text {
+    opacity: 0.7;
 }
 </style>
