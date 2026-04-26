@@ -68,9 +68,10 @@ const LoginModule = {
                     store.commit("auth/userId", user._id);
 
                     // Redirection Logic
-                    if (role === 'Admin') {
+                    const userRole = (role || 'Customer').toLowerCase();
+                    if (userRole === 'admin') {
                         router.push('/admin');
-                    } else if (role === 'Artist' || role === 'Evaluator') {
+                    } else if (userRole === 'artist' || userRole === 'evaluator') {
                         router.push('/artist/profile');
                     } else {
                         router.push('/artworks');

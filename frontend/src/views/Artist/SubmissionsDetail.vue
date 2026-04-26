@@ -99,6 +99,9 @@ export default {
                 }
 
                 // 2. Prepare the artwork object matching the backend schema
+                const userId = this.$store.getters['auth/userId'] || (JSON.parse(localStorage.getItem('objs')) || {}).accounts;
+                console.log("Submitting artwork with owner ID:", userId);
+
                 const newArtwork = {
                     title: [{ key: 'en', value: formData.title }, { key: 'th', value: formData.title }],
                     description: [{ key: 'en', value: formData.description }, { key: 'th', value: formData.description }],
@@ -107,7 +110,7 @@ export default {
                     price: parseFloat(formData.price) || 0,
                     category: formData.category,
                     image: imageUrl,
-                    owner: this.$store.getters['Authentication/user']._id,
+                    owner: userId,
                     status: null, // Depending on backend defaults, usually null for new submission
                     create: { at: new Date() }
                 };
@@ -128,6 +131,7 @@ export default {
                         assignment.artworks.forEach(aw => {
                             if (aw.owner && typeof aw.owner === 'object') aw.owner = aw.owner._id;
                             if (aw.status && typeof aw.status === 'object') aw.status = aw.status._id;
+                            if (aw.category && typeof aw.category === 'object') aw.category = aw.category._id;
                         });
                     }
                 });
@@ -147,7 +151,10 @@ export default {
                 }
             } catch (error) {
                 console.error('Error submitting work:', error);
-                alert('เกิดข้อผิดพลาดในการส่งงาน โปรดลองอีกครั้ง');
+                const errorMsg = error.response && error.response.data && error.response.data.message 
+                    ? error.response.data.message 
+                    : error.message;
+                alert('เกิดข้อผิดพลาดในการส่งงาน: ' + errorMsg);
             } finally {
                 this.submitting = false;
             }

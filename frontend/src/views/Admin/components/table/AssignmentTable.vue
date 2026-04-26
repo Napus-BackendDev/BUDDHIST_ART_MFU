@@ -114,15 +114,15 @@
                         <p class="detail-label mb-2">ARTWORK DETAIL</p>
                         <div class="artwork-description-box">
                             <p class="description-text m-0">
-                                Acrylic on canvas, 24x36 inches. A study of color theory using primary colors.
+                                {{ selectedItem.description || 'No description provided.' }}
                             </p>
                         </div>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="d-flex justify-content-between action-buttons mt-auto pt-2">
-                        <CButton class="btn-action btn-passed flex-grow-1 mr-3" variant="outline">Mark Passed</CButton>
-                        <CButton class="btn-action btn-failed flex-grow-1" variant="outline">Mark Fail</CButton>
+                        <CButton class="btn-action btn-passed flex-grow-1 mr-3" variant="outline" @click="$emit('update-status', { artworkId: selectedItem.id, statusName: 'Approved' })">Mark Passed</CButton>
+                        <CButton class="btn-action btn-failed flex-grow-1" variant="outline" @click="$emit('update-status', { artworkId: selectedItem.id, statusName: 'Rejected' })">Mark Fail</CButton>
                     </div>
                 </CCardBody>
             </CCard>
@@ -136,6 +136,10 @@ import moment from 'moment'
 export default {
     name: 'AssignmentTable',
     props: {
+        items: {
+            type: Array,
+            default: () => []
+        },
         filters: {
             type: Object,
             default: () => ({
@@ -158,58 +162,6 @@ export default {
                 { key: 'status', label: 'Status' },
                 { key: 'deadline', label: 'Deadline' }
             ],
-            items: [
-                {
-                    id: 1,
-                    preview: 'https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?w=150',
-                    student_name: 'John Doe',
-                    student_id: '6431501001',
-                    submitted_date: 'Oct 23, 2023 10:30 AM',
-                    on_time: true,
-                    status: 'Passed',
-                    deadline: 'Oct 25, 2023 11:59 PM'
-                },
-                {
-                    id: 2,
-                    preview: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=150',
-                    student_name: 'Jane Smith',
-                    student_id: '6431501002',
-                    submitted_date: 'Oct 24, 2023 02:15 PM',
-                    on_time: true,
-                    status: 'Pending',
-                    deadline: 'Oct 25, 2023 11:59 PM'
-                },
-                {
-                    id: 3,
-                    preview: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=150',
-                    student_name: 'Bob Johnson',
-                    student_id: '6431501003',
-                    submitted_date: 'Oct 26, 2023 09:40 AM',
-                    on_time: false,
-                    status: 'Pending',
-                    deadline: 'Oct 25, 2023 11:59 PM'
-                },
-                {
-                    id: 4,
-                    preview: 'https://images.unsplash.com/photo-1574182245536-392197177651?w=150',
-                    student_name: 'Alice Williams',
-                    student_id: '6431501004',
-                    submitted_date: 'Oct 25, 2023 11:50 PM',
-                    on_time: true,
-                    status: 'Fail',
-                    deadline: 'Oct 25, 2023 11:59 PM'
-                },
-                {
-                    id: 5,
-                    preview: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=150',
-                    student_name: 'Charlie Brown',
-                    student_id: '6431501005',
-                    submitted_date: 'Oct 22, 2023 08:00 AM',
-                    on_time: true,
-                    status: 'Passed',
-                    deadline: 'Oct 25, 2023 11:59 PM'
-                }
-            ]
         }
     },
     computed: {

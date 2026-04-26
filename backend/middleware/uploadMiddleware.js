@@ -20,11 +20,16 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
         case "order":
           folderPath = path.join(__dirname, "../public/data/uploads/order/");
           break;
+        case "submission":
+          folderPath = path.join(__dirname, "../public/data/uploads/submission/");
+          break;
         default:
-          cb(new Error("Invalid field name"), null);
+          return cb(new Error("Invalid field name"), null);
       }
-
-      fs.mkdirSync(folderPath, { recursive: true });
+      
+      if (folderPath) {
+        fs.mkdirSync(folderPath, { recursive: true });
+      }
       cb(null, folderPath);
     },
     filename: function (req, file, cb) {
