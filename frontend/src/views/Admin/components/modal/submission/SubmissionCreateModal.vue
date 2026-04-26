@@ -365,6 +365,11 @@ export default {
                 }))
             };
 
+            console.log("--- CREATING NEW SUBMISSION ---");
+            console.log("Title:", this.form.title);
+            console.log("Artists Enrolled (IDs):", this.selectedStudents);
+            console.log("Full Payload:", submissionData);
+
             this.$emit('save', submissionData);
             this.resetForm();
         },

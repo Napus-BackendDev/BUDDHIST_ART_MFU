@@ -6,7 +6,7 @@
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Total Submitted</div>
-                        <div class="widget-value">40 <span class="text-muted small">/ 45</span></div>
+                        <div class="widget-value">{{ stats.totalSubmitted }} <span class="text-muted small">/ {{ stats.totalExpected }}</span></div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
                         <CIcon name="cil-cloud-upload" size="xl" />
@@ -16,12 +16,12 @@
         </CCol>
 
         <!-- Passed -->
-        <CCol sm="6" lg="3" @click="$emit('input', 'Passed')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': value === 'Passed' }]">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Approved')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Approved' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Passed</div>
-                        <div class="widget-value text-success">28</div>
+                        <div class="widget-value text-success">{{ stats.passed }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
                         <CIcon name="cil-check-circle" size="xl" />
@@ -36,7 +36,7 @@
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Pending Review</div>
-                        <div class="widget-value text-warning">8</div>
+                        <div class="widget-value text-warning">{{ stats.pending }}</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">
                         <CIcon name="cil-clock" size="xl" />
@@ -46,12 +46,12 @@
         </CCol>
 
         <!-- Failed -->
-        <CCol sm="6" lg="3" @click="$emit('input', 'Fail')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': value === 'Fail' }]">
+        <CCol sm="6" lg="3" @click="$emit('input', 'Rejected')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Rejected' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">Failed</div>
-                        <div class="widget-value text-danger">4</div>
+                        <div class="widget-value text-danger">{{ stats.failed }}</div>
                     </div>
                     <div class="icon-wrapper bg-red-light text-red">
                         <CIcon name="cil-x-circle" size="xl" />
@@ -69,6 +69,16 @@ export default {
         value: {
             type: String,
             default: 'All Statuses'
+        },
+        stats: {
+            type: Object,
+            default: () => ({
+                totalSubmitted: 0,
+                totalExpected: 0,
+                passed: 0,
+                pending: 0,
+                failed: 0
+            })
         }
     }
 }

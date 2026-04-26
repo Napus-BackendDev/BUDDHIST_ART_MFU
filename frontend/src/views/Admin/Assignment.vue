@@ -9,16 +9,16 @@
         </div>
 
         <HeaderHero 
-            title="Midterm Art Project - Portrait Drawing" 
+            :title="assignmentTitle" 
             description="Manage and review all student submissions, provide feedback, and grade their work in real-time." 
             icon="cil-task" 
             :showCreateButton="false" 
             :showExportButton="true" 
             @export="handleExport"
         />
-        <AssignmentWidget v-model="filters.status" />
+        <AssignmentWidget v-model="filters.status" :stats="stats" />
         <AssignmentFilter v-model="filters" />
-        <AssignmentTable :filters="filters" />
+        <AssignmentTable :filters="filters" :items="mappedArtworks" @update-status="handleStatusUpdate" />
     </div>
 </template>
 
@@ -27,6 +27,7 @@ import AssignmentTable from './components/table/AssignmentTable.vue'
 import AssignmentWidget from './components/widget/AssignmentWidget.vue'
 import AssignmentFilter from './components/filter/AssignmentFilter.vue'
 import HeaderHero from './components/HeaderHero.vue'
+import moment from 'moment'
 
 export default {
     name: 'Assignment',
@@ -48,11 +49,159 @@ export default {
             }
         }
     },
-    methods: {
-        handleExport() {
-            // Placeholder for export functionality
-            console.log('Exporting data...');
+    created() {
+        this.fetchSubmission();
+        this.$store.dispatch('setting/status/get', {});
+    },
+    computed: {
+        allStatuses() {
+            return this.$store.getters['setting/status/item'] || [];
+        },
+        stats() {
+            const artworks = this.mappedArtworks;
+            const totalArtists = (this.submission && this.submission.artist) ? this.submission.artist.length : 0;
+            
+            return {
+                totalSubmitted: artworks.length,
+                totalExpected: totalArtists,
+                passed: artworks.filter(aw => aw.status === 'Approved').length,
+                pending: artworks.filter(aw => aw.status === 'Pending').length,
+                failed: artworks.filter(aw => aw.status === 'Rejected').length
+            };
+        },
+        submission() {
+            return this.$store.getters['submission/submissions'].find(s => s._id === this.$route.params.submissionId);
+        },
+        assignment() {
+            if (!this.submission || !this.submission.assignments) return null;
+            return this.submission.assignments.find(a => a._id === this.$route.params.id);
+        },
+        assignmentTitle() {
+            return this.assignment ? this.getName('en', this.assignment) : 'Assignment Detail';
+        },
+        mappedArtworks() {
+            if (!this.assignment || !this.assignment.artworks) return [];
+            return this.assignment.artworks.map(aw => {
+                const owner = aw.owner;
+                const status = aw.status;
+                
+                // Determine student name and ID safely
+                let studentName = 'N/A';
+                let studentId = 'N/A';
+                
+                if (owner) {
+                    if (typeof owner === 'object') {
+                        studentName = this.getName('en', owner);
+                        studentId = owner.studentId || 'N/A';
+                    } else {
+                        // It's just an ID string (Population didn't happen)
+                        studentName = `User (ID: ${owner.substring(owner.length - 4)})`;
+                        studentId = owner;
+                    }
+                }
+
+                // Determine status name safely
+                let statusName = 'Pending';
+                if (status) {
+                    statusName = typeof status === 'object' ? (this.getName('en', status) || 'Pending') : 'Pending';
+                }
+
+                return {
+                    id: aw._id,
+                    preview: aw.image,
+                    student_name: studentName,
+                    student_id: studentId,
+                    submitted_date: aw.create ? moment(aw.create.at).format('MMM DD, YYYY hh:mm A') : 'N/A',
+                    on_time: aw.create && this.assignment.create ? moment(aw.create.at).isBefore(moment(this.assignment.create.endAt)) : true,
+                    status: statusName,
+                    deadline: this.assignment.create ? moment(this.assignment.create.endAt).format('MMM DD, YYYY hh:mm A') : 'N/A',
+                    description: this.getName('en', { title: aw.description })
+                };
+            });
         }
+    },
+    methods: {
+        fetchSubmission() {
+            this.$store.dispatch('submission/get', { _id: this.$route.params.submissionId });
+        },
+        async handleStatusUpdate({ artworkId, statusName }) {
+            try {
+                if (!this.submission || !this.assignment) return;
+
+                // 1. Find the target status ID
+                const targetStatus = this.allStatuses.find(s => {
+                    const title = this.getName('en', s);
+                    return title.toLowerCase() === statusName.toLowerCase() || 
+                           (statusName === 'Approved' && title.toLowerCase() === 'approved') ||
+                           (statusName === 'Rejected' && title.toLowerCase() === 'rejected');
+                });
+
+                if (!targetStatus) {
+                    alert('ไม่พบสถานะที่ต้องการในระบบ');
+                    return;
+                }
+
+                // 2. Clone and update the submission object
+                const updatedSubmission = JSON.parse(JSON.stringify(this.submission));
+                
+                // Find the assignment and the artwork
+                const assignmentIndex = updatedSubmission.assignments.findIndex(a => a._id === this.assignment._id);
+                if (assignmentIndex === -1) return;
+
+                const artworkIndex = updatedSubmission.assignments[assignmentIndex].artworks.findIndex(aw => aw._id === artworkId);
+                if (artworkIndex === -1) return;
+
+                // Update the status ID
+                updatedSubmission.assignments[assignmentIndex].artworks[artworkIndex].status = targetStatus._id;
+
+                // 3. Unpopulate fields to prevent Mongoose cast errors
+                if (updatedSubmission.artist && updatedSubmission.artist.length > 0 && typeof updatedSubmission.artist[0] === 'object') {
+                    updatedSubmission.artist = updatedSubmission.artist.map(a => a._id);
+                }
+                
+                updatedSubmission.assignments.forEach(assignment => {
+                    if (assignment.artist && assignment.artist.length > 0 && typeof assignment.artist[0] === 'object') {
+                        assignment.artist = assignment.artist.map(a => a._id);
+                    }
+                    if (assignment.artworks) {
+                        assignment.artworks.forEach(aw => {
+                            if (aw.owner && typeof aw.owner === 'object') aw.owner = aw.owner._id;
+                            if (aw.status && typeof aw.status === 'object') aw.status = aw.status._id;
+                            if (aw.category && typeof aw.category === 'object') aw.category = aw.category._id;
+                        });
+                    }
+                });
+
+                // 4. Save to backend
+                await this.$store.dispatch('submission/update', updatedSubmission);
+                
+                // 5. Refresh data
+                await this.fetchSubmission();
+                alert(`อัปเดตสถานะเป็น ${statusName} เรียบร้อยแล้ว`);
+                
+            } catch (error) {
+                console.error('Error updating status:', error);
+                alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
+            }
+        },
+        handleExport() {
+            console.log('Exporting data...');
+        },
+        getName(lang, item) {
+            if (!item) return 'N/A';
+            
+            if (typeof item === 'string') return item;
+
+            const titleField = item.title || item.name || '';
+            if (typeof titleField === 'string' && titleField) return titleField;
+            
+            if (Array.isArray(titleField)) {
+                const nameObj = titleField.find(n => n.key === lang);
+                const fallback = titleField[0] ? titleField[0].value : 'N/A';
+                return nameObj ? nameObj.value : fallback;
+            }
+            return 'N/A';
+        },
     }
 }
 </script>
