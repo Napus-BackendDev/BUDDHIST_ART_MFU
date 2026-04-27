@@ -161,7 +161,7 @@ export default {
     submission(method, data, configs) {
         switch (method) {
             case 'get':
-                return instance.get("/api/v1/submission");
+                return instance.get("/api/v1/submission", { params: data });
             case 'exp':
                 return instance.post("/api/v1/submission/explore", data);
             case 'post':

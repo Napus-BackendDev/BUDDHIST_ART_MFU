@@ -60,15 +60,15 @@ import { mapGetters } from 'vuex';
 export default {
     name: 'CardOrderSummary',
     computed: {
-        ...mapGetters('cart', ['cartItems', 'cartTotal']),
+        ...mapGetters('cart', ['cartItems', 'cartTotal', 'cartShippingCost', 'cartFinalTotal']),
         subtotal() {
             return this.cartTotal || 0;
         },
-        shippingCost() {
-            return (this.subtotal > 1000 || this.subtotal === 0) ? 0 : 25;
-        },
         total() {
-            return this.subtotal + this.shippingCost;
+            return this.cartFinalTotal;
+        },
+        shippingCost() {
+            return this.cartShippingCost;
         }
     },
     methods: {

@@ -101,7 +101,7 @@
                         </div>
 
                         <p class="text-muted mb-0">Amount to pay: <span
-                                class="text-danger font-weight-bold h5 ml-1">$625</span></p>
+                                class="text-danger font-weight-bold h5 ml-1">฿{{ formatPrice(total) }}</span></p>
                     </div>
                 </div>
 
@@ -173,6 +173,8 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 export default {
     name: 'CardShipping',
     data() {
@@ -192,6 +194,12 @@ export default {
                 city: '',
                 postalCode: ''
             }
+        }
+    },
+    computed: {
+        ...mapGetters('cart', ['cartFinalTotal']),
+        total() {
+            return this.cartFinalTotal;
         }
     },
     methods: {
@@ -223,6 +231,10 @@ export default {
         },
         formatFileSize(bytes) {
             return this.updateFileSize(bytes);
+        },
+        formatPrice(value) {
+            if (value === undefined || value === null) return '0';
+            return parseFloat(value).toLocaleString('en-US');
         },
         removeImage() {
             this.paymentProofImage = null;

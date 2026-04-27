@@ -1,80 +1,94 @@
 <template>
-    <footer class="footer-section">
-        <div class="container pt-5 pb-5">
-            <div class="row">
-                <!-- Column 1: Brand & Description -->
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h3 class="footer-logo mb-3">Artsy.</h3>
-                    <p class="footer-desc pr-lg-5">
-                        Curating the finest digital and physical art from around the globe. Connecting collectors with
-                        creators since 2024.
-                    </p>
-                </div>
-
-                <!-- Column 2: Shop -->
-                <div class="col-6 col-lg-2 mb-4 mb-lg-0">
-                    <h5 class="footer-heading mb-3">Shop</h5>
-                    <ul class="list-unstyled footer-links">
-                        <li><a href="#">Paintings</a></li>
-                        <li><a href="#">Sculptures</a></li>
-                        <li><a href="#">Digital Art</a></li>
-                        <li><a href="#">New Arrivals</a></li>
-                    </ul>
-                </div>
-
-                <!-- Column 3: Support -->
-                <div class="col-6 col-lg-2 mb-4 mb-lg-0">
-                    <h5 class="footer-heading mb-3">Support</h5>
-                    <ul class="list-unstyled footer-links">
-                        <li><a href="#">FAQ</a></li>
-                        <li><a href="#">Shipping & Returns</a></li>
-                        <li><a href="#">Art Advisory</a></li>
-                        <li><a href="#">Contact Us</a></li>
-                    </ul>
-                </div>
-
-                <!-- Column 4: Stay Updated -->
-                <div class="col-lg-4">
-                    <h5 class="footer-heading mb-3" style="color: #F9D976;">Stay Updated</h5>
-                    <p class="footer-desc mb-3">Subscribe for exclusive drops and art news.</p>
-                    <div class="input-group mb-3 newsletter-input-group">
-                        <input type="email" class="form-control bg-dark border-dark text-white shadow-none"
-                            placeholder="Enter your email" aria-label="Enter your email">
-                        <div class="input-group-append">
-                            <button class="btn btn-danger" type="button"
-                                style="background-color: #E55B5B; border: none;">
-                                <CIcon name="cil-arrow-right" />
-                            </button>
+    <footer class="footer-user">
+        <div class="footer-main py-5">
+            <CContainer>
+                <CRow>
+                    <!-- Column 1: Brand & Identity -->
+                    <CCol lg="4" class="mb-4 mb-lg-0 pr-lg-5">
+                        <div class="footer-brand mb-4">
+                            <h2 class="brand-title">BUDDHIST <span class="highlight">ART MFU</span></h2>
+                            <div class="brand-sub">ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง</div>
                         </div>
-                    </div>
-                </div>
-            </div>
+                        <p class="brand-description">
+                            แหล่งเรียนรู้และอนุรักษ์พุทธศิลปกรรมล้านนาและร่วมสมัย 
+                            มุ่งเน้นการเผยแพร่ สืบทอด และสร้างสรรค์ผลงานพุทธศิลป์ 
+                            เพื่อสืบสานมรดกทางวัฒนธรรมอันล้ำค่าของชาติ
+                        </p>
+                        <div class="social-links mt-4">
+                            <a href="#" class="social-btn"><CIcon name="cib-facebook" /></a>
+                            <a href="#" class="social-btn"><CIcon name="cib-instagram" /></a>
+                            <a href="#" class="social-btn"><CIcon name="cib-youtube" /></a>
+                            <a href="#" class="social-btn"><CIcon name="cil-envelope-closed" /></a>
+                        </div>
+                    </CCol>
+
+                    <!-- Column 2: Quick Links -->
+                    <CCol md="4" lg="2" class="mb-4 mb-lg-0">
+                        <h5 class="footer-heading text-uppercase mb-4">เมนูแนะนำ</h5>
+                        <ul class="footer-nav list-unstyled">
+                            <li><router-link to="/">หน้าหลัก</router-link></li>
+                            <li><router-link to="/artworks">ผลงานพุทธศิลป์</router-link></li>
+                            <li><router-link to="/news">ข่าวสารและกิจกรรม</router-link></li>
+                            <li><router-link to="/track-order">เช็คสถานะคำสั่งซื้อ</router-link></li>
+                            <li><router-link to="/login">เข้าสู่ระบบ (ศิลปิน/แอดมิน)</router-link></li>
+                        </ul>
+                    </CCol>
+
+                    <!-- Column 3: Contact Info -->
+                    <CCol md="8" lg="6" class="mb-4 mb-lg-0 pl-lg-5">
+                        <h5 class="footer-heading text-uppercase mb-4">ติดต่อเรา</h5>
+                        <div class="contact-info">
+                            <div class="contact-item d-flex mb-3">
+                                <div class="contact-icon mr-3">
+                                    <CIcon name="cil-location-pin" />
+                                </div>
+                                <div class="contact-text">
+                                    มหาวิทยาลัยแม่ฟ้าหลวง 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100
+                                </div>
+                            </div>
+                            <div class="contact-item d-flex mb-3">
+                                <div class="contact-icon mr-3">
+                                    <CIcon name="cil-phone" />
+                                </div>
+                                <div class="contact-text">
+                                    โทรศัพท์: 0-5391-6000, 0-5391-7034
+                                </div>
+                            </div>
+                            <div class="contact-item d-flex">
+                                <div class="contact-icon mr-3">
+                                    <CIcon name="cil-clock" />
+                                </div>
+                                <div class="contact-text">
+                                    เวลาทำการ: จันทร์ - ศุกร์ | 08:00 - 16:00 น.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Map Placeholder / Decorative element -->
+                        <div class="footer-map-deco mt-4 rounded-lg overflow-hidden border border-secondary shadow-sm">
+                            <div class="map-overlay d-flex align-items-center justify-content-center">
+                                <CIcon name="cil-map" size="xl" class="mr-2" />
+                                <span>แผนที่มหาวิทยาลัยแม่ฟ้าหลวง</span>
+                            </div>
+                        </div>
+                    </CCol>
+                </CRow>
+            </CContainer>
         </div>
 
-        <!-- Bottom Footer -->
-        <div class="container pb-4">
-            <div class="row align-items-center border-top border-secondary pt-4">
-                <div class="col-md-6 text-center text-md-left mb-3 mb-md-0">
-                    <small class="text-muted">&copy; {{ new Date().getFullYear() }} Artsy Inc. All rights
-                        reserved.</small>
-                </div>
-                <div class="col-md-6 text-center text-md-right">
-                    <div class="social-icons">
-                        <a href="#" class="text-muted mr-3 hover-white">
-                            <CIcon name="cib-instagram" size="lg" />
-                        </a>
-                        <a href="#" class="text-muted mr-3 hover-white">
-                            <CIcon name="cib-twitter" size="lg" />
-                        </a>
-                        <a href="#" class="text-muted mr-3 hover-white">
-                            <CIcon name="cib-facebook" size="lg" />
-                        </a>
-                        <a href="#" class="text-muted hover-white">
-                            <CIcon name="cil-envelope-closed" size="lg" />
-                        </a>
+        <!-- Copyright Bar -->
+        <div class="footer-bottom py-4 bg-darker text-center border-top border-secondary">
+            <CContainer>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                    <p class="mb-0 small text-muted">
+                        &copy; {{ new Date().getFullYear() }} Center for Buddhist Art, Mae Fah Luang University. All rights reserved.
+                    </p>
+                    <div class="footer-policy mt-3 mt-md-0">
+                        <a href="#" class="small text-muted mr-3">Privacy Policy</a>
+                        <a href="#" class="small text-muted">Terms of Service</a>
                     </div>
                 </div>
-            </div>
+            </CContainer>
         </div>
     </footer>
 </template>
@@ -86,60 +100,144 @@ export default {
 </script>
 
 <style scoped>
-.footer-section {
-    background-color: #0f1219;
-    /* Dark background color from design */
-    color: #a0aec0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+.footer-user {
+    background-color: #12141a;
+    color: #cbd5e0;
+    font-family: 'Sarabun', sans-serif;
+    position: relative;
+    z-index: 100;
 }
 
-.footer-logo {
-    color: #ffffff;
-    font-weight: bold;
+.footer-main {
+    border-top: 4px solid #612721;
 }
 
-.footer-heading {
-    color: #E55B5B;
-    /* Accent color */
+.bg-darker {
+    background-color: #0a0c10;
+}
+
+.brand-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.brand-title .highlight {
+    color: #612721;
+}
+
+.brand-sub {
+    font-size: 0.9rem;
     font-weight: 600;
-    font-size: 1.1rem;
+    color: #a0aec0;
+    letter-spacing: 0.5px;
 }
 
-.footer-desc {
+.brand-description {
+    line-height: 1.7;
     color: #718096;
-    line-height: 1.6;
     font-size: 0.95rem;
 }
 
-.footer-links li {
-    margin-bottom: 0.75rem;
+.footer-heading {
+    font-family: 'Cinzel', serif;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    position: relative;
+    padding-bottom: 15px;
 }
 
-.footer-links a {
+.footer-heading::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 40px;
+    height: 3px;
+    background: #612721;
+    border-radius: 2px;
+}
+
+.footer-nav li {
+    margin-bottom: 12px;
+}
+
+.footer-nav a {
     color: #a0aec0;
     text-decoration: none;
-    transition: color 0.2s;
+    transition: all 0.25s ease;
+    font-weight: 500;
 }
 
-.footer-links a:hover {
-    color: #ffffff;
+.footer-nav a:hover {
+    color: #fff;
+    padding-left: 8px;
 }
 
-.newsletter-input-group ::placeholder {
-    color: #718096;
+.contact-icon {
+    color: #612721;
+    min-width: 24px;
 }
 
-.newsletter-input-group input:focus {
-    background-color: #1a202c !important;
-    /* Slightly lighter dark on focus */
+.contact-text {
+    font-size: 0.95rem;
 }
 
-.hover-white:hover {
-    color: #ffffff !important;
+.social-links {
+    display: flex;
+    gap: 15px;
+}
+
+.social-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a0aec0;
+    transition: all 0.3s ease;
+    text-decoration: none !important;
+}
+
+.social-btn:hover {
+    background: #612721;
+    color: #fff;
+    transform: translateY(-3px);
+}
+
+.footer-map-deco {
+    height: 100px;
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('~@/assets/images/backgrounds/news_hero.png');
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.footer-map-deco:hover {
+    filter: brightness(1.2);
+}
+
+.map-overlay {
+    height: 100%;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .border-secondary {
-    border-color: #2d3748 !important;
-    /* Darker border */
+    border-color: rgba(255,255,255,0.05) !important;
+}
+
+@media (max-width: 991.98px) {
+    .footer-heading {
+        margin-top: 20px;
+    }
 }
 </style>

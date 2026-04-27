@@ -11,8 +11,10 @@
         <HeaderHero :title="getName('en', submission)" :description="`รายละเอียดคลาสเรียนและรายการมอบหมายงานสำหรับคุณ`" icon="cil-list" :showCreateButton="false"/>
         <SubmissionDetailWidget :submission="submission" v-model="filters.status" />
         <SubmissionDetailFilter v-model="filters" />
-        <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" @submit-work="handleOpenSubmission" />
+        <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" @submit-work="handleOpenSubmission" @view-work="handleViewWork" />
         <SubmissionModal :show.sync="showSubmissionModal" :assignmentTitle="selectedAssignmentTitle":loading="submitting"@submit="handleWorkSubmit" />
+        <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView" />
+        <ArtworkEditModal :show.sync="showEditModal" :artwork="selectedArtworkForEdit" @save="handleUpdateArtwork" />
     </div>
 </template>
 
@@ -21,6 +23,8 @@ import SubmissionDetailTable from './components/table/SubmissionDetailTable.vue'
 import SubmissionDetailWidget from '../Admin/components/submission_detail/SubmissionDetailWidget.vue'
 import SubmissionDetailFilter from '../Admin/components/submission_detail/SubmissionDetailFilter.vue'
 import SubmissionModal from './components/modal/SubmissionModal.vue'
+import ArtworkViewModal from '../Admin/components/modal/artwork/ArtworkViewModal.vue'
+import ArtworkEditModal from '../Admin/components/modal/artwork/ArtworkEditModal.vue'
 import HeaderHero from './components/HeaderHero.vue'
 
 export default {
@@ -30,13 +34,19 @@ export default {
         SubmissionDetailWidget,
         SubmissionDetailFilter,
         SubmissionModal,
+        ArtworkViewModal,
+        ArtworkEditModal,
         HeaderHero
     },
     data() {
         return {
             showSubmissionModal: false,
+            showViewModal: false,
+            showEditModal: false,
             submitting: false,
             selectedAssignment: null,
+            selectedArtwork: null,
+            selectedArtworkForEdit: null,
             filters: {
                 search: '',
                 status: 'All Status',
@@ -81,6 +91,17 @@ export default {
         handleOpenSubmission(assignment) {
             this.selectedAssignment = assignment;
             this.showSubmissionModal = true;
+        },
+        handleViewWork(assignment) {
+            const userId = this.$store.getters['auth/userId'] || (JSON.parse(localStorage.getItem('objs')) || {}).accounts;
+            const artwork = assignment.artworks.find(art => {
+                const ownerId = art.owner?._id || art.owner;
+                return ownerId === userId;
+            });
+            if (artwork) {
+                this.selectedArtwork = artwork;
+                this.showViewModal = true;
+            }
         },
         async handleWorkSubmit(formData) {
             this.submitting = true;
@@ -157,6 +178,38 @@ export default {
                 alert('เกิดข้อผิดพลาดในการส่งงาน: ' + errorMsg);
             } finally {
                 this.submitting = false;
+            }
+        },
+        handleEditArtworkFromView(artwork) {
+            this.showViewModal = false;
+            this.selectedArtworkForEdit = artwork;
+            this.showEditModal = true;
+        },
+        async handleUpdateArtwork(artworkData) {
+            try {
+                await this.$store.dispatch('artwork/update', artworkData);
+
+                if (artworkData._image) {
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('_id', artworkData._id);
+                    uploadFormData.append('image', artworkData._image);
+                    await this.$store.dispatch('artwork/upload', uploadFormData);
+                }
+
+                this.fetchSubmission();
+                this.showEditModal = false;
+                this.$store.commit('dialog/showToast', {
+                    title: 'สำเร็จ',
+                    message: 'แก้ไขผลงานสำเร็จแล้ว',
+                    variant: 'success'
+                });
+            } catch (error) {
+                console.error('Error updating artwork:', error);
+                this.$store.commit('dialog/showToast', {
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'ไม่สามารถแก้ไขผลงานได้ กรุณาลองอีกครั้ง',
+                    variant: 'danger'
+                });
             }
         },
         handleExport() {

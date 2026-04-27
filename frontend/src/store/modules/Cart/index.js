@@ -18,6 +18,13 @@ const getters = {
     isCartOpen: state => state.showCart,
     isInCart: (state) => (id) => {
         return state.items.some(item => item._id === id);
+    },
+    cartShippingCost: (state, getters) => {
+        const subtotal = getters.cartTotal;
+        return (subtotal > 1000 || subtotal === 0) ? 0 : 25;
+    },
+    cartFinalTotal: (state, getters) => {
+        return getters.cartTotal + getters.cartShippingCost;
     }
 };
 

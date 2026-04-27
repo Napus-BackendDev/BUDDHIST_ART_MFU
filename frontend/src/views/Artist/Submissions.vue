@@ -41,7 +41,8 @@ export default {
     },
     methods: {
         fetchSubmissions() {
-            this.$store.dispatch('submission/get', {});
+            const userId = this.$store.getters['auth/userId'];
+            this.$store.dispatch('submission/get', { artist: userId });
         },
         handleView(item) {
             this.$router.push({ name: 'ArtistSubmissionsDetail', params: { id: item._id } });

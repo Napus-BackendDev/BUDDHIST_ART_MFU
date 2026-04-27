@@ -30,6 +30,15 @@
                     <td class="text-right">
                         <div class="d-inline-flex align-items-center" v-if="!isClosed(item)">
                             <button 
+                                v-if="hasSubmitted(item)"
+                                class="btn-view-work" 
+                                @click="$emit('view-work', item)"
+                            >
+                                <CIcon name="cil-magnifying-glass" class="mr-2 icon-submit" />
+                                <span>ดูผลงานที่ส่งไป</span>
+                            </button>
+                            <button 
+                                v-else
                                 class="btn-submit-work" 
                                 @click="$emit('submit-work', item)"
                             >
@@ -59,6 +68,7 @@
 
 <script>
 import moment from 'moment'
+import { mapGetters } from 'vuex'
 
 export default {
     name: 'SubmissionDetailTable',
@@ -114,9 +124,20 @@ export default {
                 return nameObj ? nameObj.value : (item.title[0] ? item.title[0].value : 'N/A');
             }
             return 'N/A';
+        },
+        hasSubmitted(item) {
+            if (!item.artworks || !Array.isArray(item.artworks)) return false;
+            const currentUserId = this.userId;
+            return item.artworks.some(art => {
+                const ownerId = art.owner?._id || art.owner;
+                return ownerId === currentUserId;
+            });
         }
     },
     computed: {
+        ...mapGetters({
+            userId: 'auth/userId'
+        }),
         filteredItems() {
             return (this.items || []).filter(item => {
                 const title = (this.getName('en', item) || this.getName('th', item) || '').toLowerCase();
@@ -291,6 +312,32 @@ export default {
 }
 
 .btn-submit-work:active {
+    transform: translateY(0);
+}
+
+.btn-view-work {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    border: none;
+    color: white;
+    padding: 0.5rem 1.25rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-view-work:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(66, 153, 225, 0.3);
+    background: linear-gradient(135deg, #50aff5 0%, #3a91d6 100%);
+}
+
+.btn-view-work:active {
     transform: translateY(0);
 }
 
