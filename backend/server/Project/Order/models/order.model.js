@@ -14,6 +14,9 @@ var objsSchema = new Schema({
         bill: { type: String, default: null },
         shipping: { type: String, default: null },
     },
+    carrier: { type: String, default: "Thailand Post" },
+    trackingId: { type: String, default: "" },
+    deliveryDate: { type: Date, default: null },
     artwork: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artwork', default: null }],
     status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "689c04cb255db4e56aea88ef" },
 }, { timestamps: true });

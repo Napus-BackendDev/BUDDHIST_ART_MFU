@@ -84,6 +84,12 @@ export default {
           },
           {
             _name: 'CSidebarNavItem',
+            name: 'News',
+            to: '/admin/news',
+            icon: 'cil-newspaper'
+          },
+          {
+            _name: 'CSidebarNavItem',
             name: 'Submissions',
             to: '/admin/submissions',
             icon: 'cil-cloud-upload'
@@ -93,12 +99,6 @@ export default {
             name: 'Certification',
             to: '/admin/certification',
             icon: 'cil-task'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: 'News',
-            to: '/admin/news',
-            icon: 'cil-newspaper'
           },
           {
             _name: 'CSidebarNavTitle',

@@ -251,19 +251,35 @@ export default {
     transition: all 0.3s ease;
 }
 
-.nav-link-custom:hover, .nav-link-custom.c-active {
+.nav-link-custom:hover {
+    color: #f0c24d !important; 
+    text-decoration: none !important;
+}
+
+.nav-link-custom.c-active {
     color: #ffffff !important;
 }
 
-.nav-link-custom.c-active::after {
+.nav-link-custom::after {
     content: '';
     position: absolute;
     bottom: -8px;
     left: 0;
-    width: 100%;
+    width: 0;
     height: 3px;
-    background-color: #ffffff;
+    background-color: #f0c24d;
     border-radius: 2px;
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.nav-link-custom:hover::after, .nav-link-custom.c-active::after {
+    width: 100%;
+    opacity: 1;
+}
+
+.nav-link-custom.c-active::after {
+    background-color: #ffffff;
 }
 
 /* Utility styles */

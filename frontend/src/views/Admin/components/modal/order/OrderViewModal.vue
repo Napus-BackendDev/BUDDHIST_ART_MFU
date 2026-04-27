@@ -76,6 +76,36 @@
 
             <hr class="section-divider">
 
+            <hr class="section-divider">
+            
+            <!-- Shipping & Tracking -->
+            <div class="shipping-section mt-4">
+                <h6 class="section-title mb-3">Shipping & Tracking</h6>
+                <CRow>
+                    <CCol md="4">
+                        <div class="info-item">
+                            <span class="info-label">Carrier</span>
+                            <div class="info-value">{{ order.carrier || 'Thailand Post' }}</div>
+                        </div>
+                    </CCol>
+                    <CCol md="4">
+                        <div class="info-item">
+                            <span class="info-label">Tracking ID</span>
+                            <div class="info-value font-family-mono">{{ order.trackingId || 'Not assigned' }}</div>
+                        </div>
+                    </CCol>
+                    <CCol md="4">
+                        <div class="info-item">
+                            <span class="info-label">Expected Delivery</span>
+                            <div class="info-value">{{ order.deliveryDate ? formatDateShort(order.deliveryDate) : 'To be confirmed' }}</div>
+                        </div>
+                    </CCol>
+                </CRow>
+
+            </div>
+
+            <hr class="section-divider">
+
             <!-- Artwork Selection Section -->
             <div class="artwork-section mt-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -178,6 +208,10 @@ export default {
             if (!date) return 'N/A';
             return moment(date).format('MMM DD, YYYY hh:mm A');
         },
+        formatDateShort(date) {
+            if (!date) return 'N/A';
+            return moment(date).format('MMM DD, YYYY');
+        },
         formatPrice(value) {
             if (value === undefined || value === null) return '0.00';
             const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
@@ -252,6 +286,41 @@ export default {
     font-size: 1.25rem;
     font-weight: 800;
     color: #1e293b;
+}
+
+/* Timeline */
+.timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 12px;
+}
+
+.marker-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #cbd5e1;
+}
+
+.marker-dot.latest {
+    background-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.marker-line {
+    flex-grow: 1;
+    width: 2px;
+    background-color: #f1f5f9;
+    margin: 4px 0;
+}
+
+.smallest {
+    font-size: 0.7rem;
+}
+
+.font-family-mono {
+    font-family: monospace;
 }
 
 /* Artwork Items */

@@ -15,7 +15,7 @@ exports.onQuery = async function (request, response) {
 
 exports.onQuerys = async function (request, response) {
     try {
-        let query = {};
+        let query = request.query || {};
         const doc = await Submission.onQuerys(query);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
@@ -63,7 +63,7 @@ exports.onUpload = async function (request, response) {
         if (!request.file && !request.files) {
             return ResMessage.sendResponse(response, 0, 40400, "No file uploaded");
         }
-        
+
         let filename = request.file ? request.file.filename : request.files[0].filename;
         const imagePath = `${request.protocol}://${request.get('host')}/data/uploads/submission/${filename}`;
 

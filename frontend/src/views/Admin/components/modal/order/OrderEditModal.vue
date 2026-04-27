@@ -167,8 +167,48 @@
                 </div>
             </div>
 
+            <!-- Shipping & Tracking Row -->
+            <div class="mt-4 pt-4 border-top">
+                <h6 class="font-weight-bold text-dark mb-3">Shipping & Tracking</h6>
+                <CRow>
+                    <CCol md="6">
+                        <div class="form-group-custom">
+                            <label class="form-label">Carrier</label>
+                            <CInput 
+                                v-model="form.carrier" 
+                                placeholder="e.g. Thailand Post" 
+                                class="custom-input"
+                            />
+                        </div>
+                    </CCol>
+                    <CCol md="6">
+                        <div class="form-group-custom">
+                            <label class="form-label">Tracking ID</label>
+                            <CInput 
+                                v-model="form.trackingId" 
+                                placeholder="e.g. TH123456789" 
+                                class="custom-input"
+                            />
+                        </div>
+                    </CCol>
+                </CRow>
+                <CRow>
+                    <CCol md="6">
+                        <div class="form-group-custom">
+                            <label class="form-label">Expected Delivery</label>
+                            <CInput 
+                                type="date"
+                                v-model="form.deliveryDate" 
+                                class="custom-input"
+                            />
+                        </div>
+                    </CCol>
+                </CRow>
+
+            </div>
+
             <!-- Proof of Payment Row -->
-            <div class="form-group-custom mt-4">
+            <div class="form-group-custom mt-4 pt-4 border-top">
                 <label class="form-label">Proof of Payment (Optional)</label>
                 <div class="upload-container">
                     <div v-if="!imagePreview" class="upload-area" @click="$refs.fileInput.click()">
@@ -241,6 +281,9 @@ export default {
                     shipping: ''
                 },
                 artworks: [],
+                carrier: 'Thailand Post',
+                trackingId: '',
+                deliveryDate: '',
                 _image: null
             }
         }
@@ -289,6 +332,9 @@ export default {
                         shipping: this.order.address?.shipping || ''
                     },
                     artworks: Array.isArray(this.order.artwork) ? [...this.order.artwork] : [],
+                    carrier: this.order.carrier || 'Thailand Post',
+                    trackingId: this.order.trackingId || '',
+                    deliveryDate: this.order.deliveryDate ? new Date(this.order.deliveryDate).toISOString().split('T')[0] : '',
                     _image: null
                 };
                 this.imagePreview = this.order.image || null;
@@ -362,6 +408,9 @@ export default {
                 contact: { ...this.form.contact },
                 address: { ...this.form.address },
                 artwork: this.form.artworks.map(a => a._id),
+                carrier: this.form.carrier,
+                trackingId: this.form.trackingId,
+                deliveryDate: this.form.deliveryDate,
                 _image: this.imageFile
             };
             

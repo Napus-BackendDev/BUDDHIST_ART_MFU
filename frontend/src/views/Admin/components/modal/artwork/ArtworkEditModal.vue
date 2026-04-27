@@ -25,37 +25,33 @@
         </template>
 
         <div class="px-3 py-2">
-            <!-- Basic Info Row -->
+            <!-- Row 1: Titles -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Artwork Title</label>
+                        <label class="form-label">Title (EN)</label>
                         <CInput 
-                            v-model="form.title" 
-                            placeholder="e.g. The Golden Serenity" 
+                            v-model="form.title.en" 
+                            placeholder="English Title" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Price</label>
-                        <div class="input-group-custom">
-                            <span class="currency-prefix">฿</span>
-                            <CInput 
-                                type="number"
-                                v-model="form.price" 
-                                placeholder="0.00" 
-                                class="custom-input-with-prefix text-right mb-0"
-                            />
-                        </div>
+                        <label class="form-label">Title (TH)</label>
+                        <CInput 
+                            v-model="form.title.th" 
+                            placeholder="ชื่อภาษาไทย" 
+                            class="custom-input mb-0"
+                        />
                     </div>
                 </CCol>
             </CRow>
 
-            <!-- Artist & Category Row -->
+            <!-- Row 2: Artist -->
             <CRow>
-                <CCol md="6">
+                <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Artist Name</label>
                         <div class="searchable-dropdown">
@@ -99,7 +95,11 @@
                         </div>
                     </div>
                 </CCol>
-                <CCol md="6">
+            </CRow>
+
+            <!-- Row 3: Category -->
+            <CRow>
+                <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Category</label>
                         <CDropdown :caret="false" class="w-100">
@@ -123,13 +123,13 @@
                 </CCol>
             </CRow>
 
-            <!-- Technique & Status Row -->
+            <!-- Row 4: Technique -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Technique</label>
+                        <label class="form-label">Technique (EN)</label>
                         <CInput 
-                            v-model="form.technique" 
+                            v-model="form.technique.en" 
                             placeholder="e.g. Oil on Canvas" 
                             class="custom-input mb-0"
                         />
@@ -137,15 +137,43 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Size</label>
+                        <label class="form-label">Technique (TH)</label>
                         <CInput 
-                            v-model="form.size" 
+                            v-model="form.technique.th" 
+                            placeholder="เช่น สีน้ำมันบนผ้าใบ" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Row 5: Size -->
+            <CRow>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Size (EN)</label>
+                        <CInput 
+                            v-model="form.size.en" 
                             placeholder="e.g. 100 x 150 cm" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
-                <CCol md="12">
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Size (TH)</label>
+                        <CInput 
+                            v-model="form.size.th" 
+                            placeholder="เช่น 100 x 150 ซม." 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Row 6: Sale Status & Price -->
+            <CRow>
+                <CCol :md="selectedSaleStatusName === 'Available' ? '6' : '12'">
                     <div class="form-group-custom">
                         <label class="form-label">Sale Status</label>
                         <CDropdown :caret="false" class="w-100">
@@ -167,9 +195,23 @@
                         </CDropdown>
                     </div>
                 </CCol>
+                <CCol md="6" v-if="selectedSaleStatusName === 'Available'">
+                    <div class="form-group-custom">
+                        <label class="form-label">Price</label>
+                        <div class="input-group-custom">
+                            <span class="currency-prefix">฿</span>
+                            <CInput 
+                                type="number"
+                                v-model="form.price" 
+                                placeholder="0.00" 
+                                class="custom-input-with-prefix text-right mb-0"
+                            />
+                        </div>
+                    </div>
+                </CCol>
             </CRow>
 
-            <!-- File Upload Row -->
+            <!-- Row 7: Artwork Image -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
@@ -198,6 +240,15 @@
                                                 <CIcon name="cil-pencil" class="mr-2" /> Change Image
                                             </div>
                                         </div>
+                                        <!-- Remove Button -->
+                                        <button 
+                                            type="button" 
+                                            class="btn-remove-image shadow-sm" 
+                                            @click.stop.prevent="removeImage"
+                                            title="Remove image"
+                                        >
+                                            <CIcon name="cil-trash" size="sm" />
+                                        </button>
                                     </div>
                                 </template>
                             </label>
@@ -206,14 +257,29 @@
                 </CCol>
             </CRow>
 
-            <!-- Description Row -->
+            <!-- Row 8: Description (EN) -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">Description (EN)</label>
                         <CTextarea 
-                            v-model="form.description" 
-                            placeholder="Write a brief description of the artwork..." 
+                            v-model="form.description.en" 
+                            placeholder="English description..." 
+                            rows="4"
+                            class="custom-textarea"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Row 9: Description (TH) -->
+            <CRow>
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">Description (TH)</label>
+                        <CTextarea 
+                            v-model="form.description.th" 
+                            placeholder="รายละเอียดภาษาไทย..." 
                             rows="4"
                             class="custom-textarea"
                         />
@@ -275,13 +341,13 @@ export default {
             showArtistDropdown: false,
             form: {
                 id: null,
-                title: '',
+                title: { en: '', th: '' },
                 artist: '',
                 category: '',
-                technique: '',
-                size: '',
+                technique: { en: '', th: '' },
+                size: { en: '', th: '' },
                 price: '',
-                description: '',
+                description: { en: '', th: '' },
                 status: {
                     approval: '',
                     sale: ''
@@ -313,7 +379,7 @@ export default {
             allUsers: 'user/user'
         }),
         isFormValid() {
-            return this.form.title.trim() !== '' && 
+            return (this.form.title.en.trim() !== '' || this.form.title.th.trim() !== '') && 
                    this.form.artist !== '' && 
                    this.form.price !== '' && 
                    this.imagePreview !== null;
@@ -377,13 +443,25 @@ export default {
         populateForm(artwork) {
             this.form = {
                 id: artwork._id,
-                title: this.getName('en', artwork),
+                title: {
+                    en: this.getName('en', artwork),
+                    th: this.getName('th', artwork)
+                },
                 artist: artwork.artist ? artwork.artist._id : '',
                 category: artwork.category ? artwork.category._id : '',
-                technique: this.getName('en', { title: artwork.technique }),
-                size: this.getName('en', { title: artwork.size }),
+                technique: {
+                    en: this.getName('en', { title: artwork.technique }),
+                    th: this.getName('th', { title: artwork.technique })
+                },
+                size: {
+                    en: this.getName('en', { title: artwork.size }),
+                    th: this.getName('th', { title: artwork.size })
+                },
                 price: this.cleanPrice(artwork.price),
-                description: this.getName('en', { title: artwork.description }),
+                description: {
+                    en: this.getName('en', { title: artwork.description }),
+                    th: this.getName('th', { title: artwork.description })
+                },
                 status: {
                     approval: artwork.status?.approval?._id || '',
                     sale: artwork.status?.sale?._id || ''
@@ -394,7 +472,7 @@ export default {
             this.imagePreview = artwork.image || null;
         },
         getName(lang, item) {
-            if (!item) return 'N/A';
+            if (!item) return '';
             if (typeof item === 'string') return item;
             
             const titleField = item.title || item.name || '';
@@ -402,10 +480,9 @@ export default {
             
             if (Array.isArray(titleField)) {
                 const nameObj = titleField.find(n => n.key === lang);
-                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
-                return nameObj ? nameObj.value : firstVal;
+                return nameObj ? nameObj.value : '';
             }
-            return 'N/A';
+            return '';
         },
         getArtistName(artist) {
             if (!artist) return 'N/A';
@@ -425,7 +502,7 @@ export default {
             if (!price) return '';
             return String(price).replace(/[^0-9.]/g, '');
         },
-        handleFileUpload(event) {
+        async handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -434,13 +511,78 @@ export default {
                 return;
             }
 
-            this.form.image = file;
+            try {
+                const compressedFile = await this.compressImage(file);
+                this.form.image = compressedFile;
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.imagePreview = e.target.result;
-            };
-            reader.readAsDataURL(file);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.imagePreview = e.target.result;
+                };
+                reader.readAsDataURL(compressedFile);
+            } catch (error) {
+                console.error('Compression error:', error);
+                alert('Failed to process image. Please try another file.');
+            }
+        },
+        compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        const maxDim = 2048;
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        let quality = 0.9;
+                        const mimeType = 'image/jpeg';
+                        
+                        const getBlob = (q) => {
+                            return new Promise((res) => {
+                                canvas.toBlob((blob) => {
+                                    res(blob);
+                                }, mimeType, q);
+                            });
+                        };
+
+                        const checkAndResolve = async (q) => {
+                            const blob = await getBlob(q);
+                            if (blob.size > 3 * 1024 * 1024 && q > 0.1) {
+                                return checkAndResolve(q - 0.1);
+                            } else {
+                                const compressedFile = new File([blob], file.name, {
+                                    type: mimeType,
+                                    lastModified: Date.now()
+                                });
+                                resolve(compressedFile);
+                            }
+                        };
+
+                        checkAndResolve(quality);
+                    };
+                    img.onerror = reject;
+                };
+                reader.onerror = reject;
+            });
         },
         handleArtistSearch() {
             this.showArtistDropdown = true;
@@ -460,17 +602,23 @@ export default {
         },
         handlePreview() {
             const artist = this.form.artist || this.artistSearchQuery;
-            if (!this.form.title || !artist || !this.form.price || !this.imagePreview) {
-                alert('Please fill in all required fields (Title, Artist, Price, and Image) before previewing.');
+            if (!this.form.title.en && !this.form.title.th) {
+                alert('Please enter a title.');
+                return;
+            }
+            if (!artist || !this.form.price || !this.imagePreview) {
+                alert('Please fill in required fields (Artist, Price, and Image) before previewing.');
                 return;
             }
             
             const previewData = {
                 ...this.form,
+                title: this.form.title.en || this.form.title.th,
                 artist: artist,
                 image: this.imagePreview, 
-                medium: this.form.technique || 'N/A',
-                dimensions: '60 x 80 cm', 
+                medium: this.form.technique.en || this.form.technique.th || 'N/A',
+                dimensions: this.form.size.en || this.form.size.th || 'N/A',
+                description: this.form.description.en || this.form.description.th || ''
             };
             
             sessionStorage.setItem('artwork_preview', JSON.stringify(previewData));
@@ -484,12 +632,24 @@ export default {
             
             const payload = {
                 _id: this.form.id,
-                title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
-                description: [{ key: 'en', value: this.form.description }, { key: 'th', value: this.form.description }],
+                title: [
+                    { key: 'en', value: this.form.title.en }, 
+                    { key: 'th', value: this.form.title.th }
+                ],
+                description: [
+                    { key: 'en', value: this.form.description.en }, 
+                    { key: 'th', value: this.form.description.th }
+                ],
                 artist: this.form.artist,
                 category: this.form.category,
-                technique: [{ key: 'en', value: this.form.technique }, { key: 'th', value: this.form.technique }],
-                size: [{ key: 'en', value: this.form.size }, { key: 'th', value: this.form.size }],
+                technique: [
+                    { key: 'en', value: this.form.technique.en }, 
+                    { key: 'th', value: this.form.technique.th }
+                ],
+                size: [
+                    { key: 'en', value: this.form.size.en }, 
+                    { key: 'th', value: this.form.size.th }
+                ],
                 price: parseFloat(this.form.price),
                 status: this.form.status,
                 _image: this.form.image
@@ -497,12 +657,42 @@ export default {
 
             this.$emit('save', payload);
             this.$emit('update:show', false);
+        },
+        removeImage() {
+            this.form.image = null;
+            this.imagePreview = null;
+            // Clear the file input so the same file can be selected again
+            const input = document.getElementById('artwork-image-edit-upload');
+            if (input) input.value = '';
         }
     }
 }
 </script>
 
 <style scoped>
+/* ... (existing styles) */
+.btn-remove-image {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.btn-remove-image:hover {
+    background-color: #dc2626;
+    transform: scale(1.1);
+}
 /* Reusing styles from ArtworkCreateModal.vue for consistency */
 .form-group-custom {
     margin-bottom: 1.25rem;

@@ -7,6 +7,11 @@ var mongodb = null;
 
 exports.init = function (callback) {
     mongoose.Promise = global.Promise;
+
+    // Mark Added
+    mongoose.set('useCreateIndex', true);
+    mongoose.set('useFindAndModify', false);
+
     mongodb = mongoose.connect(cfg.mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
     var db = mongoose.connection;
     db.on('error', function (err) {

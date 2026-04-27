@@ -26,17 +26,33 @@ exports.onQuerys = async function (request, response) {
 
 exports.onCreate = async function (request, response) {
   try {
-    const data = { ...request.body };
-    // Clean up empty strings for ObjectId fields to allow schema defaults to work
-    if (data.status) {
-      if (data.status.approval === "") delete data.status.approval;
-      if (data.status.sale === "") delete data.status.sale;
-    }
-    if (data.category === "") delete data.category;
-    if (data.artist === "") delete data.artist;
+    const isArray = Array.isArray(request.body);
+    const data = isArray ? request.body : { ...request.body };
 
-    const doc = await Artwork.onCreate(data);
-    return ResMessage.sendResponse(response, 0, 20000, doc);
+    const cleanObject = (obj) => {
+      if (obj.status) {
+        if (obj.status.approval === "") delete obj.status.approval;
+        if (obj.status.sale === "") delete obj.status.sale;
+      }
+      if (obj.category === "") delete obj.category;
+      if (obj.artist === "") delete obj.artist;
+      return obj;
+    };
+
+    if (isArray) {
+      const results = [];
+      for (const item of data) {
+        const cleaned = cleanObject(item);
+        const doc = await Artwork.onCreate(cleaned);
+        results.push(doc);
+      }
+      console.log(`Backend Bulk Create - Success count: ${results.length}`);
+      return ResMessage.sendResponse(response, 0, 20000, results);
+    } else {
+      const cleaned = cleanObject(data);
+      const doc = await Artwork.onCreate(cleaned);
+      return ResMessage.sendResponse(response, 0, 20000, doc);
+    }
   } catch (err) {
     console.log(err);
     return ResMessage.sendResponse(response, 0, 40400);
