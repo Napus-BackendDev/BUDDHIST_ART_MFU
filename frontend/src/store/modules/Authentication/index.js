@@ -136,6 +136,56 @@ const LoginModule = {
                     }
                     store.commit("dialog/dialog", dialog)
                 });
+        },
+
+        onGoogleLogin({ commit }, data) {
+            store.commit("dialog/loading", true)
+            return Service.authen("google", data)
+                .then((response) => {
+                    store.commit("dialog/loading", false)
+                    const user = response.data.data;
+                    
+                    if (!user || !user._id) {
+                      throw new Error("Invalid Google user data");
+                    }
+
+                    // For Google login, we might need a different redirection or role check
+                    // If the backend returns a full user object with role:
+                    const role = user.role || 'Customer';
+                    
+                    localStorage.setItem('objs', JSON.stringify({
+                        xAccessToken: response.data.token || response.data.data.token,
+                        accounts: user._id,
+                        role: role
+                    }));
+
+                    store.commit("auth/isSignIn", false);
+                    store.commit("auth/userId", user._id);
+
+                    // Redirection Logic
+                    const userRole = role.toLowerCase();
+                    if (userRole === 'admin') {
+                        router.push('/admin');
+                    } else if (userRole === 'artist' || userRole === 'evaluator') {
+                        router.push('/artist/profile');
+                    } else {
+                        router.push('/artworks');
+                    }
+
+                    return response;
+                })
+                .catch((err) => {
+                    store.commit("dialog/loading", false)
+                    console.error("Google Login Error:", err);
+                    var dialog = {
+                        message: "Google Authentication Failed",
+                        code: "40100",
+                        number: "1",
+                        status: true
+                    }
+                    store.commit("dialog/dialog", dialog)
+                    throw err;
+                });
         }
 
     },

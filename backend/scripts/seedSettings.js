@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env.dev') });
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const Group = require('../server/Project/Settings/models/group.model');
 const Status = require('../server/Project/Settings/models/status.model');
@@ -11,7 +11,7 @@ async function seedSettings() {
     try {
         const mongoURI = process.env.MONGODB;
         if (!mongoURI) {
-            throw new Error('MONGODB URI not found in .env.dev');
+            throw new Error('MONGODB URI not found in .env');
         }
 
         console.log('Connecting to MongoDB...');
@@ -19,7 +19,8 @@ async function seedSettings() {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             useFindAndModify: false,
-            useCreateIndex: true
+            useCreateIndex: true,
+            family: 4
         });
         console.log('Connected successfully.');
 

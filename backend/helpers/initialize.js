@@ -12,7 +12,11 @@ exports.init = function (callback) {
     mongoose.set('useCreateIndex', true);
     mongoose.set('useFindAndModify', false);
 
-    mongodb = mongoose.connect(cfg.mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+    mongodb = mongoose.connect(cfg.mongoURI, { 
+        useNewUrlParser: true, 
+        useUnifiedTopology: true,
+        family: 4 // Force IPv4 to avoid connection issues on newer Node versions
+    });
     var db = mongoose.connection;
     db.on('error', function (err) {
         console.log('----- Connect To MongoDB Error Status[' + JSON.stringify(err) + '] -----');

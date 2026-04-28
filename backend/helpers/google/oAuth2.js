@@ -17,17 +17,68 @@ const googleMapsAPI = instance.create({
     headers: { 'Content-Type': 'application/json' }
 });
 
+const User = require('../../server/Project/User/models/user.model');
+
 exports.onQuery = async function (request, response, next) {
+    try {
+        const config = {
+            params: {
+                alt: "json",
+                access_token: request.body.token
+            }
+        };
 
-    var config = {};
+        const googleRes = await googleAuthAPI.get("/oauth2/v3/userinfo", config);
+        const googleUser = googleRes.data;
 
-    var params = {};
-    params.alt = "json";
-    params.access_token = request.body.token
-    config.params = params;
+        if (!googleUser.email) {
+            return response.status(401).json({ 
+                code: 40100, 
+                error: "Google email not found" 
+            });
+        }
 
-    var response = await googleAuthAPI.get("/oauth2/v3/userinfo",config)
-    console.log(response)
+        // Find user in our database by studentEmail
+        // We use populate('role') to get role details
+        const user = await User.findOne({ 
+            "contact.studentEmail": googleUser.email 
+        }).populate('role');
+
+        if (!user) {
+            console.warn(`User with email ${googleUser.email} not found in database.`);
+            return response.status(404).json({
+                code: 40400,
+                error: "User not registered in the system",
+                email: googleUser.email
+            });
+        }
+
+        // Replicate logic from onSignIn to extract role and token
+        let roleName = 'Customer';
+        if (user.role && user.role.title) {
+            const roleObj = user.role.title.find(t => t.key === 'en');
+            if (roleObj) roleName = roleObj.value;
+        } else if (user.role && typeof user.role === 'string') {
+            roleName = user.role;
+        }
+
+        const userData = JSON.parse(JSON.stringify(user));
+        userData.role = roleName;
+        userData.token = "1a661eec9bf358b8567c3dc022146d19c69d2ceafe92f503e89391e5d9f9f739"; // Using the same dummy token as onSignIn
+
+        return response.status(200).json({
+            code: 20000,
+            data: userData
+        });
+
+    } catch (err) {
+        console.error("Google OAuth Error:", err.response?.data || err.message);
+        return response.status(401).json({ 
+            code: 40100, 
+            error: "Google Authentication Failed",
+            message: err.response?.data?.error_description || err.message 
+        });
+    }
 };
 
 exports.onDistance = async function (request, response, next) {

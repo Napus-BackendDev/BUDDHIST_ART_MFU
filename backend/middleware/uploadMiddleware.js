@@ -1,7 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-
+//not more than 10MB
 /**
  * Middleware for handling image uploads via Multer.
  * 
@@ -63,7 +63,7 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
   };
 
   const limits = {
-    fileSize: 5 * 1024 * 1024, // 5 MB
+    fileSize: 10 * 1024 * 1024, // 10 MB
   };
 
   // Return single or array middleware based on isMultiple flag

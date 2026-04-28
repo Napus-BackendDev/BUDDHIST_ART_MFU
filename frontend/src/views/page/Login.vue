@@ -65,6 +65,23 @@
                         </CButton>
                       </CCol>
                     </CRow>
+
+                    <div class="divider mb-4">OR</div>
+
+                    <CRow class="justify-content-center">
+                      <CCol col="12">
+                        <div class="google-login-container">
+                          <img 
+                            class="google-btn zoom" 
+                            @click="onAuthenGoogle" 
+                            src="@/assets/icons/logo-google.png" 
+                            width="50px"
+                            alt="Login with Google"
+                          />
+                          <p class="mt-2 text-muted small">Sign in with Google</p>
+                        </div>
+                      </CCol>
+                    </CRow>
                   </CForm>
                 </CCol>
               </CRow>
@@ -113,6 +130,27 @@ export default {
       } catch (err) {
         // Error is handled in store via dialog
         console.error('Login error:', err);
+      }
+    },
+    async onAuthenGoogle() {
+      try {
+        const googleUser = await this.$gAuth.signIn();
+        const idToken = googleUser.getAuthResponse().id_token;
+        const accessToken = googleUser.getAuthResponse().access_token;
+        
+        console.log('Google Auth Success', { idToken, accessToken });
+        
+        // Dispatch to store to verify with backend
+        await this.$store.dispatch('auth/onGoogleLogin', { 
+          token: accessToken || idToken 
+        });
+      } catch (err) {
+        console.error('Google sign-in error:', err);
+        if (this.$toast) {
+          this.$toast.error('Google Sign-In failed. Please try again.');
+        } else {
+          alert('Google Sign-In failed. Please try again.');
+        }
       }
     }
   }
@@ -200,5 +238,25 @@ export default {
 
 .shadow-premium {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.google-login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.google-btn {
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.google-btn:hover {
+  transform: scale(1.1);
+}
+
+.zoom:hover {
+  transform: scale(1.1);
 }
 </style>

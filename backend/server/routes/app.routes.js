@@ -4,6 +4,7 @@ const newRoutes = require("../Project/New/new.routes");
 const orderRoutes = require("../Project/Order/order.routes");
 const userRoutes = require("../Project/User/user.routes");
 const submissionRoutes = require("../Project/Submission/submission.routes");
+const googleRoutes = require("../Project/Settings/google.routes");
 
 // const sync = require("../sync/mis");
 module.exports = function (app) {
@@ -19,6 +20,7 @@ module.exports = function (app) {
   app.use(path + '/settings', settingsRoutes); // inprogress
   app.use(path + '/user', userRoutes); // inprogress
   app.use(path + '/submission', submissionRoutes); // inprogress
+  app.use(path + '/google', googleRoutes);
 
   // app.use(path + '/address', addressRoutes); // complete
 

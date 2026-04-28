@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env.dev') });
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const Category = require('../server/Project/Settings/models/category.model');
 
@@ -10,7 +10,7 @@ async function seedNewsCategories() {
     try {
         const mongoURI = process.env.MONGODB;
         if (!mongoURI) {
-            throw new Error('MONGODB URI not found in .env.dev');
+            throw new Error('MONGODB URI not found in .env');
         }
 
         console.log('Connecting to MongoDB...');
@@ -18,7 +18,8 @@ async function seedNewsCategories() {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             useFindAndModify: false,
-            useCreateIndex: true
+            useCreateIndex: true,
+            family: 4
         });
         console.log('Connected successfully.');
 
