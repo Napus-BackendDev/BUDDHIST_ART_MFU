@@ -1,6 +1,19 @@
 <template>
-  <div v-if="form">
-    <ArtistProfileHeader :user="user" @edit="isEditing = true" />
+  <div v-if="form" class="profile-view-bg min-vh-100 py-4">
+    <CContainer class="profile-container-wide">
+      <!-- Back Navigation -->
+      <div class="back-nav-wrapper mb-4">
+        <CButton 
+          variant="ghost" 
+          class="btn-back-subtle d-inline-flex align-items-center"
+          @click="$router.push('/artworks')"
+        >
+          <CIcon name="cil-arrow-left" class="mr-2" />
+          <span class="font-weight-bold">Back to Artworks</span>
+        </CButton>
+      </div>
+
+      <ArtistProfileHeader :user="user" :isPublic="isPublic" @edit="isEditing = true" />
 
     <!-- Artwork Portfolio Section -->
     <CCard class="profile-portfolio-card mt-4 border-0 shadow-premium rounded-xl overflow-hidden">
@@ -9,7 +22,7 @@
           <h3 class="mb-1 font-weight-bold text-dark portfolio-title">My Artwork Portfolio</h3>
           <p class="text-muted mb-0 portfolio-subtitle">Explore and manage your collection of digital and physical art pieces.</p>
         </div>
-        <div class="header-actions-group">
+        <div v-if="!isPublic" class="header-actions-group">
           <CButton color="primary" shape="pill" class="px-4 py-2 font-weight-bold shadow-sm btn-add-artwork" @click="handleAddNewArtwork">
             <CIcon name="cil-plus" class="mr-2" /> Add New Artwork
           </CButton>
@@ -20,6 +33,7 @@
         <div class="portfolio-grid-container">
           <ArtworkCard 
             :artworks="paginatedArtworks" 
+            :isPublic="isPublic"
             @edit="handleEditArtwork"
             @delete="handleDeleteArtwork"
           />
@@ -36,6 +50,7 @@
         </div>
       </CCardBody>
     </CCard>
+    </CContainer>
 
     <CModal
       title="Edit Artist Profile"
@@ -196,22 +211,37 @@ export default {
       allArtworks: 'artwork/artworks',
       dialogCode: 'dialog/isCode'
     }),
+    profileUserId() {
+      return this.$route.params.id || this.userId;
+    },
+    isPublic() {
+      return this.$route.params.id && this.$route.params.id !== this.userId;
+    },
     user() {
-      // Find current user from the list
+      // Find the user identified by profileUserId from the list
       if (!this.users) return null;
-      return this.users.find(u => u._id === this.userId);
+      return this.users.find(u => u._id === this.profileUserId);
     },
     artistArtworks() {
-      if (!this.allArtworks) return [];
+      if (!this.allArtworks || !Array.isArray(this.allArtworks)) return [];
       
       // 1. Filter by artist ID
       let filtered = this.allArtworks.filter(art => {
         if (!art.artist) return false;
         const id = typeof art.artist === 'object' ? art.artist._id : art.artist;
-        return id === this.userId;
+        return id === this.profileUserId;
       });
 
-      // 2. Sort by Priority and Date
+      // 2. If public, filter by Approved status
+      if (this.isPublic) {
+        filtered = filtered.filter(art => {
+          if (!art.status || !art.status.approval) return false;
+          const status = this.getName('en', art.status.approval);
+          return ['Approved', 'Success'].includes(status);
+        });
+      }
+
+      // 3. Sort by Priority and Date
       return filtered.sort((a, b) => {
         // Priority Score: Approved = 1, Others = 2, Pending = 3
         const getPriority = (art) => {
@@ -326,8 +356,8 @@ export default {
       try {
         // Force refresh user list, or fetch specific user
         const users = await this.$store.dispatch('user/get', {});
-        // Find the user directly from the fetched array to avoid reactivity timing issues
-        const currentUser = users ? users.find(u => u._id === this.userId) : null;
+        // Find the user directly from the fetched array
+        const currentUser = users ? users.find(u => u._id === this.profileUserId) : null;
         
         if (currentUser) {
           const getName = (lang) => {
@@ -607,6 +637,27 @@ export default {
 </script>
 
 <style scoped>
+.profile-view-bg {
+  background-color: #f8fafc;
+}
+.profile-container-wide {
+  max-width: 1440px !important;
+}
+
+.btn-back-subtle {
+  color: #64748b;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.btn-back-subtle:hover {
+  background-color: #ffffff;
+  color: #8c1515;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transform: translateX(-4px);
+}
+
 .shadow-premium {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02) !important;
 }

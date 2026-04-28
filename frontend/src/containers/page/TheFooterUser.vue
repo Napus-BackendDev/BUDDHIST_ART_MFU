@@ -100,20 +100,21 @@ export default {
 </script>
 
 <style scoped>
+/* Updated Footer Color Scheme */
 .footer-user {
-    background-color: #12141a;
-    color: #cbd5e0;
+    background-color: #612721; /* Main Burgundy */
+    color: #f8f9fa;
     font-family: 'Sarabun', sans-serif;
     position: relative;
     z-index: 100;
 }
 
 .footer-main {
-    border-top: 4px solid #612721;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .bg-darker {
-    background-color: #0a0c10;
+    background-color: #4a1d18; /* Darker Burgundy */
 }
 
 .brand-title {
@@ -126,19 +127,19 @@ export default {
 }
 
 .brand-title .highlight {
-    color: #612721;
+    color: #f0c24d; /* Gold highlight for contrast on burgundy */
 }
 
 .brand-sub {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #a0aec0;
+    color: #e2e8f0;
     letter-spacing: 0.5px;
 }
 
 .brand-description {
     line-height: 1.7;
-    color: #718096;
+    color: rgba(255, 255, 255, 0.7);
     font-size: 0.95rem;
 }
 
@@ -158,7 +159,7 @@ export default {
     bottom: 0;
     width: 40px;
     height: 3px;
-    background: #612721;
+    background: #f0c24d; /* Gold accent */
     border-radius: 2px;
 }
 
@@ -167,24 +168,25 @@ export default {
 }
 
 .footer-nav a {
-    color: #a0aec0;
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: all 0.25s ease;
     font-weight: 500;
 }
 
 .footer-nav a:hover {
-    color: #fff;
+    color: #f0c24d;
     padding-left: 8px;
 }
 
 .contact-icon {
-    color: #612721;
+    color: #f0c24d; /* Gold icons */
     min-width: 24px;
 }
 
 .contact-text {
     font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .social-links {
@@ -195,33 +197,35 @@ export default {
 .social-btn {
     width: 40px;
     height: 40px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.1);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #a0aec0;
+    color: #fff;
     transition: all 0.3s ease;
     text-decoration: none !important;
 }
 
 .social-btn:hover {
-    background: #612721;
-    color: #fff;
+    background: #f0c24d;
+    color: #4a1d18;
     transform: translateY(-3px);
 }
 
 .footer-map-deco {
     height: 100px;
-    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('~@/assets/images/backgrounds/news_hero.png');
+    background: linear-gradient(rgba(74, 29, 24, 0.8), rgba(74, 29, 24, 0.8)), url('~@/assets/images/backgrounds/news_hero.png');
     background-size: cover;
     background-position: center;
     cursor: pointer;
     transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 .footer-map-deco:hover {
     filter: brightness(1.2);
+    border-color: #f0c24d !important;
 }
 
 .map-overlay {
@@ -232,7 +236,7 @@ export default {
 }
 
 .border-secondary {
-    border-color: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.1) !important;
 }
 
 @media (max-width: 991.98px) {

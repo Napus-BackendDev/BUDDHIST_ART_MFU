@@ -2,65 +2,85 @@
     <div v-if="artworks.length > 0">
         <CRow>
             <CCol class="col-custom-grid mb-5" v-for="(art, index) in artworks" :key="index">
-                <CCard 
-                    :class="['h-100 border-0 shadow-sm artwork-card cursor-pointer', { 'is-pending': isPending(art), 'is-rejected': isRejected(art) }]"
-                    style="border-radius: 20px; overflow: hidden;" @click="getDetail(art._id)">
+                <CCard class="h-100 border-0 artwork-card cursor-pointer" @click="getDetail(art._id)">
+                    <!-- Image Wrapper -->
                     <div class="card-img-wrapper position-relative">
-                        <!-- Badge Container (Top-Left Stack) -->
-                        <div class="position-absolute d-flex flex-column align-items-start m-4" style="top: 0; left: 0; z-index: 1; gap: 8px;">
-                            <!-- Category Badge -->
-                            <div class="px-3 py-1 rounded-pill text-uppercase font-weight-bold cat-badge"
-                                style="font-size: 0.72rem; letter-spacing: 0.8px; color: white; border: 2px solid white;">
-                                {{ art.category ? getName(currentLocale, art.category) : 'Artwork' }}
-                            </div>
-                            
-                            <!-- Status Badge -->
-                            <div v-if="art.status && getStatusLabel(art)" 
-                                class="px-3 py-1 rounded-pill text-uppercase font-weight-bold status-badge shadow-lg"
-                                :class="getStatusClass(art)"
-                                style="font-size: 0.72rem; letter-spacing: 0.8px; color: white; border: 2px solid white;">
-                                {{ getStatusLabel(art) }}
-                            </div>
+                        <!-- Category Badge (Top-Left) -->
+                        <div class="position-absolute glass-pill-badge px-3 py-1 m-3 rounded-pill" style="top: 0; left: 0; z-index: 2;">
+                            <span class="small font-weight-bold">{{ art.category ? getName(currentLocale, art.category) : 'Artwork' }}</span>
                         </div>
 
+                        <!-- Status Badge (Top-Right) - Only in Private Mode or if not Success -->
+                        <div v-if="!isPublic && art.status && getStatusLabel(art)" 
+                            class="position-absolute px-3 py-1 m-3 rounded-pill status-badge-mini shadow-sm"
+                            :class="getStatusClass(art)"
+                            style="top: 0; right: 0; z-index: 2;">
+                            <span class="small font-weight-bold text-uppercase">{{ getStatusLabel(art) }}</span>
+                        </div>
+
+                        <!-- Full Cover Image Background -->
                         <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${art.image || 'https://via.placeholder.com/800x800?text=No+Image'})` }">
                         </div>
+                        <div class="card-img-overlay-soft"></div>
                         
-                        <!-- Status Overlays -->
-                        <div v-if="isPending(art)" class="status-overlay pending-overlay">
+                        <!-- Status Overlays (Private Only) -->
+                        <div v-if="!isPublic && isPending(art)" class="status-overlay pending-overlay">
                             <div class="status-content">
                                 <CIcon name="cil-clock" class="mb-2" size="xl" />
                                 <span class="font-weight-bold">Pending Review</span>
                             </div>
                         </div>
 
-                        <div v-if="isRejected(art)" class="status-overlay rejected-overlay">
+                        <div v-if="!isPublic && isRejected(art)" class="status-overlay rejected-overlay">
                             <div class="status-content">
                                 <CIcon name="cil-warning" class="mb-2" size="xl" />
                                 <span class="font-weight-bold">แก้ไข</span>
                             </div>
                         </div>
-                    </div>
-                    <CCardBody class="p-4 bg-white position-relative card-body-custom">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="font-weight-bold art-title mb-0">{{ getName(currentLocale, art) }}</h5>
-                        </div>
-                        <p class="text-muted art-subtitle mb-3">by {{ art.artist ? getName(currentLocale, art.artist) : 'Unknown Artist' }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h4 class="font-weight-bold price-text mb-0">฿ {{ formatPrice(art.price) }}</h4>
-                            <div v-if="art.status && art.status.sale" class="sale-status-dot" :title="getName(currentLocale, art.status.sale)">
-                                <span :class="['dot', art.status.sale.title === 'Sold Out' ? 'dot-sold' : 'dot-available']"></span>
-                                <span class="small text-muted ml-1">{{ getName(currentLocale, art.status.sale) }}</span>
-                            </div>
-                        </div>
 
-                        <!-- Action Buttons (Edit/Delete) for Artist -->
-                        <div class="action-buttons-group">
+                        <!-- Action Buttons (Edit/Delete) for Artist (Private Only) -->
+                        <div v-if="!isPublic" class="action-buttons-group">
                             <div class="action-btn edit-btn shadow-sm" title="Edit Artwork" @click.stop="handleEdit(art)">
                                 <CIcon name="cil-pencil" />
                             </div>
                             <div class="action-btn delete-btn shadow-sm" title="Delete Artwork" @click.stop="handleDelete(art)">
                                 <CIcon name="cil-trash" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Body -->
+                    <CCardBody class="p-4 bg-white">
+                        <!-- Title, Artist and Technique -->
+                        <div class="mb-3">
+                            <h4 class="font-weight-bold art-title mb-1 text-truncate">{{ getName(currentLocale, art) }}</h4>
+                            <div class="art-technique text-muted mb-1" v-if="art.technique">
+                                <small class="d-flex align-items-center">
+                                    {{ getName(currentLocale, art.technique) }}
+                                </small>
+                            </div>
+                            <p class="text-muted small art-artist mb-0">by {{ art.artist ? getName(currentLocale, art.artist) : 'Unknown Artist' }}</p>
+                        </div>
+
+                        <hr class="my-3 opacity-50">
+
+                        <!-- Price and Public Action -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="price-box">
+                                <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Price</small>
+                                <span class="price-value font-weight-bold text-danger">{{ formatPrice(art.price) }}</span>
+                                <small class="price-unit ml-1 font-weight-bold text-danger">฿</small>
+                            </div>
+                            
+                            <!-- Add to Cart Button (Only in Public Mode) -->
+                            <div v-if="isPublic" class="action-btn-container" @click.stop="handleCartAction(art)">
+                                <div v-if="isInCart(art._id)" class="in-cart-label">
+                                    <CIcon name="cil-check-circle" class="mr-1" />
+                                    <span>In Cart</span>
+                                </div>
+                                <div v-else class="action-btn-circle">
+                                    <CIcon name="cil-cart" />
+                                </div>
                             </div>
                         </div>
                     </CCardBody>
@@ -82,6 +102,10 @@ export default {
         artworks: {
             type: Array,
             default: () => []
+        },
+        isPublic: {
+            type: Boolean,
+            default: false
         }
     },
     computed: {
@@ -114,10 +138,19 @@ export default {
         },
         formatPrice(value) {
             if (value === undefined || value === null) return '0.00';
-            return parseFloat(value).toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            return parseFloat(value).toLocaleString('en-US');
+        },
+        isInCart(id) {
+            const cartItems = this.$store.getters['cart/cartItems'] || [];
+            return cartItems.some(item => item._id === id);
+        },
+        handleCartAction(art) {
+            if (this.isInCart(art._id)) {
+                this.$store.dispatch('cart/removeFromCart', art._id);
+            } else {
+                this.$store.dispatch('cart/addToCart', art);
+                this.$store.dispatch('cart/setShowCart', true);
+            }
         },
         isAvailable(art) {
             if (!art || !art.status || !art.status.sale) return true;
@@ -171,101 +204,145 @@ export default {
 
 <style scoped>
 .artwork-card {
+    border-radius: 24px;
+    overflow: hidden;
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    transform-origin: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    border: none !important;
 }
 
 .artwork-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
 }
 
 .card-img-wrapper {
-    height: 420px;
-}
-
-@media (min-width: 992px) {
-    .card-img-wrapper {
-        height: 380px;
-    }
-}
-
-.col-custom-grid {
-    flex: 0 0 100%;
-    max-width: 100%;
-    padding: 0 10px;
-}
-
-@media (min-width: 576px) {
-    .col-custom-grid {
-        flex: 0 0 50%;
-        max-width: 50%;
-    }
-}
-
-@media (min-width: 768px) {
-    .col-custom-grid {
-        flex: 0 0 33.333333%;
-        max-width: 33.333333%;
-    }
-}
-
-@media (min-width: 992px) {
-    .col-custom-grid {
-        flex: 0 0 25%;
-        max-width: 25%;
-    }
+    height: 320px;
+    overflow: hidden;
+    position: relative;
+    margin-top: -1px;
 }
 
 .card-img-bg {
     background-size: cover;
     background-position: center;
-    transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transition: transform 0.8s ease;
 }
 
 .artwork-card:hover .card-img-bg {
-    transform: scale(1.05);
+    transform: scale(1.1);
 }
+
+.card-img-overlay-soft {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 70%, rgba(0,0,0,0.1) 100%);
+    pointer-events: none;
+}
+
+.glass-pill-badge {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #612721;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.status-badge-mini {
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 0.65rem;
+    border: 1px solid #e2e8f0;
+}
+
+.badge-pending { border-color: #f59e0b; color: #d97706; }
+.badge-approved { border-color: #10b981; color: #059669; }
+.badge-rejected { border-color: #ef4444; color: #b91c1c; }
 
 .art-title {
-    color: #1e293b;
+    color: #1a202c;
     font-size: 1.15rem;
+    line-height: 1.3;
 }
 
-.art-subtitle {
+.art-artist {
+    font-size: 0.85rem;
+    letter-spacing: 0.2px;
+}
+
+.price-value {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.price-unit {
     font-size: 0.9rem;
 }
 
-.price-text {
-    color: #8c1515;
-    letter-spacing: -0.5px;
+.action-btn-container {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
 }
 
-.cat-badge {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+.in-cart-label {
+    display: flex;
+    align-items: center;
+    background-color: #f8f9fa;
+    color: #28a745;
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid #28a745;
+    transition: all 0.3s ease;
+}
+
+.action-btn-circle {
+    width: 42px;
+    height: 42px;
+    background: #f8f9fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a202c;
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+}
+
+.action-btn-circle:hover {
+    background: #8c1515;
+    color: #fff;
+    transform: scale(1.1);
 }
 
 .action-buttons-group {
     position: absolute;
-    right: 20px;
-    bottom: 40px;
+    right: 15px;
+    bottom: 15px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     opacity: 0;
     transform: translateX(10px);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 2;
+    transition: all 0.3s ease;
+    z-index: 5;
 }
 
 .artwork-card:hover .action-buttons-group {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
 }
 
 .action-btn {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -275,105 +352,8 @@ export default {
     transition: all 0.2s ease;
 }
 
-.edit-btn {
-    background-color: #8c1515; /* Red */
-}
-
-.edit-btn:hover {
-    background-color: #701111;
-    transform: scale(1.1);
-}
-
-.delete-btn {
-    background-color: #ef4444; /* Red */
-}
-
-.delete-btn:hover {
-    background-color: #dc2626;
-    transform: scale(1.1);
-}
-
-.sale-status-dot {
-    display: flex;
-    align-items: center;
-}
-
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.dot-available {
-    background-color: #10b981;
-}
-
-.dot-sold {
-    background-color: #ef4444;
-}
-
-.no-results-box {
-    border: 2px dashed #e2e8f0;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.rounded-xl {
-    border-radius: 24px;
-}
-
-.max-w-lg {
-    max-width: 32rem;
-}
-
-/* Ultra-Pop Status Badge Themes */
-.cat-badge {
-    background: linear-gradient(135deg, #8c1515 0%, #b91c1c 100%) !important;
-    box-shadow: 0 12px 24px -6px rgba(140, 21, 21, 0.5) !important;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.status-badge {
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.artwork-card:hover .cat-badge,
-.artwork-card:hover .status-badge {
-    transform: translateY(-5px) scale(1.1);
-    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3) !important;
-}
-
-.badge-pending {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-    box-shadow: 0 12px 24px -6px rgba(245, 158, 11, 0.5) !important;
-}
-
-.badge-approved {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-    box-shadow: 0 12px 24px -6px rgba(16, 185, 129, 0.5) !important;
-}
-
-.badge-rejected {
-    background: linear-gradient(135deg, #8c1515 0%, #b91c1c 100%) !important;
-    box-shadow: 0 12px 24px -6px rgba(140, 21, 21, 0.5) !important;
-}
-
-.badge-draft {
-    background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
-    box-shadow: 0 12px 24px -6px rgba(100, 116, 139, 0.5) !important;
-}
-
-.badge-info {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
-    box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.5) !important;
-}
-
-/* Status Transition Overlays (Pending & Rejected) */
-.artwork-card.is-pending .card-img-bg,
-.artwork-card.is-rejected .card-img-bg {
-    filter: grayscale(100%) brightness(0.5);
-}
+.edit-btn { background-color: #8c1515; }
+.delete-btn { background-color: #ef4444; }
 
 .status-overlay {
     position: absolute;
@@ -385,15 +365,7 @@ export default {
     align-items: center;
     justify-content: center;
     z-index: 2;
-    transition: all 0.3s ease;
-}
-
-.pending-overlay {
     background: rgba(0, 0, 0, 0.4);
-}
-
-.rejected-overlay {
-    background: rgba(140, 21, 21, 0.6); /* MFU Red tint */
 }
 
 .status-content {
@@ -403,19 +375,31 @@ export default {
     flex-direction: column;
     align-items: center;
     backdrop-filter: blur(4px);
-    padding: 1.5rem;
-    border-radius: 20px;
-    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.3);
 }
 
-.artwork-card:hover .status-overlay {
-    background: rgba(0, 0, 0, 0.2);
+.no-results-box {
+    border: 2px dashed #e2e8f0;
+    border-radius: 24px;
 }
 
-.artwork-card.is-pending .art-title,
-.artwork-card.is-pending .price-text,
-.artwork-card.is-rejected .art-title,
-.artwork-card.is-rejected .price-text {
-    opacity: 0.7;
+.col-custom-grid {
+    flex: 0 0 100%;
+    max-width: 100%;
+    padding: 0 12px;
+}
+
+@media (min-width: 576px) {
+    .col-custom-grid { flex: 0 0 50%; max-width: 50%; }
+}
+
+@media (min-width: 768px) {
+    .col-custom-grid { flex: 0 0 33.333333%; max-width: 33.333333%; }
+}
+
+@media (min-width: 992px) {
+    .col-custom-grid { flex: 0 0 25%; max-width: 25%; }
 }
 </style>

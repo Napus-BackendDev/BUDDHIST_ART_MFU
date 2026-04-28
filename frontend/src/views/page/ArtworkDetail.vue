@@ -59,7 +59,9 @@
                                 <h1 class="artwork-master-title text-dark mb-2">{{ getName('en', artwork) }}</h1>
                                 <div class="artist-signature-block mb-4">
                                     <span class="label">Artist</span>
-                                    <h4 class="artist-name">{{ artwork.artist ? getName('en', artwork.artist) : 'Unknown Artist' }}</h4>
+                                    <h4 class="artist-name clickable" @click="goToArtistProfile">
+                                        {{ artwork.artist ? getName('en', artwork.artist) : 'Unknown Artist' }}
+                                    </h4>
                                 </div>
 
                                 <!-- Price Display -->
@@ -278,6 +280,14 @@ export default {
                 });
             } else {
                 alert('URL copied to clipboard: ' + window.location.href);
+            }
+        },
+        goToArtistProfile() {
+            if (this.artwork && this.artwork.artist) {
+                const artistId = typeof this.artwork.artist === 'object' ? this.artwork.artist._id : this.artwork.artist;
+                if (artistId) {
+                    this.$router.push({ name: 'ArtistPublicProfile', params: { id: artistId } });
+                }
             }
         }
     },
@@ -508,13 +518,23 @@ export default {
     font-size: 1.5rem;
     font-weight: 400;
     color: #4a1d18;
+    transition: all 0.2s ease;
+}
+
+.artist-signature-block .artist-name.clickable {
+    cursor: pointer;
+}
+
+.artist-signature-block .artist-name.clickable:hover {
+    color: #612721;
+    text-decoration: underline;
 }
 
 .valuation-block {
-    background: white;
+    background: #f8fafc;
     padding: 24px;
     border-radius: 24px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid #f8fafc;
 }
 
 .valuation-label {

@@ -2,7 +2,7 @@
     <CCard class="order-table-card mb-4">
         <div>
             <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
-                :striped="false">
+                :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
                 <template #id="{ item }">
                     <td class="text-muted text-sm">{{ item._id.substring(item._id.length - 8).toUpperCase() }}</td>
@@ -80,15 +80,19 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ filteredItems.length }} orders</div>
-            <div class="pagination-buttons">
-                <CButton class="btn-pill-pagination mr-2" :disabled="true">
-                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
-                </CButton>
-                <CButton class="btn-pill-pagination">
-                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
-                </CButton>
+            <div class="text-muted text-sm" v-if="filteredItems.length > 0">
+                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} orders
             </div>
+            <div class="text-muted text-sm" v-else>
+                Showing 0 orders
+            </div>
+            <CPagination
+                :active-page.sync="activePage"
+                :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
+                size="sm"
+                align="end"
+                class="mb-0 pill-pagination"
+            />
         </CCardFooter>
     </CCard>
 </template>
@@ -125,7 +129,16 @@ export default {
                 { key: 'amount', label: 'AMOUNT', _classes: 'border-top-0 border-bottom' },
                 { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ]
+            ],
+            activePage: 1
+        }
+    },
+    watch: {
+        'filters': {
+            handler() {
+                this.activePage = 1;
+            },
+            deep: true
         }
     },
     computed: {
@@ -217,6 +230,9 @@ export default {
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Orders');
             XLSX.writeFile(wb, `Orders_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
+        },
+        pageChange(val) {
+            this.activePage = val;
         }
     }
 }

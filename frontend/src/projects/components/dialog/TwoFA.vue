@@ -1,7 +1,7 @@
 <template>
   <div>
     <CModal
-        add-content-classes="bg-login"
+        add-content-classes="bg-login rounded-premium overflow-hidden"
         :show.sync="is2FA"
         centered
     >
@@ -120,9 +120,14 @@ export default {
   },
 
   computed: {
-    ...mapGetters({
-      is2FA: 'auth/is2FA',
-    })
+    is2FA: {
+      get() {
+        return this.$store.getters['auth/is2FA'];
+      },
+      set(val) {
+        this.$store.commit('auth/is2FA', val);
+      }
+    }
   },
 
   watch: {
@@ -139,6 +144,10 @@ export default {
 </script>
 
 <style scoped>
+.rounded-premium {
+  border-radius: 24px !important;
+}
+
 .otp-wrapper {
   display: flex;
   justify-content: center;
@@ -155,7 +164,7 @@ export default {
   border: 2px solid #ccc;
   border-radius: 8px;
   transition: all 0.2s ease;
-  //text-transform: uppercase; /* ทำให้ตัวอักษรเป็นตัวใหญ่ */
+  text-decoration: uppercase; /* ทำให้ตัวอักษรเป็นตัวใหญ่ */
 }
 
 .otp-input input:focus {

@@ -207,6 +207,37 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
+// Global CPagination Pill Styles
+.pill-pagination {
+    .page-item .page-link {
+        border: none;
+        background-color: #f8f9fa;
+        color: #4a5568;
+        border-radius: 50px !important;
+        margin: 0 3px;
+        padding: 0.5rem 0.9rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+
+    .page-item.active .page-link {
+        background-color: #3b3dfa !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(59, 61, 250, 0.3) !important;
+    }
+
+    .page-item .page-link:hover:not(.active) {
+        background-color: #eef0f3;
+        color: #3b3dfa;
+    }
+
+    .page-item.disabled .page-link {
+        background-color: transparent !important;
+        opacity: 0.5;
+    }
+}
+
 .status-badge {
     display: inline-flex;
     align-items: center;

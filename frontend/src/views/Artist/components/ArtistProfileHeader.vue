@@ -44,7 +44,7 @@
           </div>
           
           <!-- Actions Section -->
-          <div class="header-actions-wrapper ml-md-auto pb-2">
+          <div v-if="!isPublic" class="header-actions-wrapper ml-md-auto pb-2">
             <CButton 
               class="btn-edit-premium px-4 py-2 font-weight-bold d-flex align-items-center shadow-sm"
               @click="$emit('edit')"
@@ -92,6 +92,10 @@ export default {
     user: {
       type: Object,
       default: () => null
+    },
+    isPublic: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -173,7 +177,7 @@ export default {
 
 /* Banner Design */
 .header-banner {
-  height: 180px;
+  height: 240px;
   width: 100%;
   position: relative;
   overflow: hidden;

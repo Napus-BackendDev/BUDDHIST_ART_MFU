@@ -5,7 +5,7 @@
             <CCard class="assignment-table-card mb-4">
                 <div>
                     <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
-                        :striped="false">
+                        :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
                         <!-- Preview Image Column -->
                         <template #preview="{ item }">
@@ -53,15 +53,19 @@
 
                 <CCardFooter
                     class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-                    <div class="text-muted text-sm">Showing {{ items.length }} of {{ items.length }} submissions</div>
-                    <div class="pagination-buttons">
-                        <CButton class="btn-pill-pagination mr-2" :disabled="true">
-                            <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
-                        </CButton>
-                        <CButton class="btn-pill-pagination">
-                            Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
-                        </CButton>
+                    <div class="text-muted text-sm" v-if="filteredItems.length > 0">
+                        Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} submissions
                     </div>
+                    <div class="text-muted text-sm" v-else>
+                        Showing 0 submissions
+                    </div>
+                    <CPagination
+                        :active-page.sync="activePage"
+                        :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
+                        size="sm"
+                        align="end"
+                        class="mb-0 pill-pagination"
+                    />
                 </CCardFooter>
             </CCard>
         </div>
@@ -162,6 +166,15 @@ export default {
                 { key: 'status', label: 'Status' },
                 { key: 'deadline', label: 'Deadline' }
             ],
+            activePage: 1
+        }
+    },
+    watch: {
+        'filters': {
+            handler() {
+                this.activePage = 1;
+            },
+            deep: true
         }
     },
     computed: {
@@ -206,6 +219,9 @@ export default {
             if (status === 'Fail') return { class: 'badge-fail', icon: 'cil-x-circle' };
             if (status === 'Pending') return { class: 'badge-pending', icon: 'cil-clock' };
             return { class: 'badge-in-progress', icon: 'cil-history' };
+        },
+        pageChange(val) {
+            this.activePage = val;
         }
     }
 }

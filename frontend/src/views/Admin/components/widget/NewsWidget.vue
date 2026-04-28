@@ -24,7 +24,7 @@
                         <div class="widget-value text-green">{{ counts.views }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
-                        <CIcon name="cil-eye" size="xl" />
+                        <CIcon name="cil-chart-line" size="xl" />
                     </div>
                 </CCardBody>
             </CCard>

@@ -3,7 +3,7 @@
         <CCol md="12">
             <CCard class="news-table-card mb-4">
                 <div>
-                    <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
+                    <CDataTable :items="paginatedItems" :fields="fields" class="custom-table mb-0" hover :border="false"
                         :striped="false">
                         <template #thumbnail="{ item }">
                             <td>
@@ -63,15 +63,14 @@
 
                 <CCardFooter
                     class="d-flex justify-content-between align-items-center bg-white border-0 py-4 rounded-bottom pagination-footer">
-                    <div class="text-muted text-sm">Showing {{ filteredItems.length }} of {{ items.length }} news articles</div>
-                    <div class="pagination-buttons">
-                        <CButton class="btn-pill-pagination mr-2" :disabled="true">
-                            <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
-                        </CButton>
-                        <CButton class="btn-pill-pagination">
-                            Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
-                        </CButton>
-                    </div>
+                    <div class="text-muted text-sm">Showing {{ paginatedItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }} to {{ Math.min(currentPage * itemsPerPage, filteredItems.length) }} of {{ filteredItems.length }} news articles</div>
+                    <CPagination
+                        :active-page.sync="currentPage"
+                        :pages="Math.max(1, Math.ceil(filteredItems.length / itemsPerPage))"
+                        size="sm"
+                        align="end"
+                        class="mb-0 pill-pagination"
+                    />
                 </CCardFooter>
             </CCard>
 
@@ -109,6 +108,8 @@ export default {
     },
     data() {
         return {
+            currentPage: 1,
+            itemsPerPage: 5,
             showZoomModal: false,
             zoomImageUrl: '',
             fields: [
@@ -143,6 +144,18 @@ export default {
 
                 return searchMatch && categoryMatch && dateMatch;
             });
+        },
+        paginatedItems() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            return this.filteredItems.slice(start, start + this.itemsPerPage);
+        },
+        totalPages() {
+            return Math.ceil(this.filteredItems.length / this.itemsPerPage) || 1;
+        }
+    },
+    watch: {
+        filteredItems() {
+            this.currentPage = 1;
         }
     },
     methods: {
@@ -212,32 +225,33 @@ export default {
     padding-right: 0;
 }
 
-.btn-pill-pagination {
-    background-color: #3b3dfa;
+/* Custom CPagination Pill Styles */
+::v-deep .pill-pagination .page-item .page-link {
     border: none;
-    color: #ffffff;
-    font-weight: 700;
+    background-color: #f8f9fa;
+    color: #4a5568;
+    border-radius: 50px !important;
+    margin: 0 3px;
+    padding: 0.5rem 0.9rem;
+    font-weight: 600;
     font-size: 0.85rem;
-    border-radius: 50px;
-    padding: 0.6rem 1.4rem;
-    display: inline-flex;
-    align-items: center;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 6px rgba(59, 61, 250, 0.2);
+    transition: all 0.2s;
 }
 
-.btn-pill-pagination:hover:not(:disabled) {
-    background-color: #2d2fcc;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(59, 61, 250, 0.3);
+::v-deep .pill-pagination .page-item.active .page-link {
+    background-color: #3b3dfa;
     color: #ffffff;
+    box-shadow: 0 4px 10px rgba(59, 61, 250, 0.3);
 }
 
-.btn-pill-pagination:disabled {
-    opacity: 0.4;
-    background-color: #a0aec0;
-    box-shadow: none;
-    cursor: not-allowed;
+::v-deep .pill-pagination .page-item .page-link:hover:not(.active) {
+    background-color: #eef0f3;
+    color: #3b3dfa;
+}
+
+::v-deep .pill-pagination .page-item.disabled .page-link {
+    background-color: transparent;
+    opacity: 0.5;
 }
 
 .action-btn { background: transparent; border: none; padding: 6px; cursor: pointer; border-radius: 50%; transition: all 0.2s; }

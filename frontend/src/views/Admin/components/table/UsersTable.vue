@@ -95,7 +95,7 @@
                 :pages="Math.max(1, Math.ceil(filteredUsers.length / 10))"
                 size="sm"
                 align="end"
-                class="mb-0"
+                class="mb-0 pill-pagination"
             />
         </CCardFooter>
 
