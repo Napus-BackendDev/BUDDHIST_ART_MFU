@@ -15,16 +15,17 @@
 
       <!-- Orders List Card -->
       <CCard class="border-0 shadow-premium rounded-xl overflow-hidden mt-4">
-        <CCardHeader class="bg-white border-bottom-0 pt-4 pb-3 px-4 px-md-5 d-flex justify-content-between align-items-center flex-wrap">
+        <CCardHeader class="bg-white border-bottom-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
           <h5 class="font-weight-bold text-dark mb-0">Order History</h5>
           
           <div class="d-flex align-items-center mt-3 mt-sm-0">
-             <div class="search-box mr-3">
+             <div class="search-box" style="min-width: 300px;">
                <CInput 
+                 v-model="search"
                  placeholder="Search orders..." 
                  class="custom-search-input mb-0"
                >
-                 <template #prepend-content><CIcon name="cil-search"/></template>
+                 <template #prepend-content><CIcon name="cilMagnifyingGlass"/></template>
                </CInput>
              </div>
           </div>
@@ -32,19 +33,34 @@
 
         <CCardBody class="p-0">
           <CDataTable
-            :items="orders"
+            :items="filteredOrders"
             :fields="fields"
-            table-filter
-            items-per-page-select
             :items-per-page="5"
+            :active-page="activePage"
             hover
-            sorter
-            pagination
-            class="premium-table"
+            class="custom-table mb-0"
           >
             <template #orderId="{item}">
-              <td class="align-middle">
-                <span class="font-weight-bold text-dark">#{{ item.orderId }}</span>
+              <td class="align-middle py-3">
+                <div class="d-flex align-items-center">
+                  <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 50px; height: 50px; min-width: 50px; background-color: #f0f0f0;">
+                    <img v-if="item.artwork && item.artwork[0] && item.artwork[0].image" 
+                         :src="item.artwork[0].image" 
+                         class="w-100 h-100" 
+                         style="object-fit: cover;" />
+                    <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                      <CIcon name="cil-image" />
+                    </div>
+                  </div>
+                  <div>
+                    <div class="font-weight-bold text-dark text-truncate" style="max-width: 200px;">
+                      {{ item.artwork && item.artwork[0] ? getName('en', item.artwork[0]) : 'No Artwork' }}
+                    </div>
+                    <div class="small text-muted mb-1">
+                      by {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName('en', item.artwork[0].artist) : 'Artist' }}
+                    </div>
+                  </div>
+                </div>
               </td>
             </template>
             
@@ -62,100 +78,122 @@
 
             <template #status="{item}">
               <td class="align-middle">
-                <CBadge :color="getBadge(item.status)" class="badge-premium-status px-3 py-2">
-                  {{ item.status }}
-                </CBadge>
+                <div :class="['status-badge', getStatusBadge(item.statusName).class]">
+                  <CIcon :name="getStatusBadge(item.statusName).icon" size="sm" class="status-icon" /> 
+                  {{ getStatusBadge(item.statusName).label }}
+                </div>
               </td>
             </template>
 
             <template #action="{item}">
-              <td class="align-middle">
-                <CButton color="primary" variant="outline" size="sm" class="btn-action shadow-sm hover-lift" @click="viewDetails(item)">
-                  View Details
-                </CButton>
+              <td class="align-middle text-right">
+                <button 
+                    class="action-btn icon-view" 
+                    v-c-tooltip="'View Details'"
+                    @click="viewDetails(item)"
+                >
+                    <CIcon name="cilMagnifyingGlass" size="lg" />
+                </button>
               </td>
             </template>
           </CDataTable>
         </CCardBody>
+        
+        <CCardFooter
+            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
+            <div class="text-muted text-sm" v-if="filteredOrders.length > 0">
+                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredOrders.length) }} of {{ filteredOrders.length }} orders
+            </div>
+            <div class="text-muted text-sm" v-else>
+                Showing 0 orders
+            </div>
+            <CPagination
+                :active-page.sync="activePage"
+                :pages="Math.max(1, Math.ceil(filteredOrders.length / 10))"
+                size="sm"
+                align="end"
+                class="mb-0 pill-pagination"
+            />
+        </CCardFooter>
       </CCard>
     </CContainer>
 
     <!-- Order Details Modal -->
-    <CModal
-      title="Order Details"
-      :show.sync="showModal"
-      size="lg"
-      :centered="true"
-    >
-      <div v-if="selectedOrder" class="p-4 bg-light-empty">
-         <CRow class="mb-4">
-            <CCol sm="6">
-               <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Order ID</h6>
-               <h5 class="font-weight-bold text-dark">#{{ selectedOrder.orderId }}</h5>
-            </CCol>
-            <CCol sm="6" class="text-sm-right">
-               <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Order Date</h6>
-               <h5 class="font-weight-bold text-dark">{{ selectedOrder.date }}</h5>
-            </CCol>
-         </CRow>
-         
-         <CCard class="border-0 shadow-sm rounded-lg mb-0">
-             <CCardBody>
-                 <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                     <span class="font-weight-bold text-dark">Subtotal</span>
-                     <span class="font-weight-bold">฿{{ selectedOrder.total.toLocaleString() }}</span>
-                 </div>
-                 <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                     <span class="font-weight-bold text-dark">Shipping</span>
-                     <span class="font-weight-bold text-success">Free</span>
-                 </div>
-                 <div class="d-flex justify-content-between align-items-center pt-2">
-                     <h5 class="font-weight-bold text-dark mb-0">Total</h5>
-                     <h4 class="font-weight-bold text-primary mb-0">฿{{ selectedOrder.total.toLocaleString() }}</h4>
-                 </div>
-             </CCardBody>
-         </CCard>
-      </div>
-      <template #footer>
-        <CButton @click="showModal = false" color="dark" shape="pill" class="px-4 font-weight-bold shadow-sm hover-lift btn-premium w-100">
-          Close
-        </CButton>
-      </template>
-    </CModal>
+    <OrderModal 
+      :show.sync="showModal" 
+      :order="selectedOrder" 
+    />
   </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import OrderModal from './components/modal/OrderModal.vue';
+
 export default {
   name: 'UserOrders',
+  components: {
+    OrderModal
+  },
+  mixins: [statusBadgeMixin],
   data() {
     return {
       showModal: false,
       selectedOrder: null,
       fields: [
-        { key: 'orderId', label: 'Order ID', _classes: 'font-weight-bold' },
+        { key: 'orderId', label: 'ARTWORK', _classes: 'font-weight-bold' },
         { key: 'date', label: 'Date Purchased' },
         { key: 'total', label: 'Total Amount' },
         { key: 'status', label: 'Status' },
-        { key: 'action', label: 'Actions', sorter: false, filter: false }
+        { key: 'action', label: 'Actions', sorter: false, filter: false, _classes: 'text-right' }
       ],
-      orders: [
-        { id: 1, orderId: 'ORD-2024-001', date: '12 Jan 2024', total: 4500, status: 'Delivered' },
-        { id: 2, orderId: 'ORD-2024-002', date: '05 Feb 2024', total: 12000, status: 'Processing' },
-        { id: 3, orderId: 'ORD-2024-003', date: '20 Mar 2024', total: 3200, status: 'Shipped' },
-      ]
+      search: '',
+      activePage: 1
     }
   },
-  methods: {
-    getBadge(status) {
-      switch (status) {
-        case 'Delivered': return 'success'
-        case 'Processing': return 'warning'
-        case 'Shipped': return 'info'
-        case 'Cancelled': return 'danger'
-        default: return 'primary'
-      }
+  computed: {
+    ...mapGetters({
+      allOrders: 'order/orders',
+      userId: 'auth/userId'
+    }),
+    processedOrders() {
+      if (!this.allOrders) return [];
+      // Filter orders belonging to the current user
+      return this.allOrders
+        .filter(order => order.user === this.userId || (order.user && order.user._id === this.userId))
+        .map(order => ({
+          ...order,
+          orderId: order._id.substring(order._id.length - 8).toUpperCase(),
+          date: new Date(order.createdAt).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          }),
+          total: order.artwork ? order.artwork.reduce((acc, art) => acc + (art.price || 0), 0) : 0,
+          statusName: (() => {
+            const statusLabel = this.getName('en', order.status);
+            const s = statusLabel ? statusLabel.toLowerCase() : '';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
+            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
+            return 'Pending';
+          })()
+        }));
     },
+    filteredOrders() {
+      if (!this.search) return this.processedOrders;
+      const q = this.search.toLowerCase();
+      return this.processedOrders.filter(o => 
+        o.orderId.toLowerCase().includes(q) ||
+        o.statusName.toLowerCase().includes(q) ||
+        o.date.toLowerCase().includes(q)
+      );
+    }
+  },
+  async created() {
+    await this.$store.dispatch('order/get', {});
+  },
+  methods: {
     viewDetails(item) {
       this.selectedOrder = item;
       this.showModal = true;
@@ -167,6 +205,7 @@ export default {
 <style scoped>
 .bg-light-premium {
     background-color: #f8f9fa;
+    margin-top: -2rem !important;
 }
 
 .section-title {
@@ -240,19 +279,6 @@ export default {
     vertical-align: middle;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
-}
-
-.badge-premium-status {
-    border-radius: 8px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.btn-action {
-    border-radius: 8px;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
 }
 
 .btn-premium {

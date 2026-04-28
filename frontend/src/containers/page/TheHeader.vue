@@ -1,7 +1,7 @@
 <template>
     <CHeader fixed with-subheader class="p-0 border-0 main-app-header">
         <!-- Tier 1: Main Header (White) -->
-        <div class="header-top-tier bg-white w-100 d-flex align-items-center px-3" style="height: 75px;">
+        <div class="header-top-tier bg-white w-100 d-flex align-items-center px-3" style="height: 75px; z-index: 1030; position: relative;">
             <CHeaderBrand class="d-flex align-items-center text-decoration-none brand-link-custom" to="/">
                 <img src="@/assets/icons/logo.png" height="55" class="mr-3 brand-logo-img">
                 <div class="brand-text-wrapper d-flex flex-column justify-content-center">
@@ -11,12 +11,57 @@
             </CHeaderBrand>
 
             <CHeaderNav class="ml-auto d-flex align-items-center">
-                <!-- User Login Icon (Top Right) -->
-                <CHeaderNavItem class="px-3">
+                <!-- User Login Icon / Dropdown (Top Right) -->
+                <CHeaderNavItem class="px-3" v-if="!isLoggedIn">
                     <div class="user-login-trigger text-dark d-flex align-items-center" @click="openLoginModal" style="cursor: pointer;">
                         <CIcon name="cil-user" size="xl" />
                     </div>
                 </CHeaderNavItem>
+                <CDropdown
+                    v-else
+                    inNav
+                    class="c-header-nav-items px-3"
+                    placement="bottom-end"
+                    add-menu-classes="pt-0 mt-2 shadow-sm rounded-lg premium-dropdown-menu"
+                >
+                    <template #toggler>
+                        <CHeaderNavLink class="px-0">
+                            <div class="user-login-trigger text-dark d-flex align-items-center" style="cursor: pointer;">
+                                <CIcon name="cil-user" size="xl" />
+                            </div>
+                        </CHeaderNavLink>
+                    </template>
+
+                    <!-- User Role Links -->
+                    <template v-if="userRole === 'customer' || userRole === 'user'">
+                        <CDropdownItem @click="$router.push('/user/profile')" class="font-weight-bold">
+                            <CIcon name="cil-user" class="mr-3" /> Profile
+                        </CDropdownItem>
+                        <CDropdownItem @click="$router.push('/user/order')" class="font-weight-bold">
+                            <CIcon name="cil-history" class="mr-3" /> History
+                        </CDropdownItem>
+                    </template>
+                    <!-- Artist Role Links -->
+                    <template v-else-if="userRole === 'artist'">
+                        <CDropdownItem @click="$router.push('/artist/profile')" class="font-weight-bold">
+                            <CIcon name="cil-user" class="mr-3" /> Profile
+                        </CDropdownItem>
+                        <CDropdownItem @click="$router.push('/artist/submissions')" class="font-weight-bold">
+                            <CIcon name="cil-brush" class="mr-3" /> Submissions
+                        </CDropdownItem>
+                    </template>
+                    <!-- Admin Role Links -->
+                    <template v-else-if="userRole === 'admin'">
+                        <CDropdownItem @click="$router.push('/admin')" class="font-weight-bold">
+                            <CIcon name="cil-speedometer" class="mr-3" /> Dashboard
+                        </CDropdownItem>
+                    </template>
+
+                    <CDropdownDivider/>
+                    <CDropdownItem @click="logout" class="text-danger font-weight-bold">
+                        <CIcon name="cil-lock-locked" class="mr-3" /> Logout
+                    </CDropdownItem>
+                </CDropdown>
 
                 <CHeaderNavItem class="px-3 border-right language-switcher d-md-down-none">
                     <div class="d-flex align-items-center text-dark" style="cursor: pointer;">
@@ -153,14 +198,49 @@ export default {
     name: 'TheHeaderUser',
     data() {
         return {
-            mobileMenu: false
+            mobileMenu: false,
+            isLoggedIn: false,
+            userRole: ''
         }
     },
     computed: {
-        ...mapGetters('cart', ['cartItems', 'cartCount', 'cartTotal', 'isCartOpen'])
+        ...mapGetters('cart', ['cartItems', 'cartCount', 'cartTotal', 'isCartOpen']),
+        // Re-calculate auth state dynamically based on localStorage changes when route changes
+    },
+    watch: {
+        $route() {
+            this.checkLoginStatus();
+        }
+    },
+    created() {
+        this.checkLoginStatus();
     },
     methods: {
         ...mapActions('cart', ['removeFromCart', 'setShowCart']),
+        checkLoginStatus() {
+            try {
+                const objs = JSON.parse(localStorage.getItem('objs'));
+                if (objs && objs.xAccessToken) {
+                    this.isLoggedIn = true;
+                    this.userRole = (objs.role || 'customer').toLowerCase();
+                } else {
+                    this.isLoggedIn = false;
+                    this.userRole = '';
+                }
+            } catch (e) {
+                this.isLoggedIn = false;
+                this.userRole = '';
+            }
+        },
+        logout() {
+            localStorage.removeItem('objs');
+            this.checkLoginStatus();
+            this.$store.commit('auth/isSignIn', false);
+            if (this.$route.path !== '/') {
+                this.$router.push('/');
+            }
+            window.location.reload(); // Force full reload to reset all states securely
+        },
         startShopping() {
             this.setShowCart(false);
             this.$router.push('/artworks');

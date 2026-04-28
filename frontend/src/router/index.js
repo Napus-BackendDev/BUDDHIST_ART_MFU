@@ -4,8 +4,6 @@ import Router from 'vue-router'
 // Containers
 const TheContainerUser = () => import('@/containers/page/TheContainer')
 const TheContainerAdmin = () => import('@/containers/admin/TheContainer')
-const TheContainerArtist = () => import('@/containers/artist/TheContainer')
-const TheContainerDashboardUser = () => import('@/containers/user/TheContainer')
 
 // Views User
 const Home = () => import('@/views/page/Home')
@@ -170,7 +168,7 @@ export default new Router({
         {
             path: '/artist',
             name: 'Artist',
-            component: TheContainerArtist,
+            component: TheContainerUser,
             redirect: '/artist/submissions',
             children: [
                 {
@@ -193,7 +191,7 @@ export default new Router({
         {
             path: '/user',
             name: 'UserDashboard',
-            component: TheContainerDashboardUser,
+            component: TheContainerUser,
             redirect: '/user/profile',
             children: [
                 {

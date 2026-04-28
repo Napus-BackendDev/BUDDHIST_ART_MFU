@@ -14,7 +14,10 @@
 
                 <template #subAssignment="{ item }">
                     <td>
-                        <CBadge color="info" class="p-2 pill-badge">{{ getAssignmentCount(item) }} Tasks</CBadge>
+                        <div class="status-badge badge-update">
+                            <CIcon name="cil-list" size="sm" class="status-icon" /> 
+                            {{ getAssignmentCount(item) }} Tasks
+                        </div>
                     </td>
                 </template>
 
@@ -77,7 +80,7 @@
         </div>
 
         <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
+            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredItems.length > 0">
                 Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} submissions
             </div>
@@ -98,9 +101,11 @@
 <script>
 import moment from 'moment'
 import { mapGetters } from 'vuex'
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
     name: 'SubmissionTable',
+    mixins: [statusBadgeMixin],
     props: {
         filters: {
             type: Object,
@@ -134,10 +139,6 @@ export default {
         }
     },
     methods: {
-        formatDate(date) {
-            if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY')
-        },
         moment(arg) {
             return moment(arg);
         },
@@ -146,15 +147,6 @@ export default {
             if (progress > 70) return 'info'
             if (progress > 30) return 'warning'
             return 'danger'
-        },
-        getName(lang, item) {
-            if (!item || !item.title) return 'N/A';
-            if (typeof item.title === 'string') return item.title;
-            if (Array.isArray(item.title)) {
-                const nameObj = item.title.find(n => n.key === lang);
-                return nameObj ? nameObj.value : (item.title[0] ? item.title[0].value : 'N/A');
-            }
-            return 'N/A';
         },
         getTotalStudents(item) {
             return item.artist ? item.artist.length : 0;
@@ -208,155 +200,7 @@ export default {
     margin-top: 1rem;
 }
 
-.custom-table th {
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #7a8aa3;
-    padding: 1.25rem 1.5rem;
-    border-color: #f0f1f5;
-    background-color: #ffffff;
-}
 
-.custom-table td {
-    padding: 1.25rem 1.5rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #f0f1f5;
-    color: #172b4d;
-}
-
-.custom-table tr:last-child td {
-    border-bottom: none;
-}
-
-.text-dark {
-    color: #2c3e50 !important;
-    font-size: 0.95rem;
-}
-
-.text-muted {
-    color: #8c98a9 !important;
-    font-size: 0.95rem;
-}
-
-.text-sm {
-    font-size: 0.9rem;
-}
-
-/* Footer Pagination */
-.pagination-footer {
-    border-top: 1px solid #f0f1f5 !important;
-    margin: 0 1.5rem;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.btn-pagination {
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #4a5568;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    transition: all 0.2s;
-}
-
-.btn-pagination:hover:not(:disabled) {
-    background-color: #f7fafc;
-    color: #1a202c;
-}
-
-.btn-pagination:disabled {
-    opacity: 0.6;
-    background-color: #ffffff;
-}
-
-.rounded-bottom {
-    border-bottom-left-radius: 12px !important;
-    border-bottom-right-radius: 12px !important;
-}
-
-/* Action Buttons */
-.action-btn {
-    background: transparent;
-    border: none;
-    padding: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
-    outline: none;
-    opacity: 1; /* Always visible */
-}
-
-.action-btn:hover {
-    transform: scale(1.15);
-}
-
-.icon-success {
-    color: #48bb78;
-}
-
-.icon-success:hover {
-    background-color: #f0fff4;
-    /* Light green bg */
-}
-
-.icon-danger {
-    color: #e53e3e;
-}
-
-.icon-danger:hover {
-    background-color: #ffdddd;
-    /* Light red bg */
-}
-
-.icon-trash {
-    color: #ed8936;
-}
-
-.icon-trash:hover {
-    background-color: #fffaf0;
-}
-
-.icon-view {
-    color: #a0aec0;
-}
-
-.icon-view:hover {
-    background-color: #f1f9ff;
-    /* Light gray bg */
-}
-
-.icon-edit {
-    color: #4299e1;
-}
-
-.icon-edit:hover {
-    background-color: #ebf8ff;
-    /* Light blue bg */
-}
-
-.pill-badge {
-    border-radius: 50px;
-    font-weight: 600;
-    padding: 4px 12px !important;
-    font-size: 0.75rem;
-}
-
-.progress-premium {
-    border-radius: 10px;
-    background-color: #f1f5f9;
-}
-
-.progress-label {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #475569;
-    min-width: 35px;
-}
 
 .date-text-sm {
     font-size: 0.85rem;

@@ -68,13 +68,15 @@ const LoginModule = {
                     store.commit("auth/userId", user._id);
 
                     // Redirection Logic
-                    const userRole = (role || 'Customer').toLowerCase();
-                    if (userRole === 'admin') {
-                        router.push('/admin');
-                    } else if (userRole === 'artist' || userRole === 'evaluator') {
-                        router.push('/artist/profile');
-                    } else {
-                        router.push('/artworks');
+                    if (router.currentRoute.path !== '/payment') {
+                        const userRole = (role || 'Customer').toLowerCase();
+                        if (userRole === 'admin') {
+                            router.push('/admin');
+                        } else if (userRole === 'artist' || userRole === 'evaluator') {
+                            router.push('/artist/profile');
+                        } else {
+                            router.push('/user');
+                        }
                     }
 
                     return response;

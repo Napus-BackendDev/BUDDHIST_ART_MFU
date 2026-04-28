@@ -8,8 +8,8 @@
                         <template #thumbnail="{ item }">
                             <td>
                                 <div class="thumbnail-wrapper clickable" @click="zoomImg(getFirstImage(item))">
-                                    <img :src="getFirstImage(item) || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName('en', item.title).charAt(0)}`"
-                                        :alt="getName('en', item.title)" class="thumbnail-img">
+                                    <img :src="getFirstImage(item) || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName('en', item).charAt(0)}`"
+                                        :alt="getName('en', item)" class="thumbnail-img">
                                     <div class="zoom-overlay">
                                         <CIcon name="cil-search" />
                                     </div>
@@ -18,9 +18,9 @@
                         </template>
                         <template #title="{ item }">
                             <td>
-                                <div class="font-weight-bold text-dark mb-1">{{ getName('en', item.title) }}</div>
+                                <div class="font-weight-bold text-dark mb-1">{{ getName('en', item) }}</div>
                                 <div class="text-muted small description-truncate">
-                                    {{ getName('en', item.description || item.content) }}
+                                    {{ item.description || item.content ? getName('en', item.description || item.content) : 'N/A' }}
                                 </div>
                             </td>
                         </template>
@@ -28,7 +28,7 @@
                             <td>
                                 <div class="category-badge">
                                     <CIcon name="cil-tag" size="sm" class="category-icon" /> 
-                                    {{ item.category ? getName('en', item.category.title) : 'Uncategorized' }}
+                                    {{ item.category ? getName('en', item.category) : 'Uncategorized' }}
                                 </div>
                             </td>
                         </template>
@@ -62,7 +62,7 @@
                 </div>
 
                 <CCardFooter
-                    class="d-flex justify-content-between align-items-center bg-white border-0 py-4 rounded-bottom pagination-footer">
+                    class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
                     <div class="text-muted text-sm">Showing {{ paginatedItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }} to {{ Math.min(currentPage * itemsPerPage, filteredItems.length) }} of {{ filteredItems.length }} news articles</div>
                     <CPagination
                         :active-page.sync="currentPage"
@@ -93,9 +93,11 @@
 <script>
 import moment from 'moment';
 import * as XLSX from 'xlsx';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
     name: 'NewsTable',
+    mixins: [statusBadgeMixin],
     props: {
         items: { type: Array, default: () => [] },
         filters: {
@@ -125,8 +127,8 @@ export default {
     computed: {
         filteredItems() {
             return this.items.filter(item => {
-                const title = this.getName('en', item.title).toLowerCase();
-                const content = this.getName('en', item.content || item.description).toLowerCase();
+                const title = this.getName('en', item).toLowerCase();
+                const content = (item.content || item.description) ? this.getName('en', item.content || item.description).toLowerCase() : '';
                 
                 const searchMatch = !this.filters.search || 
                     title.includes(this.filters.search.toLowerCase()) ||
@@ -177,16 +179,6 @@ export default {
             this.zoomImageUrl = url;
             this.showZoomModal = true;
         },
-        getName(lang, field) {
-            if (!field) return 'N/A';
-            if (typeof field === 'string') return field;
-            if (Array.isArray(field)) {
-                const obj = field.find(f => f.key === lang) || field[0];
-                return obj ? obj.value : 'N/A';
-            }
-            return 'N/A';
-        },
-        formatDate(date) { return date ? moment(date).format('MMM DD, YYYY') : 'N/A'; },
         exportExcel() {
             const dataToExport = this.filteredItems.map(item => ({
                 'ID': item._id,
@@ -206,69 +198,16 @@ export default {
 <style scoped>
 /* Reuse styles from AdminTable */
 .news-table-card { border-radius: 12px; border: 1px solid #eef0f3; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-top: 1rem; }
-.custom-table th { text-transform: uppercase; font-size: 0.75rem; font-weight: 700; color: #7a8aa3; padding: 1.25rem 1.5rem; border-color: #f0f1f5; background-color: #ffffff; }
-.custom-table td { padding: 1.25rem 1.5rem; vertical-align: middle; border-bottom: 1px solid #f0f1f5; color: #172b4d; }
-.text-dark { color: #2c3e50 !important; font-size: 0.95rem; }
-.text-muted { color: #8c98a9 !important; font-size: 0.95rem; }
-.text-sm { font-size: 0.9rem; }
 .thumbnail-wrapper { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; background-color: #f8f9fa; border: 1px solid #eef0f3; cursor: pointer; position: relative; }
 .thumbnail-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
 .zoom-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white; opacity: 0; transition: opacity 0.2s; }
 .thumbnail-wrapper:hover .zoom-overlay { opacity: 1; }
 .category-badge { display: inline-flex; align-items: center; padding: 0.35rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 700; color: #3b82f6; background-color: #f0f4ff; border: 1px solid rgba(59,130,246,0.3); }
 .category-icon { width: 14px; height: 14px; margin-right: 6px; }
-/* Footer Pagination */
-.pagination-footer {
-    border-top: 1px solid #f0f1f5 !important;
-    margin: 0 1.5rem;
-    padding-left: 0;
-    padding-right: 0;
-}
 
-/* Custom CPagination Pill Styles */
-::v-deep .pill-pagination .page-item .page-link {
-    border: none;
-    background-color: #f8f9fa;
-    color: #4a5568;
-    border-radius: 50px !important;
-    margin: 0 3px;
-    padding: 0.5rem 0.9rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-}
 
-::v-deep .pill-pagination .page-item.active .page-link {
-    background-color: #3b3dfa;
-    color: #ffffff;
-    box-shadow: 0 4px 10px rgba(59, 61, 250, 0.3);
-}
 
-::v-deep .pill-pagination .page-item .page-link:hover:not(.active) {
-    background-color: #eef0f3;
-    color: #3b3dfa;
-}
-
-::v-deep .pill-pagination .page-item.disabled .page-link {
-    background-color: transparent;
-    opacity: 0.5;
-}
-
-.action-btn { background: transparent; border: none; padding: 6px; cursor: pointer; border-radius: 50%; transition: all 0.2s; }
-.action-btn:hover { transform: scale(1.15); }
-.icon-view { color: #a0aec0; }
-.icon-edit { color: #4299e1; }
-.icon-trash { color: #ed8936; }
 .zoomed-image { width: 100%; max-height: 80vh; object-fit: contain; border-radius: 12px; }
-
-.description-truncate {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-height: 1.4;
-    max-width: 400px;
-}
 
 .simple-views {
     display: inline-flex;

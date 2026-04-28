@@ -4,7 +4,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var objsSchema = new Schema({
-    studentId: { type: String, unique: true, required: true },
+    studentId: { type: String, unique: true},
     image: { type: String, default: null },
     name: [{
         key: { type: String, default: null },
@@ -14,8 +14,12 @@ var objsSchema = new Schema({
     bio: { type: String, default: null},
     contact: {
         telephone: { type: String, default: null },
-        studentEmail: { type: String, default: null, required: true, unique: true },
+        studentEmail: { type: String, default: null, unique: true },
         personalEmail: { type: String, default: null }
+    },
+    address: {
+        bill: { type: String, default: null },
+        shipping: { type: String, default: null },
     },
     password: { type: String, default: null },
     status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: null },

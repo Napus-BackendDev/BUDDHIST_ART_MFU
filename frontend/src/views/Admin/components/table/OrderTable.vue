@@ -46,15 +46,16 @@
 
                 <template #status="{ item }">
                     <td>
-                        <div :class="['status-badge', getStatusInfo(item).class]">
-                            <CIcon :name="getStatusInfo(item).icon" size="sm" class="status-icon" /> {{ getStatusInfo(item).label }}
+                        <div :class="['status-badge', getStatusBadge(item.status ? getName('en', item.status) : 'Pending').class]">
+                            <CIcon :name="getStatusBadge(item.status ? getName('en', item.status) : 'Pending').icon" size="sm" class="status-icon" /> 
+                            {{ getStatusBadge(item.status ? getName('en', item.status) : 'Pending').label }}
                         </div>
                     </td>
                 </template>
 
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="getStatusInfo(item).label === 'Pending'" class="d-inline-flex align-items-center">
+                        <div v-if="(item.status ? getName('en', item.status) : 'Pending') === 'Pending'" class="d-inline-flex align-items-center">
                             <button class="action-btn icon-view" v-c-tooltip="'View Details'" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
@@ -79,7 +80,7 @@
         </div>
 
         <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
+            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredItems.length > 0">
                 Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} orders
             </div>
@@ -100,9 +101,11 @@
 <script>
 import moment from 'moment';
 import * as XLSX from 'xlsx';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
     name: 'OrderTable',
+    mixins: [statusBadgeMixin],
     props: {
         items: {
             type: Array,
@@ -155,7 +158,7 @@ export default {
                     artwork.includes(this.filters.search.toLowerCase());
 
                 // Status Filter
-                const statusInfo = this.getStatusInfo(item);
+                const statusInfo = this.getStatusBadge(item.status ? this.getName('en', item.status) : 'Pending');
                 const statusMatch = this.filters.status === 'All Status' || statusInfo.label === this.filters.status;
 
                 // Date Filter
@@ -172,27 +175,6 @@ export default {
         }
     },
     methods: {
-        getName(lang, item) {
-            if (!item) return '';
-            if (typeof item === 'string') return item;
-            if (Array.isArray(item)) {
-                const target = item.find(n => n.key === lang) || item[0];
-                return target ? target.value : '';
-            }
-            const field = item.title || item.name || item.key;
-            if (field) {
-                if (typeof field === 'string') return field;
-                if (Array.isArray(field)) {
-                    const target = field.find(n => n.key === lang) || field[0];
-                    return target ? target.value : '';
-                }
-            }
-            return item.value || '';
-        },
-        formatDate(date) {
-            if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY hh:mm A');
-        },
         formatPrice(value) {
             if (value === undefined || value === null) return '0.00';
             const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
@@ -201,21 +183,6 @@ export default {
                 maximumFractionDigits: 2
             });
         },
-        getStatusInfo(item) {
-            if (!item || !item.status) return { label: 'Pending', class: 'badge-pending', icon: 'cil-clock' };
-            const status = this.getName('en', item.status);
-            switch (status) {
-                case 'Completed':
-                case 'Success':
-                case 'Approved':
-                    return { label: 'Completed', class: 'badge-completed', icon: 'cil-check' };
-                case 'Cancelled':
-                case 'Rejected':
-                    return { label: 'Cancelled', class: 'badge-cancelled', icon: 'cil-x' };
-                default:
-                    return { label: status || 'Pending', class: 'badge-pending', icon: 'cil-clock' };
-            }
-        },
         exportExcel() {
             const dataToExport = this.filteredItems.map(item => ({
                 'Order ID': item._id,
@@ -223,7 +190,7 @@ export default {
                 'Customer': item.contact ? item.contact.name : 'N/A',
                 'Artwork': item.artwork && item.artwork[0] ? this.getName('en', item.artwork[0]) : 'N/A',
                 'Amount': item.artwork && item.artwork[0] ? item.artwork[0].price : 0,
-                'Status': this.getStatusInfo(item).label
+                'Status': this.getStatusBadge(item.status ? this.getName('en', item.status) : 'Pending').label
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -246,41 +213,6 @@ export default {
     margin-top: 1rem;
 }
 
-.custom-table th {
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #7a8aa3;
-    padding: 1.25rem 1.5rem;
-    border-color: #f0f1f5;
-    background-color: #ffffff;
-}
-
-.custom-table td {
-    padding: 1.25rem 1.5rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #f0f1f5;
-    color: #172b4d;
-}
-
-.custom-table tr:last-child td {
-    border-bottom: none;
-}
-
-.text-dark {
-    color: #2c3e50 !important;
-    font-size: 0.95rem;
-}
-
-.text-muted {
-    color: #8c98a9 !important;
-    font-size: 0.95rem;
-}
-
-.text-sm {
-    font-size: 0.9rem;
-}
-
 .thumbnail-wrapper {
     width: 44px;
     height: 44px;
@@ -296,103 +228,8 @@ export default {
     object-fit: cover;
 }
 
-/* Status Badges */
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.35rem 1rem;
-    border-radius: 50px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-}
-
-.status-icon {
-    width: 14px;
-    height: 14px;
-    margin-right: 6px;
-}
-
-.badge-completed {
-    color: #38a169;
-    background-color: #f0fff4;
-    border: 1px solid rgba(56, 161, 105, 0.4);
-}
-
-.badge-pending {
-    color: #d69e2e;
-    background-color: #fffaf0;
-    border: 1px solid rgba(214, 158, 46, 0.4);
-}
-
-.badge-cancelled {
-    color: #e53e3e;
-    background-color: #fff5f5;
-    border: 1px solid rgba(229, 62, 62, 0.4);
-}
-
-/* Footer Pagination */
-.pagination-footer {
-    border-top: 1px solid #f0f1f5 !important;
-    margin: 0 1.5rem;
-    padding-left: 0;
-    padding-right: 0;
-}
-
 .rounded-bottom {
     border-bottom-left-radius: 12px !important;
     border-bottom-right-radius: 12px !important;
-}
-
-/* Action Buttons */
-.action-btn {
-    background: transparent;
-    border: none;
-    padding: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: transform 0.2s, background-color 0.2s;
-    outline: none;
-    opacity: 1; /* Always visible */
-}
-
-.action-btn:hover {
-    transform: scale(1.15);
-}
-
-.icon-success {
-    color: #48bb78;
-}
-
-.icon-success:hover {
-    background-color: #f0fff4;
-}
-
-.icon-danger {
-    color: #e53e3e;
-}
-
-.icon-danger:hover {
-    background-color: #ffdddd;
-}
-
-.icon-view {
-    color: #a0aec0;
-}
-
-.icon-view:hover {
-    background-color: #f1f9ff;
-}
-
-.icon-edit {
-    color: #4299e1;
-}
-
-.icon-edit:hover {
-    background-color: #ebf8ff;
 }
 </style>

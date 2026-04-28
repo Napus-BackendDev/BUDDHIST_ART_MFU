@@ -5,6 +5,7 @@ var Schema = mongoose.Schema;
 
 var objsSchema = new Schema({
     image: { type: String, default: "" },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     contact: {
         name: { type: String, default: null },
         telephone: { type: String, default: null },

@@ -2,7 +2,7 @@
   <div class="user-profile-view min-vh-100 py-4 bg-light-premium">
     <CContainer class="profile-container-wide">
       <div class="mb-5 text-center text-md-left">
-        <h2 class="font-weight-bold text-dark section-title">My Dashboard</h2>
+        <h2 class="font-weight-bold text-dark section-title">Profile</h2>
         <div class="title-separator-sm mb-3 mx-auto mx-md-0"></div>
         <p class="text-muted">Manage your personal information and track your orders.</p>
       </div>
@@ -13,25 +13,48 @@
           <CCard class="profile-card border-0 shadow-premium rounded-xl h-100 mb-0 position-relative overflow-hidden">
              <div class="card-accent-bar"></div>
             <CCardBody class="text-center p-4 p-md-5 z-index-2 position-relative">
-              <div class="avatar-upload-wrapper mb-4 mx-auto">
-                <div class="avatar-preview shadow-lg">
-                  <span class="avatar-initials">US</span>
+              <div class="avatar-upload-wrapper mb-4 mx-auto" @click="triggerUpload" style="cursor: pointer;" title="Click to change photo">
+                <div class="avatar-preview shadow-lg position-relative overflow-hidden">
+                  <img v-if="form.image" :src="form.image" class="w-100 h-100" style="object-fit: cover;" />
+                  <span v-else class="avatar-initials">{{ initials }}</span>
+                  <div class="avatar-overlay d-flex align-items-center justify-content-center position-absolute w-100 h-100" style="top:0; left:0; background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.3s;">
+                      <CIcon name="cil-camera" size="xl" class="text-white" />
+                  </div>
                 </div>
+                <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept="image/*" />
               </div>
-              <h4 class="font-weight-bold mb-1 text-dark">User Name</h4>
-              <CBadge color="primary" class="badge-premium mb-4 px-3 py-2">Customer</CBadge>
+              <h4 class="font-weight-bold mb-3 text-dark">{{ fullName }}</h4>
+              <CBadge color="primary" class="badge-premium px-3 py-2">Customer</CBadge>
               <div class="text-left mt-4 border-top pt-4">
-                  <div class="contact-info-item mb-3 d-flex align-items-center premium-hover">
-                      <div class="icon-box-sm mr-3 shadow-sm">
+                  <div class="contact-info-item mb-3 d-flex align-items-center premium-hover" v-if="form.personalEmail">
+                      <div class="icon-box-sm mr-3 shadow-sm min-w-36">
                         <CIcon name="cil-envelope-closed" />
                       </div>
-                      <span class="text-dark font-weight-bold">user@example.com</span>
+                      <span class="text-dark font-weight-bold text-truncate">{{ form.personalEmail }}</span>
                   </div>
-                  <div class="contact-info-item mb-3 d-flex align-items-center premium-hover">
-                      <div class="icon-box-sm mr-3 shadow-sm">
+                  <div class="contact-info-item mb-3 d-flex align-items-center premium-hover" v-if="form.telephone">
+                      <div class="icon-box-sm mr-3 shadow-sm min-w-36">
                         <CIcon name="cil-phone" />
                       </div>
-                      <span class="text-dark font-weight-bold">08X-XXX-XXXX</span>
+                      <span class="text-dark font-weight-bold">{{ form.telephone }}</span>
+                  </div>
+                  <div class="contact-info-item mb-3 d-flex align-items-start premium-hover" v-if="form.bill">
+                      <div class="icon-box-sm mr-3 shadow-sm min-w-36 mt-1">
+                        <CIcon name="cil-location-pin" />
+                      </div>
+                      <div>
+                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">Billing Address</small>
+                        <span class="text-dark small d-block" style="line-height: 1.4;">{{ form.bill }}</span>
+                      </div>
+                  </div>
+                  <div class="contact-info-item mb-3 d-flex align-items-start premium-hover" v-if="form.shipping">
+                      <div class="icon-box-sm mr-3 shadow-sm min-w-36 mt-1">
+                        <CIcon name="cil-truck" />
+                      </div>
+                      <div>
+                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">Shipping Address</small>
+                        <span class="text-dark small d-block" style="line-height: 1.4;">{{ form.shipping }}</span>
+                      </div>
                   </div>
               </div>
               <CButton color="dark" shape="pill" class="btn-premium w-100 mt-4 shadow-sm hover-lift" @click="isEditing = true">
@@ -52,7 +75,7 @@
                            </div>
                            <div>
                                <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">Total Orders</h6>
-                               <h3 class="mb-0 font-weight-bold text-dark">5</h3>
+                               <h3 class="mb-0 font-weight-bold text-dark">{{ orders.length }}</h3>
                            </div>
                        </CCardBody>
                    </CCard>
@@ -74,71 +97,288 @@
            
            <!-- Recent Orders Teaser -->
            <CCard class="border-0 shadow-premium rounded-xl mt-2 overflow-hidden">
-               <CCardHeader class="bg-white border-bottom pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
-                   <h5 class="font-weight-bold text-dark mb-0"><CIcon name="cil-history" class="mr-2 text-primary" /> Recent Orders</h5>
-                   <CButton variant="ghost" class="text-primary font-weight-bold btn-sm hover-lift" @click="$router.push('/user/order')">
-                       View All <CIcon name="cil-arrow-right" class="ml-1" />
-                   </CButton>
-               </CCardHeader>
-               <CCardBody class="p-0">
-                   <!-- Empty State (Placeholder) -->
-                   <div class="text-center py-5 text-muted bg-light-empty">
-                        <CIcon name="cil-inbox" size="3xl" class="mb-3 opacity-25" />
-                        <p class="mb-0 font-weight-bold">No recent orders found.</p>
-                   </div>
-               </CCardBody>
+                <CCardHeader class="bg-white border-bottom pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="font-weight-bold text-dark mb-0"><CIcon name="cil-history" class="mr-2 text-primary" /> Recent Orders</h5>
+                    <CButton variant="ghost" class="text-primary font-weight-bold btn-sm hover-lift" @click="$router.push('/user/order')">
+                        View All <CIcon name="cil-arrow-right" class="ml-1" />
+                    </CButton>
+                </CCardHeader>
+                <CCardBody class="p-0">
+                    <div v-if="orders && orders.length > 0" class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase">Artwork</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Date</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Amount</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Status</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="order in orders.slice(0, 5)" :key="order._id" class="cursor-pointer">
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="d-flex align-items-center">
+                                            <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 50px; height: 50px; background-color: #f0f0f0;">
+                                                <img v-if="order.artwork && order.artwork[0] && order.artwork[0].image" 
+                                                     :src="order.artwork[0].image" 
+                                                     class="w-100 h-100" 
+                                                     style="object-fit: cover;" />
+                                                <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                                    <CIcon name="cil-image" />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="font-weight-bold text-dark text-truncate" style="max-width: 150px;">
+                                                    {{ order.artwork && order.artwork[0] ? getName('en', order.artwork[0]) : 'No Artwork' }}
+                                                </div>
+                                                <small class="text-muted">
+                                                    by {{ order.artwork && order.artwork[0] && order.artwork[0].artist ? getName('en', order.artwork[0].artist) : 'Artist' }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 align-middle text-muted small text-center">{{ order.date }}</td>
+                                    <td class="px-4 py-3 align-middle font-weight-bold text-success text-center">฿{{ order.total.toLocaleString() }}</td>
+                                    <td class="px-4 py-3 align-middle text-center">
+                                        <div :class="['status-badge', getStatusBadge(order.statusName).class, 'mx-auto']">
+                                            <CIcon :name="getStatusBadge(order.statusName).icon" size="sm" class="status-icon" /> 
+                                            {{ order.statusName }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 align-middle text-center">
+                                        <CButton 
+                                            size="sm" 
+                                            variant="outline" 
+                                            color="primary" 
+                                            class="rounded-pill px-3 shadow-sm hover-lift"
+                                            @click="viewOrder(order)"
+                                        >
+                                            View
+                                        </CButton>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="text-center py-5 text-muted bg-light-empty">
+                         <CIcon name="cil-inbox" size="3xl" class="mb-3 opacity-25" />
+                         <p class="mb-0 font-weight-bold">No recent orders found.</p>
+                    </div>
+                </CCardBody>
            </CCard>
         </CCol>
       </CRow>
     </CContainer>
 
+    <!-- Order Details Modal -->
+    <OrderModal 
+      :show.sync="showOrderModal" 
+      :order="selectedOrder" 
+    />
+
     <!-- Edit Profile Modal -->
-    <CModal
-      title="Edit Profile"
-      :show.sync="isEditing"
-      size="lg"
-      :centered="true"
-    >
-        <div class="p-4">
-             <CRow>
-              <CCol md="6" class="mb-4">
-                <label class="form-label-custom">Full Name (Thai)</label>
-                <CInput placeholder="ชื่อ-นามสกุล" class="custom-input-premium shadow-none" />
-              </CCol>
-              <CCol md="6" class="mb-4">
-                <label class="form-label-custom">Full Name (English)</label>
-                <CInput placeholder="Full Name" class="custom-input-premium shadow-none" />
-              </CCol>
-              <CCol md="6" class="mb-4">
-                <label class="form-label-custom">Email Address</label>
-                <CInput placeholder="example@gmail.com" type="email" class="custom-input-premium shadow-none" />
-              </CCol>
-              <CCol md="6" class="mb-4">
-                <label class="form-label-custom">Telephone</label>
-                <CInput placeholder="08x-xxx-xxxx" class="custom-input-premium shadow-none" />
-              </CCol>
-            </CRow>
-        </div>
-        <template #footer>
-        <div class="d-flex w-100 justify-content-end p-3 bg-light rounded-bottom">
-          <CButton @click="isEditing = false" variant="outline" shape="pill" class="mr-3 hover-lift px-4">
-            Cancel
-          </CButton>
-          <CButton color="dark" shape="pill" class="px-5 font-weight-bold shadow-sm hover-lift btn-premium" @click="isEditing = false">
-            Save Changes
-          </CButton>
-        </div>
-      </template>
-    </CModal>
+    <ProfileModal 
+      :show.sync="isEditing" 
+      :form="form" 
+      @save="handleSave" 
+      @cancel="cancelEdit" 
+    />
   </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import OrderModal from './components/modal/OrderModal.vue';
+import ProfileModal from './components/modal/ProfileModal.vue';
+
 export default {
   name: 'UserProfile',
+  components: {
+    OrderModal,
+    ProfileModal
+  },
+  mixins: [statusBadgeMixin],
   data() {
     return {
-      isEditing: false
+      isEditing: false,
+      form: {
+        _id: '',
+        nameTh: '',
+        nameEn: '',
+        personalEmail: '',
+        telephone: '',
+        bill: '',
+        shipping: '',
+        image: ''
+      },
+      selectedFile: null,
+      showOrderModal: false,
+      selectedOrder: null
+    }
+  },
+  computed: {
+    ...mapGetters({
+      userId: 'auth/userId',
+      users: 'user/user',
+      allOrders: 'order/orders'
+    }),
+    user() {
+      if (!this.users) return null;
+      return this.users.find(u => u._id === this.userId);
+    },
+    orders() {
+      if (!this.allOrders) return [];
+      return this.allOrders
+        .filter(order => order.user === this.userId || (order.user && order.user._id === this.userId))
+        .map(order => ({
+          ...order,
+          orderId: order._id.substring(order._id.length - 8).toUpperCase(),
+          date: new Date(order.createdAt).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          }),
+          total: order.artwork ? order.artwork.reduce((acc, art) => acc + (art.price || 0), 0) : 0,
+          statusName: (() => {
+            const statusLabel = this.getName('en', order.status);
+            const s = statusLabel ? statusLabel.toLowerCase() : '';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
+            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
+            return 'Pending';
+          })()
+        }));
+    },
+    nameEn() {
+      return this.form ? this.form.nameEn : '';
+    },
+    fullName() {
+      return this.form.nameTh || 'User Name';
+    },
+    initials() {
+      if (!this.form.nameTh) return 'US';
+      const parts = this.form.nameTh.trim().split(' ');
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+  },
+  async created() {
+    await this.fetchProfile();
+    await this.$store.dispatch('order/get', {});
+    console.log('DEBUG: allOrders', this.allOrders);
+  },
+  methods: {
+    viewOrder(order) {
+      this.selectedOrder = order;
+      this.showOrderModal = true;
+    },
+    async fetchProfile() {
+      try {
+        const users = await this.$store.dispatch('user/get', {});
+        const currentUser = users ? users.find(u => u._id === this.userId) : null;
+        
+        if (currentUser) {
+          const getName = (lang) => {
+            if (Array.isArray(currentUser.name)) {
+              const obj = currentUser.name.find(n => n.key === lang);
+              return obj ? obj.value : '';
+            }
+            return '';
+          };
+          
+          this.form = {
+            _id: currentUser._id,
+            image: currentUser.image || '',
+            nameTh: getName('th'),
+            nameEn: getName('en'),
+            personalEmail: currentUser.contact ? currentUser.contact.personalEmail : '',
+            telephone: currentUser.contact ? currentUser.contact.telephone : '',
+            bill: currentUser.address ? currentUser.address.bill : '',
+            shipping: currentUser.address ? currentUser.address.shipping : ''
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    },
+    async cancelEdit() {
+      this.isEditing = false;
+      this.selectedFile = null;
+      await this.fetchProfile();
+    },
+    async handleSave(updatedForm) {
+      if (updatedForm) {
+        this.form = { ...updatedForm };
+      }
+      try {
+        const payload = {
+          _id: this.form._id,
+          name: [
+            { key: 'th', value: this.form.nameTh },
+            { key: 'en', value: this.form.nameEn }
+          ],
+          contact: {
+            personalEmail: this.form.personalEmail,
+            telephone: this.form.telephone
+          },
+          address: {
+            bill: this.form.bill,
+            shipping: this.form.shipping
+          }
+        };
+
+        if (this.form.image && !this.selectedFile) {
+          payload.image = this.form.image;
+        }
+
+        await this.$store.dispatch('user/update', payload);
+
+        if (this.selectedFile) {
+          const formData = new FormData();
+          formData.append('_id', this.userId);
+          formData.append('image', this.selectedFile);
+
+          await this.$store.dispatch('user/upload', formData);
+          this.selectedFile = null;
+        }
+
+        this.isEditing = false;
+        await this.fetchProfile();
+      } catch (err) {
+        console.error('Error updating profile:', err);
+      }
+    },
+
+    async onFileChange(e) {
+      const file = e.target.files[0];
+      if (file) {
+        this.form.image = URL.createObjectURL(file);
+        this.selectedFile = file;
+        this.$refs.fileInput.value = '';
+
+        // Auto-save the image when uploaded directly from the card
+        try {
+          const formData = new FormData();
+          formData.append('_id', this.userId);
+          formData.append('image', this.selectedFile);
+
+          await this.$store.dispatch('user/upload', formData);
+          this.selectedFile = null;
+          await this.fetchProfile();
+          
+          if (this.$store.commit) {
+            this.$store.commit('dialog/showToast', { title: 'Success', message: 'Profile photo updated successfully!', variant: 'success' });
+          }
+        } catch (err) {
+          console.error('Error uploading photo:', err);
+        }
+      }
+    },
+    triggerUpload() {
+      this.$refs.fileInput.click();
     }
   }
 }
@@ -147,6 +387,7 @@ export default {
 <style scoped>
 .bg-light-premium {
     background-color: #f8f9fa;
+    margin-top: -2rem !important;
 }
 
 .section-title {
@@ -203,6 +444,10 @@ export default {
     color: #612721;
 }
 
+.avatar-upload-wrapper:hover .avatar-overlay {
+    opacity: 1 !important;
+}
+
 .card-accent-bar {
     position: absolute;
     top: 0;
@@ -224,6 +469,7 @@ export default {
 .icon-box-sm {
     width: 36px;
     height: 36px;
+    min-width: 36px;
     border-radius: 10px;
     background-color: #f8f9fa;
     display: flex;
