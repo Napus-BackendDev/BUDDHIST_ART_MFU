@@ -1,23 +1,35 @@
 const winston = require('winston');
+require('dotenv').config();
 require('winston-mongodb');  // ต้อง require winston-mongodb
 const mongoose = require('mongoose');
 
-// สร้าง Logger สำหรับบันทึก log ลง MongoDB
+// สร้าง Logger สำหรับบันทึก log
+const transports = [];
+
+// Only add MongoDB transport if MONGODB URI is provided
+if (process.env.MONGODB) {
+    transports.push(new winston.transports.MongoDB({
+        db: process.env.MONGODB,
+        collection: 'logs',
+        level: 'info',
+        storeHost: true,
+        tryReconnect: true,
+    }));
+} else {
+    console.warn('Warning: MONGODB environment variable not found. MongoDB logging disabled.');
+    // Fallback to console logging
+    transports.push(new winston.transports.Console({
+        format: winston.format.simple()
+    }));
+}
+
 const logger = winston.createLogger({
-    level: 'info',  // กำหนดระดับความรุนแรงของ log
+    level: 'info',
     format: winston.format.combine(
-        winston.format.timestamp(),  // เก็บเวลาของ log
-        winston.format.json()  // บันทึก log ในรูปแบบ JSON
+        winston.format.timestamp(),
+        winston.format.json()
     ),
-    transports: [
-        new winston.transports.MongoDB({
-            db: 'mongodb://localhost:27017/logs',  // URL ของ MongoDB
-            collection: 'logs',  // ชื่อ collection ที่จะเก็บ log
-            level: 'info',  // กำหนดระดับ log ที่จะบันทึก (สามารถปรับให้เหมาะสมได้)
-            storeHost: true,  // เก็บ hostname
-            tryReconnect: true,  // ลองเชื่อมต่อใหม่หากการเชื่อมต่อ MongoDB ล้มเหลว
-        })
-    ]
+    transports: transports
 });
 
 // ฟังก์ชันสำหรับบันทึกข้อมูลที่เกี่ยวข้องกับ success
@@ -77,8 +89,6 @@ async function deleteOldLogs() {
 // สร้าง middleware เพื่อดักจับข้อมูล response
 function loggerMiddleware (req, res, next){
     const originalJson = res.json;
-    const originalStatusJson = res.status().json;
-
     // ดักจับการส่ง json ปกติ (res.json())
     res.json = function (body) {
         res.locals.responseData = body;  // เก็บข้อมูล response ที่ส่งไปให้ client
@@ -89,18 +99,6 @@ function loggerMiddleware (req, res, next){
             logErrorData(req, res, body);
         }
         return originalJson.call(this, body);  // เรียกใช้งาน res.json เดิม
-    };
-
-    // ดักจับการส่ง json เมื่อมีการกำหนด status (res.status().json())
-    res.status().json = function (body) {
-        res.locals.responseData = body;  // เก็บข้อมูล response ที่ส่งไปให้ client
-        // บันทึก log ก่อนที่จะส่งข้อมูลไปยัง client
-        if (res.statusCode >= 200 && res.statusCode < 400) {
-            logSuccessData(req, res, body);
-        } else {
-            logErrorData(req, res, body);
-        }
-        return originalStatusJson.call(this, body);  // เรียกใช้งาน res.status().json เดิม
     };
     // ลบ log เก่าทุกๆ 10 วินาทีใน background
     // setTimeout(deleteOldLogs, 10000);

@@ -164,13 +164,13 @@
               console.log("onAuthenGoogle")
               const googleUser = await this.$gAuth.signIn();
               // const profile = googleUser.getBasicProfile();
-              // const id_token = googleUser.getAuthResponse().id_token;
-              // console.log('User:', profile);
+              const id_token = googleUser.getAuthResponse().id_token;
+              const access_token = googleUser.getAuthResponse().access_token;
               console.log('googleUser', googleUser)
 
-              // var body = {}
-              // body.token = id_token
-              // this.$store.dispatch("auth/singin", body)
+              var body = {}
+              body.token = access_token
+              this.$store.dispatch("auth/onGoogleLogin", body)
 
             } catch (err) {
               console.error('Google sign-in error:', err);

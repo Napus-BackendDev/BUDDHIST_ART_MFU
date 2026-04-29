@@ -3,6 +3,8 @@ const Order = require('../controller/order');
 const Artwork = require('../../Artwork/controller/artwork');
 const Status = require('../../Settings/controller/status');
 const ResMessage = require("../../Settings/service/message");
+const { sendMail } = require("../../../../helpers/google/Mail");
+const { confirmationOrderMail } = require("../../Mail");
 
 exports.onQuery = async function (request, response) {
     try {
@@ -47,9 +49,40 @@ exports.onCreate = async function (request, response) {
             }
         }
 
+        // Prepare email data
+        const buyerName = doc.contact?.name || "Customer";
+        const to = doc.contact?.email;
+        const orderId = doc._id;
+        let artworkTitle = "";
+        let price = 0;
+        let orderDate = doc.createdAt ? new Date(doc.createdAt).toLocaleString() : new Date().toLocaleString();
+
+        // If artwork is populated and available
+        if (doc.artwork && doc.artwork.length > 0) {
+            let artworkObj = doc.artwork[0];
+            if (artworkObj.title && Array.isArray(artworkObj.title)) {
+                artworkTitle = artworkObj.title[0]?.value || "Artwork";
+            } else if (artworkObj.title) {
+                artworkTitle = artworkObj.title;
+            }
+            price = artworkObj.price || 0;
+        }
+
+        // Send confirmation email if email exists
+        if (to) {
+            const html = confirmationOrderMail({
+                buyerName,
+                orderId,
+                artworkTitle,
+                price,
+                orderDate
+            });
+            sendMail(to, 'Order Confirmation - Buddhist Art MFU', '', html);
+        }
+
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return ResMessage.sendResponse(response, 0, 40400);
     }
 };
