@@ -91,10 +91,14 @@ import { mapGetters } from 'vuex'
 import SubmissionModal from './components/modal/SubmissionModal.vue'
 import ArtworkViewModal from '../Admin/components/modal/artwork/ArtworkViewModal.vue'
 import ArtworkEditModal from '../Admin/components/modal/artwork/ArtworkEditModal.vue'
+import HeaderHero from './components/HeaderHero.vue'
 
 export default {
     name: 'SubmissionsDetail',
     components: {
+        SubmissionDetailTable,
+        SubmissionDetailWidget,
+        SubmissionDetailFilter,
         SubmissionModal,
         ArtworkViewModal,
         ArtworkEditModal

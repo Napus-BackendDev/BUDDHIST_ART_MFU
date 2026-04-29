@@ -55,16 +55,16 @@
                         <label class="form-label">Category</label>
                         <CDropdown :caret="false" class="w-100">
                             <template #toggler>
-                                <button class="custom-select-btn">
+                                <CButton class="custom-select-btn">
                                     <span class="text-dark">{{ selectedCategoryName }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
-                                </button>
+                                </CButton>
                             </template>
                             <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="cat in categories" 
                                     :key="cat._id" 
-                                    @click="form.category = cat._id"
+                                    @click="handleCategorySelect(cat._id)"
                                 >
                                     {{ getName('en', cat) }}
                                 </CDropdownItem>
@@ -257,6 +257,8 @@ import { mapGetters } from 'vuex';
 
 export default {
     name: 'SubmissionModal',
+    components: {
+    },
     props: {
         show: {
             type: Boolean,
@@ -327,6 +329,9 @@ export default {
         }
     },
     methods: {
+        handleCategorySelect(id) {
+            this.$set(this.form, 'category', id);
+        },
         async fetchInitialData() {
             try {
                 // Fetch Categories

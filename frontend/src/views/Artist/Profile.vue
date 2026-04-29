@@ -437,7 +437,6 @@ export default {
     }
   },
   async created() {
-    await this.fetchProfile();
     this.$store.dispatch('artwork/get');
     this.$store.dispatch('submission/get', { artist: this.profileUserId });
     this.$store.dispatch('order/get', {});
@@ -516,6 +515,8 @@ export default {
       return '';
     },
     async fetchProfile() {
+      if (!this.profileUserId) return;
+      
       try {
         // Force refresh user list, or fetch specific user
         const users = await this.$store.dispatch('user/get', {});
@@ -543,7 +544,7 @@ export default {
             bio: currentUser.bio || ''
           };
         } else {
-          console.error("Profile Error: User not found in database matching ID:", this.userId);
+          console.error("Profile Error: User not found in database matching ID:", this.profileUserId);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -794,6 +795,10 @@ export default {
             this.$store.commit('dialog/isCode', null);
           });
       }
+    },
+    profileUserId: {
+      handler: 'fetchProfile',
+      immediate: true
     }
   }
 }

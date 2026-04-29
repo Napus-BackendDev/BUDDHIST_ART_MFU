@@ -39,15 +39,15 @@
                 <CCol md="6">
                     <div class="form-group-custom">
                         <label class="form-label">System Role</label>
-                        <CDropdown :caret="false" class="w-100">
+                        <CDropdown :key="form.roleId" :caret="false" class="w-100">
                             <template #toggler>
-                                <button class="custom-select-btn">
+                                <CButton class="custom-select-btn">
                                     <span class="text-dark">{{ form.roleName || 'Select Role' }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
-                                </button>
+                                </CButton>
                             </template>
                             <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
-                                <CDropdownItem v-for="r in roles" :key="r._id" @click="form.roleId = r._id; form.roleName = r.name">
+                                <CDropdownItem v-for="r in roles" :key="r._id" @click="handleRoleSelect(r)">
                                     {{ r.name }}
                                 </CDropdownItem>
                             </CDropdownMenu>
@@ -60,15 +60,15 @@
                 <CCol md="12" v-if="form.roleName === 'Artist'">
                     <div class="form-group-custom">
                         <label class="form-label">Account Status</label>
-                        <CDropdown :caret="false" class="w-100">
+                        <CDropdown :key="form.statusId" :caret="false" class="w-100">
                             <template #toggler>
-                                <button class="custom-select-btn">
+                                <CButton class="custom-select-btn">
                                     <span class="text-dark">{{ form.statusName || 'Select Status' }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
-                                </button>
+                                </CButton>
                             </template>
                             <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
-                                <CDropdownItem v-for="s in statuses" :key="s._id" @click="form.statusId = s._id; form.statusName = s.name">
+                                <CDropdownItem v-for="s in statuses" :key="s._id" @click="handleStatusSelect(s)">
                                     {{ s.name }}
                                 </CDropdownItem>
                             </CDropdownMenu>
@@ -219,6 +219,14 @@ export default {
         }
     },
     methods: {
+        handleRoleSelect(role) {
+            this.$set(this.form, 'roleId', role._id);
+            this.$set(this.form, 'roleName', role.name);
+        },
+        handleStatusSelect(status) {
+            this.$set(this.form, 'statusId', status._id);
+            this.$set(this.form, 'statusName', status.name);
+        },
         handleSave() {
             if (!this.isFormValid) return;
             const payload = {
@@ -236,9 +244,6 @@ export default {
                 status: this.form.statusId || null,
                 password: this.form.password
             };
-
-            console.log('--- Creating New User ---');
-            console.log('Payload:', payload);
 
             this.$emit('save', payload);
             this.resetForm();

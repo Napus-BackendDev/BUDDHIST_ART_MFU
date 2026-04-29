@@ -19,7 +19,7 @@
                 <!-- Category/Status Filters -->
                 <CCol lg="2" md="6" class="mb-3 mb-lg-0">
                     <label class="filter-label">Category</label>
-                    <CDropdown :caret="false" class="w-100 custom-add-dropdown">
+                    <CDropdown :key="value.category" :caret="false" class="w-100 custom-add-dropdown">
                         <template #toggler>
                             <CButton type="button" class="filter-select-btn">
                                 <span class="text-truncate mr-2">{{ value.category }}</span>
@@ -38,7 +38,7 @@
 
                 <CCol lg="2" md="6" class="mb-3 mb-lg-0">
                     <label class="filter-label">Status</label>
-                    <CDropdown :caret="false" class="w-100 custom-add-dropdown">
+                    <CDropdown :key="value.status" :caret="false" class="w-100 custom-add-dropdown">
                         <template #toggler>
                             <CButton type="button" class="filter-select-btn">
                                 <span class="text-truncate mr-2">{{ value.status }}</span>

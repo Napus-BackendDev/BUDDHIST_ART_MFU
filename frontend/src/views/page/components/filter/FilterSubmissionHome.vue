@@ -3,7 +3,7 @@
         <h2 class="font-weight-bold mb-3 mb-md-0 section-title" style="color: #2c3e50;">Submission Collection</h2>
         
         <div class="filter-selection" style="min-width: 220px;">
-            <CDropdown :caret="false" class="premium-dropdown shadow-sm w-100">
+            <CDropdown :key="selectedCategory" :caret="false" class="premium-dropdown shadow-sm w-100">
                 <template #toggler>
                     <button type="button" class="premium-toggle-btn d-flex align-items-center px-4 py-2 border-0 bg-white shadow-sm w-100 h-100">
                         <CIcon name="cil-filter" class="mr-3 text-danger" />

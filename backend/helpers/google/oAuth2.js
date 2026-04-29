@@ -1,11 +1,16 @@
 const instance = require('axios');
+const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../../server/Project/User/models/user.model');
+const Role = require('../../server/Project/Settings/models/role.model');
+const Status = require('../../server/Project/Settings/models/status.model');
 const ResMessage = require('../../server/Project/Settings/service/message');
 
-const googleAuthAPI = instance.create({
-    baseURL: 'https://www.googleapis.com',
-    headers: { 'Content-Type': 'application/json' }
-});
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+if (!process.env.GOOGLE_CLIENT_ID) {
+    console.error("FATAL ERROR: GOOGLE_CLIENT_ID is not defined in environment variables!");
+}
 
 const googleMapsAPI = instance.create({
     baseURL: 'https://maps.googleapis.com',
@@ -13,47 +18,78 @@ const googleMapsAPI = instance.create({
 });
 
 /**
- * Handles Google Authentication
- * 1. Verifies token with Google
- * 2. Finds user in local database by email
- * 3. Returns user data with system token
+ * Handles Google Authentication & Automatic Registration (Production Ready)
+ * 1. Verifies ID Token with Google's library
+ * 2. Finds user in local database by email (Student or Personal)
+ * 3. If not found, creates a new user with 'Customer' role
+ * 4. Generates a secure JWT for the session
  */
 exports.onQuery = async function (request, response, next) {
     try {
-        const { token } = request.body;
+        const { token } = request.body; // This is now the ID Token
         
         if (!token) {
-            return response.status(400).json({ message: "Token is required" });
+            return response.status(400).json({ message: "ID Token is required" });
         }
 
-        const config = {
-            params: {
-                alt: "json",
-                access_token: token
-            }
-        };
+        // 1. Verify ID Token
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { email, name, picture, given_name } = payload;
 
-        // 1. Get user info from Google
-        const googleRes = await googleAuthAPI.get("/oauth2/v3/userinfo", config);
-        const googleUser = googleRes.data;
-
-        if (!googleUser.email) {
+        if (!email) {
             return response.status(400).json({ message: "Google account does not have an email" });
         }
 
-        // 2. Find user in database by studentEmail
-        const user = await User.findOne({ "contact.studentEmail": googleUser.email }).populate('role');
+        // 2. Find user in database by studentEmail OR personalEmail
+        let user = await User.findOne({ 
+            $or: [
+                { "contact.studentEmail": email },
+                { "contact.personalEmail": email }
+            ]
+        }).populate('role');
 
+        // 3. If user NOT found, Register them as a new Customer
         if (!user) {
-            console.warn(`User with email ${googleUser.email} not found.`);
-            return response.status(404).json({ 
-                code: 40400, 
-                message: "This Google account is not registered in our system.",
-                email: googleUser.email 
+            console.log(`Registering new user: ${email}`);
+            
+            // Find "Customer" Role
+            const customerRole = await Role.findOne({ "title.value": "Customer" });
+            if (!customerRole) {
+                throw new Error("Default 'Customer' role not found in database. Please run seed:role.");
+            }
+
+            // Find "NewStudent" Status (Optional default)
+            const newStatus = await Status.findOne({ "title.value": "NewStudent" });
+
+            // Extract studentId from email if it's an MFU email, otherwise use a timestamp
+            const isMfuEmail = email.endsWith('@lamduan.mfu.ac.th');
+            const studentId = isMfuEmail ? email.split('@')[0] : `G-${Date.now().toString().slice(-8)}`;
+
+            // Create new user
+            user = await User.create({
+                studentId: studentId,
+                image: picture,
+                name: [
+                    { key: 'en', value: name || given_name },
+                    { key: 'th', value: name || given_name }
+                ],
+                role: customerRole._id,
+                status: newStatus ? newStatus._id : null,
+                contact: {
+                    studentEmail: isMfuEmail ? email : null,
+                    personalEmail: !isMfuEmail ? email : null
+                }
             });
+
+            // Populate role for the response
+            user = await User.findById(user._id).populate('role');
         }
 
-        // 3. Prepare User Data (Consistent with user.service.js)
+        // 4. Prepare Role Name for JWT and Frontend
         let roleName = 'Customer';
         if (user.role && user.role.title) {
             const roleObj = user.role.title.find(t => t.key === 'en');
@@ -62,20 +98,29 @@ exports.onQuery = async function (request, response, next) {
             roleName = user.role;
         }
 
+        // 5. Generate a SECURE JWT
+        const systemToken = jwt.sign(
+            { 
+                userId: user._id, 
+                role: roleName,
+                email: email 
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
         const userData = JSON.parse(JSON.stringify(user));
         userData.role = roleName;
-        // Using your system's dummy token for consistency
-        userData.token = "1a661eec9bf358b8567c3dc022146d19c69d2ceafe92f503e89391e5d9f9f739";
-
-        console.log("Google Login Success for:", googleUser.email);
+        userData.token = systemToken; // Real JWT!
         
         return ResMessage.sendResponse(response, 0, 20000, userData);
 
     } catch (err) {
-        console.error("Google Auth Error:", err.response?.data || err.message);
+        if (err.response) console.error("Response Data:", err.response.data);
+        
         return response.status(401).json({ 
             message: "Google Authentication failed", 
-            error: err.response?.data || err.message 
+            error: err.message 
         });
     }
 };

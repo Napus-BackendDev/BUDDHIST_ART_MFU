@@ -106,7 +106,7 @@
                                 </div>
                                 <span class="tag-name mr-2 text-truncate">{{ getStudentName(student) }}</span>
                                 <button class="btn-remove-tag" @click="toggleStudent(student)">
-                                    <CIcon name="cil-x" size="custom-sm" />
+                                    <CIcon name="cil-x" size="sm" />
                                 </button>
                             </div>
                         </div>

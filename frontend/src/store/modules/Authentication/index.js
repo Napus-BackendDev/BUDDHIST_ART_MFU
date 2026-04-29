@@ -7,7 +7,7 @@ const LoginModule = {
     state: {
         isSignIn: false,
         is2FA: false,
-        userId: "69b6fa8106450177a0874a87"
+        userId: null
 
     },
 
@@ -28,15 +28,17 @@ const LoginModule = {
     },
 
     actions: {
-        supportReload({ commit }, data) {
-
-            var objs = JSON.parse(localStorage.getItem('objs'));
-
-            store.commit('xAccessToken', objs.xAccessToken)
-            // store.commit('accounts',objs.accounts)
-            store.commit('auth/userId', objs.accounts)
-            store.dispatch('personal/config', {})
-
+        supportReload({ commit }) {
+            try {
+                const objs = JSON.parse(localStorage.getItem('objs'));
+                if (objs && objs.xAccessToken) {
+                    store.commit('xAccessToken', objs.xAccessToken);
+                    commit('userId', objs.accounts);
+                    // store.dispatch('personal/config', {}); 
+                }
+            } catch (e) {
+                console.error("Failed to restore session:", e);
+            }
         },
 
 
@@ -47,8 +49,6 @@ const LoginModule = {
                     store.commit("dialog/loading", false)
                     const user = response.data.data;
                     const role = user.role || 'Customer';
-
-                    console.log("LOGIN SUCCESS! Received User:", user);
 
                     if (!user._id) {
                         console.error("CRITICAL ERROR: user._id is missing from backend response!");
@@ -67,15 +67,18 @@ const LoginModule = {
                     store.commit("auth/isSignIn", false); // Close modal if used as modal
                     store.commit("auth/userId", user._id);
 
-                    // Redirection Logic
+                    // Redirection Logic (Avoid NavigationDuplicated)
                     if (router.currentRoute.path !== '/payment') {
                         const userRole = (role || 'Customer').toLowerCase();
-                        if (userRole === 'admin') {
-                            router.push('/admin');
-                        } else if (userRole === 'artist' || userRole === 'evaluator') {
-                            router.push('/artist/profile');
-                        } else {
-                            router.push('/user');
+                        let target = '/user';
+                        
+                        if (userRole === 'admin') target = '/admin';
+                        else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
+                        
+                        if (router.currentRoute.path !== target) {
+                            router.push(target).catch(err => {
+                                if (err.name !== 'NavigationDuplicated') throw err;
+                            });
                         }
                     }
 
@@ -104,8 +107,6 @@ const LoginModule = {
                     const user = response.data.data;
                     const role = user.role || 'Customer';
 
-                    console.log("GOOGLE LOGIN SUCCESS! Received User:", user);
-
                     // Store user data properly
                     localStorage.setItem('objs', JSON.stringify({
                         xAccessToken: response.data.token || response.data.data.token,
@@ -116,15 +117,18 @@ const LoginModule = {
                     store.commit("auth/isSignIn", false); 
                     store.commit("auth/userId", user._id);
 
-                    // Redirection Logic
+                    // Redirection Logic (Avoid NavigationDuplicated)
                     if (router.currentRoute.path !== '/payment') {
                         const userRole = (role || 'Customer').toLowerCase();
-                        if (userRole === 'admin') {
-                            router.push('/admin');
-                        } else if (userRole === 'artist' || userRole === 'evaluator') {
-                            router.push('/artist/profile');
-                        } else {
-                            router.push('/user');
+                        let target = '/user';
+                        
+                        if (userRole === 'admin') target = '/admin';
+                        else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
+                        
+                        if (router.currentRoute.path !== target) {
+                            router.push(target).catch(err => {
+                                if (err.name !== 'NavigationDuplicated') throw err;
+                            });
                         }
                     }
 
