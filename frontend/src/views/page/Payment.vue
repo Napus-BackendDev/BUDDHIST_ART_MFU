@@ -52,16 +52,18 @@ export default {
 
             try {
                 // 1. Prepare order data for backend (matching Order model)
+                const userId = this.$store.getters['auth/userId'];
                 const orderData = {
                     artwork: this.cartItems.map(item => item._id),
+                    user: userId || null,
                     contact: {
-                        name: `${payload.shippingForm.firstName} ${payload.shippingForm.lastName}`,
-                        telephone: payload.shippingForm.phone,
+                        name: payload.shippingForm.name,
+                        telephone: payload.shippingForm.telephone,
                         email: payload.shippingForm.email
                     },
                     address: {
-                        shipping: `${payload.shippingForm.address}, ${payload.shippingForm.city}, ${payload.shippingForm.postalCode}`,
-                        bill: `${payload.shippingForm.address}, ${payload.shippingForm.city}, ${payload.shippingForm.postalCode}`
+                        shipping: payload.shippingForm.shipping,
+                        bill: payload.shippingForm.bill || payload.shippingForm.shipping
                     }
                 };
 

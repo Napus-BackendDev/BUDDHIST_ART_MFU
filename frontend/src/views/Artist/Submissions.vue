@@ -1,6 +1,7 @@
 <template>
     <div class="submissions-dashboard">
         <HeaderHero 
+            v-if="!hideHeader"
             title="ศิลปะพุทธศิลป์ - การยื่นประกาศ" 
             description="ตรวจสอบและจัดการรายการยื่นประกาศ ทั้งหมดในระบบพุทธศิลป์" 
             icon="cil-list" 
@@ -26,6 +27,12 @@ export default {
         SubmissionWidget,
         SubmissionFilter
     },
+    props: {
+        hideHeader: {
+            type: Boolean,
+            default: false
+        }
+    },
     data() {
         return {
             filters: {
@@ -45,7 +52,7 @@ export default {
             this.$store.dispatch('submission/get', { artist: userId });
         },
         handleView(item) {
-            this.$router.push({ name: 'ArtistSubmissionsDetail', params: { id: item._id } });
+            this.$emit('view-detail', item._id);
         }
     }
 }

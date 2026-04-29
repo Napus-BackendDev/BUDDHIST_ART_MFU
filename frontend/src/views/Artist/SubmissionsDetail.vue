@@ -8,7 +8,13 @@
             </CLink>
         </div> -->
 
-        <HeaderHero :title="getName('en', submission)" :description="`รายละเอียดคลาสเรียนและรายการมอบหมายงานสำหรับคุณ`" icon="cil-list" :showCreateButton="false"/>
+        <HeaderHero 
+            v-if="!hideHeader"
+            :title="getName('en', submission)" 
+            :description="`รายละเอียดคลาสเรียนและรายการมอบหมายงานสำหรับคุณ`" 
+            icon="cil-list" 
+            :showCreateButton="false"
+        />
         <SubmissionDetailWidget :submission="submission" v-model="filters.status" />
         <SubmissionDetailFilter v-model="filters" />
         <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" @submit-work="handleOpenSubmission" @view-work="handleViewWork" />
@@ -37,6 +43,16 @@ export default {
         ArtworkViewModal,
         ArtworkEditModal,
         HeaderHero
+    },
+    props: {
+        id: {
+            type: String,
+            default: null
+        },
+        hideHeader: {
+            type: Boolean,
+            default: false
+        }
     },
     data() {
         return {
@@ -69,7 +85,8 @@ export default {
     },
     computed: {
         submission() {
-            return this.$store.getters['submission/submissions'].find(s => s._id === this.$route.params.id);
+            const submissionId = this.id || this.$route.params.id;
+            return this.$store.getters['submission/submissions'].find(s => s._id === submissionId);
         },
         selectedAssignmentTitle() {
             return this.selectedAssignment ? this.getName('en', this.selectedAssignment) : '';
@@ -77,7 +94,10 @@ export default {
     },
     methods: {
         fetchSubmission() {
-            this.$store.dispatch('submission/get', { _id: this.$route.params.id });
+            const submissionId = this.id || this.$route.params.id;
+            if (submissionId) {
+                this.$store.dispatch('submission/get', { _id: submissionId });
+            }
         },
         getName(lang, item) {
             if (!item || !item.title) return 'N/A';

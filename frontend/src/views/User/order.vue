@@ -1,0 +1,298 @@
+<template>
+  <div class="user-orders-view min-vh-100 py-4 bg-light-premium">
+    <CContainer class="profile-container-wide">
+      <!-- Header Section -->
+      <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap">
+        <div>
+          <h2 class="font-weight-bold text-dark section-title">My Orders</h2>
+          <div class="title-separator-sm mb-3"></div>
+          <p class="text-muted mb-0">Track your past purchases and delivery status.</p>
+        </div>
+        <CButton color="dark" variant="outline" shape="pill" class="btn-sm font-weight-bold shadow-sm hover-lift mt-3 mt-md-0" @click="$router.push('/user')">
+          <CIcon name="cil-arrow-left" class="mr-2" /> Back to Dashboard
+        </CButton>
+      </div>
+
+      <!-- Orders List Card -->
+      <CCard class="border-0 shadow-premium rounded-xl overflow-hidden mt-4">
+        <CCardHeader class="bg-white border-bottom-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
+          <h5 class="font-weight-bold text-dark mb-0">Order History</h5>
+          
+          <div class="d-flex align-items-center mt-3 mt-sm-0">
+             <div class="search-box" style="min-width: 300px;">
+               <CInput 
+                 v-model="search"
+                 placeholder="Search orders..." 
+                 class="custom-search-input mb-0"
+               >
+                 <template #prepend-content><CIcon name="cilMagnifyingGlass"/></template>
+               </CInput>
+             </div>
+          </div>
+        </CCardHeader>
+
+        <CCardBody class="p-0">
+          <CDataTable
+            :items="filteredOrders"
+            :fields="fields"
+            :items-per-page="5"
+            :active-page="activePage"
+            hover
+            class="custom-table mb-0"
+          >
+            <template #orderId="{item}">
+              <td class="align-middle py-3">
+                <div class="d-flex align-items-center">
+                  <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 50px; height: 50px; min-width: 50px; background-color: #f0f0f0;">
+                    <img v-if="item.artwork && item.artwork[0] && item.artwork[0].image" 
+                         :src="item.artwork[0].image" 
+                         class="w-100 h-100" 
+                         style="object-fit: cover;" />
+                    <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                      <CIcon name="cil-image" />
+                    </div>
+                  </div>
+                  <div>
+                    <div class="font-weight-bold text-dark text-truncate" style="max-width: 200px;">
+                      {{ item.artwork && item.artwork[0] ? getName('en', item.artwork[0]) : 'No Artwork' }}
+                    </div>
+                    <div class="small text-muted mb-1">
+                      by {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName('en', item.artwork[0].artist) : 'Artist' }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </template>
+            
+            <template #date="{item}">
+              <td class="align-middle text-muted">
+                {{ item.date }}
+              </td>
+            </template>
+
+            <template #total="{item}">
+              <td class="align-middle font-weight-bold text-success">
+                ฿{{ item.total.toLocaleString() }}
+              </td>
+            </template>
+
+            <template #status="{item}">
+              <td class="align-middle">
+                <div :class="['status-badge', getStatusBadge(item.statusName).class]">
+                  <CIcon :name="getStatusBadge(item.statusName).icon" size="sm" class="status-icon" /> 
+                  {{ getStatusBadge(item.statusName).label }}
+                </div>
+              </td>
+            </template>
+
+            <template #action="{item}">
+              <td class="align-middle text-right">
+                <button 
+                    class="action-btn icon-view" 
+                    v-c-tooltip="'View Details'"
+                    @click="viewDetails(item)"
+                >
+                    <CIcon name="cilMagnifyingGlass" size="lg" />
+                </button>
+              </td>
+            </template>
+          </CDataTable>
+        </CCardBody>
+        
+        <CCardFooter
+            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
+            <div class="text-muted text-sm" v-if="filteredOrders.length > 0">
+                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredOrders.length) }} of {{ filteredOrders.length }} orders
+            </div>
+            <div class="text-muted text-sm" v-else>
+                Showing 0 orders
+            </div>
+            <CPagination
+                :active-page.sync="activePage"
+                :pages="Math.max(1, Math.ceil(filteredOrders.length / 10))"
+                size="sm"
+                align="end"
+                class="mb-0 pill-pagination"
+            />
+        </CCardFooter>
+      </CCard>
+    </CContainer>
+
+    <!-- Order Details Modal -->
+    <OrderModal 
+      :show.sync="showModal" 
+      :order="selectedOrder" 
+    />
+  </div>
+</template>
+
+<script>
+import { mapGetters } from 'vuex';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import OrderModal from './components/modal/OrderModal.vue';
+
+export default {
+  name: 'UserOrders',
+  components: {
+    OrderModal
+  },
+  mixins: [statusBadgeMixin],
+  data() {
+    return {
+      showModal: false,
+      selectedOrder: null,
+      fields: [
+        { key: 'orderId', label: 'ARTWORK', _classes: 'font-weight-bold' },
+        { key: 'date', label: 'Date Purchased' },
+        { key: 'total', label: 'Total Amount' },
+        { key: 'status', label: 'Status' },
+        { key: 'action', label: 'Actions', sorter: false, filter: false, _classes: 'text-right' }
+      ],
+      search: '',
+      activePage: 1
+    }
+  },
+  computed: {
+    ...mapGetters({
+      allOrders: 'order/orders',
+      userId: 'auth/userId'
+    }),
+    processedOrders() {
+      if (!this.allOrders) return [];
+      // Filter orders belonging to the current user
+      return this.allOrders
+        .filter(order => order.user === this.userId || (order.user && order.user._id === this.userId))
+        .map(order => ({
+          ...order,
+          orderId: order._id.substring(order._id.length - 8).toUpperCase(),
+          date: new Date(order.createdAt).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          }),
+          total: order.artwork ? order.artwork.reduce((acc, art) => acc + (art.price || 0), 0) : 0,
+          statusName: (() => {
+            const statusLabel = this.getName('en', order.status);
+            const s = statusLabel ? statusLabel.toLowerCase() : '';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
+            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
+            return 'Pending';
+          })()
+        }));
+    },
+    filteredOrders() {
+      if (!this.search) return this.processedOrders;
+      const q = this.search.toLowerCase();
+      return this.processedOrders.filter(o => 
+        o.orderId.toLowerCase().includes(q) ||
+        o.statusName.toLowerCase().includes(q) ||
+        o.date.toLowerCase().includes(q)
+      );
+    }
+  },
+  async created() {
+    await this.$store.dispatch('order/get', {});
+  },
+  methods: {
+    viewDetails(item) {
+      this.selectedOrder = item;
+      this.showModal = true;
+    }
+  }
+}
+</script>
+
+<style scoped>
+.bg-light-premium {
+    background-color: #f8f9fa;
+    margin-top: -2rem !important;
+}
+
+.section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 2.2rem;
+    color: #2c3e50;
+    letter-spacing: 1px;
+}
+
+.title-separator-sm {
+    width: 50px;
+    height: 4px;
+    background: linear-gradient(90deg, #d4af37, #f3e5ab);
+    border-radius: 2px;
+}
+
+.shadow-premium {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+}
+
+.rounded-xl {
+    border-radius: 20px !important;
+}
+
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-3px);
+}
+
+.bg-light-empty {
+    background-color: #f8f9fa;
+}
+
+/* Custom Search Input */
+.custom-search-input ::v-deep .form-control {
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    padding-left: 10px;
+    background-color: #f8fafc;
+    transition: all 0.3s ease;
+}
+
+.custom-search-input ::v-deep .form-control:focus {
+    background-color: #ffffff;
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+/* Premium Table Styles */
+.premium-table ::v-deep table {
+    margin-bottom: 0;
+}
+
+.premium-table ::v-deep thead th {
+    border-top: none;
+    border-bottom: 2px solid #f1f5f9;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 1.5rem;
+    background-color: #ffffff;
+}
+
+.premium-table ::v-deep tbody td {
+    padding: 1rem 1.5rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.btn-premium {
+    background: linear-gradient(135deg, #612721 0%, #8a3a31 100%);
+    color: white !important;
+    border: none;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-premium:hover {
+    background: linear-gradient(135deg, #8a3a31 0%, #612721 100%);
+    box-shadow: 0 8px 20px rgba(97, 39, 33, 0.25) !important;
+    transform: translateY(-2px);
+}
+</style>

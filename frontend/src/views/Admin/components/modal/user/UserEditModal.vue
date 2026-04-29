@@ -57,7 +57,7 @@
             </CRow>
 
             <!-- Status Row -->
-            <CRow>
+            <CRow v-if="form.roleName === 'Artist'">
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Account Status</label>
@@ -205,7 +205,12 @@ export default {
     },
     computed: {
         isFormValid() {
-            return this.form && this.form.studentId && this.form.roleId && this.form.statusId && this.form.nameEn && this.form.email;
+            if (!this.form) return false;
+            const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.form.email;
+            if (this.form.roleName === 'Artist') {
+                return baseValid && this.form.statusId;
+            }
+            return baseValid;
         }
     },
     methods: {

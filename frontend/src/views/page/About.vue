@@ -37,26 +37,44 @@
 
                 <!-- Contact Info Card -->
                 <CCol lg="6" class="mb-5">
-                    <CCard class="contact-card border-0 shadow-sm h-100 p-4">
-                        <CCardBody>
-                            <h3 class="font-weight-bold mb-4">Contact Information</h3>
-                            <div class="contact-item d-flex align-items-center mb-4">
-                                <div class="contact-icon-box mr-3">
-                                    <CIcon name="cil-location-pin" />
+                    <CCard class="contact-card premium-card border-0 shadow-sm h-100 p-4 position-relative overflow-hidden">
+                        <div class="card-accent-bar"></div>
+                        <div class="card-watermark"><CIcon name="cil-institution" size="custom-size" style="width: 250px; height: 250px;" /></div>
+                        <CCardBody class="position-relative z-index-2">
+                            <h3 class="font-weight-bold mb-3 section-title">Contact Information</h3>
+                            <div class="title-separator-sm mb-4"></div>
+                            <p class="text-muted mb-5">
+                                Reach out to us for inquiries regarding exhibitions, collaborations, or educational programs.
+                            </p>
+                            
+                            <div class="contact-item d-flex align-items-center mb-4 premium-hover">
+                                <div class="contact-icon-box shadow-sm mr-4">
+                                    <CIcon name="cil-location-pin" size="lg" />
                                 </div>
-                                <span class="text-muted">333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100</span>
+                                <div>
+                                    <h6 class="font-weight-bold mb-1 text-dark">Address</h6>
+                                    <span class="text-muted">333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100</span>
+                                </div>
                             </div>
-                            <div class="contact-item d-flex align-items-center mb-4">
-                                <div class="contact-icon-box mr-3">
-                                    <CIcon name="cil-phone" />
+                            
+                            <div class="contact-item d-flex align-items-center mb-4 premium-hover">
+                                <div class="contact-icon-box shadow-sm mr-4">
+                                    <CIcon name="cil-phone" size="lg" />
                                 </div>
-                                <span class="text-muted">0-5391-6000, 0-5391-7034</span>
+                                <div>
+                                    <h6 class="font-weight-bold mb-1 text-dark">Phone</h6>
+                                    <span class="text-muted">0-5391-6000, 0-5391-7034</span>
+                                </div>
                             </div>
-                            <div class="contact-item d-flex align-items-center mb-4">
-                                <div class="contact-icon-box mr-3">
-                                    <CIcon name="cil-envelope-closed" />
+                            
+                            <div class="contact-item d-flex align-items-center mb-4 premium-hover">
+                                <div class="contact-icon-box shadow-sm mr-4">
+                                    <CIcon name="cil-envelope-closed" size="lg" />
                                 </div>
-                                <span class="text-muted">pr@mfu.ac.th</span>
+                                <div>
+                                    <h6 class="font-weight-bold mb-1 text-dark">Email</h6>
+                                    <span class="text-muted">pr@mfu.ac.th</span>
+                                </div>
                             </div>
                         </CCardBody>
                     </CCard>
@@ -64,28 +82,36 @@
 
                 <!-- Send us a Message Card -->
                 <CCol lg="6" class="mb-5">
-                    <CCard class="contact-card border-0 shadow-sm h-100 p-4">
-                        <CCardBody>
+                    <CCard class="contact-card premium-card border-0 shadow-sm h-100 p-4 position-relative overflow-hidden">
+                        <div class="card-accent-bar-right"></div>
+                        <CCardBody class="position-relative z-index-2">
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h3 class="font-weight-bold mb-0">Send us a message</h3>
-                                <CButton color="facebook" shape="pill" class="d-flex align-items-center shadow-sm hover-lift" href="https://facebook.com" target="_blank">
-                                    <CIcon name="cib-facebook" class="mr-2" /> Facebook
+                                <div>
+                                    <h3 class="font-weight-bold mb-2 section-title">Send a Message</h3>
+                                    <div class="title-separator-sm"></div>
+                                </div>
+                                <CButton color="facebook" shape="pill" class="d-flex align-items-center shadow-sm hover-lift btn-sm px-3" href="https://facebook.com" target="_blank">
+                                    <CIcon name="cib-facebook" class="mr-2" /> Follow Us
                                 </CButton>
                             </div>
-                            <CForm @submit.prevent="submitForm">
+                            
+                            <CForm @submit.prevent="submitForm" class="mt-4">
                                 <CRow>
-                                    <CCol md="6">
-                                        <CInput label="Name" placeholder="Your Name" class="custom-input" />
+                                    <CCol md="6" class="mb-3">
+                                        <label class="form-label-custom">Full Name</label>
+                                        <CInput placeholder="John Doe" class="custom-input-premium" />
                                     </CCol>
-                                    <CCol md="6">
-                                        <CInput label="Email" placeholder="Your Email" type="email" class="custom-input" />
+                                    <CCol md="6" class="mb-3">
+                                        <label class="form-label-custom">Email Address</label>
+                                        <CInput placeholder="john@example.com" type="email" class="custom-input-premium" />
                                     </CCol>
-                                    <CCol md="12">
-                                        <CTextarea label="Message" placeholder="How can we help you?" rows="4" class="custom-input" />
+                                    <CCol md="12" class="mb-4">
+                                        <label class="form-label-custom">Your Message</label>
+                                        <CTextarea placeholder="How can we help you?" rows="4" class="custom-input-premium" />
                                     </CCol>
                                 </CRow>
-                                <CButton color="dark" shape="pill" class="px-5 py-2 mt-2 font-weight-bold shadow-sm hover-lift">
-                                    Submit Message
+                                <CButton class="btn-premium px-5 py-2 font-weight-bold shadow hover-lift w-100 mt-2">
+                                    Submit Message <CIcon name="cil-envelope-closed" class="ml-2" />
                                 </CButton>
                             </CForm>
                         </CCardBody>
@@ -274,8 +300,124 @@ export default {
     box-shadow: 0 0 0 0.2rem rgba(97, 39, 33, 0.1);
 }
 
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
 .hover-lift:hover {
     transform: translateY(-3px);
+}
+
+/* Premium Card Styles */
+.premium-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fdfcfb 100%);
+    border: 1px solid rgba(97, 39, 33, 0.05) !important;
+}
+
+.premium-card:hover {
+    box-shadow: 0 15px 35px rgba(97, 39, 33, 0.08) !important;
+    transform: translateY(-5px);
+}
+
+.card-accent-bar-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 6px;
+    background: linear-gradient(to bottom, #d4af37, #f3e5ab);
+}
+
+.card-watermark {
+    position: absolute;
+    right: -40px;
+    bottom: -40px;
+    opacity: 0.04;
+    color: #612721;
+    z-index: 1;
+    pointer-events: none;
+    transform: rotate(-15deg);
+}
+
+.z-index-2 {
+    z-index: 2;
+}
+
+.title-separator-sm {
+    width: 40px;
+    height: 3px;
+    background: #d4af37;
+    border-radius: 2px;
+}
+
+.premium-hover {
+    transition: all 0.3s ease;
+    padding: 10px;
+    border-radius: 12px;
+    margin-left: -10px;
+    margin-right: -10px;
+}
+
+.premium-hover:hover {
+    background: rgba(97, 39, 33, 0.03);
+    transform: translateX(5px);
+}
+
+.contact-icon-box {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #612721 0%, #8a3a31 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.premium-hover:hover .contact-icon-box {
+    transform: scale(1.1) rotate(5deg);
+    background: linear-gradient(135deg, #d4af37 0%, #b5952f 100%);
+    box-shadow: 0 8px 15px rgba(212, 175, 55, 0.3) !important;
+}
+
+.form-label-custom {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.custom-input-premium ::v-deep .form-control {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+    background-color: #f8fafc;
+    transition: all 0.3s ease;
+    color: #2d3748;
+    height: auto;
+}
+
+.custom-input-premium ::v-deep .form-control:focus {
+    background-color: #ffffff;
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.btn-premium {
+    background: linear-gradient(135deg, #612721 0%, #8a3a31 100%);
+    color: white !important;
+    border: none;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-premium:hover {
+    background: linear-gradient(135deg, #8a3a31 0%, #612721 100%);
+    box-shadow: 0 8px 20px rgba(97, 39, 33, 0.25) !important;
+    transform: translateY(-2px);
 }
 
 @media (max-width: 991.98px) {
