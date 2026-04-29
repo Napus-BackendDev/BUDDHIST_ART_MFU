@@ -7,7 +7,7 @@ const LoginModule = {
     state: {
         isSignIn: false,
         is2FA: false,
-        userId: "69b6fa8106450177a0874a87"
+        userId: null
 
     },
 

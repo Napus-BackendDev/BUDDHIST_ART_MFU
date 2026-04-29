@@ -1,5 +1,7 @@
 const instance = require('axios');
 const User = require('../../server/Project/User/models/user.model');
+const Role = require('../../server/Project/Settings/models/role.model');
+const Status = require('../../server/Project/Settings/models/status.model');
 const ResMessage = require('../../server/Project/Settings/service/message');
 
 const googleAuthAPI = instance.create({
@@ -13,10 +15,11 @@ const googleMapsAPI = instance.create({
 });
 
 /**
- * Handles Google Authentication
+ * Handles Google Authentication & Automatic Registration
  * 1. Verifies token with Google
  * 2. Finds user in local database by email
- * 3. Returns user data with system token
+ * 3. If not found, creates a new user with 'Customer' role
+ * 4. Returns user data with system token
  */
 exports.onQuery = async function (request, response, next) {
     try {
@@ -42,18 +45,44 @@ exports.onQuery = async function (request, response, next) {
         }
 
         // 2. Find user in database by studentEmail
-        const user = await User.findOne({ "contact.studentEmail": googleUser.email }).populate('role');
+        let user = await User.findOne({ "contact.studentEmail": googleUser.email }).populate('role');
 
+        // 3. If user NOT found, Register them as a new Customer
         if (!user) {
-            console.warn(`User with email ${googleUser.email} not found.`);
-            return response.status(404).json({ 
-                code: 40400, 
-                message: "This Google account is not registered in our system.",
-                email: googleUser.email 
+            console.log(`Registering new user: ${googleUser.email}`);
+            
+            // Find "Customer" Role
+            const customerRole = await Role.findOne({ "title.value": "Customer" });
+            if (!customerRole) {
+                throw new Error("Default 'Customer' role not found in database. Please run seed:role.");
+            }
+
+            // Find "NewStudent" Status (Optional default)
+            const newStatus = await Status.findOne({ "title.value": "NewStudent" });
+
+            // Extract studentId from email (e.g. "6631503129" from "6631503129@lamduan.mfu.ac.th")
+            const studentId = googleUser.email.split('@')[0];
+
+            // Create new user
+            user = await User.create({
+                studentId: studentId,
+                image: googleUser.picture,
+                name: [
+                    { key: 'en', value: googleUser.name || googleUser.given_name },
+                    { key: 'th', value: googleUser.name || googleUser.given_name }
+                ],
+                role: customerRole._id,
+                status: newStatus ? newStatus._id : null,
+                contact: {
+                    studentEmail: googleUser.email
+                }
             });
+
+            // Populate role for the response
+            user = await User.findById(user._id).populate('role');
         }
 
-        // 3. Prepare User Data (Consistent with user.service.js)
+        // 4. Prepare User Data (Consistent with user.service.js)
         let roleName = 'Customer';
         if (user.role && user.role.title) {
             const roleObj = user.role.title.find(t => t.key === 'en');
