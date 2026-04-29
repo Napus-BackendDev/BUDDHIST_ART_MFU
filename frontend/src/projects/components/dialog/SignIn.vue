@@ -164,12 +164,19 @@
               console.log("onAuthenGoogle")
               const googleUser = await this.$gAuth.signIn();
               // const profile = googleUser.getBasicProfile();
-              const id_token = googleUser.getAuthResponse().id_token;
-              const access_token = googleUser.getAuthResponse().access_token;
-              console.log('googleUser', googleUser)
+              const authResponse = googleUser.getAuthResponse ? googleUser.getAuthResponse() : (googleUser.Gc || googleUser.uc || googleUser);
+              const id_token = authResponse.id_token;
+              
+              console.log('ID TOKEN extracted:', id_token ? 'YES (Length: ' + id_token.length + ')' : 'NO (Undefined)');
+
+              if (!id_token) {
+                console.error('Could not find ID Token in Google response:', googleUser);
+                this.$toast?.error('Authentication failed: ID Token missing.');
+                return;
+              }
 
               var body = {}
-              body.token = access_token
+              body.token = id_token
               this.$store.dispatch("auth/onGoogleLogin", body)
 
             } catch (err) {
