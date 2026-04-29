@@ -8,8 +8,8 @@
                     <CIcon name="cil-arrow-left" size="lg" />
                 </CLink>
                 <div>
-                    <h3 class="font-weight-bold m-0" style="color: #2c3e50;">Create Certification</h3>
-                    <p class="text-muted mt-1 mb-0 font-weight-bold">Design your certificate template</p>
+                    <h3 class="font-weight-bold m-0" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Create Certification' : 'สร้างใบรับรอง' }}</h3>
+                    <p class="text-muted mt-1 mb-0 font-weight-bold">{{ $i18n.locale === 'en' ? 'Design your certificate template' : 'ออกแบบเทมเพลตใบรับรองของคุณ' }}</p>
                 </div>
             </div>
 
@@ -17,10 +17,10 @@
             <div class="d-flex align-items-center">
                 <CButton color="secondary" variant="outline" class="mr-2 px-4 shadow-sm font-weight-bold"
                     @click="resetCanvas">
-                    Reset
+                    {{ $i18n.locale === 'en' ? 'Reset' : 'รีเซ็ต' }}
                 </CButton>
                 <CButton color="primary" class="px-4 shadow-sm font-weight-bold" @click="saveCertificate">
-                    Save Template
+                    {{ $i18n.locale === 'en' ? 'Save Template' : 'บันทึกเทมเพลต' }}
                 </CButton>
             </div>
         </div>
@@ -31,15 +31,15 @@
             <div class="col-md-3 p-0 pr-md-3 mb-4 mb-md-0">
                 <CCard class="shadow-sm border-0 h-100 tools-card">
                     <CCardHeader class="bg-white border-0 pt-4 pb-2">
-                        <h6 class="m-0 font-weight-bold text-dark text-uppercase tracking-wide">Editor Tools</h6>
+                        <h6 class="m-0 font-weight-bold text-dark text-uppercase tracking-wide">{{ $i18n.locale === 'en' ? 'Editor Tools' : 'เครื่องมือแก้ไข' }}</h6>
                     </CCardHeader>
                     <CCardBody class="pt-2">
                         <!-- Add Text Block -->
                         <div class="tool-group mb-4">
-                            <label class="text-muted small font-weight-bold text-uppercase mb-2">Text Elements</label>
-                            <CInput placeholder="Enter text..." v-model="newTextContent" class="mb-2" />
+                            <label class="text-muted small font-weight-bold text-uppercase mb-2">{{ $i18n.locale === 'en' ? 'Text Elements' : 'องค์ประกอบข้อความ' }}</label>
+                            <CInput :placeholder="$i18n.locale === 'en' ? 'Enter text...' : 'ใส่ข้อความ...'" v-model="newTextContent" class="mb-2" />
                             <CButton color="dark" variant="outline" class="w-100 font-weight-bold" @click="addText">
-                                <CIcon name="cil-text" class="mr-2" /> Add Text
+                                <CIcon name="cil-text" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Add Text' : 'เพิ่มข้อความ' }}
                             </CButton>
                         </div>
 
@@ -47,7 +47,7 @@
 
                         <!-- Placeholder Data Blocks -->
                         <div class="tool-group mb-4">
-                            <label class="text-muted small font-weight-bold text-uppercase mb-2">Dynamic Data</label>
+                            <label class="text-muted small font-weight-bold text-uppercase mb-2">{{ $i18n.locale === 'en' ? 'Dynamic Data' : 'ข้อมูลไดนามิก' }}</label>
                             <div class="d-flex flex-wrap gap-2">
                                 <CButton color="info" variant="outline" size="sm" class="mb-2 mr-2 custom-pill"
                                     @click="addPlaceholder('{{ Student Name }}')">
@@ -68,14 +68,13 @@
 
                         <!-- Background Setting -->
                         <div class="tool-group mb-4">
-                            <label class="text-muted small font-weight-bold text-uppercase mb-2">Background
-                                Image</label>
+                            <label class="text-muted small font-weight-bold text-uppercase mb-2">{{ $i18n.locale === 'en' ? 'Background Image' : 'ภาพพื้นหลัง' }}</label>
                             <div class="custom-file file-upload-wrapper">
                                 <input type="file" class="custom-file-input" id="bgUpload" accept="image/*"
                                     @change="onBackgroundImageUpload">
-                                <label class="custom-file-label m-0 text-muted" for="bgUpload">Choose image...</label>
+                                <label class="custom-file-label m-0 text-muted" for="bgUpload">{{ $i18n.locale === 'en' ? 'Choose image...' : 'เลือกรูปภาพ...' }}</label>
                             </div>
-                            <small class="text-muted d-block mt-2">Recommended: 1920x1080px (16:9)</small>
+                            <small class="text-muted d-block mt-2">{{ $i18n.locale === 'en' ? 'Recommended: 1920x1080px (16:9)' : 'แนะนำ: 1920x1080px (16:9)' }}</small>
                         </div>
                     </CCardBody>
                 </CCard>
@@ -118,8 +117,8 @@
                         <div v-if="!bgImage && elements.length === 0"
                             class="empty-canvas-state text-center position-absolute pointer-events-none">
                             <CIcon name="cil-image" size="3xl" class="text-muted mb-3 opacity-50" />
-                            <h5 class="text-muted font-weight-bold">Empty Canvas</h5>
-                            <p class="text-muted small">Upload a background image or add text to start designing.</p>
+                            <h5 class="text-muted font-weight-bold">{{ $i18n.locale === 'en' ? 'Empty Canvas' : 'ผืนผ้าใบว่างเปล่า' }}</h5>
+                            <p class="text-muted small">{{ $i18n.locale === 'en' ? 'Upload a background image or add text to start designing.' : 'อัปโหลดภาพพื้นหลังหรือเพิ่มข้อความเพื่อเริ่มออกแบบ' }}</p>
                         </div>
                     </CCardBody>
                 </CCard>

@@ -99,7 +99,7 @@ async function seedSettings() {
                 group: showGroup._id
             },
             {
-                title: [{ key: 'en', value: 'Revised' }, { key: 'th', value: 'ให้แก้ไข' }],
+                title: [{ key: 'en', value: 'In Cart' }, { key: 'th', value: 'อยู่ในตะกร้า' }],
                 group: showGroup._id
             }
         ];

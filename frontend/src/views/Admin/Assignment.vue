@@ -4,13 +4,13 @@
         <div class="mb-3">
             <CLink :to="{ name: 'SubmissionsDetail', params: { id: $route.params.submissionId } }" class="back-link d-inline-flex align-items-center text-muted">
                 <CIcon name="cil-arrow-left" class="mr-2" />
-                <span class="font-weight-bold">Back to detail</span>
+                <span class="font-weight-bold">{{ $i18n.locale === 'en' ? 'Back to detail' : 'กลับไปยังหน้ารายละเอียด' }}</span>
             </CLink>
         </div>
 
         <HeaderHero 
             :title="assignmentTitle" 
-            description="Manage and review all student submissions, provide feedback, and grade their work in real-time." 
+            :description="$i18n.locale === 'en' ? 'Manage and review all student submissions, provide feedback, and grade their work in real-time.' : 'จัดการและตรวจสอบการส่งงานของนักศึกษาทั้งหมด ให้ข้อเสนอแนะ และให้คะแนนแบบเรียลไทม์'" 
             icon="cil-task" 
             :showCreateButton="false" 
             :showExportButton="true" 

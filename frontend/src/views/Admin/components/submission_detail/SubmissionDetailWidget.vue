@@ -5,7 +5,7 @@
       <CCard :class="['widget-card', { 'active-widget': value === 'All Status' }]">
         <CCardBody class="d-flex justify-content-between align-items-center p-4">
           <div>
-            <div class="widget-title">Total Assignments</div>
+            <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total Assignments' : 'งานที่มอบหมายทั้งหมด' }}</div>
             <div class="widget-value text-blue">{{ totalAssignments }}</div>
           </div>
           <div class="icon-wrapper bg-soft-blue text-blue border-blue">
@@ -20,7 +20,7 @@
       <CCard :class="['widget-card', { 'active-widget': false }]">
         <CCardBody class="d-flex justify-content-between align-items-center p-4">
           <div>
-            <div class="widget-title">Students Enrolled</div>
+            <div class="widget-title">{{ $i18n.locale === 'en' ? 'Students Enrolled' : 'นักศึกษาที่เข้าร่วม' }}</div>
             <div class="widget-value text-info">{{ studentsEnrolled }}</div>
           </div>
           <div class="icon-wrapper bg-soft-info text-info border-info">
@@ -35,7 +35,7 @@
       <CCard :class="['widget-card', { 'active-widget': value === 'In Progress' }]">
         <CCardBody class="d-flex justify-content-between align-items-center p-4">
           <div>
-            <div class="widget-title">Avg. Progress</div>
+            <div class="widget-title">{{ $i18n.locale === 'en' ? 'Avg. Progress' : 'ความคืบหน้าเฉลี่ย' }}</div>
             <div class="widget-value text-success">{{ avgProgress }}%</div>
           </div>
           <div class="icon-wrapper bg-soft-success text-success border-success">
@@ -50,7 +50,7 @@
       <CCard :class="['widget-card', { 'active-widget': false }]">
         <CCardBody class="d-flex justify-content-between align-items-center p-4">
           <div>
-            <div class="widget-title">Pending Reviews</div>
+            <div class="widget-title">{{ $i18n.locale === 'en' ? 'Pending Reviews' : 'รอการตรวจ' }}</div>
             <div class="widget-value text-warning">{{ pendingReviews }}</div>
           </div>
           <div class="icon-wrapper bg-soft-warning text-warning border-warning">

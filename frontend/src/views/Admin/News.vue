@@ -1,6 +1,6 @@
 <template>
     <div class="news-dashboard">
-        <HeaderHero title="News Management" description="Manage your news articles, announcements, and updates for the community." icon="cil-newspaper" :showCreateButton="true" :showExportButton="true" createButtonText="Create News" @create="onAddNews" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'News Management' : 'จัดการข่าวสาร'" :description="$i18n.locale === 'en' ? 'Manage your news articles, announcements, and updates for the community.' : 'จัดการบทความข่าว ประกาศ และอัปเดตสำหรับชุมชน'" icon="cil-newspaper" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create News' : 'สร้างข่าวสาร'" @create="onAddNews" @export="handleExport" />
         <NewsWidget v-model="filters.status" :items="newsItems" />
         <NewsFilter v-model="filters" :categories="categoriesList" />
         <NewsTable ref="adminTable" :filters="filters" :items="newsItems" @view="handleViewNews" @edit="handleEditNews" @delete="handleDeleteNews" />

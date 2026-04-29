@@ -19,16 +19,16 @@
                 <CIcon :name="getStatusIcon(item)" size="lg" />
               </div>
               <div class="title-details">
-                <h5 class="mb-1 font-weight-bold text-dark-premium text-truncate">{{ getName('en', item) }}</h5>
+                <h5 class="mb-1 font-weight-bold text-dark-premium text-truncate">{{ getName($i18n.locale, item) }}</h5>
                 <div class="d-flex align-items-center flex-wrap">
                   <div class="meta-item-minimal mr-3">
                     <CIcon name="cil-calendar" class="mr-1 opacity-6" size="sm" />
-                    <span>Due: {{ formatDate(item.create.endAt) }}</span>
+                    <span>{{ $i18n.locale === 'en' ? 'Due' : 'กำหนดส่ง' }}: {{ formatDate(item.create.endAt) }}</span>
                   </div>
                   <div class="meta-item-minimal">
                     <CIcon name="cil-description" class="mr-1 opacity-6" size="sm" />
                     <span class="font-weight-bold">{{ getAssignmentCount(item) }}</span>
-                    <span class="ml-1">Assignments</span>
+                    <span class="ml-1">{{ $i18n.locale === 'en' ? 'Assignments' : 'งานที่มอบหมาย' }}</span>
                   </div>
                 </div>
               </div>
@@ -39,7 +39,7 @@
               <!-- Progress Indicator -->
               <div class="progress-wrapper-minimal mr-md-5 mr-3 d-none d-lg-block" style="width: 140px;">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="text-muted-xs font-weight-bold uppercase">Progress</span>
+                  <span class="text-muted-xs font-weight-bold uppercase">{{ $i18n.locale === 'en' ? 'Progress' : 'ความคืบหน้า' }}</span>
                   <span class="font-weight-bold text-dark-premium small">{{ calculateProgress(item) }}%</span>
                 </div>
                 <CProgress 
@@ -54,7 +54,7 @@
               <div class="status-container-minimal mr-md-4 mr-2">
                 <div :class="['status-pill-flat', getStatusClass(item)]">
                   <div class="status-dot mr-2"></div>
-                  {{ getStatusLabel(item) }}
+                  {{ getStatusLabel(item, $i18n.locale) }}
                 </div>
               </div>
 
@@ -77,9 +77,9 @@
           <CIcon name="cil-list" size="2xl" class="text-muted-light" />
         </div>
       </div>
-      <h5 class="font-weight-bold text-dark-premium mb-2">No Submissions Found</h5>
+      <h5 class="font-weight-bold text-dark-premium mb-2">{{ $i18n.locale === 'en' ? 'No Submissions Found' : 'ไม่พบรายการมอบหมายงาน' }}</h5>
       <p class="text-muted small mx-auto" style="max-width: 250px;">
-        You don't have any artwork submissions assigned to you yet.
+        {{ $i18n.locale === 'en' ? "You don't have any artwork submissions assigned to you yet." : "คุณยังไม่มีรายการส่งผลงานศิลปะที่ได้รับมอบหมาย" }}
       </p>
     </div>
   </div>
@@ -138,22 +138,22 @@ export default {
             });
             return Math.round((totalSubmitted / totalPossible) * 100);
         },
-        getStatusLabel(item) {
-            if (!item.create || !item.create.startAt || !item.create.endAt) return 'N/A';
+        getStatusLabel(item, lang = 'en') {
+            if (!item.create || !item.create.startAt || !item.create.endAt) return lang === 'en' ? 'N/A' : 'ไม่มีข้อมูล';
             const now = moment();
             const start = moment(item.create.startAt);
             const end = moment(item.create.endAt);
 
-            if (now.isBefore(start)) return 'Upcoming';
-            if (now.isBetween(start, end)) return 'Open';
-            return 'Closed';
+            if (now.isBefore(start)) return lang === 'en' ? 'Upcoming' : 'เร็วๆนี้';
+            if (now.isBetween(start, end)) return lang === 'en' ? 'Open' : 'เปิดรับ';
+            return lang === 'en' ? 'Closed' : 'ปิดแล้ว';
         },
         getStatusClass(item) {
-            const status = this.getStatusLabel(item).toLowerCase().replace('/', '');
+            const status = this.getStatusLabel(item, 'en').toLowerCase().replace('/', '');
             return `status-${status}`;
         },
         getStatusIcon(item) {
-            const status = this.getStatusLabel(item);
+            const status = this.getStatusLabel(item, 'en');
             if (status === 'Open') return 'cilLockUnlocked';
             if (status === 'Closed') return 'cilLockLocked';
             return 'cilHistory';

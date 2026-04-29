@@ -1,8 +1,8 @@
 <template>
     <div>
         <HeaderHero 
-            title="Admin Dashboard" 
-            subtitle="Welcome back! Here's what's happening with your platform today."
+            :title="$i18n.locale === 'en' ? 'Admin Dashboard' : 'แผงควบคุมหลัก'" 
+            :subtitle="$i18n.locale === 'en' ? 'Welcome back! Here\'s what\'s happening with your platform today.' : 'ยินดีต้อนรับกลับ! นี่คือความเคลื่อนไหวบนแพลตฟอร์มของคุณในวันนี้'"
             icon="cil-speedometer"
         />
         <WidgetsDashboard />

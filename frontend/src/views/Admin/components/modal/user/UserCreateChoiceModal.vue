@@ -13,8 +13,8 @@
                         <CIcon name="cil-user-plus" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Add New User</h5>
-                        <p class="text-muted small mb-0">Choose how you would like to add new members to the system.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Add New User' : 'เพิ่มผู้ใช้ใหม่' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Choose how you would like to add new members to the system.' : 'เลือกวิธีที่คุณต้องการเพิ่มสมาชิกใหม่เข้าสู่ระบบ' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -31,10 +31,10 @@
                         <div class="choice-icon bg-green-light text-green">
                             <CIcon name="cil-keyboard" size="xl" />
                         </div>
-                        <h6 class="choice-label">Manual Entry</h6>
-                        <p class="choice-desc">Input user details manually through a step-by-step form. Best for adding individuals.</p>
+                        <h6 class="choice-label">{{ $i18n.locale === 'en' ? 'Manual Entry' : 'กรอกข้อมูลด้วยตนเอง' }}</h6>
+                        <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Input user details manually through a step-by-step form. Best for adding individuals.' : 'กรอกรายละเอียดผู้ใช้ด้วยตนเองผ่านแบบฟอร์ม เหมาะสำหรับการเพิ่มผู้ใช้รายบุคคล' }}</p>
                         <div class="choice-footer">
-                            <span>Add Manually</span>
+                            <span>{{ $i18n.locale === 'en' ? 'Add Manually' : 'เพิ่มด้วยตนเอง' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
                     </div>
@@ -46,10 +46,10 @@
                         <div class="choice-icon bg-blue-light text-blue">
                             <CIcon name="cil-file" size="xl" />
                         </div>
-                        <h6 class="choice-label">Import from File</h6>
-                        <p class="choice-desc">Bulk upload multiple users at once using an Excel or CSV file. Fast and efficient for large batches.</p>
+                        <h6 class="choice-label">{{ $i18n.locale === 'en' ? 'Import from File' : 'นำเข้าจากไฟล์' }}</h6>
+                        <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Bulk upload multiple users at once using an Excel or CSV file. Fast and efficient for large batches.' : 'อัปโหลดผู้ใช้หลายคนพร้อมกันด้วยไฟล์ Excel หรือ CSV รวดเร็วและมีประสิทธิภาพ' }}</p>
                         <div class="choice-footer text-blue">
-                            <span>Upload File</span>
+                            <span>{{ $i18n.locale === 'en' ? 'Upload File' : 'อัปโหลดไฟล์' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
                         <input 
@@ -66,7 +66,7 @@
 
         <template #footer>
             <div class="w-100 text-center py-2">
-                <span class="text-muted small">Need a template? <a href="javascript:void(0)" class="font-weight-bold text-blue" @click="$emit('download-template')">Download User Import Template</a></span>
+                <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Need a template?' : 'ต้องการไฟล์ต้นแบบ?' }} <a href="javascript:void(0)" class="font-weight-bold text-blue" @click="$emit('download-template')">{{ $i18n.locale === 'en' ? 'Download User Import Template' : 'ดาวน์โหลดไฟล์ต้นแบบนำเข้าผู้ใช้' }}</a></span>
             </div>
         </template>
     </CModal>

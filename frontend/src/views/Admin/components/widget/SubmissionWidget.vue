@@ -5,7 +5,7 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'All Time' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Total Submissions</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total Submissions' : 'ส่งงานทั้งหมด' }}</div>
                         <div class="widget-value">{{ totalSubmissions }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
@@ -20,7 +20,7 @@
             <CCard :class="['widget-card', { 'active-widget': false }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Assignments</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Assignments' : 'งานที่มอบหมาย' }}</div>
                         <div class="widget-value text-green">{{ totalAssignments }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
@@ -35,7 +35,7 @@
             <CCard :class="['widget-card', { 'active-widget': false }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Students</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Students' : 'นักศึกษา' }}</div>
                         <div class="widget-value text-orange">{{ totalStudents }}</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">
@@ -50,7 +50,7 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'Today' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">New Today</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'New Today' : 'มาใหม่วันนี้' }}</div>
                         <div class="widget-value text-purple">{{ newTodayCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-purple-light text-purple">

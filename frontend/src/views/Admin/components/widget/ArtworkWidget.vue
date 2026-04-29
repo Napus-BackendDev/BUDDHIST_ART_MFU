@@ -5,7 +5,7 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'All Status' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Total Artwork</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total Artwork' : 'ผลงานทั้งหมด' }}</div>
                         <div class="widget-value text-blue">{{ counts.total }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
@@ -20,7 +20,7 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'Approved' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Approved</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Approved' : 'อนุมัติแล้ว' }}</div>
                         <div class="widget-value text-green">{{ counts.approved }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
@@ -35,7 +35,7 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'Pending' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Pending</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ' }}</div>
                         <div class="widget-value text-orange">{{ counts.pending }}</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">
@@ -50,7 +50,7 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'Rejected' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Rejected</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธ' }}</div>
                         <div class="widget-value text-red">{{ counts.rejected }}</div>
                     </div>
                     <div class="icon-wrapper bg-red-light text-red">

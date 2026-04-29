@@ -6,8 +6,8 @@
         <CIcon name="cil-arrow-left" size="lg" />
       </button>
       <div>
-        <h4 class="mb-0 font-weight-bold text-dark-premium">{{ getName('en', submission) }}</h4>
-        <p class="text-muted small mb-0">Select an assignment below to submit your artwork or view your submissions.</p>
+        <h4 class="mb-0 font-weight-bold text-dark-premium">{{ getName($i18n.locale, submission) }}</h4>
+        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Select an assignment below to submit your artwork or view your submissions.' : 'เลือกงานที่ได้รับมอบหมายด้านล่างเพื่อส่งผลงานหรือดูผลงานของคุณ' }}</p>
       </div>
     </div>
 
@@ -26,15 +26,15 @@
             </div>
 
             <div class="flex-grow-1 mr-3 mr-md-4 py-1">
-              <h6 class="mb-1 font-weight-bold text-dark-premium text-truncate">{{ getName('en', assign) }}</h6>
+              <h6 class="mb-1 font-weight-bold text-dark-premium text-truncate">{{ getName($i18n.locale, assign) }}</h6>
               <div class="d-flex align-items-center flex-wrap">
                 <div class="meta-item-minimal mr-3">
                   <CIcon name="cil-clock" class="mr-1 opacity-6" size="sm" />
-                  <span>Deadline: {{ formatDateTime(assign.create.endAt) }}</span>
+                  <span>{{ $i18n.locale === 'en' ? 'Deadline' : 'กำหนดส่ง' }}: {{ formatDateTime(assign.create.endAt) }}</span>
                 </div>
                 <div v-if="hasSubmitted(assign)" class="meta-item-minimal text-success">
                   <CIcon name="cil-check-circle" class="mr-1" size="sm" />
-                  <span class="font-weight-bold">Submitted</span>
+                  <span class="font-weight-bold">{{ $i18n.locale === 'en' ? 'Submitted' : 'ส่งแล้ว' }}</span>
                 </div>
               </div>
             </div>
@@ -42,21 +42,21 @@
             <div class="status-indicator-minimal mr-md-4 d-none d-sm-block">
                <div :class="['status-pill-flat', getAssignmentStatusClass(assign)]">
                  <div class="status-dot mr-2"></div>
-                 {{ getAssignmentStatusLabel(assign) }}
+                 {{ getAssignmentStatusLabel(assign, $i18n.locale) }}
                </div>
             </div>
 
             <div class="action-btn-minimal ml-auto">
               <template v-if="!isClosed(assign)">
                 <CButton v-if="hasSubmitted(assign)" color="info" shape="pill" variant="outline" class="btn-sm px-3 font-weight-bold btn-resubmit" @click.stop="handleOpenSubmission(assign)">
-                  Resubmit
+                  {{ $i18n.locale === 'en' ? 'Resubmit' : 'ส่งงานใหม่' }}
                 </CButton>
                 <CButton v-else color="success" shape="pill" class="btn-sm px-4 font-weight-bold btn-submit-now" @click.stop="handleOpenSubmission(assign)">
-                  Submit Work
+                  {{ $i18n.locale === 'en' ? 'Submit Work' : 'ส่งงาน' }}
                 </CButton>
               </template>
               <template v-else>
-                <div class="text-muted small font-weight-bold text-uppercase opacity-6">Submission Closed</div>
+                <div class="text-muted small font-weight-bold text-uppercase opacity-6">{{ $i18n.locale === 'en' ? 'Submission Closed' : 'ปิดรับงานแล้ว' }}</div>
               </template>
             </div>
          </div>
@@ -96,9 +96,6 @@ import HeaderHero from './components/HeaderHero.vue'
 export default {
     name: 'SubmissionsDetail',
     components: {
-        SubmissionDetailTable,
-        SubmissionDetailWidget,
-        SubmissionDetailFilter,
         SubmissionModal,
         ArtworkViewModal,
         ArtworkEditModal
@@ -221,10 +218,10 @@ export default {
             if (this.hasSubmitted(item)) return 'status-open'; // Use green for submitted too
             return 'status-upcoming';
         },
-        getAssignmentStatusLabel(item) {
-            if (this.isClosed(item)) return 'Closed';
-            if (this.hasSubmitted(item)) return 'Submitted';
-            return 'In Progress';
+        getAssignmentStatusLabel(item, lang = 'en') {
+            if (this.isClosed(item)) return lang === 'en' ? 'Closed' : 'ปิดแล้ว';
+            if (this.hasSubmitted(item)) return lang === 'en' ? 'Submitted' : 'ส่งแล้ว';
+            return lang === 'en' ? 'In Progress' : 'กำลังดำเนินการ';
         },
         getAssignmentIcon(item) {
             if (this.isClosed(item)) return 'cilLockLocked';

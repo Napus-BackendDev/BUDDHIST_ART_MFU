@@ -17,8 +17,8 @@
                 <template #thumbnail="{ item }">
                     <td>
                         <div class="thumbnail-wrapper clickable" @click="zoomImg(item.image)">
-                            <img :src="item.image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName('en', item).charAt(0)}`"
-                                :alt="getName('en', item)" class="thumbnail-img">
+                            <img :src="item.image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName($i18n.locale, item).charAt(0)}`"
+                                :alt="getName($i18n.locale, item)" class="thumbnail-img">
                              <div class="zoom-overlay">
                                 <CIcon name="cil-search" />
                              </div>
@@ -27,15 +27,15 @@
                 </template>
                 <template #title="{ item }">
                     <td>
-                        <div class="font-weight-bold text-dark mb-1">{{ getName('en', item) }}</div>
+                        <div class="font-weight-bold text-dark mb-1">{{ getName($i18n.locale, item) || getName('en', item) }}</div>
                         <div class="text-muted small description-truncate" v-if="item.description">
-                            {{ getName('en', item.description) }}
+                            {{ getName($i18n.locale, item.description) || getName('en', item.description) }}
                         </div>
                     </td>
                 </template>
                 <template #artist="{ item }">
                     <td class="text-muted">
-                        <div class="artist-name">{{ item.artist ? getName('en', item.artist) : 'N/A' }}</div>
+                        <div class="artist-name">{{ item.artist ? getName($i18n.locale, item.artist) || getName('en', item.artist) : 'N/A' }}</div>
                         <div v-if="item.artist && item.artist.studentId" class="artist-id mt-1">ID: {{ item.artist.studentId }}</div>
                     </td>
                 </template>
@@ -44,7 +44,7 @@
                 </template>
                 <template #category="{ item }">
                     <td>
-                        <span class="category-pill">{{ item.category ? getName('en', item.category) : 'N/A' }}</span>
+                        <span class="category-pill">{{ item.category ? getName($i18n.locale, item.category) || getName('en', item.category) : 'N/A' }}</span>
                     </td>
                 </template>
                 <template #status="{ item }">
@@ -144,7 +144,7 @@
         >
             <template #header>
                 <div class="w-100 d-flex justify-content-between align-items-center">
-                    <h5 class="modal-title py-0">Zoom Artwork Image</h5>
+                    <h5 class="modal-title py-0">{{ $i18n.locale === 'en' ? 'Zoom Artwork Image' : 'ดูรูปผลงานศิลปะขนาดใหญ่' }}</h5>
                     <CButton close @click="showZoomModal = false" />
                 </div>
             </template>
@@ -184,16 +184,7 @@ export default {
         return {
             showZoomModal: false,
             zoomImageUrl: '',
-            activePage: 1,
-            fields: [
-                { key: 'thumbnail', label: 'THUMBNAIL', _classes: 'border-top-0 border-bottom' },
-                { key: 'title', label: 'ARTWORK TITLE', _classes: 'border-top-0 border-bottom' },
-                { key: 'artist', label: 'ARTIST', _classes: 'border-top-0 border-bottom' },
-                { key: 'updatedAt', label: 'LAST UPDATED', _classes: 'border-top-0 border-bottom' },
-                { key: 'category', label: 'CATEGORY', _classes: 'border-top-0 border-bottom' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ]
+            activePage: 1
         }
     },
     watch: {
@@ -205,6 +196,17 @@ export default {
         }
     },
     computed: {
+        fields() {
+            return [
+                { key: 'thumbnail', label: this.$i18n.locale === 'en' ? 'THUMBNAIL' : 'รูปภาพตัวอย่าง', _classes: 'border-top-0 border-bottom' },
+                { key: 'title', label: this.$i18n.locale === 'en' ? 'ARTWORK TITLE' : 'ชื่อผลงานศิลปะ', _classes: 'border-top-0 border-bottom' },
+                { key: 'artist', label: this.$i18n.locale === 'en' ? 'ARTIST' : 'ศิลปิน', _classes: 'border-top-0 border-bottom' },
+                { key: 'updatedAt', label: this.$i18n.locale === 'en' ? 'LAST UPDATED' : 'อัปเดตล่าสุด', _classes: 'border-top-0 border-bottom' },
+                { key: 'category', label: this.$i18n.locale === 'en' ? 'CATEGORY' : 'หมวดหมู่', _classes: 'border-top-0 border-bottom' },
+                { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+            ];
+        },
         filteredItems() {
             return this.items.filter(item => {
                 const title = this.getName('en', item).toLowerCase();

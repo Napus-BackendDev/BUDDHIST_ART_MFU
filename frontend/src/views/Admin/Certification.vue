@@ -5,8 +5,8 @@
             <!-- Left: Title & Subtitle -->
             <div class="d-flex align-items-center">
                 <div>
-                    <h3 class="font-weight-bold m-0" style="color: #2c3e50;">Certifications</h3>
-                    <p class="text-muted mt-1 mb-0 font-weight-bold">Manage and view all student certificates</p>
+                    <h3 class="font-weight-bold m-0" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Certifications' : 'ใบรับรอง' }}</h3>
+                    <p class="text-muted mt-1 mb-0 font-weight-bold">{{ $i18n.locale === 'en' ? 'Manage and view all student certificates' : 'จัดการและดูใบรับรองนักศึกษาทั้งหมด' }}</p>
                 </div>
             </div>
 
@@ -14,10 +14,10 @@
             <div class="d-flex align-items-center">
                 <div class="search-wrapper mr-3">
                     <CIcon name="cilMagnifyingGlass" class="search-icon" />
-                    <CInput class="m-0 custom-search-cinput" placeholder="Search certifications..." />
+                    <CInput class="m-0 custom-search-cinput" :placeholder="$i18n.locale === 'en' ? 'Search certifications...' : 'ค้นหาใบรับรอง...'" />
                 </div>
                 <CButton class="add-btn d-flex align-items-center" @click="createCertification">
-                    <CIcon name="cil-plus" class="mr-2" /> Create Certification
+                    <CIcon name="cil-plus" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Create Certification' : 'สร้างใบรับรอง' }}
                 </CButton>
             </div>
         </div>

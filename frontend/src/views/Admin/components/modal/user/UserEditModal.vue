@@ -13,8 +13,8 @@
                         <CIcon name="cil-pencil" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Edit User Account</h5>
-                        <p class="text-muted small mb-0">Modify user profile, system roles, and account status.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Edit User Account' : 'แก้ไขบัญชีผู้ใช้' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Modify user profile, system roles, and account status.' : 'ปรับเปลี่ยนโปรไฟล์ผู้ใช้, บทบาทในระบบ และสถานะบัญชี' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -28,7 +28,7 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Student ID / Username</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Student ID / Username' : 'รหัสนักศึกษา / ชื่อผู้ใช้' }}</label>
                         <CInput 
                             v-model="form.studentId" 
                             placeholder="e.g. 66xxxxxxxx" 
@@ -38,11 +38,11 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">System Role</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'System Role' : 'บทบาทในระบบ' }}</label>
                         <CDropdown :key="form.roleId" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ form.roleName || 'Select Role' }}</span>
+                                    <span class="text-dark">{{ form.roleName || ($i18n.locale === 'en' ? 'Select Role' : 'เลือกบทบาท') }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
@@ -60,13 +60,13 @@
             <CRow v-if="form.roleName === 'Artist'">
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">Account Status</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Account Status' : 'สถานะบัญชี' }}</label>
                         <CDropdown :key="form.statusId" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
                                     <div class="d-flex align-items-center">
                                         <div :class="['status-dot mr-2', getStatusDotClass(form.statusName)]"></div>
-                                        <span class="text-dark">{{ form.statusName || 'Select Status' }}</span>
+                                        <span class="text-dark">{{ form.statusName || ($i18n.locale === 'en' ? 'Select Status' : 'เลือกสถานะ') }}</span>
                                     </div>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
@@ -88,7 +88,7 @@
             <CRow>
                 <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
-                        <label class="form-label">Full Name (Thai)</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
                         <CInput 
                             v-model="form.nameTh" 
                             placeholder="ภาษาไทย" 
@@ -98,7 +98,7 @@
                 </CCol>
                 <CCol md="6" v-if="form.roleName !== 'Customer'">
                     <div class="form-group-custom">
-                        <label class="form-label">Full Name (English)</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
                         <CInput 
                             v-model="form.nameEn" 
                             placeholder="English name" 
@@ -112,7 +112,7 @@
             <CRow>
                 <CCol md="6" v-if="form.roleName !== 'Customer'">
                     <div class="form-group-custom">
-                        <label class="form-label">Official Email</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Official Email' : 'อีเมลทางการ' }}</label>
                         <CInput 
                             v-model="form.email" 
                             type="email" 
@@ -123,7 +123,7 @@
                 </CCol>
                 <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
-                        <label class="form-label">Personal Email</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
                         <CInput 
                             v-model="form.personalEmail" 
                             type="email" 
@@ -137,7 +137,7 @@
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">Telephone</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
                         <CInput 
                             v-model="form.telephone" 
                             placeholder="08x-xxx-xxxx" 
@@ -155,7 +155,7 @@
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
                 >
-                    Cancel
+                    {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
                 <CButton 
                     color="primary" 
@@ -163,7 +163,7 @@
                     class="btn-save-user"
                     :disabled="!isFormValid"
                 >
-                    Save Changes
+                    {{ $i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการเปลี่ยนแปลง' }}
                 </CButton>
             </div>
         </template>

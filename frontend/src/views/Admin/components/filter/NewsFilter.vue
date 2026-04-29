@@ -4,21 +4,21 @@
             <CRow class="align-items-end">
                 <!-- Search Field -->
                 <CCol lg="3" md="12" class="mb-3 mb-lg-0">
-                    <label class="filter-label">Search News</label>
+                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search News' : 'ค้นหาข่าวสาร' }}</label>
                     <div class="search-field-wrapper">
                         <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
                         <CInput 
                             :value="value.search" 
                             @input="updateFilter('search', $event)"
                             class="m-0 border-0 custom-input-plain"
-                            placeholder="Title, Content..." 
+                            :placeholder="$i18n.locale === 'en' ? 'Title, Content...' : 'หัวข้อ, เนื้อหา...'" 
                         />
                     </div>
                 </CCol>
 
                 <!-- Category Filter -->
                 <CCol lg="2" md="6" class="mb-3 mb-lg-0">
-                    <label class="filter-label">Category</label>
+                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
                     <CSelect 
                         :options="categoryOptions" 
                         :value="value.category"
@@ -29,7 +29,7 @@
 
                 <!-- Quick Range -->
                 <CCol lg="4" md="12" class="mb-3 mb-lg-0">
-                    <label class="filter-label">Quick Range</label>
+                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Quick Range' : 'ช่วงเวลาด่วน' }}</label>
                     <CButtonGroup class="w-100 quick-range-group">
                         <CButton 
                             v-for="range in [ 'All Time' , 'Today', 'This Month', 'This Year']" 
@@ -44,7 +44,7 @@
 
                 <!-- Time Range -->
                 <CCol lg="3" md="12">
-                    <label class="filter-label">Time Range</label>
+                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
                     <div class="d-flex align-items-center">
                         <div class="date-input-wrapper">
                             <CInput 
@@ -97,9 +97,9 @@ export default {
         categoryOptions() {
             const options = this.categories.map(cat => ({
                 value: this.getName('en', cat.title),
-                label: this.getName('en', cat.title)
+                label: this.getName(this.$i18n.locale, cat.title) || this.getName('en', cat.title)
             }));
-            return [{ value: 'All Categories', label: 'All Categories' }, ...options];
+            return [{ value: 'All Categories', label: this.$i18n.locale === 'en' ? 'All Categories' : 'หมวดหมู่ทั้งหมด' }, ...options];
         }
     },
     methods: {

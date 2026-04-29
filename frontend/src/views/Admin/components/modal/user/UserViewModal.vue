@@ -13,8 +13,8 @@
                         <CIcon name="cil-user" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">User Information</h5>
-                        <p class="text-muted small mb-0">Detailed profiles and system permissions.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'User Information' : 'ข้อมูลผู้ใช้' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Detailed profiles and system permissions.' : 'โปรไฟล์แบบละเอียดและสิทธิ์การใช้งานระบบ' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -53,10 +53,10 @@
             <div class="profile-section mb-5">
                 <h6 class="section-title-modern mb-4">
                     <CIcon name="cil-description" class="mr-2" />
-                    Biography
+                    {{ $i18n.locale === 'en' ? 'Biography' : 'ประวัติส่วนตัว' }}
                 </h6>
                 <div class="bio-content-box p-4 rounded-xl bg-light">
-                    {{ user.bio || 'No biography information provided for this user.' }}
+                    {{ user.bio || ($i18n.locale === 'en' ? 'No biography information provided for this user.' : 'ไม่มีข้อมูลประวัติส่วนตัวสำหรับผู้ใช้นี้') }}
                 </div>
             </div>
 
@@ -64,27 +64,27 @@
             <div class="profile-section mb-5">
                 <h6 class="section-title-modern mb-4">
                     <CIcon name="cil-user" class="mr-2" />
-                    Personal Information
+                    {{ $i18n.locale === 'en' ? 'Personal Information' : 'ข้อมูลส่วนตัว' }}
                 </h6>
                 <div class="info-grid-modern">
                     <div class="info-item-modern">
-                        <label>FULL NAME (THAI)</label>
+                        <label>{{ $i18n.locale === 'en' ? 'FULL NAME (THAI)' : 'ชื่อ-นามสกุล (ไทย)' }}</label>
                         <div class="value">{{ getName('th') || 'N/A' }}</div>
                     </div>
                     <div class="info-item-modern" v-if="!isCustomer">
-                        <label>FULL NAME (ENGLISH)</label>
+                        <label>{{ $i18n.locale === 'en' ? 'FULL NAME (ENGLISH)' : 'ชื่อ-นามสกุล (อังกฤษ)' }}</label>
                         <div class="value">{{ getName('en') || 'N/A' }}</div>
                     </div>
                     <div class="info-item-modern" v-if="!isCustomer">
-                        <label>OFFICIAL EMAIL</label>
+                        <label>{{ $i18n.locale === 'en' ? 'OFFICIAL EMAIL' : 'อีเมลอย่างเป็นทางการ' }}</label>
                         <div class="value text-primary font-weight-bold">{{ (user.contact && user.contact.studentEmail) || 'N/A' }}</div>
                     </div>
                     <div class="info-item-modern">
-                        <label>PERSONAL EMAIL</label>
+                        <label>{{ $i18n.locale === 'en' ? 'PERSONAL EMAIL' : 'อีเมลส่วนตัว' }}</label>
                         <div class="value">{{ (user.contact && user.contact.personalEmail) || 'Not Provided' }}</div>
                     </div>
                     <div class="info-item-modern">
-                        <label>TELEPHONE</label>
+                        <label>{{ $i18n.locale === 'en' ? 'TELEPHONE' : 'เบอร์โทรศัพท์' }}</label>
                         <div class="value">{{ (user.contact && user.contact.telephone) || 'N/A' }}</div>
                     </div>
                 </div>
@@ -94,16 +94,16 @@
             <div class="profile-section mb-5" v-if="isCustomer">
                 <h6 class="section-title-modern mb-4">
                     <CIcon name="cil-location-pin" class="mr-2" />
-                    Address Information
+                    {{ $i18n.locale === 'en' ? 'Address Information' : 'ข้อมูลที่อยู่' }}
                 </h6>
                 <div class="address-grid">
                     <div class="address-box p-3 rounded-xl border mb-3">
-                        <div class="text-label-xs mb-2">SHIPPING ADDRESS</div>
-                        <div class="text-dark small">{{ (user.address && user.address.shipping) || 'No shipping address provided.' }}</div>
+                        <div class="text-label-xs mb-2">{{ $i18n.locale === 'en' ? 'SHIPPING ADDRESS' : 'ที่อยู่สำหรับจัดส่ง' }}</div>
+                        <div class="text-dark small">{{ (user.address && user.address.shipping) || ($i18n.locale === 'en' ? 'No shipping address provided.' : 'ไม่มีข้อมูลที่อยู่สำหรับจัดส่ง') }}</div>
                     </div>
                     <div class="address-box p-3 rounded-xl border">
-                        <div class="text-label-xs mb-2">BILLING ADDRESS</div>
-                        <div class="text-dark small">{{ (user.address && user.address.bill) || 'No billing address provided.' }}</div>
+                        <div class="text-label-xs mb-2">{{ $i18n.locale === 'en' ? 'BILLING ADDRESS' : 'ที่อยู่สำหรับออกบิล' }}</div>
+                        <div class="text-dark small">{{ (user.address && user.address.bill) || ($i18n.locale === 'en' ? 'No billing address provided.' : 'ไม่มีข้อมูลที่อยู่สำหรับออกบิล') }}</div>
                     </div>
                 </div>
             </div>
@@ -112,7 +112,7 @@
             <div class="profile-section mb-4">
                 <h6 class="section-title-modern mb-4">
                     <CIcon name="cil-image" class="mr-2" />
-                    Artist Status
+                    {{ $i18n.locale === 'en' ? 'Artist Status' : 'สถานะศิลปิน' }}
                 </h6>
                 <div class="stats-banner-modern p-4 rounded-xl d-flex align-items-center justify-content-between text-white shadow-sm">
                     <div class="d-flex align-items-center">
@@ -120,7 +120,7 @@
                             <CIcon name="cil-brush" size="xl" />
                         </div>
                         <div>
-                            <div class="stat-label-white">TOTAL ARTWORKS</div>
+                            <div class="stat-label-white">{{ $i18n.locale === 'en' ? 'TOTAL ARTWORKS' : 'ผลงานทั้งหมด' }}</div>
                             <div class="stat-value-large">{{ (user.artworks && user.artworks.length) || 0 }}</div>
                         </div>
                     </div>
@@ -135,14 +135,14 @@
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
                 >
-                    Close
+                    {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
                 </CButton>
                 <CButton 
                     color="primary" 
                     @click="$emit('edit', user)"
                     class="btn-edit-user"
                 >
-                    <CIcon name="cil-pencil" class="mr-2" /> Edit Profile
+                    <CIcon name="cil-pencil" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Edit Profile' : 'แก้ไขโปรไฟล์' }}
                 </CButton>
             </div>
         </template>

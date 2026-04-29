@@ -4,21 +4,21 @@
             <CRow class="align-items-end">
                 <!-- Search Field -->
                 <CCol lg="4" md="12" class="mb-3 mb-lg-0">
-                    <label class="filter-label">Search Submissions</label>
+                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search Submissions' : 'ค้นหาการส่งงาน' }}</label>
                     <div class="search-field-wrapper">
                         <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
                         <CInput 
                             :value="value.search" 
                             @input="updateFilter('search', $event)"
                             class="m-0 border-0 custom-input-plain"
-                            placeholder="Submission Title..." 
+                            :placeholder="$i18n.locale === 'en' ? 'Submission Title...' : 'หัวข้องาน...'" 
                         />
                     </div>
                 </CCol>
 
                 <!-- Quick Range -->
                 <CCol lg="5" md="12" class="mb-3 mb-lg-0">
-                    <label class="filter-label">Quick Range</label>
+                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Quick Range' : 'ช่วงเวลาด่วน' }}</label>
                     <CButtonGroup class="w-100 quick-range-group">
                         <CButton 
                             v-for="range in [ 'All Time' , 'Today', 'This Week', 'This Month', 'This Year']" 
@@ -33,7 +33,7 @@
 
                 <!-- Time Range -->
                 <CCol lg="3" md="12">
-                    <label class="filter-label">Time Range</label>
+                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
                     <div class="d-flex align-items-center">
                         <div class="date-input-wrapper">
                             <CInput 

@@ -25,7 +25,7 @@
                                 {{ getInitials(getName('en', item) || getName('th', item)) }}
                             </div>
                             <div>
-                                <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ getName('en', item) || getName('th', item) }}</div>
+                                <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ getName($i18n.locale, item) || getName('en', item) || getName('th', item) }}</div>
                                 <div class="small text-muted font-weight-bold">{{ item.studentId ? `ID: ${item.studentId}` : 'No Student ID' }}</div>
                             </div>
                         </div>
@@ -35,7 +35,7 @@
                 <!-- Email Office / Personal Column -->
                 <template #email_details="{ item }">
                     <td class="py-3">
-                        <template v-if="getRoleName(item.role) === 'Customer'">
+                        <template v-if="getRoleNameEn(item.role) === 'Customer'">
                             <div class="font-weight-bold" style="color: #4f5d73; font-size: 0.9rem;">{{ (item.contact && item.contact.personalEmail) || '-' }}</div>
                         </template>
                         <template v-else>
@@ -56,17 +56,17 @@
                 <!-- Status Column -->
                 <template #status="{ item }">
                     <td class="py-3">
-                        <div v-if="getRoleName(item.role) === 'Customer'" class="status-badge status-customer">
+                        <div v-if="getRoleNameEn(item.role) === 'Customer'" class="status-badge status-customer">
                             <CIcon name="cil-user" size="sm" class="status-icon" />
-                            Customer
+                            {{ $i18n.locale === 'en' ? 'Customer' : 'ลูกค้า' }}
                         </div>
-                        <div v-else-if="getRoleName(item.role) === 'Admin' || getStatusName(item.status) === 'Admin'" class="status-badge status-admin">
+                        <div v-else-if="getRoleNameEn(item.role) === 'Admin' || getStatusNameEn(item.status) === 'Admin'" class="status-badge status-admin">
                             <CIcon name="cilShieldAlt" size="sm" class="status-icon" />
-                            Admin
+                            {{ $i18n.locale === 'en' ? 'Admin' : 'ผู้ดูแลระบบ' }}
                         </div>
-                        <div v-else :class="['status-badge', getStatusBadge(getStatusName(item.status)).class]">
-                            <CIcon :name="getStatusBadge(getStatusName(item.status)).icon" size="sm" class="status-icon" />
-                            {{ getStatusBadge(getStatusName(item.status)).label }}
+                        <div v-else :class="['status-badge', getStatusBadge(getStatusNameEn(item.status)).class]">
+                            <CIcon :name="getStatusBadge(getStatusNameEn(item.status)).icon" size="sm" class="status-icon" />
+                            {{ getStatusName(item.status) }}
                         </div>
                     </td>
                 </template>
@@ -130,15 +130,6 @@ export default {
     },
     data() {
         return {
-            // Fields Definition
-            fields: [
-
-                { key: 'name_student_id', label: 'NAME / STUDENT ID', _classes: 'border-top-0 border-bottom w-30' },
-                { key: 'email_details', label: 'EMAIL OFFICE / PERSONAL', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'tel_role', label: 'TEL / ROLE', _classes: 'border-top-0 border-bottom w-20' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom w-10' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right w-5' }
-            ],
             activePage: 1
         }
     },
@@ -151,13 +142,22 @@ export default {
         }
     },
     computed: {
+        fields() {
+            return [
+                { key: 'name_student_id', label: this.$i18n.locale === 'en' ? 'NAME / STUDENT ID' : 'ชื่อ / รหัสนักศึกษา', _classes: 'border-top-0 border-bottom w-30' },
+                { key: 'email_details', label: this.$i18n.locale === 'en' ? 'EMAIL OFFICE / PERSONAL' : 'อีเมลสำนักงาน / ส่วนตัว', _classes: 'border-top-0 border-bottom w-25' },
+                { key: 'tel_role', label: this.$i18n.locale === 'en' ? 'TEL / ROLE' : 'เบอร์โทรศัพท์ / บทบาท', _classes: 'border-top-0 border-bottom w-20' },
+                { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom w-10' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right w-5' }
+            ];
+        },
         ...mapGetters({
             users: 'user/user'
         }),
         filteredUsers() {
             if (!this.users) return [];
             return this.users.filter(user => {
-                const name = (this.getName('en', user) || this.getName('th', user) || '').toLowerCase();
+                const name = (this.getName(this.$i18n.locale, user) || this.getName('en', user) || this.getName('th', user) || '').toLowerCase();
                 const email = ((user.contact && user.contact.studentEmail) || '').toLowerCase();
                 const studentId = (user.studentId || '').toLowerCase();
                 const search = this.filters.search.toLowerCase();
@@ -203,8 +203,18 @@ export default {
             if (!role) return 'User';
             if (typeof role === 'string') return role;
             if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
-                const titleEn = role.title.find(t => t.key === 'en');
-                return titleEn ? titleEn.value : (role.title[0] ? role.title[0].value : 'Unknown');
+                const lang = this.$i18n.locale || 'en';
+                const titleLang = role.title.find(t => t.key === lang) || role.title.find(t => t.key === 'en');
+                return titleLang ? titleLang.value : (role.title[0] ? role.title[0].value : 'Unknown');
+            }
+            return 'User';
+        },
+        getRoleNameEn(role) {
+            if (!role) return 'User';
+            if (typeof role === 'string') return role;
+            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
+                const titleLang = role.title.find(t => t.key === 'en');
+                return titleLang ? titleLang.value : (role.title[0] ? role.title[0].value : 'Unknown');
             }
             return 'User';
         },
@@ -212,8 +222,18 @@ export default {
             if (!status) return 'Admin';
             if (typeof status === 'string') return status;
             if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
-                const titleEn = status.title.find(t => t.key === 'en');
-                return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Unknown');
+                const lang = this.$i18n.locale || 'en';
+                const titleLang = status.title.find(t => t.key === lang) || status.title.find(t => t.key === 'en');
+                return titleLang ? titleLang.value : (status.title[0] ? status.title[0].value : 'Unknown');
+            }
+            return 'Admin';
+        },
+        getStatusNameEn(status) {
+            if (!status) return 'Admin';
+            if (typeof status === 'string') return status;
+            if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
+                const titleLang = status.title.find(t => t.key === 'en');
+                return titleLang ? titleLang.value : (status.title[0] ? status.title[0].value : 'Unknown');
             }
             return 'Admin';
         },

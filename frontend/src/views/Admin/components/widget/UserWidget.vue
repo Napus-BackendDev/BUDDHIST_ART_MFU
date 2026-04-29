@@ -5,7 +5,7 @@
             <CCard :class="['widget-card', { 'active-widget': currentRole === 'All Roles' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Total Users</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total Users' : 'ผู้ใช้งานทั้งหมด' }}</div>
                         <div class="widget-value text-primary">{{ totalCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
@@ -20,7 +20,7 @@
             <CCard :class="['widget-card', { 'active-widget': currentRole === 'Admin' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Admin</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Admin' : 'ผู้ดูแลระบบ' }}</div>
                         <div class="widget-value text-info">{{ adminsCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-info-soft text-info">
@@ -35,7 +35,7 @@
             <CCard :class="['widget-card', { 'active-widget': currentRole === 'Artist' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Artist</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Artist' : 'ศิลปิน' }}</div>
                         <div class="widget-value text-success">{{ artistsCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
@@ -50,7 +50,7 @@
             <CCard :class="['widget-card', { 'active-widget': currentRole === 'Customer' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Customer</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Customer' : 'ลูกค้า' }}</div>
                         <div class="widget-value text-warning">{{ customersCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-yellow-light text-warning">

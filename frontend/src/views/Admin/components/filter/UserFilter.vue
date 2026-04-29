@@ -4,21 +4,21 @@
       <CRow class="align-items-end">
         <!-- Search Field -->
         <CCol lg="6" md="12" class="mb-3 mb-lg-0">
-          <label class="filter-label">Search Users</label>
+          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search Users' : 'ค้นหาผู้ใช้งาน' }}</label>
           <div class="search-field-wrapper">
             <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
             <CInput 
               :value="value.search" 
               @input="updateFilter('search', $event)"
               class="m-0 border-0 custom-input-plain"
-              placeholder="Name, Email or Student ID..." 
+              :placeholder="$i18n.locale === 'en' ? 'Name, Email or Student ID...' : 'ชื่อ อีเมล หรือรหัสนักศึกษา...'" 
             />
           </div>
         </CCol>
 
         <!-- Role Filter -->
         <CCol lg="3" md="6" class="mb-3 mb-lg-0">
-          <label class="filter-label">Role</label>
+          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Role' : 'บทบาท' }}</label>
           <CDropdown :key="value.role" :caret="false" class="w-100 custom-add-dropdown">
             <template #toggler>
               <CButton type="button" class="filter-select-btn shadow-none">
@@ -27,18 +27,18 @@
               </CButton>
             </template>
             <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
-              <CDropdownItem @click="updateFilter('role', 'All Roles')">All Roles</CDropdownItem>
+              <CDropdownItem @click="updateFilter('role', 'All Roles')">{{ $i18n.locale === 'en' ? 'All Roles' : 'บทบาททั้งหมด' }}</CDropdownItem>
               <CDropdownItem v-for="r in roles" :key="r._id" @click="updateFilter('role', r.name)">
                 {{ r.name }}
               </CDropdownItem>
-              <CDropdownItem v-if="roles.length === 0" disabled class="small text-muted">No Roles Available</CDropdownItem>
+              <CDropdownItem v-if="roles.length === 0" disabled class="small text-muted">{{ $i18n.locale === 'en' ? 'No Roles Available' : 'ไม่มีบทบาท' }}</CDropdownItem>
             </CDropdownMenu>
           </CDropdown>
         </CCol>
 
         <!-- Status Filter -->
         <CCol lg="3" md="6" class="mb-3 mb-lg-0">
-          <label class="filter-label">Status</label>
+          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Status' : 'สถานะ' }}</label>
           <CDropdown :key="value.status" :caret="false" class="w-100 custom-add-dropdown">
             <template #toggler>
               <CButton type="button" class="filter-select-btn shadow-none">
@@ -47,11 +47,11 @@
               </CButton>
             </template>
             <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
-              <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
+              <CDropdownItem @click="updateFilter('status', 'All Status')">{{ $i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด' }}</CDropdownItem>
               <CDropdownItem v-for="s in statuses" :key="s._id" @click="updateFilter('status', s.name)">
                 {{ s.name }}
               </CDropdownItem>
-              <CDropdownItem v-if="statuses.length === 0" disabled class="small text-muted">No Status Available</CDropdownItem>
+              <CDropdownItem v-if="statuses.length === 0" disabled class="small text-muted">{{ $i18n.locale === 'en' ? 'No Status Available' : 'ไม่มีสถานะ' }}</CDropdownItem>
             </CDropdownMenu>
           </CDropdown>
         </CCol>

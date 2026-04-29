@@ -14,8 +14,8 @@
                         <CIcon name="cil-pencil" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Edit News Article</h5>
-                        <p class="text-muted small mb-0">Update the details of your news announcement.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Edit News Article' : 'แก้ไขบทความข่าว' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Update the details of your news announcement.' : 'อัปเดตรายละเอียดประกาศข่าวของคุณ' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -29,10 +29,10 @@
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">News Title</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'News Title' : 'หัวข้อข่าว' }}</label>
                         <CInput 
                             v-model="form.title" 
-                            placeholder="e.g. New Exhibition Opening Soon" 
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. New Exhibition Opening Soon' : 'เช่น นิทรรศการใหม่เปิดเร็วๆ นี้'" 
                             class="custom-input mb-0"
                         />
                     </div>
@@ -44,8 +44,8 @@
                 <CCol md="12">
                     <div class="form-group-custom">
                         <CTextarea 
-                            label="Content" 
-                            placeholder="Enter news content..." 
+                            :label="$i18n.locale === 'en' ? 'Content' : 'เนื้อหา'" 
+                            :placeholder="$i18n.locale === 'en' ? 'Enter news content...' : 'กรอกเนื้อหาข่าว...'" 
                             v-model="form.description" 
                             rows="5"
                             class="custom-textarea"
@@ -58,7 +58,7 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Category</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
                         <CSelect 
                             :options="categoryOptions" 
                             :value.sync="form.category"
@@ -72,7 +72,7 @@
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">News Images (Multiple)</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'News Images (Multiple)' : 'รูปภาพข่าว (หลายรูป)' }}</label>
                         <div class="multiple-upload-container">
                             <input 
                                 type="file" 
@@ -85,7 +85,7 @@
                             <label for="news-images-edit" class="upload-trigger-card mb-3">
                                 <div class="upload-placeholder py-4 text-center">
                                     <CIcon name="cil-cloud-upload" size="xl" class="text-blue mb-2" />
-                                    <div class="font-weight-bold">Click to add more images</div>
+                                    <div class="font-weight-bold">{{ $i18n.locale === 'en' ? 'Click to add more images' : 'คลิกเพื่อเพิ่มรูปภาพ' }}</div>
                                     <div class="text-muted small">PNG, JPG or JPEG</div>
                                 </div>
                             </label>
@@ -94,7 +94,7 @@
                                 <!-- Existing Images from Backend -->
                                 <div v-for="(img, index) in existingImages" :key="'ex-'+index" class="preview-item">
                                     <img :src="img" class="preview-img" />
-                                    <div class="existing-badge">Existing</div>
+                                    <div class="existing-badge">{{ $i18n.locale === 'en' ? 'Existing' : 'รูปเดิม' }}</div>
                                     <button class="remove-img-btn" @click.stop="removeExistingImage(index)">
                                         <CIcon name="cil-x" size="sm" />
                                     </button>
@@ -120,7 +120,7 @@
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
                 >
-                    Cancel
+                    {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
                 <CButton 
                     color="outline-primary" 
@@ -128,7 +128,7 @@
                     class="btn-preview-news mr-2"
                     :disabled="previewLoading"
                 >
-                    {{ previewLoading ? 'Preparing...' : 'Preview' }}
+                    {{ previewLoading ? ($i18n.locale === 'en' ? 'Preparing...' : 'กำลังเตรียม...') : ($i18n.locale === 'en' ? 'Preview' : 'ดูตัวอย่าง') }}
                 </CButton>
                 <CButton 
                     color="primary" 
@@ -136,7 +136,7 @@
                     class="btn-save-news"
                     :disabled="!isFormValid"
                 >
-                    Update News
+                    {{ $i18n.locale === 'en' ? 'Update News' : 'อัปเดตข่าว' }}
                 </CButton>
             </div>
         </template>
@@ -194,7 +194,7 @@ export default {
                 value: cat._id,
                 label: this.getName('en', cat.title)
             }));
-            return [{ value: null, label: 'Select Category', disabled: true }, ...options];
+            return [{ value: null, label: this.$i18n.locale === 'en' ? 'Select Category' : 'เลือกหมวดหมู่', disabled: true }, ...options];
         }
     },
     methods: {

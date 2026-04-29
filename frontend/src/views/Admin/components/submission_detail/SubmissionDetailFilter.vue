@@ -4,21 +4,21 @@
       <CRow class="align-items-end">
         <!-- Search Field -->
         <CCol lg="3" md="12" class="mb-3 mb-lg-0">
-          <label class="filter-label">Search Assignments</label>
+          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search Assignments' : 'ค้นหางาน' }}</label>
           <div class="search-field-wrapper">
             <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
             <CInput 
               :value="value.search" 
               @input="updateFilter('search', $event)"
               class="m-0 border-0 custom-input-plain"
-              placeholder="Assignment title..." 
+              :placeholder="$i18n.locale === 'en' ? 'Assignment title...' : 'หัวข้องาน...'" 
             />
           </div>
         </CCol>
 
         <!-- Status Filter -->
         <CCol lg="2" md="4" class="mb-3 mb-lg-0">
-          <label class="filter-label">Status</label>
+          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Status' : 'สถานะ' }}</label>
           <CDropdown class="filter-dropdown-small" :caret="false">
             <template #toggler>
               <CButton class="dropdown-trigger-btn-small">
@@ -27,16 +27,16 @@
               </CButton>
             </template>
             <CDropdownMenu>
-              <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
-              <CDropdownItem @click="updateFilter('status', 'In Progress')">In Progress</CDropdownItem>
-              <CDropdownItem @click="updateFilter('status', 'Closed')">Closed</CDropdownItem>
+              <CDropdownItem @click="updateFilter('status', 'All Status')">{{ $i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด' }}</CDropdownItem>
+              <CDropdownItem @click="updateFilter('status', 'In Progress')">{{ $i18n.locale === 'en' ? 'In Progress' : 'กำลังดำเนินการ' }}</CDropdownItem>
+              <CDropdownItem @click="updateFilter('status', 'Closed')">{{ $i18n.locale === 'en' ? 'Closed' : 'ปิดแล้ว' }}</CDropdownItem>
             </CDropdownMenu>
           </CDropdown>
         </CCol>
 
         <!-- Quick Range -->
         <CCol lg="4" md="8" class="mb-3 mb-lg-0">
-          <label class="filter-label">Quick Range</label>
+          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Quick Range' : 'ช่วงเวลาด่วน' }}</label>
           <CButtonGroup class="w-100 quick-range-group">
             <CButton 
               v-for="range in ['All Time', 'Today', 'This Week', 'Last 30 Days', 'This Year']" 
@@ -51,7 +51,7 @@
 
         <!-- Time Range -->
         <CCol lg="3" md="12" class="mb-3 mb-lg-0">
-          <label class="filter-label">Time Range</label>
+          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
           <div class="d-flex align-items-center">
             <div class="date-input-wrapper">
               <CInput 

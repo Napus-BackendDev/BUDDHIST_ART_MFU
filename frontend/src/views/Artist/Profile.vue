@@ -15,12 +15,12 @@
           <CCard class="profile-portfolio-card mt-4 border-0 shadow-premium rounded-xl overflow-hidden">
             <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
               <div class="header-title-group mb-3 mb-md-0">
-                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">My Artwork Portfolio</h3>
-                <p class="text-muted mb-0 portfolio-subtitle">Explore and manage your collection of digital and physical art pieces.</p>
+                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ $i18n.locale === 'en' ? 'My Artwork Portfolio' : 'พอร์ตโฟลิโอผลงานศิลปะของฉัน' }}</h3>
+                <p class="text-muted mb-0 portfolio-subtitle">{{ $i18n.locale === 'en' ? 'Explore and manage your collection of digital and physical art pieces.' : 'สำรวจและจัดการคอลเลกชันผลงานศิลปะดิจิทัลและศิลปะบนผืนผ้าใบของคุณ' }}</p>
               </div>
               <div v-if="!isPublic" class="header-actions-group">
                 <CButton color="primary" shape="pill" class="px-4 py-2 font-weight-bold shadow-sm btn-add-artwork" @click="handleAddNewArtwork">
-                  <CIcon name="cil-plus" class="mr-2" /> Add New Artwork
+                  <CIcon name="cil-plus" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Add New Artwork' : 'เพิ่มผลงานศิลปะใหม่' }}
                 </CButton>
               </div>
             </CCardHeader>
@@ -51,11 +51,11 @@
           <CCard v-if="!isPublic" class="profile-portfolio-card mt-5 border-0 shadow-premium rounded-xl overflow-hidden">
             <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
               <div class="header-title-group mb-3 mb-md-0">
-                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">Recent Submissions</h3>
-                <p class="text-muted mb-0 portfolio-subtitle">A quick overview of your latest certification tasks.</p>
+                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ $i18n.locale === 'en' ? 'Recent Submissions' : 'รายการส่งงานล่าสุด' }}</h3>
+                <p class="text-muted mb-0 portfolio-subtitle">{{ $i18n.locale === 'en' ? 'A quick overview of your latest certification tasks.' : 'ภาพรวมการส่งมอบหมายงานล่าสุดของคุณ' }}</p>
               </div>
               <CButton color="dark" variant="outline" shape="pill" class="btn-sm px-3 font-weight-bold" @click="activeView = 'submissions'">
-                View All Submissions
+                {{ $i18n.locale === 'en' ? 'View All Submissions' : 'ดูรายการส่งงานทั้งหมด' }}
               </CButton>
             </CCardHeader>
             
@@ -84,13 +84,13 @@
           <CCard class="border-0 shadow-premium rounded-xl overflow-hidden">
             <CCardHeader class="bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-center flex-wrap">
               <div class="header-title-group mb-3 mb-md-0">
-                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">My Order History</h3>
-                <p class="text-muted mb-0 portfolio-subtitle">Track your past purchases and collection expansion.</p>
+                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ $i18n.locale === 'en' ? 'My Order History' : 'ประวัติคำสั่งซื้อของฉัน' }}</h3>
+                <p class="text-muted mb-0 portfolio-subtitle">{{ $i18n.locale === 'en' ? 'Track your past purchases and collection expansion.' : 'ติดตามการสั่งซื้อและการขยายคอลเลกชันของคุณ' }}</p>
               </div>
               <div class="search-box" style="min-width: 300px;">
                 <CInput 
                   v-model="orderSearch"
-                  placeholder="Search orders..." 
+                  :placeholder="$i18n.locale === 'en' ? 'Search orders...' : 'ค้นหาคำสั่งซื้อ...'" 
                   class="custom-search-input mb-0"
                 >
                   <template #prepend-content><CIcon name="cilMagnifyingGlass"/></template>
@@ -102,10 +102,10 @@
               <CDataTable
                 :items="filteredOrders"
                 :fields="[
-                  { key: 'orderIdDisplay', label: 'Order ID' },
-                  { key: 'dateDisplay', label: 'Date' },
-                  { key: 'totalAmount', label: 'Total' },
-                  { key: 'statusName', label: 'Status' },
+                  { key: 'orderIdDisplay', label: $i18n.locale === 'en' ? 'Order ID' : 'รหัสคำสั่งซื้อ' },
+                  { key: 'dateDisplay', label: $i18n.locale === 'en' ? 'Date' : 'วันที่' },
+                  { key: 'totalAmount', label: $i18n.locale === 'en' ? 'Total' : 'ยอดรวม' },
+                  { key: 'statusName', label: $i18n.locale === 'en' ? 'Status' : 'สถานะ' },
                   { key: 'action', label: '', _style: 'width:1%', sorter: false, filter: false }
                 ]"
                 :items-per-page="10"
@@ -157,7 +157,7 @@
     />
 
     <CModal
-      title="Edit Artist Profile"
+      :title="$i18n.locale === 'en' ? 'Edit Artist Profile' : 'แก้ไขโปรไฟล์ศิลปิน'"
       :show.sync="isEditing"
       size="xl"
       :centered="true"
@@ -171,28 +171,28 @@
             <div class="avatar-upload-wrapper mb-4">
               <div 
                 class="avatar-preview shadow-lg"
-                :style="{ backgroundColor: getAvatarColor(nameEn) }"
+                :style="{ backgroundColor: getAvatarColor(form.nameEn) }"
               >
                 <img v-if="form.image" :src="form.image" class="avatar-img" />
                 <span v-else class="avatar-initials">{{ initials }}</span>
               </div>
               <CButton variant="outline" shape="pill" class="btn-sm btn-upload mt-3 shadow-sm" @click="triggerUpload">
-                <CIcon name="cil-camera" class="mr-2" /> Change Photo
+                <CIcon name="cil-camera" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Change Photo' : 'เปลี่ยนรูปโปรไฟล์' }}
               </CButton>
               <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept="image/*" />
             </div>
 
-            <h4 class="font-weight-bold mb-1">{{ nameEn }}</h4>
+            <h4 class="font-weight-bold mb-1">{{ displayName }}</h4>
             <p class="text-muted small mb-4">{{ studentId }}</p>
             
             <div class="text-left mt-4 border-top pt-4">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="section-label mb-0">Biography</label>
+                <label class="section-label mb-0">{{ $i18n.locale === 'en' ? 'Biography' : 'ประวัติส่วนตัว' }}</label>
                 <small class="text-muted">{{ form.bio ? form.bio.length : 0 }} / 200</small>
               </div>
               <CTextarea 
                 v-model="form.bio"
-                placeholder="Tell us about yourself and your artistic style..."
+                :placeholder="$i18n.locale === 'en' ? 'Tell us about yourself and your artistic style...' : 'บอกเล่าเกี่ยวกับตัวคุณและสไตล์ศิลปะของคุณ...'"
                 class="bio-textarea"
                 rows="4"
                 maxlength="200"
@@ -206,38 +206,38 @@
       <CCol lg="8">
         <CCard class="border-0 shadow-sm rounded-xl h-100 mb-0">
           <CCardHeader class="bg-white border-bottom py-3 px-4 px-md-5">
-            <h5 class="mb-0 font-weight-bold text-dark">Personal Information</h5>
+            <h5 class="mb-0 font-weight-bold text-dark">{{ $i18n.locale === 'en' ? 'Personal Information' : 'ข้อมูลส่วนตัว' }}</h5>
           </CCardHeader>
           <CCardBody class="p-4 p-md-5">
             <CRow>
               <!-- Name Fields -->
               <CCol md="6" class="mb-4">
-                <label class="form-label">Full Name (Thai)</label>
+                <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
                 <CInput v-model="form.nameTh" placeholder="ชื่อ-นามสกุล" class="custom-input shadow-none" />
               </CCol>
               <CCol md="6" class="mb-4">
-                <label class="form-label">Full Name (English)</label>
+                <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
                 <CInput v-model="form.nameEn" placeholder="Full Name" class="custom-input shadow-none" />
               </CCol>
 
               <!-- Email Fields -->
               <CCol md="6" class="mb-4">
-                <label class="form-label">University Email</label>
+                <label class="form-label">{{ $i18n.locale === 'en' ? 'University Email' : 'อีเมลมหาวิทยาลัย' }}</label>
                 <CInput v-model="form.email" placeholder="student@lamduan.mfu.ac.th" disabled class="custom-input shadow-none bg-light" />
-                <small class="text-muted">Cannot be changed</small>
+                <small class="text-muted">{{ $i18n.locale === 'en' ? 'Cannot be changed' : 'ไม่สามารถแก้ไขได้' }}</small>
               </CCol>
               <CCol md="6" class="mb-4">
-                <label class="form-label">Personal Email</label>
+                <label class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
                 <CInput v-model="form.personalEmail" placeholder="example@gmail.com" class="custom-input shadow-none" />
               </CCol>
 
               <!-- Phone & ID -->
               <CCol md="6" class="mb-4">
-                <label class="form-label">Telephone</label>
+                <label class="form-label">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
                 <CInput v-model="form.telephone" placeholder="08x-xxx-xxxx" class="custom-input shadow-none" />
               </CCol>
               <CCol md="6" class="mb-4">
-                <label class="form-label">Artist ID / Student ID</label>
+                <label class="form-label">{{ $i18n.locale === 'en' ? 'Artist ID / Student ID' : 'รหัสศิลปิน / รหัสนักศึกษา' }}</label>
                 <CInput v-model="form.studentId" placeholder="64xxxxxxx" disabled class="custom-input shadow-none bg-light" />
               </CCol>
             </CRow>
@@ -251,10 +251,10 @@
       <template #footer>
         <div class="d-flex w-100 justify-content-end p-2">
           <CButton @click="cancelEdit" variant="outline" shape="pill" class="btn-modal-action mr-3">
-            Cancel
+            {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
           </CButton>
           <CButton @click="handleSave" shape="pill" class="btn-modal-action btn-save-action font-weight-bold">
-            <CIcon name="cil-save" class="mr-2" /> Save Changes
+            <CIcon name="cil-save" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการเปลี่ยนแปลง' }}
           </CButton>
         </div>
       </template>
@@ -387,12 +387,16 @@ export default {
     nameEn() {
       return this.form ? this.form.nameEn : '';
     },
+    displayName() {
+      if (!this.form) return '';
+      return this.$i18n.locale === 'th' && this.form.nameTh ? this.form.nameTh : this.form.nameEn;
+    },
     studentId() {
       return this.form ? this.form.studentId : '';
     },
     initials() {
-      if (!this.nameEn) return 'A';
-      return this.nameEn.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      const name = this.displayName || 'A';
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     },
     totalArtworksPages() {
       if (!this.artistArtworks) return 0;

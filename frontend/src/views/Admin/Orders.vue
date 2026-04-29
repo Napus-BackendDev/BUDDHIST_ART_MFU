@@ -1,6 +1,6 @@
 <template>
     <div class="orders-page">
-        <HeaderHero title="Order Management" description="Overview and track all customer orders, payments and fulfillment statuses in real-time." icon="cil-cart" :showCreateButton="true" :showExportButton="true" createButtonText="Create Order" @create="onCreateOrder" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'Order Management' : 'จัดการคำสั่งซื้อ'" :description="$i18n.locale === 'en' ? 'Overview and track all customer orders, payments and fulfillment statuses in real-time.' : 'ภาพรวมและติดตามคำสั่งซื้อของลูกค้า การชำระเงิน และสถานะการจัดส่งแบบเรียลไทม์'" icon="cil-cart" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Order' : 'สร้างคำสั่งซื้อ'" @create="onCreateOrder" @export="handleExport" />
         <OrderWidget v-model="filters.status" :orders="orders" />
         <OrderFilter v-model="filters" />
         <OrderTable ref="orderTable" :filters="filters" :items="orders" @view-order="onViewOrder" @edit-order="onEditOrder" @approve="handleApproveOrder" @reject="handleRejectOrder"/>

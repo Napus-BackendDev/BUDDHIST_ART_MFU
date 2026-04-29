@@ -19,11 +19,10 @@
             <div class="avatar-ring">
               <div 
                 class="avatar-main shadow-sm"
-                :style="{ backgroundColor: getAvatarColor(nameEn) }"
+                :style="{ backgroundColor: getAvatarColor(user ? (typeof user.name === 'string' ? user.name : (Array.isArray(user.name) ? (user.name.find(n => n.key === 'en') || {}).value : '')) : '') }"
               >
                 <img v-if="user && user.image" :src="user.image" class="avatar-image" />
                 <span v-else class="avatar-initials text-white">{{ initials }}</span>
-                
               </div>
             </div>
           </div>
@@ -31,7 +30,7 @@
           <!-- User Details Section -->
           <div class="user-details-wrapper flex-grow-1 text-center text-md-left mt-2 mb-3 mb-md-0 pb-1">
             <div class="d-flex flex-column flex-md-row align-items-center mb-1 ">
-              <h2 class="display-name font-weight-bold mb-0 mr-md-3">{{ nameEn }}</h2>
+              <h2 class="display-name font-weight-bold mb-0 mr-md-3">{{ displayName }}</h2>
               <div class="status-pill-modern" :class="statusClass">
                 <span class="dot"></span>
                 <span class="status-text">{{ statusName }}</span>
@@ -39,7 +38,7 @@
             </div>
             
             <p class="profile-bio text-muted mb-0">
-              {{ bio || 'No biography provided yet. Express your unique artistic vision in your profile.' }}
+              {{ bio || ($i18n.locale === 'en' ? 'No biography provided yet. Express your unique artistic vision in your profile.' : 'ยังไม่มีข้อมูลประวัติส่วนตัว โปรดระบุข้อมูลเพื่อแสดงความเป็นเอกลักษณ์ทางศิลปะของคุณในโปรไฟล์') }}
             </p>
           </div>
           
@@ -49,7 +48,7 @@
               class="btn-edit-premium px-4 py-2 font-weight-bold d-flex align-items-center shadow-sm"
               @click="$emit('edit')"
             >
-              <CIcon name="cil-pencil" class="mr-2 icon-pulse" /> Edit Profile
+              <CIcon name="cil-pencil" class="mr-2 icon-pulse" /> {{ $i18n.locale === 'en' ? 'Edit Profile' : 'แก้ไขโปรไฟล์' }}
             </CButton>
           </div>
         </div>
@@ -65,21 +64,21 @@
                 <div class="pill-icon-box">
                   <CIcon name="cil-envelope-closed" />
                 </div>
-                <span class="pill-text">{{ email || 'No email provided' }}</span>
+                <span class="pill-text">{{ email || ($i18n.locale === 'en' ? 'No email provided' : 'ไม่มีข้อมูลอีเมล') }}</span>
               </div>
               
               <div class="meta-pill mr-md-4 mb-2">
                 <div class="pill-icon-box">
                   <CIcon name="cil-phone" />
                 </div>
-                <span class="pill-text">{{ telephone || 'No phone number' }}</span>
+                <span class="pill-text">{{ telephone || ($i18n.locale === 'en' ? 'No phone number' : 'ไม่มีเบอร์โทรศัพท์') }}</span>
               </div>
               
               <div class="meta-pill mb-2">
                 <div class="pill-icon-box">
                   <CIcon name="cil-calendar" />
                 </div>
-                <span class="pill-text">Artist since {{ joinedDate }}</span>
+                <span class="pill-text">{{ $i18n.locale === 'en' ? 'Artist since' : 'เข้าร่วมเมื่อ' }} {{ joinedDate }}</span>
               </div>
             </div>
 
@@ -89,19 +88,19 @@
                   class="btn-nav-premium px-3 py-1 font-weight-bold d-flex align-items-center mr-2 mb-2"
                   @click="$emit('navigate', 'portfolio')"
                 >
-                  <CIcon name="cil-user" class="mr-2" /> Profile
+                  <CIcon name="cil-user" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Profile' : 'โปรไฟล์' }}
                 </CButton>
                 <CButton 
                   class="btn-nav-premium px-3 py-1 font-weight-bold d-flex align-items-center mr-2 mb-2"
                   @click="$emit('navigate', 'submissions')"
                 >
-                  <CIcon name="cil-cloud-upload" class="mr-2" /> Submission
+                  <CIcon name="cil-cloud-upload" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Submission' : 'ส่งงาน' }}
                 </CButton>
                 <CButton 
                   class="btn-nav-premium px-3 py-1 font-weight-bold d-flex align-items-center mb-2"
                   @click="$emit('navigate', 'orders')"
                 >
-                  <CIcon name="cil-cart" class="mr-2" /> Order
+                  <CIcon name="cil-cart" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Order' : 'คำสั่งซื้อ' }}
                 </CButton>
             </div>
         </div>
@@ -124,38 +123,49 @@ export default {
     }
   },
   computed: {
-    nameEn() {
+    displayName() {
       if (!this.user) return 'Loading...';
-      const getName = (lang) => {
+      const lang = this.$i18n.locale || 'en';
+      const getName = (l) => {
         if (Array.isArray(this.user.name)) {
-          const obj = this.user.name.find(n => n.key === lang);
+          const obj = this.user.name.find(n => n.key === l);
           return obj ? obj.value : '';
         }
-        return '';
+        return typeof this.user.name === 'string' ? this.user.name : '';
       };
-      return getName('en') || getName('th') || 'Artist Name';
+      return getName(lang) || getName('en') || getName('th') || 'Artist Name';
     },
     username() {
-      if (!this.nameEn || this.nameEn === 'Loading...') return 'artist';
-      return this.nameEn.toLowerCase().replace(/\s+/g, '').substring(0, 15);
+      if (!this.displayName || this.displayName === 'Loading...') return 'artist';
+      return this.displayName.toLowerCase().replace(/\s+/g, '').substring(0, 15);
     },
     initials() {
-      if (!this.nameEn || this.nameEn === 'Loading...') return 'A';
-      return this.nameEn.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      if (!this.displayName || this.displayName === 'Loading...') return 'A';
+      return this.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     },
     statusName() {
-      if (!this.user || !this.user.status) return 'New Student';
+      if (!this.user || !this.user.status) return this.$i18n.locale === 'en' ? 'New Student' : 'นักศึกษาใหม่';
       const status = this.user.status;
       if (typeof status === 'string') return status;
       if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
+        const titleLang = status.title.find(t => t.key === (this.$i18n.locale || 'en'));
+        if (titleLang) return titleLang.value;
         const titleEn = status.title.find(t => t.key === 'en');
         return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Status');
       }
-      return 'Student';
+      return this.$i18n.locale === 'en' ? 'Student' : 'นักศึกษา';
     },
     statusClass() {
-      const name = this.statusName.toLowerCase();
-      if (name.includes('new')) return 'status-new';
+      let statusStr = 'new student';
+      if (this.user && this.user.status) {
+        if (typeof this.user.status === 'string') statusStr = this.user.status;
+        else if (typeof this.user.status === 'object' && this.user.status.title && Array.isArray(this.user.status.title)) {
+          const titleEn = this.user.status.title.find(t => t.key === 'en');
+          if (titleEn) statusStr = titleEn.value;
+        }
+      }
+      const name = statusStr.toLowerCase();
+      if (name.includes('new') || name.includes('ใหม่')) return 'status-new';
       if (name.includes('active')) return 'status-active';
       return 'status-default';
     },

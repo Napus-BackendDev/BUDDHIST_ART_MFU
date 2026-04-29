@@ -5,7 +5,7 @@
             <CCard class="widget-card h-100">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Total News</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total News' : 'ข่าวทั้งหมด' }}</div>
                         <div class="widget-value text-blue">{{ counts.total }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
@@ -20,7 +20,7 @@
             <CCard class="widget-card h-100">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Total Views</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total Views' : 'ยอดเข้าชมรวม' }}</div>
                         <div class="widget-value text-green">{{ counts.views }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
@@ -35,7 +35,7 @@
             <CCard class="widget-card h-100">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">News Categories</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'News Categories' : 'หมวดหมู่ข่าวสาร' }}</div>
                         <div class="widget-value text-orange">{{ counts.categories }}</div>
                     </div>
                     <div class="icon-wrapper bg-orange-light text-orange">

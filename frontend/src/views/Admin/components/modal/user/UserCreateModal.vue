@@ -13,8 +13,8 @@
                         <CIcon name="cil-user-plus" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Add New User</h5>
-                        <p class="text-muted small mb-0">Enter user details manually to create a new system account.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Add New User' : 'เพิ่มผู้ใช้ใหม่' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Enter user details manually to create a new system account.' : 'กรอกรายละเอียดผู้ใช้ด้วยตนเองเพื่อสร้างบัญชีใหม่ในระบบ' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -28,7 +28,7 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Student ID / Username</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Student ID / Username' : 'รหัสนักศึกษา / ชื่อผู้ใช้' }}</label>
                         <CInput 
                             v-model="form.studentId" 
                             placeholder="e.g. 66xxxxxxxx" 
@@ -38,11 +38,11 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">System Role</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'System Role' : 'บทบาทในระบบ' }}</label>
                         <CDropdown :key="form.roleId" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ form.roleName || 'Select Role' }}</span>
+                                    <span class="text-dark">{{ form.roleName || ($i18n.locale === 'en' ? 'Select Role' : 'เลือกบทบาท') }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
@@ -59,11 +59,11 @@
             <CRow>
                 <CCol md="12" v-if="form.roleName === 'Artist'">
                     <div class="form-group-custom">
-                        <label class="form-label">Account Status</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Account Status' : 'สถานะบัญชี' }}</label>
                         <CDropdown :key="form.statusId" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ form.statusName || 'Select Status' }}</span>
+                                    <span class="text-dark">{{ form.statusName || ($i18n.locale === 'en' ? 'Select Status' : 'เลือกสถานะ') }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
@@ -81,7 +81,7 @@
             <CRow>
                 <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
-                        <label class="form-label">Full Name (Thai)</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
                         <CInput 
                             v-model="form.nameTh" 
                             placeholder="ภาษาไทย" 
@@ -91,7 +91,7 @@
                 </CCol>
                 <CCol md="6" v-if="form.roleName !== 'Customer'">
                     <div class="form-group-custom">
-                        <label class="form-label">Full Name (English)</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
                         <CInput 
                             v-model="form.nameEn" 
                             placeholder="English name" 
@@ -105,7 +105,7 @@
             <CRow>
                 <CCol md="6" v-if="form.roleName !== 'Customer'">
                     <div class="form-group-custom">
-                        <label class="form-label">Official Email</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Official Email' : 'อีเมลทางการ' }}</label>
                         <CInput 
                             v-model="form.email" 
                             type="email" 
@@ -116,7 +116,7 @@
                 </CCol>
                 <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
-                        <label class="form-label">Personal Email</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
                         <CInput 
                             v-model="form.personalEmail" 
                             type="email" 
@@ -131,7 +131,7 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Telephone</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
                         <CInput 
                             v-model="form.telephone" 
                             placeholder="08x-xxx-xxxx" 
@@ -141,11 +141,11 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Temporary Password</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Temporary Password' : 'รหัสผ่านชั่วคราว' }}</label>
                         <CInput 
                             v-model="form.password" 
                             type="password" 
-                            placeholder="Enter password" 
+                            :placeholder="$i18n.locale === 'en' ? 'Enter password' : 'กรอกรหัสผ่าน'"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -160,7 +160,7 @@
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
                 >
-                    Cancel
+                    {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
                 <CButton 
                     color="primary" 
@@ -168,7 +168,7 @@
                     class="btn-create-user"
                     :disabled="!isFormValid"
                 >
-                    Create User Account
+                    {{ $i18n.locale === 'en' ? 'Create User Account' : 'สร้างบัญชีผู้ใช้' }}
                 </CButton>
             </div>
         </template>

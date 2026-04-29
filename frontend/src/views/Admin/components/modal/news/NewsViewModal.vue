@@ -14,8 +14,8 @@
                         <CIcon name="cil-newspaper" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">News Article Details</h5>
-                        <p class="text-muted small mb-0">View the full content of this news article.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'News Article Details' : 'รายละเอียดข่าว' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'View the full content of this news article.' : 'ดูเนื้อหาทั้งหมดของข่าวนี้' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -30,7 +30,7 @@
                 <img :src="getFirstImage(news)" class="news-main-image" />
                 <div class="category-badge-floating">
                     <CIcon name="cil-tag" class="mr-1" />
-                    {{ news.category ? getName('en', news.category.title) : 'Uncategorized' }}
+                    {{ news.category ? getName('en', news.category.title) : ($i18n.locale === 'en' ? 'Uncategorized' : 'ไม่มีหมวดหมู่') }}
                 </div>
             </div>
 
@@ -51,21 +51,21 @@
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
                 >
-                    Close
+                    {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
                 </CButton>
                 <CButton 
                     color="outline-primary" 
                     @click="onPreview"
                     class="btn-preview-news mr-2"
                 >
-                    Preview
+                    {{ $i18n.locale === 'en' ? 'Preview' : 'ดูตัวอย่าง' }}
                 </CButton>
                 <CButton 
                     color="primary" 
                     @click="$emit('edit', news)"
                     class="btn-edit-news"
                 >
-                    Edit News
+                    {{ $i18n.locale === 'en' ? 'Edit News' : 'แก้ไขข่าว' }}
                 </CButton>
             </div>
         </template>

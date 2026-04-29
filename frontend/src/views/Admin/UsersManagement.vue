@@ -1,9 +1,9 @@
 <template>
     <div class="users-management-dashboard">
         <HeaderHero 
-            title="User Management" 
-            description="Manage system users, roles, and permissions effectively. Support for manual entry and bulk import." 
-            createButtonText="Create User"
+            :title="$i18n.locale === 'en' ? 'User Management' : 'จัดการผู้ใช้งาน'" 
+            :description="$i18n.locale === 'en' ? 'Manage system users, roles, and permissions effectively. Support for manual entry and bulk import.' : 'จัดการผู้ใช้งาน ระบบบทบาท และสิทธิ์การเข้าถึง รองรับการเพิ่มข้อมูลด้วยตนเองและนำเข้าแบบกลุ่ม'" 
+            :createButtonText="$i18n.locale === 'en' ? 'Create User' : 'เพิ่มผู้ใช้งาน'"
             icon="cil-people"
             :showCreateButton="true"
             :showExportButton="true"
@@ -104,8 +104,9 @@ export default {
             if (!this.rawRoles || !Array.isArray(this.rawRoles)) return [];
             return this.rawRoles.map(r => {
                 if (!r.title || !Array.isArray(r.title)) return null;
-                const titleEn = r.title.find(t => t.key === 'en');
-                const name = titleEn ? titleEn.value : (r.title[0] ? r.title[0].value : 'Unknown');
+                const lang = this.$i18n.locale || 'en';
+                const titleLang = r.title.find(t => t.key === lang) || r.title.find(t => t.key === 'en');
+                const name = titleLang ? titleLang.value : (r.title[0] ? r.title[0].value : 'Unknown');
                 return { _id: r._id, name };
             }).filter(role => role && role.name !== 'Unknown' && role.name !== '');
         },
@@ -117,8 +118,9 @@ export default {
                 return groupTitleEn && groupTitleEn.value === 'Student Group';
             }).map(s => {
                 if (!s.title || !Array.isArray(s.title)) return null;
-                const titleEn = s.title.find(t => t.key === 'en');
-                const name = titleEn ? titleEn.value : (s.title[0] ? s.title[0].value : 'Unknown');
+                const lang = this.$i18n.locale || 'en';
+                const titleLang = s.title.find(t => t.key === lang) || s.title.find(t => t.key === 'en');
+                const name = titleLang ? titleLang.value : (s.title[0] ? s.title[0].value : 'Unknown');
                 return { _id: s._id, name };
             }).filter(s => s && s.name !== 'Unknown');
         }

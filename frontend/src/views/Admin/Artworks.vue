@@ -1,6 +1,6 @@
 <template>
     <div class="artworks-dashboard">
-        <HeaderHero title="Artwork Management" description="Manage your art collection, update availability, and showcase new arrivals." icon="cil-paint" :showCreateButton="true" :showExportButton="true" createButtonText="Create Artwork" @create="onAddArtwork" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานของคุณ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" @create="onAddArtwork" @export="handleExport" />
         <ArtworkWidget v-model="filters.status" :items="artworks" />
         <ArtworkFilter v-model="filters" />
         <AdminTable ref="adminTable" :filters="filters" :items="artworks" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
