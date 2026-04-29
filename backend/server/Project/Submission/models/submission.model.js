@@ -14,7 +14,6 @@ var objsSchema = new Schema({
             key: { type: String, default: null },
             value: { type: String, default: null },
         }],
-        artist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
         create: {
             startAt: { type: Date, default: Date.now },
             endAt: { type: Date, default: Date.now },
