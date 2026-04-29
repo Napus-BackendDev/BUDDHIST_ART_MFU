@@ -34,6 +34,9 @@ const gauthOption = {
 Vue.use(GAuth, gauthOption)
 console.log(gauthOption)
 
+// Restore session on load
+store.dispatch('auth/supportReload');
+
 new Vue({
   el: '#app',
   router,

@@ -19,17 +19,17 @@
         <!-- Status Filter -->
         <CCol lg="2" md="4" class="mb-3 mb-lg-0">
           <label class="filter-label">Status</label>
-          <CDropdown :caret="false" class="w-100 custom-add-dropdown">
+          <CDropdown class="filter-dropdown-small" :caret="false">
             <template #toggler>
-              <CButton type="button" class="filter-select-btn">
-                <span class="text-truncate mr-2">{{ value.status }}</span>
+              <CButton class="dropdown-trigger-btn-small">
+                {{ value.status }}
                 <CIcon name="cil-filter" class="filter-icon-small" />
               </CButton>
             </template>
-            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
-            <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
-            <CDropdownItem @click="updateFilter('status', 'In Progress')">In Progress</CDropdownItem>
-            <CDropdownItem @click="updateFilter('status', 'Closed')">Closed</CDropdownItem>
+            <CDropdownMenu>
+              <CDropdownItem @click="updateFilter('status', 'All Status')">All Status</CDropdownItem>
+              <CDropdownItem @click="updateFilter('status', 'In Progress')">In Progress</CDropdownItem>
+              <CDropdownItem @click="updateFilter('status', 'Closed')">Closed</CDropdownItem>
             </CDropdownMenu>
           </CDropdown>
         </CCol>
@@ -80,10 +80,16 @@
 </template>
 
 <script>
+import { CDropdown, CDropdownMenu, CDropdownItem } from '@coreui/vue';
 import moment from 'moment'
 
 export default {
   name: 'SubmissionDetailFilter',
+  components: {
+    CDropdown,
+    CDropdownMenu,
+    CDropdownItem
+  },
   props: {
     value: {
       type: Object,

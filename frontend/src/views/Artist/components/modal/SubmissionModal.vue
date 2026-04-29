@@ -42,18 +42,18 @@
                 <CCol md="6">
                     <div class="form-group-custom">
                         <label class="form-label">หมวดหมู่ (Category)</label>
-                        <CDropdown :caret="false" class="w-100">
+                        <CDropdown :key="form.category" :caret="false" class="w-100">
                             <template #toggler>
-                                <button class="custom-select-btn">
+                                <CButton class="custom-select-btn">
                                     <span class="text-dark">{{ selectedCategoryName }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
-                                </button>
+                                </CButton>
                             </template>
                             <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="cat in categories" 
                                     :key="cat._id" 
-                                    @click="form.category = cat._id"
+                                    @click="handleCategorySelect(cat._id)"
                                 >
                                     {{ getName('en', cat) }}
                                 </CDropdownItem>
@@ -176,8 +176,12 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 export default {
     name: 'SubmissionModal',
+    components: {
+    },
     props: {
         show: {
             type: Boolean,
@@ -220,11 +224,14 @@ export default {
                    this.form.image !== null;
         },
         selectedCategoryName() {
-            const cat = this.categories.find(c => c._id === this.form.category);
-            return cat ? this.getName('en', cat) : 'เลือกหมวดหมู่ (Select Category)';
-        }
+            const cat = this.categories.find(c => String(c._id) === String(this.form.category));
+            return cat ? this.getName('en', cat) : 'Select Category';
+        },
     },
     methods: {
+        handleCategorySelect(id) {
+            this.$set(this.form, 'category', id);
+        },
         async fetchInitialData() {
             try {
                 // Fetch Categories for the dropdown

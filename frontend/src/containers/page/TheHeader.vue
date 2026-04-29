@@ -34,25 +34,25 @@
 
                     <!-- User Role Links -->
                     <template v-if="userRole === 'customer' || userRole === 'user'">
-                        <CDropdownItem @click="$router.push('/user/profile')" class="font-weight-bold">
+                        <CDropdownItem @click="handleNavigateTo('/user/profile')" class="font-weight-bold">
                             <CIcon name="cil-user" class="mr-3" /> Profile
                         </CDropdownItem>
-                        <CDropdownItem @click="$router.push('/user/order')" class="font-weight-bold">
+                        <CDropdownItem @click="handleNavigateTo('/user/order')" class="font-weight-bold">
                             <CIcon name="cil-history" class="mr-3" /> History
                         </CDropdownItem>
                     </template>
                     <!-- Artist Role Links -->
                     <template v-else-if="userRole === 'artist'">
-                        <CDropdownItem @click="$router.push('/artist/profile')" class="font-weight-bold">
+                        <CDropdownItem @click="handleNavigateTo('/artist/profile')" class="font-weight-bold">
                             <CIcon name="cil-user" class="mr-3" /> Profile
                         </CDropdownItem>
-                        <CDropdownItem @click="$router.push('/artist/submissions')" class="font-weight-bold">
+                        <CDropdownItem @click="handleNavigateTo('/artist/submissions')" class="font-weight-bold">
                             <CIcon name="cil-brush" class="mr-3" /> Submissions
                         </CDropdownItem>
                     </template>
                     <!-- Admin Role Links -->
                     <template v-else-if="userRole === 'admin'">
-                        <CDropdownItem @click="$router.push('/admin')" class="font-weight-bold">
+                        <CDropdownItem @click="handleNavigateTo('/admin')" class="font-weight-bold">
                             <CIcon name="cil-speedometer" class="mr-3" /> Dashboard
                         </CDropdownItem>
                     </template>
@@ -271,6 +271,15 @@ export default {
         },
         openLoginModal() {
             this.$store.commit('auth/isSignIn', true);
+        },
+        handleNavigateTo(path) {
+            if (this.$route.path !== path) {
+                this.$router.push(path).catch(err => {
+                    if (err.name !== 'NavigationDuplicated') {
+                        throw err;
+                    }
+                });
+            }
         }
     }
 }

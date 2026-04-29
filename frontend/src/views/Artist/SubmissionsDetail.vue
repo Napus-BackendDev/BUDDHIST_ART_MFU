@@ -32,10 +32,14 @@ import SubmissionModal from './components/modal/SubmissionModal.vue'
 import ArtworkViewModal from '../Admin/components/modal/artwork/ArtworkViewModal.vue'
 import ArtworkEditModal from '../Admin/components/modal/artwork/ArtworkEditModal.vue'
 import HeaderHero from './components/HeaderHero.vue'
+import { CDropdown, CDropdownMenu, CDropdownItem } from '@coreui/vue-pro';
 
 export default {
     name: 'SubmissionsDetail',
     components: {
+        CDropdown,
+        CDropdownMenu,
+        CDropdownItem,
         SubmissionDetailTable,
         SubmissionDetailWidget,
         SubmissionDetailFilter,

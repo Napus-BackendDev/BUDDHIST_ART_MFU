@@ -4,6 +4,8 @@ const initialize = require("../helpers/initialize");
 const middlewares = require('../middleware/middlewares');
 const swagger = require('../swagger/swagger');
 const routes = require('../server/routes/app.routes');
+const cors = require('cors');
+const { corsOptions } = require('./corsAndIP');
 
 let isReady = false;
 
@@ -13,24 +15,20 @@ module.exports = function () {
   // Swagger setup
   swagger(app);
 
+  // Use standard CORS middleware immediately
+  app.use(cors(corsOptions));
+
+  // Debug middleware to log CORS requests
+  app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+      console.log(`CORS Preflight: ${req.method} ${req.url} from ${req.headers.origin}`);
+    }
+    next();
+  });
+
   initialize.init(function (status) {
     if (status) {
       middlewares(app);
-
-      app.use(function (req, res, next) {
-        if (req.method === "OPTIONS") {
-          const headers = {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, GET, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Accept, Authorization, Access-Control-Allow-Headers, X-Access-Token"
-          };
-          res.writeHead(200, headers);
-          res.end();
-        } else {
-          res.header("Access-Control-Allow-Origin", "*");
-          next();
-        }
-      });
 
       // Load routes
       routes(app);

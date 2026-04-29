@@ -73,6 +73,23 @@
           <ArtistSubmissions @view-detail="handleViewDetail" />
         </div>
 
+        <div v-else-if="activeView === 'submission-detail'" key="submission-detail" class="mt-4">
+          <div class="mb-4 d-flex align-items-center">
+            <CButton 
+              variant="ghost" 
+              class="btn-back-subtle d-flex align-items-center" 
+              @click="activeView = 'submissions'"
+            >
+              <CIcon name="cil-arrow-left" class="mr-2" />
+              <span class="font-weight-bold">Back to All Submissions</span>
+            </CButton>
+          </div>
+          <ArtistSubmissionsDetail 
+            :id="selectedSubmissionId" 
+            :hideHeader="true" 
+          />
+        </div>
+
         <div v-else-if="activeView === 'orders'" key="orders" class="mt-4">
           <CCard class="border-0 shadow-premium rounded-xl overflow-hidden">
             <CCardHeader class="bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-center flex-wrap">
@@ -430,7 +447,6 @@ export default {
     }
   },
   async created() {
-    await this.fetchProfile();
     this.$store.dispatch('artwork/get');
     this.$store.dispatch('submission/get', { artist: this.profileUserId });
     this.$store.dispatch('order/get', {});
@@ -509,6 +525,8 @@ export default {
       return '';
     },
     async fetchProfile() {
+      if (!this.profileUserId) return;
+      
       try {
         // Force refresh user list, or fetch specific user
         const users = await this.$store.dispatch('user/get', {});
@@ -536,7 +554,7 @@ export default {
             bio: currentUser.bio || ''
           };
         } else {
-          console.error("Profile Error: User not found in database matching ID:", this.userId);
+          console.error("Profile Error: User not found in database matching ID:", this.profileUserId);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -787,6 +805,10 @@ export default {
             this.$store.commit('dialog/isCode', null);
           });
       }
+    },
+    profileUserId: {
+      handler: 'fetchProfile',
+      immediate: true
     }
   }
 }

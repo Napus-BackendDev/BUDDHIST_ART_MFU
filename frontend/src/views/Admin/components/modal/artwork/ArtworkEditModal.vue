@@ -102,18 +102,18 @@
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Category</label>
-                        <CDropdown :caret="false" class="w-100">
+                        <CDropdown :key="form.category" :caret="false" class="w-100">
                             <template #toggler>
-                                <button class="custom-select-btn">
-                                    <span class="text-dark">{{ selectedCategoryName }}</span>
-                                    <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
-                                </button>
+                                <CButton class="custom-select-btn">
+                                     <span class="text-dark">{{ selectedCategoryName }}</span>
+                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
+                                </CButton>
                             </template>
                             <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="cat in categories" 
                                     :key="cat._id" 
-                                    @click="form.category = cat._id"
+                                    @click="handleCategorySelect(cat._id)"
                                 >
                                     {{ getName('en', cat) }}
                                 </CDropdownItem>
@@ -176,18 +176,18 @@
                 <CCol :md="selectedSaleStatusName === 'Available' ? '6' : '12'">
                     <div class="form-group-custom">
                         <label class="form-label">Sale Status</label>
-                        <CDropdown :caret="false" class="w-100">
+                        <CDropdown :key="form.status.sale" :caret="false" class="w-100">
                             <template #toggler>
-                                <button class="custom-select-btn">
-                                    <span class="text-dark">{{ selectedSaleStatusName }}</span>
-                                    <CIcon name="cil-filter" class="dropdown-icon" />
-                                </button>
+                                <CButton class="custom-select-btn">
+                                     <span class="text-dark">{{ selectedSaleStatusName }}</span>
+                                     <CIcon name="cil-filter" class="dropdown-icon" />
+                                </CButton>
                             </template>
                             <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="status in saleStatuses" 
                                     :key="status._id" 
-                                    @click="form.status.sale = status._id"
+                                    @click="handleSaleStatusSelect(status._id)"
                                 >
                                     {{ getName('en', status) }}
                                 </CDropdownItem>
@@ -322,6 +322,8 @@ import { mapGetters } from 'vuex';
 
 export default {
     name: 'ArtworkEditModal',
+    components: {
+    },
     props: {
         show: {
             type: Boolean,
@@ -407,12 +409,12 @@ export default {
             });
         },
         selectedCategoryName() {
-            const cat = this.categories.find(c => c._id === this.form.category);
+            const cat = this.categories.find(c => String(c._id) === String(this.form.category));
             return cat ? this.getName('en', cat) : 'Select Category';
         },
         selectedSaleStatusName() {
-            const status = this.statuses.find(s => s._id === this.form.status.sale);
-            return status ? this.getName('en', status) : 'Select Sale Status';
+            const status = this.saleStatuses.find(s => String(s._id) === String(this.form.status.sale));
+            return status ? this.getName('en', status) : 'Select Status';
         },
         selectedApprovalStatusName() {
             const status = this.statuses.find(s => s._id === this.form.status.approval);
@@ -420,20 +422,23 @@ export default {
         }
     },
     methods: {
+        handleCategorySelect(id) {
+            this.$set(this.form, 'category', id);
+        },
+        handleSaleStatusSelect(id) {
+            this.$set(this.form.status, 'sale', id);
+        },
         async fetchInitialData() {
             try {
                 this.$store.dispatch('user/get', {});
 
                 const categories = await this.$store.dispatch('artwork/category', { method: 'get' });
-                console.log('--- Edit Artwork Categories ---', categories);
                 this.categories = categories || [];
 
                 await this.$store.dispatch('setting/status/get');
                 this.statuses = this.$store.getters['setting/status/item'] || [];
-                console.log('--- Edit Artwork Statuses ---', this.statuses);
                 
                 if (this.artwork) {
-                    console.log('--- Populating Form with Artwork ---', this.artwork);
                     this.populateForm(this.artwork);
                 }
             } catch (error) {

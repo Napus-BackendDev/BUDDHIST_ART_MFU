@@ -22,10 +22,14 @@ const state = {
   sidebarShow: 'responsive',
   sidebarMinimize: false,
   asideShow: false,
-  darkMode: false
+  darkMode: false,
+  xAccessToken: null
 }
 
 const mutations = {
+  xAccessToken(state, token) {
+    state.xAccessToken = token
+  },
   toggleSidebarDesktop(state) {
     const sidebarOpened = [true, 'responsive'].includes(state.sidebarShow)
     state.sidebarShow = sidebarOpened ? false : 'responsive'

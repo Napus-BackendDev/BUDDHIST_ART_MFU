@@ -10,42 +10,45 @@ instance.defaults.baseURL = process.env.VUE_APP_API_URL;
 
 instance.defaults.headers = {
     "Content-Type": "application/json",
-    // "Api-version": "1.0",
-    "X-Access-Token": "1a661eec9bf358b8567c3dc022146d19c69d2ceafe92f503e89391e5d9f9f739",
 }
 
-//
-// // เพิ่ม request interceptor
-// instance.interceptors.request.use(
-//     (config) => {
-//       const token = `${store.state.XAccessToken}`;
-//       if (token) {
-//         config.headers.Authorization = `Bearer ${store.state.XAccessToken}`;
-//       }
-//
-//       config.headers.lang  = `${store.getters['setting/lang']}`;
-//       return config;
-//     },
-//     (error) => {
-//       return Promise.reject(error);
-//     }
-// );
-//
-// // เพิ่ม Interceptor สำหรับ Response
-// instance.interceptors.response.use(
-//     (response) => {
-//       // คืนค่าปกติหาก response สำเร็จ
-//       return response;
-//     },
-//     (error) => {
-//       // ตรวจสอบสถานะ 401
-//       if (error.response && error.response.status === 401) {
-//         // แสดง Dialog หรือ Popup
-//         router.push('/login');
-//       }
-//       return Promise.reject(error);
-//     }
-// );
+// Add request interceptor
+instance.interceptors.request.use(
+    (config) => {
+      const token = store.state.xAccessToken;
+      if (token) {
+        config.headers["X-Access-Token"] = token;
+        // Also add Authorization header if backend needs it
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Add language if available
+      try {
+        const lang = store.getters['setting/lang'];
+        if (lang) config.headers.lang = lang;
+      } catch (e) {
+        // Ignore if store not ready
+      }
+      
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+);
+
+// Add response interceptor
+instance.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    (error) => {
+      if (error.response && error.response.status === 401) {
+          // Optional: handle unauthorized
+      }
+      return Promise.reject(error);
+    }
+);
 
 export default {
 
