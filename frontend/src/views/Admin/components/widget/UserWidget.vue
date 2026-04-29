@@ -1,12 +1,12 @@
 <template>
     <CRow class="mb-4">
-        <!-- Total Students -->
-        <CCol sm="6" lg="3" @click="updateFilter('All Status', 'Artist')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': currentRole === 'Artist' && value === 'All Status' }]">
+        <!-- Total Users -->
+        <CCol sm="6" lg="3" @click="updateFilter('All Status', 'All Roles')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': currentRole === 'All Roles' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Total Student</div>
-                        <div class="widget-value text-primary">{{ studentsCount }}</div>
+                        <div class="widget-title">Total Users</div>
+                        <div class="widget-value text-primary">{{ totalCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">
                         <CIcon name="cil-people" size="xl" />
@@ -24,37 +24,37 @@
                         <div class="widget-value text-info">{{ adminsCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-info-soft text-info">
-                        <CIcon name="cil-shield-check" size="xl" />
+                        <CIcon name="cilShieldAlt" size="xl" />
                     </div>
                 </CCardBody>
             </CCard>
         </CCol>
 
-        <!-- New Student -->
-        <CCol sm="6" lg="3" @click="updateFilter('NewStudent', 'Artist')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': value === 'NewStudent' }]">
+        <!-- Artists -->
+        <CCol sm="6" lg="3" @click="updateFilter('All Status', 'Artist')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': currentRole === 'Artist' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">New Student</div>
-                        <div class="widget-value text-success">{{ newStudentsCount }}</div>
+                        <div class="widget-title">Artist</div>
+                        <div class="widget-value text-success">{{ artistsCount }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
-                        <CIcon name="cil-check-circle" size="xl" />
+                        <CIcon name="cil-brush" size="xl" />
                     </div>
                 </CCardBody>
             </CCard>
         </CCol>
 
-        <!-- Old Student -->
-        <CCol sm="6" lg="3" @click="updateFilter('OldStudent', 'Artist')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': value === 'OldStudent' }]">
+        <!-- Customers -->
+        <CCol sm="6" lg="3" @click="updateFilter('All Status', 'Customer')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': currentRole === 'Customer' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">Old Student</div>
-                        <div class="widget-value text-secondary">{{ oldStudentsCount }}</div>
+                        <div class="widget-title">Customer</div>
+                        <div class="widget-value text-warning">{{ customersCount }}</div>
                     </div>
-                    <div class="icon-wrapper bg-gray-light text-gray">
-                        <CIcon name="cil-history" size="xl" />
+                    <div class="icon-wrapper bg-yellow-light text-warning">
+                        <CIcon name="cil-user" size="xl" />
                     </div>
                 </CCardBody>
             </CCard>
@@ -81,17 +81,17 @@ export default {
         ...mapGetters({
             users: 'user/user'
         }),
-        studentsCount() {
-            return this.users.filter(u => this.getRoleName(u.role) === 'Artist').length;
+        totalCount() {
+            return this.users ? this.users.length : 0;
         },
         adminsCount() {
             return this.users.filter(u => this.getRoleName(u.role) === 'Admin').length;
         },
-        newStudentsCount() {
-            return this.users.filter(u => this.getStatusName(u.status) === 'NewStudent').length;
+        artistsCount() {
+            return this.users.filter(u => this.getRoleName(u.role) === 'Artist').length;
         },
-        oldStudentsCount() {
-            return this.users.filter(u => this.getStatusName(u.status) === 'OldStudent').length;
+        customersCount() {
+            return this.users.filter(u => this.getRoleName(u.role) === 'Customer').length;
         }
     },
     methods: {
@@ -176,6 +176,8 @@ export default {
 .text-green { color: #10b981; }
 .bg-red-light { background-color: #fff5f5; }
 .text-red { color: #e53e3e; }
+.bg-yellow-light { background-color: #fffbeb; }
+.text-warning { color: #d97706; }
 .bg-gray-light { background-color: #f7fafc; }
 .text-gray { color: #718096; }
 </style>

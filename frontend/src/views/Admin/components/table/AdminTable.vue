@@ -26,7 +26,12 @@
                     </td>
                 </template>
                 <template #title="{ item }">
-                    <td class="font-weight-bold text-dark">{{ getName('en', item) }}</td>
+                    <td>
+                        <div class="font-weight-bold text-dark mb-1">{{ getName('en', item) }}</div>
+                        <div class="text-muted small description-truncate" v-if="item.description">
+                            {{ getName('en', item.description) }}
+                        </div>
+                    </td>
                 </template>
                 <template #artist="{ item }">
                     <td class="text-muted">
@@ -44,14 +49,15 @@
                 </template>
                 <template #status="{ item }">
                     <td>
-                        <div :class="['status-badge', getStatusInfo(item).class]">
-                            <CIcon :name="getStatusInfo(item).icon" size="sm" class="status-icon" /> {{ getStatusInfo(item).label }}
+                        <div :class="['status-badge', getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').class]">
+                            <CIcon :name="getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').icon" size="sm" class="status-icon" /> 
+                            {{ getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').label }}
                         </div>
                     </td>
                 </template>
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="getStatusInfo(item).label === 'Pending' || getStatusInfo(item).label === 'Revised'" class="d-inline-flex align-items-center">
+                        <div v-if="getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').label === 'Pending' || getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').label === 'Revised'" class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
                                 v-c-tooltip="'ดูรายละเอียด'"
@@ -110,7 +116,7 @@
         </div>
 
         <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
+            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredItems.length > 0">
                 Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} artworks
             </div>
@@ -155,9 +161,11 @@
 <script>
 import moment from 'moment';
 import * as XLSX from 'xlsx';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
     name: 'AdminTable',
+    mixins: [statusBadgeMixin],
     props: {
         items: {
             type: Array,
@@ -212,7 +220,7 @@ export default {
                 const categoryMatch = this.filters.category === 'All Categories' || categoryName === this.filters.category;
 
                 // Status Filter
-                const statusInfo = this.getStatusInfo(item);
+                const statusInfo = this.getStatusBadge(item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending');
                 const statusMatch = this.filters.status === 'All Status' || statusInfo.label === this.filters.status;
 
                 // Date Filter
@@ -254,44 +262,8 @@ export default {
                 this.$emit('delete', item);
             }
         },
-        getName(lang, item) {
-            if (!item) return 'N/A';
-            if (typeof item === 'string') return item;
-            
-            const titleField = item.title || item.name || '';
-            if (typeof titleField === 'string' && titleField) return titleField;
-            
-            if (Array.isArray(titleField)) {
-                const nameObj = titleField.find(n => n.key === lang);
-                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
-                return nameObj ? nameObj.value : firstVal;
-            }
-            return 'N/A';
-        },
-        formatDate(date) {
-            if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY');
-        },
         pageChange(val) {
             this.activePage = val;
-        },
-        getStatusInfo(item) {
-            // Approval status mapping
-            const approval = item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
-            
-            switch (approval) {
-                case 'Approved':
-                case 'Success':
-                    return { label: 'Approved', class: 'badge-completed', icon: 'cil-check' };
-                case 'Rejected':
-                case 'Cancelled':
-                    return { label: 'Rejected', class: 'badge-cancelled', icon: 'cil-x' };
-                case 'Revised':
-                    return { label: 'Revised', class: 'badge-update', icon: 'cil-sync' };
-                case 'Pending':
-                default:
-                    return { label: 'Pending', class: 'badge-pending', icon: 'cil-clock' };
-            }
         },
         exportExcel() {
             const dataToExport = this.filteredItems.map(item => ({
@@ -300,7 +272,7 @@ export default {
                 'Artist': item.artist ? this.getName('en', item.artist) : 'N/A',
                 'Category': item.category ? this.getName('en', item.category) : 'N/A',
                 'Price': item.price,
-                'Status': this.getStatusInfo(item).label,
+                'Status': this.getStatusBadge(item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending').label,
                 'Created At': this.formatDate(item.createdAt)
             }));
 
@@ -314,57 +286,15 @@ export default {
 </script>
 
 <style scoped>
-.artwork-table-card {
-    border-radius: 12px;
-    border: 1px solid #eef0f3;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-    margin-top: 1rem;
+/* Custom Modal Tweaks for Zoom */
+.zoom-modal >>> .modal-content {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
 }
 
-.custom-table th {
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #7a8aa3;
-    padding: 1.25rem 1.5rem;
-    border-color: #f0f1f5;
-    background-color: #ffffff;
-}
-
-.custom-table td {
-    padding: 1.25rem 1.5rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #f0f1f5;
-    color: #172b4d;
-}
-
-.custom-table tr:last-child td {
-    border-bottom: none;
-}
-
-.text-dark {
-    color: #2c3e50 !important;
-    font-size: 0.95rem;
-}
-
-.text-muted {
-    color: #8c98a9 !important;
-    font-size: 0.95rem;
-}
-
-.text-sm {
-    font-size: 0.9rem;
-}
-
-.artist-name {
-    color: #4a5568;
-    font-weight: 600;
-}
-
-.artist-id {
-    font-size: 0.75rem;
-    color: #718096;
-    letter-spacing: 0.2px;
+.zoom-modal >>> .modal-body {
+    padding: 1.5rem; /* Give some nice breathing room */
 }
 
 .thumbnail-wrapper {
@@ -425,171 +355,21 @@ export default {
     border-radius: 12px;
 }
 
-/* Custom Modal Tweaks for Zoom */
-.zoom-modal >>> .modal-content {
-    background-color: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-}
-
-.zoom-modal >>> .modal-body {
-    padding: 1.5rem; /* Give some nice breathing room */
-}
-
-.category-pill {
-    background-color: #f0f3f5;
+.artist-name {
     color: #4a5568;
-    padding: 0.35rem 0.85rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    display: inline-block;
-}
-
-/* Status Badges */
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.35rem 1rem;
-    border-radius: 50px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-}
-
-.status-icon {
-    width: 14px;
-    height: 14px;
-    margin-right: 6px;
-}
-
-.badge-completed {
-    color: #38a169;
-    background-color: #f0fff4;
-    border: 1px solid rgba(56, 161, 105, 0.4);
-}
-
-.badge-pending {
-    color: #d69e2e;
-    background-color: #fffaf0;
-    border: 1px solid rgba(214, 158, 46, 0.4);
-}
-
-.badge-cancelled {
-    color: #e53e3e;
-    background-color: #fff5f5;
-    border: 1px solid rgba(229, 62, 62, 0.4);
-}
-
-.badge-update {
-    color: #3182ce;
-    border: 1px solid rgba(49, 130, 206, 0.4);
-    background-color: #ebf8ff;
-}
-
-/* Footer Pagination */
-.pagination-footer {
-    border-top: 1px solid #f0f1f5 !important;
-    margin: 0 1.5rem;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-::v-deep .pill-pagination .page-item .page-link {
-    border: none;
-    background-color: #f8f9fa;
-    color: #4a5568;
-    border-radius: 50px !important;
-    margin: 0 3px;
-    padding: 0.5rem 0.9rem;
     font-weight: 600;
-    font-size: 0.85rem;
-    transition: all 0.2s;
 }
 
-::v-deep .pill-pagination .page-item.active .page-link {
-    background-color: #3b3dfa;
-    color: #ffffff;
-    box-shadow: 0 4px 10px rgba(59, 61, 250, 0.3);
+.artist-id {
+    font-size: 0.75rem;
+    color: #718096;
+    letter-spacing: 0.2px;
 }
 
-::v-deep .pill-pagination .page-item .page-link:hover:not(.active) {
-    background-color: #eef0f3;
-    color: #3b3dfa;
-}
-
-::v-deep .pill-pagination .page-item.disabled .page-link {
-    background-color: transparent;
-    opacity: 0.5;
-}
-
-.rounded-bottom {
-    border-bottom-left-radius: 12px !important;
-    border-bottom-right-radius: 12px !important;
-}
-
-/* Action Buttons */
-.action-btn {
-    background: transparent;
-    border: none;
-    padding: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
-    outline: none;
-    opacity: 1; /* Always visible */
-}
-
-.action-btn:hover {
-    transform: scale(1.15);
-}
-
-.icon-success {
-    color: #48bb78;
-}
-
-.icon-success:hover {
-    background-color: #f0fff4;
-    /* Light green bg */
-}
-
-.icon-danger {
-    color: #e53e3e;
-}
-
-.icon-danger:hover {
-    background-color: #ffdddd;
-    /* Light red bg */
-}
-
-.icon-trash {
-    color: #ed8936; /* An orange/red for warning but not same as reject */
-}
-
-.icon-trash:hover {
-    background-color: #fffaf0;
-}
-
-.icon-view {
-    color: #a0aec0;
-}
-
-.icon-view:hover {
-    background-color: #f1f9ff;
-    /* Light gray bg */
-}
-
-.icon-edit {
-    color: #4299e1;
-    /* A nice blue color for edit */
-}
-
-.icon-edit:hover {
-    background-color: #ebf8ff;
-    /* Light blue bg */
+.artwork-table-card {
+    border-radius: 12px;
+    border: 1px solid #eef0f3;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    margin-top: 1rem;
 }
 </style>

@@ -44,7 +44,7 @@
           </div>
           
           <!-- Actions Section -->
-          <div class="header-actions-wrapper ml-md-auto pb-2">
+          <div v-if="!isPublic" class="header-actions-wrapper ml-md-auto pb-2">
             <CButton 
               class="btn-edit-premium px-4 py-2 font-weight-bold d-flex align-items-center shadow-sm"
               @click="$emit('edit')"
@@ -57,28 +57,53 @@
         <!-- Bottom Divider -->
          <div class="header-divider my-4"></div>
 
-        <!-- Meta Information Row -->
-        <div class="meta-info-grid d-flex flex-wrap justify-content-center justify-content-md-start">
-          <div class="meta-pill mr-md-4 mb-2">
-            <div class="pill-icon-box">
-              <CIcon name="cil-envelope-closed" />
+        <!-- Meta Information Row + Navigation -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <!-- Meta Information Row -->
+            <div class="meta-info-grid d-flex flex-wrap justify-content-center justify-content-md-start">
+              <div class="meta-pill mr-md-4 mb-2">
+                <div class="pill-icon-box">
+                  <CIcon name="cil-envelope-closed" />
+                </div>
+                <span class="pill-text">{{ email || 'No email provided' }}</span>
+              </div>
+              
+              <div class="meta-pill mr-md-4 mb-2">
+                <div class="pill-icon-box">
+                  <CIcon name="cil-phone" />
+                </div>
+                <span class="pill-text">{{ telephone || 'No phone number' }}</span>
+              </div>
+              
+              <div class="meta-pill mb-2">
+                <div class="pill-icon-box">
+                  <CIcon name="cil-calendar" />
+                </div>
+                <span class="pill-text">Artist since {{ joinedDate }}</span>
+              </div>
             </div>
-            <span class="pill-text">{{ email || 'No email provided' }}</span>
-          </div>
-          
-          <div class="meta-pill mr-md-4 mb-2">
-            <div class="pill-icon-box">
-              <CIcon name="cil-phone" />
+
+            <!-- Quick Navigation Buttons -->
+            <div v-if="!isPublic" class="header-quick-nav d-flex flex-wrap justify-content-center mt-3 mt-md-0">
+                <CButton 
+                  class="btn-nav-premium px-3 py-1 font-weight-bold d-flex align-items-center mr-2 mb-2"
+                  @click="$emit('navigate', 'portfolio')"
+                >
+                  <CIcon name="cil-user" class="mr-2" /> Profile
+                </CButton>
+                <CButton 
+                  class="btn-nav-premium px-3 py-1 font-weight-bold d-flex align-items-center mr-2 mb-2"
+                  @click="$emit('navigate', 'submissions')"
+                >
+                  <CIcon name="cil-cloud-upload" class="mr-2" /> Submission
+                </CButton>
+                <CButton 
+                  class="btn-nav-premium px-3 py-1 font-weight-bold d-flex align-items-center mb-2"
+                  @click="$emit('navigate', 'orders')"
+                >
+                  <CIcon name="cil-cart" class="mr-2" /> Order
+                </CButton>
             </div>
-            <span class="pill-text">{{ telephone || 'No phone number' }}</span>
-          </div>
-          
-          <div class="meta-pill mb-2">
-            <div class="pill-icon-box">
-              <CIcon name="cil-calendar" />
-            </div>
-            <span class="pill-text">Artist since {{ joinedDate }}</span>
-          </div>
         </div>
       </div>
     </div>
@@ -92,6 +117,10 @@ export default {
     user: {
       type: Object,
       default: () => null
+    },
+    isPublic: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -173,7 +202,7 @@ export default {
 
 /* Banner Design */
 .header-banner {
-  height: 180px;
+  height: 240px;
   width: 100%;
   position: relative;
   overflow: hidden;
@@ -337,6 +366,23 @@ export default {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 10px 20px -5px rgba(140, 21, 21, 0.4);
   color: white;
+}
+
+.btn-nav-premium {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.btn-nav-premium:hover {
+  background: #ffffff;
+  border-color: #d4af37;
+  color: #612721;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .icon-pulse:hover {

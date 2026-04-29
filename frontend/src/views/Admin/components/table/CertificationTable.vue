@@ -2,7 +2,7 @@
     <CCard class="certification-table-card mb-4">
         <div>
             <CDataTable :items="items" :fields="fields" class="custom-table mb-0" hover :border="false"
-                :striped="false">
+                :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
                 <!-- Certificate Name -->
                 <template #certificate_name="{ item }">
@@ -54,15 +54,19 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ items.length }} of {{ items.length }} certificates</div>
-            <div class="pagination-buttons">
-                <CButton class="btn-pill-pagination mr-2" :disabled="true">
-                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
-                </CButton>
-                <CButton class="btn-pill-pagination">
-                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
-                </CButton>
+            <div class="text-muted text-sm" v-if="items.length > 0">
+                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, items.length) }} of {{ items.length }} certificates
             </div>
+            <div class="text-muted text-sm" v-else>
+                Showing 0 certificates
+            </div>
+            <CPagination
+                :active-page.sync="activePage"
+                :pages="Math.max(1, Math.ceil(items.length / 10))"
+                size="sm"
+                align="end"
+                class="mb-0 pill-pagination"
+            />
         </CCardFooter>
     </CCard>
 </template>
@@ -121,13 +125,17 @@ export default {
                     times_used: 0,
                     status: 'Inactive'
                 }
-            ]
+            ],
+            activePage: 1
         }
     },
     methods: {
         getStatusBadge(status) {
             if (status === 'Active') return 'badge-success-soft';
             return 'badge-secondary-soft'; // Inactive
+        },
+        pageChange(val) {
+            this.activePage = val;
         }
     }
 }

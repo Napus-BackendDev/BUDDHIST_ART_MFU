@@ -2,20 +2,19 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 // Containers
-const TheContainerUser = () => import('@/containers/user/TheContainer')
+const TheContainerUser = () => import('@/containers/page/TheContainer')
 const TheContainerAdmin = () => import('@/containers/admin/TheContainer')
-const TheContainerArtist = () => import('@/containers/artist/TheContainer')
 
 // Views User
-const Home = () => import('@/views/User/Home')
-const News = () => import('@/views/User/News')
-const ArtworkDetail = () => import('@/views/User/ArtworkDetail')
-const Orders = () => import('@/views/User/Orders')
-const Payment = () => import('@/views/User/Payment')
-const Bill = () => import('@/views/User/Bill')
-const Artworks = () => import('@/views/User/Artworks')
-const About = () => import('@/views/User/About')
-const NewsDetail = () => import('@/views/User/NewsDetail')
+const Home = () => import('@/views/page/Home')
+const News = () => import('@/views/page/News')
+const ArtworkDetail = () => import('@/views/page/ArtworkDetail')
+
+const Payment = () => import('@/views/page/Payment')
+const Bill = () => import('@/views/page/Bill')
+const Artworks = () => import('@/views/page/Artworks')
+const About = () => import('@/views/page/About')
+const NewsDetail = () => import('@/views/page/NewsDetail')
 
 // View Admin
 const Overview = () => import('@/views/Admin/Overview')
@@ -34,8 +33,12 @@ const ArtistProfile = () => import('@/views/Artist/Profile.vue')
 const ArtistSubmissions = () => import('@/views/Artist/Submissions.vue')
 const ArtistSubmissionsDetail = () => import('@/views/Artist/SubmissionsDetail.vue')
 
+// View User Dashboard
+const UserProfile = () => import('@/views/User/index.vue')
+const UserOrder = () => import('@/views/User/order.vue')
+
 // View Page
-const Login = () => import('@/views/page/Login.vue')
+
 // const Register = () => import('@/views/page/Register')
 // const Page404 = () => import('@/views/page/Page404')
 // const Page500 = () => import('@/views/page/Page500')
@@ -72,11 +75,7 @@ export default new Router({
                     name: 'ArtworkDetail',
                     component: ArtworkDetail
                 },
-                {
-                    path: 'orders',
-                    name: 'Orders',
-                    component: Orders
-                },
+
                 {
                     path: 'payment',
                     name: 'Payment',
@@ -101,6 +100,11 @@ export default new Router({
                     path: 'news/:id',
                     name: 'NewsDetail',
                     component: NewsDetail
+                },
+                {
+                    path: 'artist-profile/:id',
+                    name: 'ArtistPublicProfile',
+                    component: ArtistProfile
                 }
             ]
         },
@@ -164,7 +168,7 @@ export default new Router({
         {
             path: '/artist',
             name: 'Artist',
-            component: TheContainerArtist,
+            component: TheContainerUser,
             redirect: '/artist/submissions',
             children: [
                 {
@@ -185,9 +189,23 @@ export default new Router({
             ]
         },
         {
-            path: '/login',
-            name: 'Login',
-            component: Login
-        }
+            path: '/user',
+            name: 'UserDashboard',
+            component: TheContainerUser,
+            redirect: '/user/profile',
+            children: [
+                {
+                    path: 'profile',
+                    name: 'UserProfile',
+                    component: UserProfile
+                },
+                {
+                    path: 'order',
+                    name: 'UserOrder',
+                    component: UserOrder
+                }
+            ]
+        },
+
     ]
 })

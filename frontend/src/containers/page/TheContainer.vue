@@ -13,12 +13,15 @@
         </CWrapper>
         <CenterLoading />
 
+        <SignIn />
+        <TwoFA />
+
     </div>
 </template>
 
 <script>
 import TheHeaderUser from './TheHeader'
-import TheFooterUser from '../TheFooterUser'
+import TheFooterUser from './TheFooterUser'
 import CenterLoading from "@/projects/components/dialog/CenterLoading.vue";
 import SignIn from "@/projects/components/dialog/SignIn.vue";
 import TwoFA from "@/projects/components/dialog/TwoFA.vue";

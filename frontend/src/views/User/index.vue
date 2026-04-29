@@ -1,0 +1,581 @@
+<template>
+  <div class="user-profile-view min-vh-100 py-4 bg-light-premium">
+    <CContainer class="profile-container-wide">
+      <div class="mb-5 text-center text-md-left">
+        <h2 class="font-weight-bold text-dark section-title">Profile</h2>
+        <div class="title-separator-sm mb-3 mx-auto mx-md-0"></div>
+        <p class="text-muted">Manage your personal information and track your orders.</p>
+      </div>
+
+      <CRow>
+        <!-- Left Column: Avatar & Bio -->
+        <CCol lg="4" class="mb-4">
+          <CCard class="profile-card border-0 shadow-premium rounded-xl h-100 mb-0 position-relative overflow-hidden">
+             <div class="card-accent-bar"></div>
+            <CCardBody class="text-center p-4 p-md-5 z-index-2 position-relative">
+              <div class="avatar-upload-wrapper mb-4 mx-auto" @click="triggerUpload" style="cursor: pointer;" title="Click to change photo">
+                <div class="avatar-preview shadow-lg position-relative overflow-hidden">
+                  <img v-if="form.image" :src="form.image" class="w-100 h-100" style="object-fit: cover;" />
+                  <span v-else class="avatar-initials">{{ initials }}</span>
+                  <div class="avatar-overlay d-flex align-items-center justify-content-center position-absolute w-100 h-100" style="top:0; left:0; background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.3s;">
+                      <CIcon name="cil-camera" size="xl" class="text-white" />
+                  </div>
+                </div>
+                <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept="image/*" />
+              </div>
+              <h4 class="font-weight-bold mb-3 text-dark">{{ fullName }}</h4>
+              <CBadge color="primary" class="badge-premium px-3 py-2">Customer</CBadge>
+              <div class="text-left mt-4 border-top pt-4">
+                  <div class="contact-info-item mb-3 d-flex align-items-center premium-hover" v-if="form.personalEmail">
+                      <div class="icon-box-sm mr-3 shadow-sm min-w-36">
+                        <CIcon name="cil-envelope-closed" />
+                      </div>
+                      <span class="text-dark font-weight-bold text-truncate">{{ form.personalEmail }}</span>
+                  </div>
+                  <div class="contact-info-item mb-3 d-flex align-items-center premium-hover" v-if="form.telephone">
+                      <div class="icon-box-sm mr-3 shadow-sm min-w-36">
+                        <CIcon name="cil-phone" />
+                      </div>
+                      <span class="text-dark font-weight-bold">{{ form.telephone }}</span>
+                  </div>
+                  <div class="contact-info-item mb-3 d-flex align-items-start premium-hover" v-if="form.bill">
+                      <div class="icon-box-sm mr-3 shadow-sm min-w-36 mt-1">
+                        <CIcon name="cil-location-pin" />
+                      </div>
+                      <div>
+                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">Billing Address</small>
+                        <span class="text-dark small d-block" style="line-height: 1.4;">{{ form.bill }}</span>
+                      </div>
+                  </div>
+                  <div class="contact-info-item mb-3 d-flex align-items-start premium-hover" v-if="form.shipping">
+                      <div class="icon-box-sm mr-3 shadow-sm min-w-36 mt-1">
+                        <CIcon name="cil-truck" />
+                      </div>
+                      <div>
+                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">Shipping Address</small>
+                        <span class="text-dark small d-block" style="line-height: 1.4;">{{ form.shipping }}</span>
+                      </div>
+                  </div>
+              </div>
+              <CButton color="dark" shape="pill" class="btn-premium w-100 mt-4 shadow-sm hover-lift" @click="isEditing = true">
+                <CIcon name="cil-pencil" class="mr-2" /> Edit Profile
+              </CButton>
+            </CCardBody>
+          </CCard>
+        </CCol>
+
+        <!-- Right Column: Quick Stats & Recent Activity -->
+        <CCol lg="8">
+           <CRow>
+               <CCol sm="6" class="mb-4">
+                   <CCard class="stat-card border-0 shadow-sm rounded-xl h-100 premium-card-hover">
+                       <CCardBody class="p-4 d-flex align-items-center">
+                           <div class="stat-icon-box bg-gold-gradient text-white mr-4 shadow-sm">
+                               <CIcon name="cil-cart" size="xl" />
+                           </div>
+                           <div>
+                               <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">Total Orders</h6>
+                               <h3 class="mb-0 font-weight-bold text-dark">{{ orders.length }}</h3>
+                           </div>
+                       </CCardBody>
+                   </CCard>
+               </CCol>
+               <CCol sm="6" class="mb-4">
+                   <CCard class="stat-card border-0 shadow-sm rounded-xl h-100 premium-card-hover">
+                       <CCardBody class="p-4 d-flex align-items-center">
+                           <div class="stat-icon-box bg-red-gradient text-white mr-4 shadow-sm">
+                               <CIcon name="cil-calendar" size="xl" />
+                           </div>
+                           <div>
+                               <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">Member Since</h6>
+                               <h3 class="mb-0 font-weight-bold text-dark">2024</h3>
+                           </div>
+                       </CCardBody>
+                   </CCard>
+               </CCol>
+           </CRow>
+           
+           <!-- Recent Orders Teaser -->
+           <CCard class="border-0 shadow-premium rounded-xl mt-2 overflow-hidden">
+                <CCardHeader class="bg-white border-bottom pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="font-weight-bold text-dark mb-0"><CIcon name="cil-history" class="mr-2 text-primary" /> Recent Orders</h5>
+                    <CButton variant="ghost" class="text-primary font-weight-bold btn-sm hover-lift" @click="$router.push('/user/order')">
+                        View All <CIcon name="cil-arrow-right" class="ml-1" />
+                    </CButton>
+                </CCardHeader>
+                <CCardBody class="p-0">
+                    <div v-if="orders && orders.length > 0" class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase">Artwork</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Date</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Amount</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Status</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="order in orders.slice(0, 5)" :key="order._id" class="cursor-pointer">
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="d-flex align-items-center">
+                                            <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 50px; height: 50px; background-color: #f0f0f0;">
+                                                <img v-if="order.artwork && order.artwork[0] && order.artwork[0].image" 
+                                                     :src="order.artwork[0].image" 
+                                                     class="w-100 h-100" 
+                                                     style="object-fit: cover;" />
+                                                <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                                    <CIcon name="cil-image" />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="font-weight-bold text-dark text-truncate" style="max-width: 150px;">
+                                                    {{ order.artwork && order.artwork[0] ? getName('en', order.artwork[0]) : 'No Artwork' }}
+                                                </div>
+                                                <small class="text-muted">
+                                                    by {{ order.artwork && order.artwork[0] && order.artwork[0].artist ? getName('en', order.artwork[0].artist) : 'Artist' }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 align-middle text-muted small text-center">{{ order.date }}</td>
+                                    <td class="px-4 py-3 align-middle font-weight-bold text-success text-center">฿{{ order.total.toLocaleString() }}</td>
+                                    <td class="px-4 py-3 align-middle text-center">
+                                        <div :class="['status-badge', getStatusBadge(order.statusName).class, 'mx-auto']">
+                                            <CIcon :name="getStatusBadge(order.statusName).icon" size="sm" class="status-icon" /> 
+                                            {{ order.statusName }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 align-middle text-center">
+                                        <CButton 
+                                            size="sm" 
+                                            variant="outline" 
+                                            color="primary" 
+                                            class="rounded-pill px-3 shadow-sm hover-lift"
+                                            @click="viewOrder(order)"
+                                        >
+                                            View
+                                        </CButton>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="text-center py-5 text-muted bg-light-empty">
+                         <CIcon name="cil-inbox" size="3xl" class="mb-3 opacity-25" />
+                         <p class="mb-0 font-weight-bold">No recent orders found.</p>
+                    </div>
+                </CCardBody>
+           </CCard>
+        </CCol>
+      </CRow>
+    </CContainer>
+
+    <!-- Order Details Modal -->
+    <OrderModal 
+      :show.sync="showOrderModal" 
+      :order="selectedOrder" 
+    />
+
+    <!-- Edit Profile Modal -->
+    <ProfileModal 
+      :show.sync="isEditing" 
+      :form="form" 
+      @save="handleSave" 
+      @cancel="cancelEdit" 
+    />
+  </div>
+</template>
+
+<script>
+import { mapGetters } from 'vuex';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import OrderModal from './components/modal/OrderModal.vue';
+import ProfileModal from './components/modal/ProfileModal.vue';
+
+export default {
+  name: 'UserProfile',
+  components: {
+    OrderModal,
+    ProfileModal
+  },
+  mixins: [statusBadgeMixin],
+  data() {
+    return {
+      isEditing: false,
+      form: {
+        _id: '',
+        nameTh: '',
+        nameEn: '',
+        personalEmail: '',
+        telephone: '',
+        bill: '',
+        shipping: '',
+        image: ''
+      },
+      selectedFile: null,
+      showOrderModal: false,
+      selectedOrder: null
+    }
+  },
+  computed: {
+    ...mapGetters({
+      userId: 'auth/userId',
+      users: 'user/user',
+      allOrders: 'order/orders'
+    }),
+    user() {
+      if (!this.users) return null;
+      return this.users.find(u => u._id === this.userId);
+    },
+    orders() {
+      if (!this.allOrders) return [];
+      return this.allOrders
+        .filter(order => order.user === this.userId || (order.user && order.user._id === this.userId))
+        .map(order => ({
+          ...order,
+          orderId: order._id.substring(order._id.length - 8).toUpperCase(),
+          date: new Date(order.createdAt).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          }),
+          total: order.artwork ? order.artwork.reduce((acc, art) => acc + (art.price || 0), 0) : 0,
+          statusName: (() => {
+            const statusLabel = this.getName('en', order.status);
+            const s = statusLabel ? statusLabel.toLowerCase() : '';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
+            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
+            return 'Pending';
+          })()
+        }));
+    },
+    nameEn() {
+      return this.form ? this.form.nameEn : '';
+    },
+    fullName() {
+      return this.form.nameTh || 'User Name';
+    },
+    initials() {
+      if (!this.form.nameTh) return 'US';
+      const parts = this.form.nameTh.trim().split(' ');
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+  },
+  async created() {
+    await this.fetchProfile();
+    await this.$store.dispatch('order/get', {});
+    console.log('DEBUG: allOrders', this.allOrders);
+  },
+  methods: {
+    viewOrder(order) {
+      this.selectedOrder = order;
+      this.showOrderModal = true;
+    },
+    async fetchProfile() {
+      try {
+        const users = await this.$store.dispatch('user/get', {});
+        const currentUser = users ? users.find(u => u._id === this.userId) : null;
+        
+        if (currentUser) {
+          const getName = (lang) => {
+            if (Array.isArray(currentUser.name)) {
+              const obj = currentUser.name.find(n => n.key === lang);
+              return obj ? obj.value : '';
+            }
+            return '';
+          };
+          
+          this.form = {
+            _id: currentUser._id,
+            image: currentUser.image || '',
+            nameTh: getName('th'),
+            nameEn: getName('en'),
+            personalEmail: currentUser.contact ? currentUser.contact.personalEmail : '',
+            telephone: currentUser.contact ? currentUser.contact.telephone : '',
+            bill: currentUser.address ? currentUser.address.bill : '',
+            shipping: currentUser.address ? currentUser.address.shipping : ''
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    },
+    async cancelEdit() {
+      this.isEditing = false;
+      this.selectedFile = null;
+      await this.fetchProfile();
+    },
+    async handleSave(updatedForm) {
+      if (updatedForm) {
+        this.form = { ...updatedForm };
+      }
+      try {
+        const payload = {
+          _id: this.form._id,
+          name: [
+            { key: 'th', value: this.form.nameTh },
+            { key: 'en', value: this.form.nameEn }
+          ],
+          contact: {
+            personalEmail: this.form.personalEmail,
+            telephone: this.form.telephone
+          },
+          address: {
+            bill: this.form.bill,
+            shipping: this.form.shipping
+          }
+        };
+
+        if (this.form.image && !this.selectedFile) {
+          payload.image = this.form.image;
+        }
+
+        await this.$store.dispatch('user/update', payload);
+
+        if (this.selectedFile) {
+          const formData = new FormData();
+          formData.append('_id', this.userId);
+          formData.append('image', this.selectedFile);
+
+          await this.$store.dispatch('user/upload', formData);
+          this.selectedFile = null;
+        }
+
+        this.isEditing = false;
+        await this.fetchProfile();
+      } catch (err) {
+        console.error('Error updating profile:', err);
+      }
+    },
+
+    async onFileChange(e) {
+      const file = e.target.files[0];
+      if (file) {
+        this.form.image = URL.createObjectURL(file);
+        this.selectedFile = file;
+        this.$refs.fileInput.value = '';
+
+        // Auto-save the image when uploaded directly from the card
+        try {
+          const formData = new FormData();
+          formData.append('_id', this.userId);
+          formData.append('image', this.selectedFile);
+
+          await this.$store.dispatch('user/upload', formData);
+          this.selectedFile = null;
+          await this.fetchProfile();
+          
+          if (this.$store.commit) {
+            this.$store.commit('dialog/showToast', { title: 'Success', message: 'Profile photo updated successfully!', variant: 'success' });
+          }
+        } catch (err) {
+          console.error('Error uploading photo:', err);
+        }
+      }
+    },
+    triggerUpload() {
+      this.$refs.fileInput.click();
+    }
+  }
+}
+</script>
+
+<style scoped>
+.bg-light-premium {
+    background-color: #f8f9fa;
+    margin-top: -2rem !important;
+}
+
+.section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 2.2rem;
+    color: #2c3e50;
+    letter-spacing: 1px;
+}
+
+.title-separator-sm {
+    width: 50px;
+    height: 4px;
+    background: linear-gradient(90deg, #d4af37, #f3e5ab);
+    border-radius: 2px;
+}
+
+.shadow-premium {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+}
+
+.rounded-xl {
+    border-radius: 20px !important;
+}
+
+.z-index-2 {
+    z-index: 2;
+}
+
+/* Avatar Styles */
+.avatar-upload-wrapper {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    position: relative;
+    padding: 5px;
+    background: linear-gradient(135deg, #d4af37, #612721);
+}
+
+.avatar-preview {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 3px solid white;
+}
+
+.avatar-initials {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #612721;
+}
+
+.avatar-upload-wrapper:hover .avatar-overlay {
+    opacity: 1 !important;
+}
+
+.card-accent-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, #612721, #d4af37);
+    z-index: 3;
+}
+
+.badge-premium {
+    background: rgba(212, 175, 55, 0.15);
+    color: #b5952f;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.icon-box-sm {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #612721;
+    transition: all 0.3s ease;
+}
+
+.premium-hover {
+    padding: 8px 10px;
+    border-radius: 12px;
+    margin-left: -10px;
+    transition: all 0.3s ease;
+}
+
+.premium-hover:hover {
+    background-color: rgba(212, 175, 55, 0.05);
+    transform: translateX(5px);
+}
+
+.premium-hover:hover .icon-box-sm {
+    background: linear-gradient(135deg, #612721 0%, #8a3a31 100%);
+    color: white;
+}
+
+.btn-premium {
+    background: linear-gradient(135deg, #612721 0%, #8a3a31 100%);
+    color: white !important;
+    border: none;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-premium:hover {
+    background: linear-gradient(135deg, #8a3a31 0%, #612721 100%);
+    box-shadow: 0 8px 20px rgba(97, 39, 33, 0.25) !important;
+    transform: translateY(-2px);
+}
+
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-3px);
+}
+
+/* Stats Cards */
+.premium-card-hover {
+    transition: all 0.3s ease;
+}
+.premium-card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08) !important;
+}
+
+.stat-icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-gold-gradient {
+    background: linear-gradient(135deg, #d4af37 0%, #b5952f 100%);
+}
+
+.bg-red-gradient {
+    background: linear-gradient(135deg, #612721 0%, #8a3a31 100%);
+}
+
+.tracking-wide {
+    letter-spacing: 1px;
+}
+
+.bg-light-empty {
+    background-color: #f8f9fa;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+}
+
+/* Forms */
+.form-label-custom {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.custom-input-premium ::v-deep .form-control {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+    background-color: #f8fafc;
+    transition: all 0.3s ease;
+    color: #2d3748;
+    height: auto;
+}
+
+.custom-input-premium ::v-deep .form-control:focus {
+    background-color: #ffffff;
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+</style>

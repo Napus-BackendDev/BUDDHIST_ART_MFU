@@ -194,7 +194,20 @@ export default {
                     const activeStatus = this.studentStatuses.find(s => s.name.toLowerCase().includes('active') || s.name.toLowerCase().includes('normal')) || this.studentStatuses[0];
 
                     const mappedData = jsonData.map(row => {
-                        // Handle potential spaces in headers or different casings if necessary
+                        // Resolve Role from file if provided, else use default student role
+                        let roleId = studentRole ? studentRole._id : null;
+                        if (row['Role']) {
+                            const foundRole = this.roles.find(r => r.name.toLowerCase() === String(row['Role']).toLowerCase());
+                            if (foundRole) roleId = foundRole._id;
+                        }
+
+                        // Resolve Status from file if provided, else use default active status
+                        let statusId = activeStatus ? activeStatus._id : null;
+                        if (row['Status']) {
+                            const foundStatus = this.studentStatuses.find(s => s.name.toLowerCase() === String(row['Status']).toLowerCase());
+                            if (foundStatus) statusId = foundStatus._id;
+                        }
+
                         return {
                             studentId: row['StudentID'] ? String(row['StudentID']) : '',
                             name: [
@@ -207,8 +220,8 @@ export default {
                                 telephone: row['Telephone'] ? String(row['Telephone']) : ''
                             },
                             password: String(row['Temporary Password'] || '123456'),
-                            role: studentRole ? studentRole._id : null,
-                            status: activeStatus ? activeStatus._id : null
+                            role: roleId,
+                            status: statusId
                         };
                     }).filter(u => u.studentId && u.contact.studentEmail);
 
@@ -238,8 +251,8 @@ export default {
         },
         downloadTemplate() {
             const data = [
-                ["StudentID", "UsernameThai", "UsernameEng", "Official Email", "Personal Email", "Telephone", "Temporary Password"],
-                ["64XXXXXX", "ตัวอย่าง ชื่อ-นามสกุล", "Sample Name", "sample.nam@lamduan.mfu.ac.th", "sample@gmail.com", "0812345678", "123456"]
+                ["StudentID", "UsernameThai", "UsernameEng", "Official Email", "Personal Email", "Telephone", "Temporary Password", "Role", "Status"],
+                ["64XXXXXX", "ตัวอย่าง ชื่อ-นามสกุล", "Sample Name", "sample.nam@lamduan.mfu.ac.th", "sample@gmail.com", "0812345678", "123456", "Student", "NewStudent"]
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(data);
             const workbook = XLSX.utils.book_new();
@@ -247,7 +260,7 @@ export default {
             
             // Auto-width columns
             const wscols = [
-                {wch: 15}, {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 15}, {wch: 20}
+                {wch: 15}, {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 15}
             ];
             worksheet['!cols'] = wscols;
 
@@ -285,7 +298,8 @@ export default {
                     'Personal Email': (user.contact && user.contact.personalEmail) || '-',
                     'Telephone': (user.contact && user.contact.telephone) || '-',
                     'Role': this.getRoleName(user.role),
-                    'Status': this.getStatusName(user.status)
+                    'Status': this.getStatusName(user.status),
+                    'Profile Image': user.avatar || '-'
                 };
             });
 
@@ -302,7 +316,8 @@ export default {
                 {wch: 30}, // Personal Email
                 {wch: 15}, // Telephone
                 {wch: 15}, // Role
-                {wch: 15}  // Status
+                {wch: 15}, // Status
+                {wch: 50}  // Profile Image (Longer for URL)
             ];
             worksheet['!cols'] = wscols;
 

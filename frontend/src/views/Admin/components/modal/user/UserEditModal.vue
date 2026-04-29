@@ -57,7 +57,7 @@
             </CRow>
 
             <!-- Status Row -->
-            <CRow>
+            <CRow v-if="form.roleName === 'Artist'">
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Account Status</label>
@@ -86,7 +86,7 @@
 
             <!-- Names Row -->
             <CRow>
-                <CCol md="6">
+                <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
                         <label class="form-label">Full Name (Thai)</label>
                         <CInput 
@@ -96,7 +96,7 @@
                         />
                     </div>
                 </CCol>
-                <CCol md="6">
+                <CCol md="6" v-if="form.roleName !== 'Customer'">
                     <div class="form-group-custom">
                         <label class="form-label">Full Name (English)</label>
                         <CInput 
@@ -110,7 +110,7 @@
 
             <!-- Contacts Row -->
             <CRow>
-                <CCol md="6">
+                <CCol md="6" v-if="form.roleName !== 'Customer'">
                     <div class="form-group-custom">
                         <label class="form-label">Official Email</label>
                         <CInput 
@@ -121,7 +121,7 @@
                         />
                     </div>
                 </CCol>
-                <CCol md="6">
+                <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
                         <label class="form-label">Personal Email</label>
                         <CInput 
@@ -205,7 +205,12 @@ export default {
     },
     computed: {
         isFormValid() {
-            return this.form && this.form.studentId && this.form.roleId && this.form.statusId && this.form.nameEn && this.form.email;
+            if (!this.form) return false;
+            const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.form.email;
+            if (this.form.roleName === 'Artist') {
+                return baseValid && this.form.statusId;
+            }
+            return baseValid;
         }
     },
     methods: {

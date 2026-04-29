@@ -1,41 +1,153 @@
 <template>
-  <div v-if="form">
-    <ArtistProfileHeader :user="user" @edit="isEditing = true" />
+  <div v-if="form" class="profile-view-bg min-vh-100 py-4">
+    <CContainer class="profile-container-wide">
+    <ArtistProfileHeader 
+      :user="user" 
+      :isPublic="isPublic" 
+      @edit="isEditing = true" 
+      @navigate="handleNavigate"
+    />
+ 
+      <transition name="fade" mode="out-in">
+        
+        <div v-if="activeView === 'portfolio'" key="portfolio">
+          <!-- Artwork Portfolio Section -->
+          <CCard class="profile-portfolio-card mt-4 border-0 shadow-premium rounded-xl overflow-hidden">
+            <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
+              <div class="header-title-group mb-3 mb-md-0">
+                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">My Artwork Portfolio</h3>
+                <p class="text-muted mb-0 portfolio-subtitle">Explore and manage your collection of digital and physical art pieces.</p>
+              </div>
+              <div v-if="!isPublic" class="header-actions-group">
+                <CButton color="primary" shape="pill" class="px-4 py-2 font-weight-bold shadow-sm btn-add-artwork" @click="handleAddNewArtwork">
+                  <CIcon name="cil-plus" class="mr-2" /> Add New Artwork
+                </CButton>
+              </div>
+            </CCardHeader>
+            
+            <CCardBody class="p-4 p-md-5">
+              <div class="portfolio-grid-container">
+                <ArtworkCard 
+                  :artworks="paginatedArtworks" 
+                  :isPublic="isPublic"
+                  @edit="handleEditArtwork"
+                  @delete="handleDeleteArtwork"
+                />
+              </div>
 
-    <!-- Artwork Portfolio Section -->
-    <CCard class="profile-portfolio-card mt-4 border-0 shadow-premium rounded-xl overflow-hidden">
-      <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
-        <div class="header-title-group mb-3 mb-md-0">
-          <h3 class="mb-1 font-weight-bold text-dark portfolio-title">My Artwork Portfolio</h3>
-          <p class="text-muted mb-0 portfolio-subtitle">Explore and manage your collection of digital and physical art pieces.</p>
-        </div>
-        <div class="header-actions-group">
-          <CButton color="primary" shape="pill" class="px-4 py-2 font-weight-bold shadow-sm btn-add-artwork" @click="handleAddNewArtwork">
-            <CIcon name="cil-plus" class="mr-2" /> Add New Artwork
-          </CButton>
-        </div>
-      </CCardHeader>
+              <!-- Portfolio Pagination -->
+              <div v-if="totalArtworksPages > 1" class="d-flex justify-content-center mt-5 mb-2">
+                <CPagination
+                  :active-page.sync="activePage"
+                  :pages="totalArtworksPages"
+                  align="center"
+                  class="premium-pagination"
+                />
+              </div>
+            </CCardBody>
+          </CCard>
       
-      <CCardBody class="p-4 p-md-5">
-        <div class="portfolio-grid-container">
-          <ArtworkCard 
-            :artworks="paginatedArtworks" 
-            @edit="handleEditArtwork"
-            @delete="handleDeleteArtwork"
-          />
+          <!-- Submissions Section (Preview - Only for own profile) -->
+          <CCard v-if="!isPublic" class="profile-portfolio-card mt-5 border-0 shadow-premium rounded-xl overflow-hidden">
+            <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
+              <div class="header-title-group mb-3 mb-md-0">
+                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">Recent Submissions</h3>
+                <p class="text-muted mb-0 portfolio-subtitle">A quick overview of your latest certification tasks.</p>
+              </div>
+              <CButton color="dark" variant="outline" shape="pill" class="btn-sm px-3 font-weight-bold" @click="activeView = 'submissions'">
+                View All Submissions
+              </CButton>
+            </CCardHeader>
+            
+            <CCardBody class="p-4 p-md-5 pt-0">
+              <SubmissionTable 
+                @view="handleViewSubmission" 
+                @edit="handleEditSubmission" 
+                @delete="handleDeleteSubmission" 
+              />
+            </CCardBody>
+          </CCard>
         </div>
 
-        <!-- Portfolio Pagination -->
-        <div v-if="totalArtworksPages > 1" class="d-flex justify-content-center mt-5 mb-2">
-          <CPagination
-            :active-page.sync="activePage"
-            :pages="totalArtworksPages"
-            align="center"
-            class="premium-pagination"
-          />
+        <div v-else-if="activeView === 'submissions'" key="submissions" class="mt-4">
+          <ArtistSubmissions @view-detail="handleViewDetail" />
         </div>
-      </CCardBody>
-    </CCard>
+
+        <div v-else-if="activeView === 'orders'" key="orders" class="mt-4">
+          <CCard class="border-0 shadow-premium rounded-xl overflow-hidden">
+            <CCardHeader class="bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-center flex-wrap">
+              <div class="header-title-group mb-3 mb-md-0">
+                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">My Order History</h3>
+                <p class="text-muted mb-0 portfolio-subtitle">Track your past purchases and collection expansion.</p>
+              </div>
+              <div class="search-box" style="min-width: 300px;">
+                <CInput 
+                  v-model="orderSearch"
+                  placeholder="Search orders..." 
+                  class="custom-search-input mb-0"
+                >
+                  <template #prepend-content><CIcon name="cilMagnifyingGlass"/></template>
+                </CInput>
+              </div>
+            </CCardHeader>
+
+            <CCardBody class="p-0">
+              <CDataTable
+                :items="filteredOrders"
+                :fields="[
+                  { key: 'orderIdDisplay', label: 'Order ID' },
+                  { key: 'dateDisplay', label: 'Date' },
+                  { key: 'totalAmount', label: 'Total' },
+                  { key: 'statusName', label: 'Status' },
+                  { key: 'action', label: '', _style: 'width:1%', sorter: false, filter: false }
+                ]"
+                :items-per-page="10"
+                :active-page="orderActivePage"
+                hover
+                class="custom-table mb-0"
+              >
+                <template #orderIdDisplay="{item}">
+                  <td class="align-middle py-3 px-4">
+                    <div class="d-flex align-items-center">
+                      <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 45px; height: 45px; background-color: #f8fafc;">
+                        <img v-if="item.artwork && item.artwork[0]" :src="item.artwork[0].image" class="w-100 h-100 object-fit-cover" />
+                        <CIcon v-else name="cil-image" class="text-muted m-2" />
+                      </div>
+                      <span class="font-weight-bold text-dark">#{{ item.orderIdDisplay }}</span>
+                    </div>
+                  </td>
+                </template>
+                <template #dateDisplay="{item}">
+                  <td class="align-middle text-muted px-4">{{ item.dateDisplay }}</td>
+                </template>
+                <template #totalAmount="{item}">
+                  <td class="align-middle font-weight-bold text-primary px-4">฿{{ item.totalAmount.toLocaleString() }}</td>
+                </template>
+                <template #statusName="{item}">
+                  <td class="align-middle px-4">
+                    <div :class="['status-badge-inline', item.statusName.toLowerCase()]">
+                      {{ item.statusName }}
+                    </div>
+                  </td>
+                </template>
+                <template #action="{item}">
+                  <td class="align-middle text-right px-4">
+                    <button class="action-btn icon-view" @click="viewOrderDetails(item)">
+                      <CIcon name="cilMagnifyingGlass" size="lg" />
+                    </button>
+                  </td>
+                </template>
+              </CDataTable>
+            </CCardBody>
+          </CCard>
+        </div>
+      </transition>
+    </CContainer>
+
+    <OrderModal 
+      :show.sync="showOrderModal" 
+      :order="selectedOrder" 
+    />
 
     <CModal
       title="Edit Artist Profile"
@@ -161,7 +273,10 @@
 <script>
 import ArtistProfileHeader from './components/ArtistProfileHeader.vue'
 import ArtworkCard from './components/card/CardArtworks.vue'
-import SubmissionTable from '../Admin/components/table/SubmissionTable.vue'
+import SubmissionTable from './components/table/SubmissionTable.vue'
+import ArtistSubmissions from './Submissions.vue'
+import ArtistSubmissionsDetail from './SubmissionsDetail.vue'
+import OrderModal from '../User/components/modal/OrderModal.vue'
 import ArtworkCreateModal from './components/modal/ArtworkCreateModal.vue'
 import ArtworkEditModal from './components/modal/ArtworkEditModal.vue'
 import { mapGetters } from 'vuex';
@@ -172,11 +287,20 @@ export default {
     ArtistProfileHeader,
     ArtworkCard,
     SubmissionTable,
+    ArtistSubmissions,
+    ArtistSubmissionsDetail,
+    OrderModal,
     ArtworkCreateModal,
     ArtworkEditModal
   },
   data() {
     return {
+      activeView: 'portfolio',
+      selectedSubmissionId: null,
+      selectedOrder: null,
+      showOrderModal: false,
+      orderSearch: '',
+      orderActivePage: 1,
       form: null,
       loading: false,
       isEditing: false,
@@ -194,24 +318,40 @@ export default {
       userId: 'auth/userId',
       users: 'user/user',
       allArtworks: 'artwork/artworks',
+      allOrders: 'order/orders',
       dialogCode: 'dialog/isCode'
     }),
+    profileUserId() {
+      return this.$route.params.id || this.userId;
+    },
+    isPublic() {
+      return this.$route.params.id && this.$route.params.id !== this.userId;
+    },
     user() {
-      // Find current user from the list
+      // Find the user identified by profileUserId from the list
       if (!this.users) return null;
-      return this.users.find(u => u._id === this.userId);
+      return this.users.find(u => u._id === this.profileUserId);
     },
     artistArtworks() {
-      if (!this.allArtworks) return [];
+      if (!this.allArtworks || !Array.isArray(this.allArtworks)) return [];
       
       // 1. Filter by artist ID
       let filtered = this.allArtworks.filter(art => {
         if (!art.artist) return false;
         const id = typeof art.artist === 'object' ? art.artist._id : art.artist;
-        return id === this.userId;
+        return id === this.profileUserId;
       });
 
-      // 2. Sort by Priority and Date
+      // 2. If public, filter by Approved status
+      if (this.isPublic) {
+        filtered = filtered.filter(art => {
+          if (!art.status || !art.status.approval) return false;
+          const status = this.getName('en', art.status.approval);
+          return ['Approved', 'Success'].includes(status);
+        });
+      }
+
+      // 3. Sort by Priority and Date
       return filtered.sort((a, b) => {
         // Priority Score: Approved = 1, Others = 2, Pending = 3
         const getPriority = (art) => {
@@ -256,16 +396,62 @@ export default {
       const start = (this.activePage - 1) * this.itemsPerPage;
       const end = start + this.itemsPerPage;
       return this.artistArtworks.slice(start, end);
+    },
+    processedOrders() {
+      if (!this.allOrders) return [];
+      return this.allOrders
+        .filter(order => order.user === this.profileUserId || (order.user && order.user._id === this.profileUserId))
+        .map(order => ({
+          ...order,
+          orderIdDisplay: order._id.substring(order._id.length - 8).toUpperCase(),
+          dateDisplay: new Date(order.createdAt).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          }),
+          totalAmount: order.artwork ? order.artwork.reduce((acc, art) => acc + (art.price || 0), 0) : 0,
+          statusName: (() => {
+            const statusLabel = this.getName('en', order.status);
+            const s = statusLabel ? statusLabel.toLowerCase() : '';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
+            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
+            return 'Pending';
+          })()
+        }));
+    },
+    filteredOrders() {
+      if (!this.orderSearch) return this.processedOrders;
+      const q = this.orderSearch.toLowerCase();
+      return this.processedOrders.filter(o => 
+        o.orderIdDisplay.toLowerCase().includes(q) ||
+        o.statusName.toLowerCase().includes(q) ||
+        o.dateDisplay.toLowerCase().includes(q)
+      );
     }
   },
   async created() {
     await this.fetchProfile();
     this.$store.dispatch('artwork/get');
-    this.$store.dispatch('submission/get', {});
+    this.$store.dispatch('submission/get', { artist: this.profileUserId });
+    this.$store.dispatch('order/get', {});
   },
   methods: {
     handleViewSubmission(item) {
-      if(item && item._id) this.$router.push({ name: 'SubmissionsDetail', params: { id: item._id } });
+      if(item && item._id) {
+        this.selectedSubmissionId = item._id;
+        this.activeView = 'submission-detail';
+      }
+    },
+    handleNavigate(view) {
+      this.activeView = view;
+    },
+    handleViewDetail(id) {
+      this.selectedSubmissionId = id;
+      this.activeView = 'submission-detail';
+    },
+    viewOrderDetails(item) {
+      this.selectedOrder = item;
+      this.showOrderModal = true;
     },
     handleEditSubmission(item) {
       this.$store.commit('dialog/showToast', { title: 'Info', message: 'Edit submission in Dashboard', variant: 'info' });
@@ -326,8 +512,8 @@ export default {
       try {
         // Force refresh user list, or fetch specific user
         const users = await this.$store.dispatch('user/get', {});
-        // Find the user directly from the fetched array to avoid reactivity timing issues
-        const currentUser = users ? users.find(u => u._id === this.userId) : null;
+        // Find the user directly from the fetched array
+        const currentUser = users ? users.find(u => u._id === this.profileUserId) : null;
         
         if (currentUser) {
           const getName = (lang) => {
@@ -607,6 +793,28 @@ export default {
 </script>
 
 <style scoped>
+.profile-view-bg {
+  margin-top: -2rem !important;
+  background-color: #f8fafc;
+}
+.profile-container-wide {
+  max-width: 1440px !important;
+}
+
+.btn-back-subtle {
+  color: #64748b;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.btn-back-subtle:hover {
+  background-color: #ffffff;
+  color: #8c1515;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transform: translateX(-4px);
+}
+
 .shadow-premium {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02) !important;
 }

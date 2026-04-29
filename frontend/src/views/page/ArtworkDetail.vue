@@ -59,7 +59,9 @@
                                 <h1 class="artwork-master-title text-dark mb-2">{{ getName('en', artwork) }}</h1>
                                 <div class="artist-signature-block mb-4">
                                     <span class="label">Artist</span>
-                                    <h4 class="artist-name">{{ artwork.artist ? getName('en', artwork.artist) : 'Unknown Artist' }}</h4>
+                                    <h4 class="artist-name clickable" @click="goToArtistProfile">
+                                        {{ artwork.artist ? getName('en', artwork.artist) : 'Unknown Artist' }}
+                                    </h4>
                                 </div>
 
                                 <!-- Price Display -->
@@ -109,13 +111,14 @@
 
                                 <!-- Purchase Actions -->
                                 <div class="action-stack-premium pt-4 border-top">
-                                    <CButton block :color="isSoldOut || isPreview ? 'secondary' : (isInCart ? 'dark' : 'danger')" size="lg" shape="pill"
-                                        :disabled="isSoldOut || isPreview"
+                                    <CButton block :color="isSoldOut || isPreview || !isPurchasable ? 'secondary' : (isInCart ? 'dark' : 'danger')" size="lg" shape="pill"
+                                        :disabled="isSoldOut || isPreview || !isPurchasable"
                                         class="btn-purchase-premium shadow-lg mb-3"
-                                        :style="isSoldOut || isPreview || isInCart ? 'background: #e2e8f0 !important; color: #94a3b8 !important;' : 'background: linear-gradient(135deg, #4a1d18, #612721); color: white !important;'"
+                                        :style="isSoldOut || isPreview || !isPurchasable || isInCart ? 'background: #e2e8f0 !important; color: #94a3b8 !important;' : 'background: linear-gradient(135deg, #4a1d18, #612721); color: white !important;'"
                                         @click="addToCart">
-                                        <CIcon v-if="!isSoldOut && !isPreview && !isInCart" name="cilCart" size="xl" class="mr-3" />
+                                        <CIcon v-if="!isSoldOut && !isPreview && isPurchasable && !isInCart" name="cilCart" size="xl" class="mr-3" />
                                         <CIcon v-else-if="isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
+                                        <CIcon v-else-if="!isPurchasable && !isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
                                         <CIcon v-else-if="isInCart" name="cilCheck" size="xl" class="mr-3" />
                                         {{ getButtonText }}
                                     </CButton>
@@ -184,9 +187,17 @@ export default {
             if (!this.artwork || !this.artwork._id) return false;
             return this.$store.getters['cart/isInCart'](this.artwork._id);
         },
+        isPurchasable() {
+            if (this.isPreview) return false;
+            if (!this.artwork || !this.artwork.status || !this.artwork.status.sale) return false;
+            const status = this.getName('en', this.artwork.status.sale);
+            // ONLY 'Available' status is purchasable.
+            return status === 'Available';
+        },
         getButtonText() {
             if (this.isPreview) return 'Preview Mode';
             if (this.isSoldOut) return 'Already Sold Out';
+            if (!this.isPurchasable) return 'Not for Sale';
             if (this.isInCart) return 'In Collection (Remove?)';
             return 'Add in cart';
         }
@@ -235,7 +246,7 @@ export default {
             }
         },
         addToCart() {
-            if (this.isPreview || this.isSoldOut) return;
+            if (this.isPreview || this.isSoldOut || !this.isPurchasable) return;
             if (this.isInCart) {
                 this.$store.dispatch('cart/removeFromCart', this.artwork._id);
             } else {
@@ -278,6 +289,14 @@ export default {
                 });
             } else {
                 alert('URL copied to clipboard: ' + window.location.href);
+            }
+        },
+        goToArtistProfile() {
+            if (this.artwork && this.artwork.artist) {
+                const artistId = typeof this.artwork.artist === 'object' ? this.artwork.artist._id : this.artwork.artist;
+                if (artistId) {
+                    this.$router.push({ name: 'ArtistPublicProfile', params: { id: artistId } });
+                }
             }
         }
     },
@@ -508,13 +527,23 @@ export default {
     font-size: 1.5rem;
     font-weight: 400;
     color: #4a1d18;
+    transition: all 0.2s ease;
+}
+
+.artist-signature-block .artist-name.clickable {
+    cursor: pointer;
+}
+
+.artist-signature-block .artist-name.clickable:hover {
+    color: #612721;
+    text-decoration: underline;
 }
 
 .valuation-block {
-    background: white;
+    background: #f8fafc;
     padding: 24px;
     border-radius: 24px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid #f8fafc;
 }
 
 .valuation-label {

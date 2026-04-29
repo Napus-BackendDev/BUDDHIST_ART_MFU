@@ -50,26 +50,6 @@ async function seedRoles() {
             },
             {
                 title: [
-                    { key: 'en', value: 'Developer' },
-                    { key: 'th', value: 'นักพัฒนา' }
-                ],
-                description: [
-                    { key: 'en', value: 'System developers with technical access' },
-                    { key: 'th', value: 'นักพัฒนาระบบที่มีการเข้าถึงทางเทคนิค' }
-                ]
-            },
-            {
-                title: [
-                    { key: 'en', value: 'Evaluator' },
-                    { key: 'th', value: 'ผู้ประเมิน' }
-                ],
-                description: [
-                    { key: 'en', value: 'Responsible for evaluating submissions' },
-                    { key: 'th', value: 'รับผิดชอบในการประเมินผลงาน' }
-                ]
-            },
-            {
-                title: [
                     { key: 'en', value: 'Customer' },
                     { key: 'th', value: 'ลูกค้า/นักศึกษา' }
                 ],

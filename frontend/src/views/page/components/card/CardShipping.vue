@@ -13,33 +13,25 @@
             </CCardHeader>
             <CCardBody class="p-4 pt-0" v-show="currentStep === 1">
                 <CRow>
-                    <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">First Name</label>
-                        <CInput v-model="form.firstName" placeholder="" class="bg-light border-0 shadow-none" />
-                    </CCol>
-                    <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Last Name</label>
-                        <CInput v-model="form.lastName" placeholder="" class="bg-light border-0 shadow-none" />
-                    </CCol>
-                    <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Email Address</label>
-                        <CInput v-model="form.email" placeholder="" class="bg-light border-0 shadow-none" />
-                    </CCol>
-                    <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Phone Number</label>
-                        <CInput v-model="form.phone" placeholder="" class="bg-light border-0 shadow-none" />
-                    </CCol>
                     <CCol md="12" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Address</label>
-                        <CInput v-model="form.address" placeholder="" class="bg-light border-0 shadow-none" />
+                        <label class="font-weight-bold small text-muted">Full Name</label>
+                        <CInput v-model="form.name" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">City</label>
-                        <CInput v-model="form.city" placeholder="" class="bg-light border-0 shadow-none" />
+                        <label class="font-weight-bold small text-muted">Personal Email</label>
+                        <CInput v-model="form.email" placeholder="" type="email" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Postal Code</label>
-                        <CInput v-model="form.postalCode" placeholder="" class="bg-light border-0 shadow-none" />
+                        <label class="font-weight-bold small text-muted">Telephone</label>
+                        <CInput v-model="form.telephone" placeholder="" class="bg-light border-0 shadow-none" />
+                    </CCol>
+                    <CCol md="6" class="mb-3">
+                        <label class="font-weight-bold small text-muted">Billing Address</label>
+                        <CTextarea v-model="form.bill" placeholder="" rows="3" class="bg-light border-0 shadow-none" />
+                    </CCol>
+                    <CCol md="6" class="mb-3">
+                        <label class="font-weight-bold small text-muted">Shipping Address</label>
+                        <CTextarea v-model="form.shipping" placeholder="" rows="3" class="bg-light border-0 shadow-none" />
                     </CCol>
                 </CRow>
 
@@ -186,23 +178,67 @@ export default {
             paymentProofName: '',
             paymentProofSize: '',
             form: {
-                firstName: '',
-                lastName: '',
+                name: '',
                 email: '',
-                phone: '',
-                address: '',
-                city: '',
-                postalCode: ''
+                telephone: '',
+                bill: '',
+                shipping: ''
             }
         }
     },
     computed: {
         ...mapGetters('cart', ['cartFinalTotal']),
+        ...mapGetters({
+            userId: 'auth/userId',
+            users: 'user/user'
+        }),
         total() {
             return this.cartFinalTotal;
+        },
+        isLoggedIn() {
+            return !!this.userId;
+        }
+    },
+    watch: {
+        isLoggedIn(newVal) {
+            if (newVal) {
+                this.autofillUserData();
+            }
+        }
+    },
+    async mounted() {
+        if (this.isLoggedIn) {
+            await this.autofillUserData();
         }
     },
     methods: {
+        async autofillUserData() {
+            try {
+                // Ensure users are loaded
+                let allUsers = this.users;
+                if (!allUsers || allUsers.length === 0) {
+                    allUsers = await this.$store.dispatch('user/get', {});
+                }
+                const currentUser = allUsers ? allUsers.find(u => u._id === this.userId) : null;
+                if (currentUser) {
+                    // Extract name
+                    let nameStr = '';
+                    if (Array.isArray(currentUser.name)) {
+                        const nameTh = currentUser.name.find(n => n.key === 'th');
+                        const nameEn = currentUser.name.find(n => n.key === 'en');
+                        nameStr = (nameTh ? nameTh.value : '') || (nameEn ? nameEn.value : '');
+                    }
+                    
+                    this.form.name = this.form.name || nameStr;
+                    this.form.email = this.form.email || (currentUser.contact ? currentUser.contact.personalEmail : '');
+                    this.form.telephone = this.form.telephone || (currentUser.contact ? currentUser.contact.telephone : '');
+                    this.form.bill = this.form.bill || (currentUser.address ? currentUser.address.bill : '');
+                    this.form.shipping = this.form.shipping || (currentUser.address ? currentUser.address.shipping : '');
+                }
+            } catch (e) {
+                console.error('Error autofilling user data', e);
+            }
+        },
         triggerUpload() {
             this.$refs.fileInput.click();
         },
@@ -247,8 +283,15 @@ export default {
             }
         },
         onConfirmPayment() {
+            // Check Login Status first
+            if (!this.isLoggedIn) {
+                this.$store.commit('dialog/showToast', { title: 'Authentication Required', message: 'กรุณาเข้าสู่ระบบก่อนยืนยันคำสั่งซื้อ', variant: 'warning' });
+                this.$store.commit('auth/isSignIn', true);
+                return;
+            }
+
             // Basic validation
-            if (!this.form.firstName || !this.form.email || !this.form.address) {
+            if (!this.form.name || !this.form.email || !this.form.shipping) {
                 alert('Please fill in all required shipping information.');
                 this.currentStep = 1;
                 return;

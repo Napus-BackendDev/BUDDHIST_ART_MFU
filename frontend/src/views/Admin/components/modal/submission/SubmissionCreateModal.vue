@@ -286,13 +286,17 @@ export default {
             if (!this.availableStudents) return [];
             const q = this.studentSearch.toLowerCase();
             return this.availableStudents.filter(s => {
+                // Only show Artists
+                if (this.getRoleName(s.role) !== 'Artist') return false;
+
                 const name = this.getStudentName(s).toLowerCase();
-                const studentId = (s.username || '').toLowerCase(); // Assuming username is student_id
+                const studentId = (s.studentId || s.username || '').toLowerCase();
                 return name.includes(q) || studentId.includes(q);
             });
         },
         allSelected() {
-            return this.availableStudents && this.selectedStudents.length === this.availableStudents.length;
+            const artists = this.availableStudents.filter(s => this.getRoleName(s.role) === 'Artist');
+            return artists.length > 0 && this.selectedStudents.length === artists.length;
         },
         selectedStudentDetails() {
             if (!this.availableStudents) return [];
@@ -304,6 +308,15 @@ export default {
             if (!student || !student.name) return 'N/A';
             const nameObj = student.name.find(n => n.key === 'en') || student.name[0];
             return nameObj ? nameObj.value : 'N/A';
+        },
+        getRoleName(role) {
+            if (!role) return 'User';
+            if (typeof role === 'string') return role;
+            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
+                const titleEn = role.title.find(t => t.key === 'en');
+                return titleEn ? titleEn.value : (role.title[0] ? role.title[0].value : 'User');
+            }
+            return 'User';
         },
         addAssignment() {
             this.form.assignments.push({ id: Date.now(), title: '', startDateTime: '', endDateTime: '' });
@@ -326,7 +339,8 @@ export default {
             if (this.allSelected) {
                 this.selectedStudents = [];
             } else {
-                this.selectedStudents = this.availableStudents.map(s => s._id);
+                const artists = this.availableStudents.filter(s => this.getRoleName(s.role) === 'Artist');
+                this.selectedStudents = artists.map(s => s._id);
             }
         },
         getInitials(name) {

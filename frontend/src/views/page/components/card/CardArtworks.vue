@@ -39,7 +39,7 @@
                             </div>
                             
                             <!-- Action Button: Add to Cart / In Cart Status -->
-                            <div class="action-btn-container" @click.stop="handleCartAction(art)">
+                            <div v-if="isPurchasable(art)" class="action-btn-container" @click.stop="handleCartAction(art)">
                                 <div v-if="isInCart(art._id)" class="in-cart-label">
                                     <CIcon name="cil-check-circle" class="mr-1" />
                                     <span>อยู่ในตะกร้าแล้ว</span>
@@ -105,6 +105,7 @@ export default {
             return cartItems.some(item => item._id === id);
         },
         handleCartAction(art) {
+            if (!this.isPurchasable(art)) return;
             if (this.isInCart(art._id)) {
                 // If already in cart, remove it
                 this.$store.dispatch('cart/removeFromCart', art._id);
@@ -115,6 +116,12 @@ export default {
                 // Automatically open the cart sidebar (A-side)
                 this.$store.dispatch('cart/setShowCart', true);
             }
+        },
+        isPurchasable(art) {
+            if (!art || !art.status || !art.status.sale) return false;
+            const status = this.getName('en', art.status.sale);
+            // ONLY 'Available' status is purchasable.
+            return status === 'Available';
         }
     }
 }

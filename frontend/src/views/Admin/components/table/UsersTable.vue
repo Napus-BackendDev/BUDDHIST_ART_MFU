@@ -14,23 +14,18 @@
                 @page-change="pageChange"
             >
 
-                <!-- ID Column -->
-                <template #id="{ item }">
-                    <td class="py-3">
-                        <span class="font-weight-bold" style="color: #4f5d73;">{{ item.studentId || 'N/A' }}</span>
-                    </td>
-                </template>
+
 
                 <!-- User Name / Student ID Column -->
                 <template #name_student_id="{ item }">
                     <td class="py-3">
                         <div class="d-flex align-items-center">
                             <div class="avatar-circle mr-3"
-                                :style="{ backgroundColor: getAvatarColor(getName(item, 'en') || getName(item, 'th')) }">
-                                {{ getInitials(getName(item, 'en') || getName(item, 'th')) }}
+                                :style="{ backgroundColor: getAvatarColor(getName('en', item) || getName('th', item)) }">
+                                {{ getInitials(getName('en', item) || getName('th', item)) }}
                             </div>
                             <div>
-                                <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ getName(item, 'en') || getName(item, 'th') }}</div>
+                                <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ getName('en', item) || getName('th', item) }}</div>
                                 <div class="small text-muted font-weight-bold">{{ item.studentId ? `ID: ${item.studentId}` : 'No Student ID' }}</div>
                             </div>
                         </div>
@@ -56,9 +51,17 @@
                 <!-- Status Column -->
                 <template #status="{ item }">
                     <td class="py-3">
-                        <div :class="['status-badge', getStatusBadge(item.status).class]">
-                            <CIcon :name="getStatusBadge(item.status).icon" size="sm" class="status-icon" />
-                            {{ getStatusName(item.status) }}
+                        <div v-if="getRoleName(item.role) === 'Customer'" class="status-badge status-customer">
+                            <CIcon name="cil-user" size="sm" class="status-icon" />
+                            Customer
+                        </div>
+                        <div v-else-if="getRoleName(item.role) === 'Admin' || getStatusName(item.status) === 'Admin'" class="status-badge status-admin">
+                            <CIcon name="cilShieldAlt" size="sm" class="status-icon" />
+                            Admin
+                        </div>
+                        <div v-else :class="['status-badge', getStatusBadge(getStatusName(item.status)).class]">
+                            <CIcon :name="getStatusBadge(getStatusName(item.status)).icon" size="sm" class="status-icon" />
+                            {{ getStatusBadge(getStatusName(item.status)).label }}
                         </div>
                     </td>
                 </template>
@@ -83,7 +86,7 @@
         </div>
 
         <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
+            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredUsers.length > 0">
                 Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredUsers.length) }} of {{ filteredUsers.length }} users
             </div>
@@ -95,7 +98,7 @@
                 :pages="Math.max(1, Math.ceil(filteredUsers.length / 10))"
                 size="sm"
                 align="end"
-                class="mb-0"
+                class="mb-0 pill-pagination"
             />
         </CCardFooter>
 
@@ -105,9 +108,11 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
     name: 'UsersTable',
+    mixins: [statusBadgeMixin],
     props: {
         filters: {
             type: Object,
@@ -122,7 +127,7 @@ export default {
         return {
             // Fields Definition
             fields: [
-                { key: 'id', label: 'USER ID', _classes: 'border-top-0 border-bottom w-10' },
+
                 { key: 'name_student_id', label: 'NAME / STUDENT ID', _classes: 'border-top-0 border-bottom w-30' },
                 { key: 'email_details', label: 'EMAIL OFFICE / PERSONAL', _classes: 'border-top-0 border-bottom w-25' },
                 { key: 'tel_role', label: 'TEL / ROLE', _classes: 'border-top-0 border-bottom w-20' },
@@ -147,7 +152,7 @@ export default {
         filteredUsers() {
             if (!this.users) return [];
             return this.users.filter(user => {
-                const name = (this.getName(user, 'en') || this.getName(user, 'th') || '').toLowerCase();
+                const name = (this.getName('en', user) || this.getName('th', user) || '').toLowerCase();
                 const email = ((user.contact && user.contact.studentEmail) || '').toLowerCase();
                 const studentId = (user.studentId || '').toLowerCase();
                 const search = this.filters.search.toLowerCase();
@@ -178,14 +183,6 @@ export default {
             }
             return colors[Math.abs(hash) % colors.length];
         },
-        getStatusBadge(status) {
-            const name = this.getStatusName(status);
-            if (name === 'Admin') return { class: 'badge-admin', icon: 'cil-shield-check' };
-            if (name === 'Active' || name === 'NewStudent') return { class: 'badge-passed', icon: 'cil-check-circle' };
-            if (name === 'Suspended') return { class: 'badge-fail', icon: 'cil-x-circle' };
-            if (name === 'OldStudent') return { class: 'badge-secondary-status', icon: 'cil-clock' };
-            return { class: 'badge-pending', icon: 'cil-clock' }; // Inactive or others
-        },
         handleView(item) {
             this.$emit('view', item);
         },
@@ -193,18 +190,9 @@ export default {
             this.$emit('edit', item);
         },
         handleDelete(item) {
-            if (confirm(`Are you sure you want to delete user ${this.getName(item, 'en') || this.getName(item, 'th')}?`)) {
+            if (confirm(`Are you sure you want to delete user ${this.getName('en', item) || this.getName('th', item)}?`)) {
                 this.$emit('delete', item);
             }
-        },
-        getName(user, lang) {
-            if (!user || !user.name) return '';
-            if (typeof user.name === 'string') return user.name;
-            if (Array.isArray(user.name)) {
-                const nameObj = user.name.find(n => n.key === lang);
-                return nameObj ? nameObj.value : (user.name[0] ? user.name[0].value : '');
-            }
-            return '';
         },
         getRoleName(role) {
             if (!role) return 'User';
@@ -238,27 +226,6 @@ export default {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
-.custom-table th {
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #7a8aa3;
-    padding: 1.25rem 1.5rem;
-    border-color: #f0f1f5;
-    background-color: #ffffff;
-}
-
-.custom-table td {
-    padding: 1.25rem 1.5rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #f0f1f5;
-    color: #4f5d73;
-}
-
-.custom-table tr:last-child td {
-    border-bottom: none;
-}
-
 /* Avatar */
 .avatar-circle {
     width: 40px;
@@ -273,107 +240,34 @@ export default {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Badges */
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.35rem 0.85rem;
-    border-radius: 50px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-}
-
-.status-icon {
-    width: 14px;
-    height: 14px;
-    margin-right: 6px;
-}
-
-.badge-passed {
-    color: #38a169;
-    background-color: #f0fff4;
-    border: 1px solid rgba(56, 161, 105, 0.4);
-}
-
-.badge-pending {
-    color: #d69e2e;
-    background-color: #fffaf0;
-    border: 1px solid rgba(214, 158, 46, 0.4);
-}
-
-.badge-fail {
-    color: #e53e3e;
-    background-color: #fff5f5;
-    border: 1px solid rgba(229, 62, 62, 0.4);
-}
-
-.badge-secondary-status {
-    color: #718096;
-    background-color: #f7fafc;
-    border: 1px solid rgba(113, 128, 150, 0.4);
-}
-
-.badge-admin {
-    color: #3182ce;
-    background-color: #ebf8ff;
-    border: 1px solid rgba(49, 130, 206, 0.4);
-}
-
 /* Footer Pagination */
 .pagination-footer {
     border-top: 1px solid #f0f1f5 !important;
     margin: 0 1.5rem;
 }
 
-.btn-pagination {
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #4a5568;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    transition: all 0.2s;
-}
-
-.btn-pagination:hover:not(:disabled) {
-    background-color: #f7fafc;
-    color: #1a202c;
-}
-
-.btn-pagination:disabled {
-    opacity: 0.6;
-}
-
-/* Action Buttons */
-.action-btn {
-    background: transparent;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
+.status-badge {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s;
-    outline: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
 }
 
-.icon-view { color: #a0aec0; }
-.icon-edit { color: #4299e1; }
-.icon-danger { color: #e53e3e; }
-
-.action-btn:hover {
-    transform: scale(1.15);
-    background-color: #f8f9fa;
+.status-icon {
+    margin-right: 0.4rem;
 }
 
-::v-deep tr:hover td {
-    background-color: #f8f9fa;
+.status-customer {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
 }
 
-::v-deep .custom-table th {
-    border-bottom: 2px solid #f1f5f9;
+.status-admin {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
 }
 </style>
