@@ -69,8 +69,8 @@
                                         {{ getInitials(artwork.artist) }}
                                     </div>
                                     <div class="view-value font-weight-bold text-dark">
-                                        {{ artwork.artist ? getName('en', artwork.artist) : 'N/A' }}
-                                        <div v-if="artwork.artist && artwork.artist.studentId" class="small text-muted">ID: {{ artwork.artist.studentId }}</div>
+                                        {{ (artwork.artist || artwork.owner) ? getName('en', artwork.artist || artwork.owner) : 'N/A' }}
+                                        <div v-if="(artwork.artist || artwork.owner) && (artwork.artist || artwork.owner).studentId" class="small text-muted">ID: {{ (artwork.artist || artwork.owner).studentId }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -225,8 +225,23 @@ export default {
             const defaultStatus = { label: 'N/A', class: 'status-pending', icon: 'cil-question-mark' };
             if (!item || !item.status) return { approval: defaultStatus, sale: defaultStatus };
             
-            // Approval Status Logic - Directly passing populated status object
-            const appLabel = item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
+            // 1. Standalone Artwork Pattern: { status: { approval: ID, sale: ID } }
+            // 2. Submission Artwork Pattern: { status: ID } (This is usually the approval status)
+            
+            let approvalStatus = null;
+            let saleStatus = null;
+
+            if (item.status && item.status.approval) {
+                // Standalone pattern
+                approvalStatus = item.status.approval;
+                saleStatus = item.status.sale;
+            } else if (item.status) {
+                // Submission pattern (single status is the approval status)
+                approvalStatus = item.status;
+            }
+
+            // Approval Badge
+            const appLabel = approvalStatus ? this.getName('en', approvalStatus) : 'Pending';
             let approval = { ...defaultStatus, label: appLabel };
             
             switch (appLabel) {
@@ -236,8 +251,8 @@ export default {
                 default: approval = { label: appLabel, class: 'status-pending', icon: 'cil-clock' };
             }
 
-            // Sale Status Logic - Directly passing populated status object
-            const saleLabel = item.status.sale ? this.getName('en', item.status.sale) : 'Not for Sale';
+            // Sale Badge
+            const saleLabel = saleStatus ? this.getName('en', saleStatus) : 'Not for sale';
             let sale = { ...defaultStatus, label: saleLabel };
 
             switch (saleLabel) {

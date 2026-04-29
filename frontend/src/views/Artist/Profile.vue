@@ -73,6 +73,13 @@
           <ArtistSubmissions @view-detail="handleViewDetail" />
         </div>
 
+        <div v-else-if="activeView === 'submission-detail'" key="submission-detail" class="mt-4">
+          <ArtistSubmissionsDetail 
+            :id="selectedSubmissionId" 
+            @back="activeView = 'submissions'" 
+          />
+        </div>
+
         <div v-else-if="activeView === 'orders'" key="orders" class="mt-4">
           <CCard class="border-0 shadow-premium rounded-xl overflow-hidden">
             <CCardHeader class="bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-center flex-wrap">

@@ -43,6 +43,56 @@ const SubmissionModule = {
         },
         upload({ commit }, data) {
             return Service.submission('upload', data, {});
+        },
+        async submitWork({ dispatch, state, rootGetters }, payload) {
+            const { submissionId, assignmentId, artwork } = payload;
+            
+            let imageUrl = '';
+            if (artwork._image) {
+                const formData = new FormData();
+                formData.append('image', artwork._image);
+                const uploadRes = await Service.submission('upload', formData);
+                imageUrl = uploadRes.data.data.url;
+            }
+
+            const submission = state.submissions.find(s => s._id === submissionId);
+            if (!submission) throw new Error('Submission not found');
+
+            const assignments = JSON.parse(JSON.stringify(submission.assignments));
+            const assignment = assignments.find(a => a._id === assignmentId);
+            if (!assignment) throw new Error('Assignment not found');
+
+            if (!assignment.artworks) assignment.artworks = [];
+
+            const currentUserId = rootGetters['auth/userId'];
+            
+            const existingArtworkIndex = assignment.artworks.findIndex(art => {
+                const ownerId = art.owner?._id || art.owner;
+                return ownerId === currentUserId;
+            });
+
+            const newArtwork = {
+                title: artwork.title,
+                description: artwork.description,
+                category: artwork.category,
+                technique: artwork.technique,
+                size: artwork.size,
+                price: artwork.price,
+                status: artwork.status.approval,
+                image: imageUrl || (existingArtworkIndex !== -1 ? assignment.artworks[existingArtworkIndex].image : ''),
+                owner: currentUserId,
+                create: {
+                    at: new Date()
+                }
+            };
+
+            if (existingArtworkIndex !== -1) {
+                assignment.artworks.splice(existingArtworkIndex, 1, newArtwork);
+            } else {
+                assignment.artworks.push(newArtwork);
+            }
+
+            return dispatch('update', { _id: submissionId, assignments });
         }
     },
 

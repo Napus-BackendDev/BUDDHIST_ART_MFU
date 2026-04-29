@@ -4,7 +4,16 @@ const createBaseService = require('../../../../helpers/base.service')
 
 const defaultPopulate = [
     { path: 'artist' },
-    { path: 'assignments.artworks.owner' },
-    { path: 'assignments.artworks.status' }
+    { 
+        path: 'assignments',
+        populate: {
+            path: 'artworks',
+            populate: [
+                { path: 'owner' },
+                { path: 'status' },
+                { path: 'category' }
+            ]
+        }
+    }
 ];
 module.exports = createBaseService(objSchema, defaultPopulate);
