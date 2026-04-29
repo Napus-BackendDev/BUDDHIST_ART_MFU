@@ -60,22 +60,32 @@ async function seedCategories() {
             },
             {
                 title: [
-                    { key: 'en', value: 'Printmaking' },
-                    { key: 'th', value: 'ภาพพิมพ์' }
+                    { key: 'en', value: 'Drawing' },
+                    { key: 'th', value: 'การวาดเส้น' }
                 ],
                 description: [
-                    { key: 'en', value: 'Art created by printing images, usually on paper' },
-                    { key: 'th', value: 'ผลงานศิลปะที่สร้างสรรค์โดยกระบวนการพิมพ์ภาพ' }
+                    { key: 'en', value: 'Art created using lines or areas of tone, usually on paper' },
+                    { key: 'th', value: 'ผลงานศิลปะที่สร้างสรรค์โดยการขีดเขียนหรือวาดเส้นลงบนพื้นระนาบ' }
                 ]
             },
             {
                 title: [
-                    { key: 'en', value: 'Video Art' },
-                    { key: 'th', value: 'VDO Art' }
+                    { key: 'en', value: 'Digital Art' },
+                    { key: 'th', value: 'ศิลปะดิจิทัล' }
                 ],
                 description: [
-                    { key: 'en', value: 'Art created using video and/or audio data' },
-                    { key: 'th', value: 'ผลงานศิลปะที่สร้างสรรค์โดยใช้สื่อวิดีโอหรือเสียง' }
+                    { key: 'en', value: 'Art created or presented using digital technology' },
+                    { key: 'th', value: 'ผลงานศิลปะที่สร้างสรรค์โดยใช้เทคโนโลยีดิจิทัล' }
+                ]
+            },
+            {
+                title: [
+                    { key: 'en', value: 'Installation Art' },
+                    { key: 'th', value: 'ศิลปะการติดตั้ง' }
+                ],
+                description: [
+                    { key: 'en', value: 'Three-dimensional works designed to transform the perception of a space' },
+                    { key: 'th', value: 'ผลงานศิลปะที่สร้างสรรค์เพื่อติดตั้งในพื้นที่เฉพาะเจาะจง' }
                 ]
             },
             {

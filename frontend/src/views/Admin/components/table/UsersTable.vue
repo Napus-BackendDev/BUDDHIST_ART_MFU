@@ -51,7 +51,15 @@
                 <!-- Status Column -->
                 <template #status="{ item }">
                     <td class="py-3">
-                        <div :class="['status-badge', getStatusBadge(getStatusName(item.status)).class]">
+                        <div v-if="getRoleName(item.role) === 'Customer'" class="status-badge status-customer">
+                            <CIcon name="cil-user" size="sm" class="status-icon" />
+                            Customer
+                        </div>
+                        <div v-else-if="getRoleName(item.role) === 'Admin' || getStatusName(item.status) === 'Admin'" class="status-badge status-admin">
+                            <CIcon name="cilShieldAlt" size="sm" class="status-icon" />
+                            Admin
+                        </div>
+                        <div v-else :class="['status-badge', getStatusBadge(getStatusName(item.status)).class]">
                             <CIcon :name="getStatusBadge(getStatusName(item.status)).icon" size="sm" class="status-icon" />
                             {{ getStatusBadge(getStatusName(item.status)).label }}
                         </div>
@@ -236,5 +244,30 @@ export default {
 .pagination-footer {
     border-top: 1px solid #f0f1f5 !important;
     margin: 0 1.5rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.status-icon {
+    margin-right: 0.4rem;
+}
+
+.status-customer {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.status-admin {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
 }
 </style>

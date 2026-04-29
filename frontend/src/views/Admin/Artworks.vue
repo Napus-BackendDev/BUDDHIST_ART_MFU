@@ -140,6 +140,30 @@ export default {
                             category: { name: categoryName, matchedId: categoryId }
                         });
 
+                        const saleStatusName = getValue('SaleStatus') || '';
+                        const approvalStatusName = getValue('ShowStatuses') || '';
+
+                        // Resolve Status IDs
+                        const allStatuses = this.$store.getters['setting/status/item'] || [];
+                        
+                        let saleStatusId = "69678075e5f76f7a8c42dc12"; // Default: Not for sale
+                        if (saleStatusName) {
+                            const foundSale = allStatuses.find(s => 
+                                this.getName('en', s).toLowerCase().includes(saleStatusName.toLowerCase()) ||
+                                this.getName('th', s).toLowerCase().includes(saleStatusName.toLowerCase())
+                            );
+                            if (foundSale) saleStatusId = foundSale._id;
+                        }
+
+                        let approvalStatusId = "69677d4de5f76f7a8c42dbf6"; // Default: Pending
+                        if (approvalStatusName) {
+                            const foundApproval = allStatuses.find(s => 
+                                this.getName('en', s).toLowerCase().includes(approvalStatusName.toLowerCase()) ||
+                                this.getName('th', s).toLowerCase().includes(approvalStatusName.toLowerCase())
+                            );
+                            if (foundApproval) approvalStatusId = foundApproval._id;
+                        }
+
                         return {
                             title: [
                                 { key: 'th', value: titleTh },
@@ -161,8 +185,8 @@ export default {
                             artist: artistId,
                             category: categoryId,
                             status: {
-                                approval: "69677d4de5f76f7a8c42dbf6", // Pending
-                                sale: "69678075e5f76f7a8c42dc12" // Not for sale
+                                approval: approvalStatusId,
+                                sale: saleStatusId
                             }
                         };
                     }).filter(a => a.title[0].value || a.title[1].value);
@@ -193,8 +217,8 @@ export default {
         },
         downloadTemplate() {
             const data = [
-                ["ArtworkTitleThai", "ArtworkTitleEng", "DescriptionThai", "DescriptionEng", "TechniqueThai", "TechniqueEng", "SizeThai", "SizeEng", "Price", "ArtistID"],
-                ["ภาพวาดพุทธศิลป์ตัวอย่าง", "Sample Buddhist Art", "คำอธิบายผลงานเบื้องต้น...", "Brief artwork description...", "สีน้ำมันบนผ้าใบ", "Oil on Canvas", "60x80 ซม.", "60x80 cm", "5500", "64XXXXXX"]
+                ["ArtworkTitleThai", "ArtworkTitleEng", "DescriptionThai", "DescriptionEng", "TechniqueThai", "TechniqueEng", "SizeThai", "SizeEng", "Price", "ArtistID", "Category", "SaleStatus", "ShowStatuses"],
+                ["ภาพวาดพุทธศิลป์ตัวอย่าง", "Sample Buddhist Art", "คำอธิบายผลงานเบื้องต้น...", "Brief artwork description...", "สีน้ำมันบนผ้าใบ", "Oil on Canvas", "60x80 ซม.", "60x80 cm", "5500", "64XXXXXX", "Painting", "Available", "Approved"]
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(data);
             const workbook = XLSX.utils.book_new();
@@ -202,7 +226,7 @@ export default {
             
             // Auto-width columns
             const wscols = [
-                {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 10}, {wch: 15}
+                {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 10}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}
             ];
             worksheet['!cols'] = wscols;
 
