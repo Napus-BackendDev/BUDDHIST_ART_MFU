@@ -7,14 +7,14 @@
                         <!-- Header -->
                         <div class="news-header-simple mb-5">
                             <CBadge v-if="currentNews.category" color="danger" shape="pill" class="px-3 py-2 mb-3">
-                                {{ getLang(currentNews.category.title) }}
+                                {{ getName($i18n.locale, currentNews.category.title) }}
                             </CBadge>
-                            <h1 class="font-weight-bold mb-4">{{ getLang(currentNews.title) }}</h1>
+                            <h1 class="font-weight-bold mb-4">{{ getName($i18n.locale, currentNews.title) }}</h1>
                             <hr class="my-4">
                         </div>
 
                         <!-- Content -->
-                        <div class="article-content mb-5" v-html="getLang(currentNews.description)">
+                        <div class="article-content mb-5" v-html="getName($i18n.locale, currentNews.description)">
                         </div>
 
                         <!-- Gallery (All images moved here) -->
@@ -31,11 +31,11 @@
                         <!-- Date Info (Moved to bottom) with Facebook Share -->
                         <div class="text-muted small border-top pt-3 d-flex justify-content-between align-items-center flex-wrap">
                             <div class="mb-2">
-                                <span class="mr-3"><CIcon name="cil-calendar" /> เผยแพร่เมื่อ: {{ formatDate(currentNews.create ? currentNews.create.datetime : null) }}</span>
-                                <span class="mr-3"><CIcon name="cil-eye" /> {{ currentNews.views || 0 }} เข้าชม</span>
+                                <span class="mr-3"><CIcon name="cil-calendar" /> {{ $i18n.locale === 'en' ? 'Published:' : 'เผยแพร่เมื่อ:' }} {{ formatDate(currentNews.create ? currentNews.create.datetime : null) }}</span>
+                                <span class="mr-3"><CIcon name="cil-eye" /> {{ currentNews.views || 0 }} {{ $i18n.locale === 'en' ? 'Views' : 'เข้าชม' }}</span>
                             </div>
                             <div class="mb-2">
-                                <span class="mr-2">ติดตามข่าวสารเพิ่มเติม:</span>
+                                <span class="mr-2">{{ $i18n.locale === 'en' ? 'Follow for more news:' : 'ติดตามข่าวสารเพิ่มเติม:' }}</span>
                                 <CButton color="link" class="p-0" @click="goToFacebook">
                                     <CIcon name="cib-facebook" size="xl" style="color: #1877F2;" />
                                 </CButton>
@@ -44,7 +44,7 @@
 
                         <div class="text-center mt-3 pt-5 border-top">
                             <CButton color="outline-dark" shape="pill" class="px-5" @click="$router.push('/news')">
-                                กลับหน้าหลักข่าวสาร
+                                {{ $i18n.locale === 'en' ? 'Back to News' : 'กลับหน้าหลักข่าวสาร' }}
                             </CButton>
                         </div>
                     </CCol>
@@ -111,12 +111,6 @@ export default {
             } finally {
                 this.loading = false;
             }
-        },
-        getLang(arr) {
-            if (!arr || !Array.isArray(arr) || arr.length === 0) return '';
-            const lang = this.$i18n.locale || 'th';
-            const item = arr.find(i => i.key === lang) || arr.find(i => i.key === 'th') || arr[0];
-            return item ? item.value : '';
         },
         getFirstImage(item) {
             return (item && item.images && item.images.length > 0) ? item.images[0] : null;

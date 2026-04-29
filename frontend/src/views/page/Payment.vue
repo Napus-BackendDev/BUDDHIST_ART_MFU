@@ -4,9 +4,9 @@
 
             <div class="mb-4">
                 <CLink href="#" @click.native.prevent="$router.go(-1)" class="text-muted small text-decoration-none">
-                    <CIcon name="cil-arrow-left" size="sm" class="mr-1" /> Back to Shopping
+                    <CIcon name="cil-arrow-left" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Back to Shopping' : 'กลับไปช้อปปิ้ง' }}
                 </CLink>
-                <h2 class="font-weight-bold mt-2" style="color: #2c3e50;">Checkout</h2>
+                <h2 class="font-weight-bold mt-2" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Checkout' : 'ชำระเงิน' }}</h2>
             </div>
 
             <CRow>
@@ -46,7 +46,7 @@ export default {
     methods: {
         async handleConfirmPayment(payload) {
             if (this.cartItems.length === 0) {
-                alert('Your cart is empty!');
+                alert(this.$i18n.locale === 'en' ? 'Your cart is empty!' : 'ตะกร้าสินค้าของคุณว่างเปล่า!');
                 return;
             }
 
@@ -98,7 +98,7 @@ export default {
 
             } catch (error) {
                 console.error('Order creation failed:', error);
-                alert('เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
+                alert(this.$i18n.locale === 'en' ? 'Error creating order. Please try again.' : 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
             }
         }
     }

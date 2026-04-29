@@ -54,11 +54,11 @@
 <!--          <CIcon size="lg" name="cil-applications-settings" class="mr-2"/>-->
 <!--        </button>-->
 <!--      </CHeaderNavItem>-->
-<!--      <CHeaderNavItem >-->
-<!--        <CButton size="sm" color="info" shape="pill" variant="outline" style="width: 35px; height:35px;" @click="onSwitchLang" >-->
-<!--          {{lang.toUpperCase()}}-->
-<!--        </CButton>-->
-<!--      </CHeaderNavItem>-->
+      <CHeaderNavItem >
+        <CButton size="sm" color="info" shape="pill" variant="outline" style="width: 35px; height:35px;" @click="onSwitchLang" >
+          {{lang === 'th' ? 'EN' : 'TH'}}
+        </CButton>
+      </CHeaderNavItem>
 
 <!--      <TheHeaderDropdownAccnt class="pr-3"/>-->
     </CHeaderNav>
@@ -87,14 +87,10 @@ export default {
 
   methods: {
     onSwitchLang(){
-      switch (this.lang) {
-        case "th":
-          this.$store.commit("setting/lang", "en")
-          break;
-        case "en":
-          this.$store.commit("setting/lang", "th")
-          break;
-      }
+      const newLang = this.lang === 'th' ? 'en' : 'th';
+      this.$store.commit("setting/lang", newLang);
+      this.$i18n.locale = newLang;
+      localStorage.setItem('lang', newLang);
     }
   },
 

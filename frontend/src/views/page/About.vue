@@ -9,8 +9,8 @@
                         <h1 class="header-title text-uppercase mb-2">About <span class="text-highlight">Us</span></h1>
                         <div class="title-separator mb-4"></div>
                         <p class="header-subtitle mb-0">
-                            ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง <br class="d-none d-md-block">
-                            สืบสาน พัฒนา และเผยแพร่คุณค่าแห่งพุทธศิลป์ล้านนาสู่สากล
+                            {{ $i18n.locale === 'en' ? 'Buddhist Art Center, Mae Fah Luang University' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }} <br class="d-none d-md-block">
+                            {{ $i18n.locale === 'en' ? 'Preserving, developing, and promoting the value of Lanna Buddhist art internationally' : 'สืบสาน พัฒนา และเผยแพร่คุณค่าแห่งพุทธศิลป์ล้านนาสู่สากล' }}
                         </p>
                     </div>
                 </div>
@@ -26,10 +26,9 @@
                     <CCard class="contact-card border-0 shadow-sm p-4 overflow-hidden">
                         <div class="card-accent-bar"></div>
                         <CCardBody>
-                            <h2 class="section-title mb-4 font-weight-bold">วิสัยทัศน์และพันธกิจ</h2>
+                            <h2 class="section-title mb-4 font-weight-bold">{{ $i18n.locale === 'en' ? 'Vision and Mission' : 'วิสัยทัศน์และพันธกิจ' }}</h2>
                             <p class="lead text-muted line-height-2">
-                                ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง ก่อตั้งขึ้นเพื่อเป็นแหล่งเรียนรู้และรวบรวมมรดกทางวัฒนธรรมพุทธศิลป์ที่ล้ำค่า 
-                                โดยมุ่งเน้นการวิจัย การอนุรักษ์ และการต่อยอดศิลปกรรมไทยให้เข้ากับยุคสมัย เพื่อสร้างความเข้าใจที่ลึกซึ้งในจิตวิญญาณแห่งศิลปะและศาสนา
+                                {{ $i18n.locale === 'en' ? 'The Buddhist Art Center of Mae Fah Luang University was established as a learning and cultural heritage center for invaluable Buddhist art. It focuses on research, preservation, and the modernization of Thai art to create a deep understanding of the spirit of art and religion.' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง ก่อตั้งขึ้นเพื่อเป็นแหล่งเรียนรู้และรวบรวมมรดกทางวัฒนธรรมพุทธศิลป์ที่ล้ำค่า โดยมุ่งเน้นการวิจัย การอนุรักษ์ และการต่อยอดศิลปกรรมไทยให้เข้ากับยุคสมัย เพื่อสร้างความเข้าใจที่ลึกซึ้งในจิตวิญญาณแห่งศิลปะและศาสนา' }}
                             </p>
                         </CCardBody>
                     </CCard>
@@ -41,10 +40,10 @@
                         <div class="card-accent-bar"></div>
                         <div class="card-watermark"><CIcon name="cil-institution" size="custom-size" style="width: 250px; height: 250px;" /></div>
                         <CCardBody class="position-relative z-index-2">
-                            <h3 class="font-weight-bold mb-3 section-title">Contact Information</h3>
+                            <h3 class="font-weight-bold mb-3 section-title">{{ $i18n.locale === 'en' ? 'Contact Information' : 'ข้อมูลการติดต่อ' }}</h3>
                             <div class="title-separator-sm mb-4"></div>
                             <p class="text-muted mb-5">
-                                Reach out to us for inquiries regarding exhibitions, collaborations, or educational programs.
+                                {{ $i18n.locale === 'en' ? 'Reach out to us for inquiries regarding exhibitions, collaborations, or educational programs.' : 'ติดต่อเราเพื่อสอบถามข้อมูลเกี่ยวกับนิทรรศการ ความร่วมมือ หรือโปรแกรมการศึกษา' }}
                             </p>
                             
                             <div class="contact-item d-flex align-items-center mb-4 premium-hover">
@@ -52,8 +51,8 @@
                                     <CIcon name="cil-location-pin" size="lg" />
                                 </div>
                                 <div>
-                                    <h6 class="font-weight-bold mb-1 text-dark">Address</h6>
-                                    <span class="text-muted">333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100</span>
+                                    <h6 class="font-weight-bold mb-1 text-dark">{{ $i18n.locale === 'en' ? 'Address' : 'ที่อยู่' }}</h6>
+                                    <span class="text-muted">{{ $i18n.locale === 'en' ? '333 Moo 1, Thasud, Muang, Chiang Rai 57100' : '333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}</span>
                                 </div>
                             </div>
                             
@@ -62,7 +61,7 @@
                                     <CIcon name="cil-phone" size="lg" />
                                 </div>
                                 <div>
-                                    <h6 class="font-weight-bold mb-1 text-dark">Phone</h6>
+                                    <h6 class="font-weight-bold mb-1 text-dark">{{ $i18n.locale === 'en' ? 'Phone' : 'เบอร์โทรศัพท์' }}</h6>
                                     <span class="text-muted">0-5391-6000, 0-5391-7034</span>
                                 </div>
                             </div>
@@ -72,7 +71,7 @@
                                     <CIcon name="cil-envelope-closed" size="lg" />
                                 </div>
                                 <div>
-                                    <h6 class="font-weight-bold mb-1 text-dark">Email</h6>
+                                    <h6 class="font-weight-bold mb-1 text-dark">{{ $i18n.locale === 'en' ? 'Email' : 'อีเมล' }}</h6>
                                     <span class="text-muted">pr@mfu.ac.th</span>
                                 </div>
                             </div>
@@ -87,31 +86,31 @@
                         <CCardBody class="position-relative z-index-2">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div>
-                                    <h3 class="font-weight-bold mb-2 section-title">Send a Message</h3>
+                                    <h3 class="font-weight-bold mb-2 section-title">{{ $i18n.locale === 'en' ? 'Send a Message' : 'ส่งข้อความ' }}</h3>
                                     <div class="title-separator-sm"></div>
                                 </div>
                                 <CButton color="facebook" shape="pill" class="d-flex align-items-center shadow-sm hover-lift btn-sm px-3" href="https://facebook.com" target="_blank">
-                                    <CIcon name="cib-facebook" class="mr-2" /> Follow Us
+                                    <CIcon name="cib-facebook" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Follow Us' : 'ติดตามเรา' }}
                                 </CButton>
                             </div>
                             
                             <CForm @submit.prevent="submitForm" class="mt-4">
                                 <CRow>
                                     <CCol md="6" class="mb-3">
-                                        <label class="form-label-custom">Full Name</label>
-                                        <CInput placeholder="John Doe" class="custom-input-premium" />
+                                        <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Full Name' : 'ชื่อ-นามสกุล' }}</label>
+                                        <CInput :placeholder="$i18n.locale === 'en' ? 'John Doe' : 'สมชาย ใจดี'" class="custom-input-premium" />
                                     </CCol>
                                     <CCol md="6" class="mb-3">
-                                        <label class="form-label-custom">Email Address</label>
-                                        <CInput placeholder="john@example.com" type="email" class="custom-input-premium" />
+                                        <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Email Address' : 'อีเมล' }}</label>
+                                        <CInput :placeholder="$i18n.locale === 'en' ? 'john@example.com' : 'somchai@example.com'" type="email" class="custom-input-premium" />
                                     </CCol>
                                     <CCol md="12" class="mb-4">
-                                        <label class="form-label-custom">Your Message</label>
-                                        <CTextarea placeholder="How can we help you?" rows="4" class="custom-input-premium" />
+                                        <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Your Message' : 'ข้อความของคุณ' }}</label>
+                                        <CTextarea :placeholder="$i18n.locale === 'en' ? 'How can we help you?' : 'พิมพ์ข้อความของคุณที่นี่...'" rows="4" class="custom-input-premium" />
                                     </CCol>
                                 </CRow>
                                 <CButton class="btn-premium px-5 py-2 font-weight-bold shadow hover-lift w-100 mt-2">
-                                    Submit Message <CIcon name="cil-envelope-closed" class="ml-2" />
+                                    {{ $i18n.locale === 'en' ? 'Submit Message' : 'ส่งข้อความ' }} <CIcon name="cil-envelope-closed" class="ml-2" />
                                 </CButton>
                             </CForm>
                         </CCardBody>
@@ -142,7 +141,7 @@ export default {
     methods: {
         submitForm() {
             // Logic for form submission
-            alert('Message Sent!');
+            alert(this.$i18n.locale === 'en' ? 'Message Sent!' : 'ส่งข้อความสำเร็จ!');
         }
     }
 }

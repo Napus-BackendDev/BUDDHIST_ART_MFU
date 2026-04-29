@@ -64,9 +64,9 @@
                 </CDropdown>
 
                 <CHeaderNavItem class="px-3 border-right language-switcher d-md-down-none">
-                    <div class="d-flex align-items-center text-dark" style="cursor: pointer;">
+                    <div class="d-flex align-items-center text-dark" style="cursor: pointer;" @click="toggleLang">
                         <CIcon name="cil-globe-alt" size="lg" class="mr-2" />
-                        <span class="font-weight-bold">TH</span>
+                        <span class="font-weight-bold">{{ $i18n.locale === 'th' ? 'EN' : 'TH' }}</span>
                     </div>
                 </CHeaderNavItem>
                 
@@ -92,16 +92,16 @@
             <CContainer fluid class="d-flex justify-content-center align-items-center h-100">
                 <CHeaderNav class="nav-links-container">
                     <CHeaderNavItem class="px-4">
-                        <CHeaderNavLink to="/" exact class="nav-link-custom">หน้าหลัก</CHeaderNavLink>
+                        <CHeaderNavLink to="/" exact class="nav-link-custom">{{ $t('header.home') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                     <CHeaderNavItem class="px-4">
-                        <CHeaderNavLink to="/artworks" class="nav-link-custom">ผลงานศิลปะ</CHeaderNavLink>
+                        <CHeaderNavLink to="/artworks" class="nav-link-custom">{{ $t('header.artworks') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                     <CHeaderNavItem class="px-4">
-                        <CHeaderNavLink to="/news" class="nav-link-custom">ข่าวสาร</CHeaderNavLink>
+                        <CHeaderNavLink to="/news" class="nav-link-custom">{{ $t('header.news') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                     <CHeaderNavItem class="px-4">
-                        <CHeaderNavLink to="/about" class="nav-link-custom">เกี่ยวกับเรา</CHeaderNavLink>
+                        <CHeaderNavLink to="/about" class="nav-link-custom">{{ $t('header.about') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                 </CHeaderNav>
             </CContainer>
@@ -119,16 +119,16 @@
                     </div>
                     <ul class="list-unstyled">
                         <li class="mb-4">
-                            <CHeaderNavLink to="/" exact class="text-dark h5 p-0" @click.native="mobileMenu = false">หน้าหลัก</CHeaderNavLink>
+                            <CHeaderNavLink to="/" exact class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.home') }}</CHeaderNavLink>
                         </li>
                         <li class="mb-4">
-                            <CHeaderNavLink to="/artworks" class="text-dark h5 p-0" @click.native="mobileMenu = false">ผลงานศิลปะ</CHeaderNavLink>
+                            <CHeaderNavLink to="/artworks" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.artworks') }}</CHeaderNavLink>
                         </li>
                         <li class="mb-4">
-                            <CHeaderNavLink to="/news" class="text-dark h5 p-0" @click.native="mobileMenu = false">ข่าวสาร</CHeaderNavLink>
+                            <CHeaderNavLink to="/news" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.news') }}</CHeaderNavLink>
                         </li>
                         <li class="mb-4">
-                            <CHeaderNavLink to="/about" class="text-dark h5 p-0" @click.native="mobileMenu = false">เกี่ยวกับเรา</CHeaderNavLink>
+                            <CHeaderNavLink to="/about" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.about') }}</CHeaderNavLink>
                         </li>
 
                     </ul>
@@ -140,7 +140,7 @@
         <div class="cart-backdrop" v-if="isCartOpen" @click="setShowCart(false)"></div>
         <div class="cart-sidebar bg-white shadow-lg" :class="{ 'open': isCartOpen }">
             <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-                <h5 class="font-weight-bold m-0">Your Cart ({{ cartCount || 0 }})</h5>
+                <h5 class="font-weight-bold m-0">{{ $i18n.locale === 'en' ? 'Your Cart' : 'ตะกร้าสินค้า' }} ({{ cartCount || 0 }})</h5>
                 <button type="button" class="close" @click="setShowCart(false)" style="outline: none;">
                     <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span>
                 </button>
@@ -151,9 +151,9 @@
                 <div class="mb-4">
                     <CIcon name="cil-basket" size="xl" class="text-muted" style="transform: scale(2);" />
                 </div>
-                <h5 class="font-weight-bold mb-2">Cart is empty</h5>
+                <h5 class="font-weight-bold mb-2">{{ $i18n.locale === 'en' ? 'Cart is empty' : 'ตะกร้าสินค้าว่างเปล่า' }}</h5>
                 <CButton color="danger" shape="pill" class="mt-3 px-4 font-weight-bold" @click="startShopping">
-                    Shop Now
+                    {{ $i18n.locale === 'en' ? 'Shop Now' : 'ช้อปเลย' }}
                 </CButton>
             </div>
 
@@ -166,9 +166,9 @@
                             :style="{ backgroundImage: `url(${item.image})` }">
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="font-weight-bold mb-0">{{ getName('th', item.title) }}</h6>
-                            <div class="text-muted small mb-1" v-if="item.artist">โดย {{ getName('th', item.artist) }}</div>
-                            <div class="font-weight-bold text-danger h6 mb-0">{{ formatPrice(item.price) }} บาท</div>
+                            <h6 class="font-weight-bold mb-0">{{ getName($i18n.locale, item.title) }}</h6>
+                            <div class="text-muted small mb-1" v-if="item.artist">{{ $i18n.locale === 'th' ? 'โดย' : 'By' }} {{ getName($i18n.locale, item.artist) }}</div>
+                            <div class="font-weight-bold text-danger h6 mb-0">฿{{ formatPrice(item.price) }}</div>
                         </div>
                         <div class="text-right">
                             <CButton size="sm" color="link" class="text-danger" @click="removeFromCart(item._id)">
@@ -179,11 +179,11 @@
                 </div>
                 <div class="p-4 bg-light border-top pb-5 mb-5">
                     <div class="d-flex justify-content-between mb-3 text-dark align-items-center">
-                        <span class="h6 mb-0 font-weight-bold">Total</span>
+                        <span class="h6 mb-0 font-weight-bold">{{ $i18n.locale === 'en' ? 'Total' : 'ยอดรวม' }}</span>
                         <span class="font-weight-bold h4 mb-0 text-danger">฿{{ (cartTotal || 0).toLocaleString() }}</span>
                     </div>
                     <CButton block color="danger" size="lg" class="py-2 font-weight-bold shadow-sm mb-2" @click="$router.push('/payment'); setShowCart(false);">
-                        สั่งซื้อสินค้า
+                        {{ $i18n.locale === 'en' ? 'Checkout' : 'สั่งซื้อสินค้า' }}
                     </CButton>
                 </div>
             </div>
@@ -245,32 +245,18 @@ export default {
             this.setShowCart(false);
             this.$router.push('/artworks');
         },
-        getName(lang, item) {
-            if (!item) return '';
-            if (typeof item === 'string') return item;
-            
-            if (Array.isArray(item)) {
-                let obj = item.find(n => n.key === lang);
-                if (!obj) obj = item.find(n => n.key === 'th');
-                return obj ? obj.value : (item[0] ? item[0].value : '');
-            }
-
-            const dataField = item.title || item.name || '';
-            if (typeof dataField === 'string' && dataField) return dataField;
-            
-            if (Array.isArray(dataField)) {
-                let obj = dataField.find(n => n.key === lang);
-                if (!obj) obj = dataField.find(n => n.key === 'th');
-                return obj ? obj.value : (dataField[0] ? dataField[0].value : '');
-            }
-            return '';
-        },
         formatPrice(value) {
             if (value === undefined || value === null) return '0';
             return parseFloat(value).toLocaleString('en-US');
         },
         openLoginModal() {
             this.$store.commit('auth/isSignIn', true);
+        },
+        toggleLang() {
+            const newLang = this.$i18n.locale === 'th' ? 'en' : 'th';
+            this.$i18n.locale = newLang;
+            this.$store.commit("setting/lang", newLang);
+            localStorage.setItem('lang', newLang);
         }
     }
 }

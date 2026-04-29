@@ -7,15 +7,15 @@
                     <h1 class="hero-title text-uppercase mb-2">Buddhist <span class="text-highlight">Art MFU</span></h1>
                     <div class="title-separator mb-4"></div>
                     <p class="hero-subtitle mb-4">
-                        ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง <br class="d-none d-md-block">
-                        แหล่งเรียนรู้และอนุรักษ์พุทธศิลปกรรมล้านนาและร่วมสมัย
+                        {{ $i18n.locale === 'en' ? 'Buddhist Art Center, Mae Fah Luang University' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }} <br class="d-none d-md-block">
+                        {{ $i18n.locale === 'en' ? 'A center for learning and preserving Lanna and contemporary Buddhist art' : 'แหล่งเรียนรู้และอนุรักษ์พุทธศิลปกรรมล้านนาและร่วมสมัย' }}
                     </p>
                     <div class="d-flex gap-3">
                         <CButton color="danger" shape="pill" class="px-5 py-3 font-weight-bold shadow-lg mr-3 btn-main" @click="$router.push('/artworks')">
-                            ชมผลงานศิลปะ
+                            {{ $i18n.locale === 'en' ? 'View Artworks' : 'ชมผลงานศิลปะ' }}
                         </CButton>
                         <CButton color="light" variant="outline" shape="pill" class="px-5 py-3 font-weight-bold slide-btn-outline" @click="$router.push('/news')">
-                            ข่าวสารและกิจกรรม
+                            {{ $i18n.locale === 'en' ? 'News & Activities' : 'ข่าวสารและกิจกรรม' }}
                         </CButton>
                     </div>
                 </div>

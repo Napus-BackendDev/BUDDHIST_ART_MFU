@@ -4,11 +4,12 @@
         <CContainer class="hero-content-wrapper">
             <div class="hero-text-content">
                 <div class="reveal-animation">
-                    <h1 class="hero-title text-uppercase mb-2">News <span class="text-highlight">& Events</span></h1>
+                    <h1 v-if="$i18n.locale === 'en'" class="hero-title text-uppercase mb-2">News <span class="text-highlight">& Events</span></h1>
+                    <h1 v-else class="hero-title text-uppercase mb-2">ข่าวสาร <span class="text-highlight">& กิจกรรม</span></h1>
                     <div class="title-separator mb-4"></div>
                     <p class="hero-subtitle mb-0">
-                        ติดตามข่าวสาร กิจกรรม และความเคลื่อนไหว <br class="d-none d-md-block">
-                        จากศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง
+                        {{ $i18n.locale === 'en' ? 'Follow news, activities, and updates' : 'ติดตามข่าวสาร กิจกรรม และความเคลื่อนไหว' }} <br class="d-none d-md-block">
+                        {{ $i18n.locale === 'en' ? 'from the Buddhist Art Center, Mae Fah Luang University' : 'จากศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }}
                     </p>
                 </div>
             </div>

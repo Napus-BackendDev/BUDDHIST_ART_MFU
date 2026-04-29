@@ -2,9 +2,9 @@
   <div class="user-profile-view min-vh-100 py-4 bg-light-premium">
     <CContainer class="profile-container-wide">
       <div class="mb-5 text-center text-md-left">
-        <h2 class="font-weight-bold text-dark section-title">Profile</h2>
+        <h2 class="font-weight-bold text-dark section-title">{{ $i18n.locale === 'en' ? 'Profile' : 'โปรไฟล์' }}</h2>
         <div class="title-separator-sm mb-3 mx-auto mx-md-0"></div>
-        <p class="text-muted">Manage your personal information and track your orders.</p>
+        <p class="text-muted">{{ $i18n.locale === 'en' ? 'Manage your personal information and track your orders.' : 'จัดการข้อมูลส่วนตัวและติดตามคำสั่งซื้อของคุณ' }}</p>
       </div>
 
       <CRow>
@@ -24,7 +24,7 @@
                 <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept="image/*" />
               </div>
               <h4 class="font-weight-bold mb-3 text-dark">{{ fullName }}</h4>
-              <CBadge color="primary" class="badge-premium px-3 py-2">Customer</CBadge>
+              <CBadge color="primary" class="badge-premium px-3 py-2">{{ $i18n.locale === 'en' ? 'Customer' : 'ลูกค้า' }}</CBadge>
               <div class="text-left mt-4 border-top pt-4">
                   <div class="contact-info-item mb-3 d-flex align-items-center premium-hover" v-if="form.personalEmail">
                       <div class="icon-box-sm mr-3 shadow-sm min-w-36">
@@ -43,7 +43,7 @@
                         <CIcon name="cil-location-pin" />
                       </div>
                       <div>
-                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">Billing Address</small>
+                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ออกใบเสร็จ' }}</small>
                         <span class="text-dark small d-block" style="line-height: 1.4;">{{ form.bill }}</span>
                       </div>
                   </div>
@@ -52,13 +52,13 @@
                         <CIcon name="cil-truck" />
                       </div>
                       <div>
-                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">Shipping Address</small>
+                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</small>
                         <span class="text-dark small d-block" style="line-height: 1.4;">{{ form.shipping }}</span>
                       </div>
                   </div>
               </div>
               <CButton color="dark" shape="pill" class="btn-premium w-100 mt-4 shadow-sm hover-lift" @click="isEditing = true">
-                <CIcon name="cil-pencil" class="mr-2" /> Edit Profile
+                <CIcon name="cil-pencil" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Edit Profile' : 'แก้ไขโปรไฟล์' }}
               </CButton>
             </CCardBody>
           </CCard>
@@ -74,7 +74,7 @@
                                <CIcon name="cil-cart" size="xl" />
                            </div>
                            <div>
-                               <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">Total Orders</h6>
+                               <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">{{ $i18n.locale === 'en' ? 'Total Orders' : 'คำสั่งซื้อทั้งหมด' }}</h6>
                                <h3 class="mb-0 font-weight-bold text-dark">{{ orders.length }}</h3>
                            </div>
                        </CCardBody>
@@ -87,7 +87,7 @@
                                <CIcon name="cil-calendar" size="xl" />
                            </div>
                            <div>
-                               <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">Member Since</h6>
+                               <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">{{ $i18n.locale === 'en' ? 'Member Since' : 'เป็นสมาชิกตั้งแต่' }}</h6>
                                <h3 class="mb-0 font-weight-bold text-dark">2024</h3>
                            </div>
                        </CCardBody>
@@ -98,9 +98,9 @@
            <!-- Recent Orders Teaser -->
            <CCard class="border-0 shadow-premium rounded-xl mt-2 overflow-hidden">
                 <CCardHeader class="bg-white border-bottom pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
-                    <h5 class="font-weight-bold text-dark mb-0"><CIcon name="cil-history" class="mr-2 text-primary" /> Recent Orders</h5>
+                    <h5 class="font-weight-bold text-dark mb-0"><CIcon name="cil-history" class="mr-2 text-primary" /> {{ $i18n.locale === 'en' ? 'Recent Orders' : 'คำสั่งซื้อล่าสุด' }}</h5>
                     <CButton variant="ghost" class="text-primary font-weight-bold btn-sm hover-lift" @click="$router.push('/user/order')">
-                        View All <CIcon name="cil-arrow-right" class="ml-1" />
+                        {{ $i18n.locale === 'en' ? 'View All' : 'ดูทั้งหมด' }} <CIcon name="cil-arrow-right" class="ml-1" />
                     </CButton>
                 </CCardHeader>
                 <CCardBody class="p-0">
@@ -108,11 +108,11 @@
                         <table class="table table-hover mb-0">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase">Artwork</th>
-                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Date</th>
-                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Amount</th>
-                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Status</th>
-                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">Action</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase">{{ $i18n.locale === 'en' ? 'Artwork' : 'ผลงานพุทธศิลป์' }}</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Date' : 'วันที่' }}</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Amount' : 'ยอดสุทธิ' }}</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Status' : 'สถานะ' }}</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Action' : 'การกระทำ' }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -130,10 +130,10 @@
                                             </div>
                                             <div>
                                                 <div class="font-weight-bold text-dark text-truncate" style="max-width: 150px;">
-                                                    {{ order.artwork && order.artwork[0] ? getName('en', order.artwork[0]) : 'No Artwork' }}
+                                                    {{ order.artwork && order.artwork[0] ? getName($i18n.locale, order.artwork[0]) : ($i18n.locale === 'en' ? 'No Artwork' : 'ไม่มีผลงาน') }}
                                                 </div>
                                                 <small class="text-muted">
-                                                    by {{ order.artwork && order.artwork[0] && order.artwork[0].artist ? getName('en', order.artwork[0].artist) : 'Artist' }}
+                                                    {{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ order.artwork && order.artwork[0] && order.artwork[0].artist ? getName($i18n.locale, order.artwork[0].artist) : ($i18n.locale === 'en' ? 'Artist' : 'ศิลปิน') }}
                                                 </small>
                                             </div>
                                         </div>
@@ -154,7 +154,7 @@
                                             class="rounded-pill px-3 shadow-sm hover-lift"
                                             @click="viewOrder(order)"
                                         >
-                                            View
+                                            {{ $i18n.locale === 'en' ? 'View' : 'ดู' }}
                                         </CButton>
                                     </td>
                                 </tr>
@@ -163,7 +163,7 @@
                     </div>
                     <div v-else class="text-center py-5 text-muted bg-light-empty">
                          <CIcon name="cil-inbox" size="3xl" class="mb-3 opacity-25" />
-                         <p class="mb-0 font-weight-bold">No recent orders found.</p>
+                         <p class="mb-0 font-weight-bold">{{ $i18n.locale === 'en' ? 'No recent orders found.' : 'ไม่พบคำสั่งซื้อล่าสุด' }}</p>
                     </div>
                 </CCardBody>
            </CCard>

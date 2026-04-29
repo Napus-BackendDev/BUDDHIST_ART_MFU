@@ -4,25 +4,25 @@
       <!-- Header Section -->
       <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap">
         <div>
-          <h2 class="font-weight-bold text-dark section-title">My Orders</h2>
+          <h2 class="font-weight-bold text-dark section-title">{{ $i18n.locale === 'en' ? 'My Orders' : 'คำสั่งซื้อของฉัน' }}</h2>
           <div class="title-separator-sm mb-3"></div>
-          <p class="text-muted mb-0">Track your past purchases and delivery status.</p>
+          <p class="text-muted mb-0">{{ $i18n.locale === 'en' ? 'Track your past purchases and delivery status.' : 'ติดตามประวัติการสั่งซื้อและสถานะการจัดส่ง' }}</p>
         </div>
         <CButton color="dark" variant="outline" shape="pill" class="btn-sm font-weight-bold shadow-sm hover-lift mt-3 mt-md-0" @click="$router.push('/user')">
-          <CIcon name="cil-arrow-left" class="mr-2" /> Back to Dashboard
+          <CIcon name="cil-arrow-left" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Back to Dashboard' : 'กลับไปที่แดชบอร์ด' }}
         </CButton>
       </div>
 
       <!-- Orders List Card -->
       <CCard class="border-0 shadow-premium rounded-xl overflow-hidden mt-4">
         <CCardHeader class="bg-white border-bottom-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
-          <h5 class="font-weight-bold text-dark mb-0">Order History</h5>
+          <h5 class="font-weight-bold text-dark mb-0">{{ $i18n.locale === 'en' ? 'Order History' : 'ประวัติการสั่งซื้อ' }}</h5>
           
           <div class="d-flex align-items-center mt-3 mt-sm-0">
              <div class="search-box" style="min-width: 300px;">
                <CInput 
                  v-model="search"
-                 placeholder="Search orders..." 
+                 :placeholder="$i18n.locale === 'en' ? 'Search orders...' : 'ค้นหาคำสั่งซื้อ...'" 
                  class="custom-search-input mb-0"
                >
                  <template #prepend-content><CIcon name="cilMagnifyingGlass"/></template>
@@ -54,10 +54,10 @@
                   </div>
                   <div>
                     <div class="font-weight-bold text-dark text-truncate" style="max-width: 200px;">
-                      {{ item.artwork && item.artwork[0] ? getName('en', item.artwork[0]) : 'No Artwork' }}
+                      {{ item.artwork && item.artwork[0] ? getName($i18n.locale, item.artwork[0]) : ($i18n.locale === 'en' ? 'No Artwork' : 'ไม่มีผลงาน') }}
                     </div>
                     <div class="small text-muted mb-1">
-                      by {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName('en', item.artwork[0].artist) : 'Artist' }}
+                      {{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName($i18n.locale, item.artwork[0].artist) : ($i18n.locale === 'en' ? 'Artist' : 'ศิลปิน') }}
                     </div>
                   </div>
                 </div>
@@ -102,10 +102,10 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredOrders.length > 0">
-                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredOrders.length) }} of {{ filteredOrders.length }} orders
+                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, filteredOrders.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredOrders.length }} {{ $i18n.locale === 'en' ? 'orders' : 'รายการ' }}
             </div>
             <div class="text-muted text-sm" v-else>
-                Showing 0 orders
+                {{ $i18n.locale === 'en' ? 'Showing 0 orders' : 'ไม่พบรายการ' }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
@@ -141,13 +141,6 @@ export default {
     return {
       showModal: false,
       selectedOrder: null,
-      fields: [
-        { key: 'orderId', label: 'ARTWORK', _classes: 'font-weight-bold' },
-        { key: 'date', label: 'Date Purchased' },
-        { key: 'total', label: 'Total Amount' },
-        { key: 'status', label: 'Status' },
-        { key: 'action', label: 'Actions', sorter: false, filter: false, _classes: 'text-right' }
-      ],
       search: '',
       activePage: 1
     }
@@ -157,6 +150,15 @@ export default {
       allOrders: 'order/orders',
       userId: 'auth/userId'
     }),
+    fields() {
+      return [
+        { key: 'orderId', label: this.$i18n.locale === 'en' ? 'ARTWORK' : 'ผลงานพุทธศิลป์', _classes: 'font-weight-bold' },
+        { key: 'date', label: this.$i18n.locale === 'en' ? 'Date Purchased' : 'วันที่สั่งซื้อ' },
+        { key: 'total', label: this.$i18n.locale === 'en' ? 'Total Amount' : 'ยอดสุทธิ' },
+        { key: 'status', label: this.$i18n.locale === 'en' ? 'Status' : 'สถานะ' },
+        { key: 'action', label: this.$i18n.locale === 'en' ? 'Actions' : 'การกระทำ', sorter: false, filter: false, _classes: 'text-right' }
+      ]
+    },
     processedOrders() {
       if (!this.allOrders) return [];
       // Filter orders belonging to the current user

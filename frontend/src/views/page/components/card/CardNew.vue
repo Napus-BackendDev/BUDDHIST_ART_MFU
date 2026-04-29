@@ -24,7 +24,7 @@
 
                     <div class="mt-auto">
                         <CLink :to="{ name: 'NewsDetail', params: { id: news._id } }" class="read-more-btn">
-                            <span>Read Article</span>
+                            <span>{{ $i18n.locale === 'en' ? 'Read Article' : 'อ่านบทความ' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2 arrow-icon" />
                         </CLink>
                     </div>

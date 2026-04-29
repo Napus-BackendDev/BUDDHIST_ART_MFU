@@ -2,15 +2,15 @@
     <div class="featured-section py-5 bg-light">
         <CContainer fluid class="px-md-5">
             <div class="d-flex align-items-center justify-content-between mb-5">
-                <h2 class="font-weight-bold mb-0 section-title-home">ผลงาน</h2>
+                <h2 class="font-weight-bold mb-0 section-title-home">{{ $i18n.locale === 'en' ? 'Featured Artworks' : 'ผลงาน' }}</h2>
                 <CButton color="danger" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold" @click="$router.push('/artworks')">
-                    ดูผลงานทั้งหมด
+                    {{ $i18n.locale === 'en' ? 'View All Artworks' : 'ดูผลงานทั้งหมด' }}
                 </CButton>
             </div>
 
             <div v-if="loading" class="text-center py-5">
                 <CSpinner color="danger" variant="grow" />
-                <p class="mt-3 text-muted">กำลังโหลดผลงานชิ้นเอก...</p>
+                <p class="mt-3 text-muted">{{ $i18n.locale === 'en' ? 'Loading masterpieces...' : 'กำลังโหลดผลงานชิ้นเอก...' }}</p>
             </div>
 
             <template v-else>
@@ -20,7 +20,7 @@
                 
                 <div v-else class="text-center py-5 bg-white rounded-xl shadow-sm border mt-3">
                     <CIcon name="cil-search" size="xl" class="text-muted mb-3" />
-                    <p class="text-muted">ยังไม่มีผลงานในหมวดหมู่นี้</p>
+                    <p class="text-muted">{{ $i18n.locale === 'en' ? 'No artworks found' : 'ยังไม่มีผลงานในหมวดหมู่นี้' }}</p>
                 </div>
             </template>
         </CContainer>
@@ -67,17 +67,6 @@ export default {
         getStatusLabel(art) {
             if (!art || !art.status || !art.status.approval) return 'Pending';
             return this.getName('en', art.status.approval);
-        },
-        getName(lang, item) {
-            if (!item) return '';
-            if (typeof item === 'string') return item;
-            const titleField = item.title || item.name || '';
-            if (typeof titleField === 'string' && titleField) return titleField;
-            if (Array.isArray(titleField)) {
-                const nameObj = titleField.find(n => n.key === lang);
-                return nameObj ? nameObj.value : (titleField[0] ? titleField[0].value : '');
-            }
-            return '';
         }
     },
     mounted() {

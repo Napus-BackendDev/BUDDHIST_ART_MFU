@@ -7,37 +7,37 @@
                 @click.native="currentStep = 1">
                 <h5 class="font-weight-bold mb-0 d-flex align-items-center" :class="currentStep === 1 ? 'text-dark' : 'text-muted'">
                     <span class="step-badge mr-3" :class="{ 'bg-success text-white': currentStep === 2 }">1</span>
-                    <span>Shipping Information</span>
+                    <span>{{ $i18n.locale === 'en' ? 'Shipping Information' : 'ข้อมูลการจัดส่ง' }}</span>
                     <CIcon name="cil-check-circle" v-if="currentStep === 2" class="ml-auto text-success" size="xl" />
                 </h5>
             </CCardHeader>
             <CCardBody class="p-4 pt-0" v-show="currentStep === 1">
                 <CRow>
                     <CCol md="12" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Full Name</label>
+                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Full Name' : 'ชื่อ-นามสกุล' }}</label>
                         <CInput v-model="form.name" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Personal Email</label>
+                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมล' }}</label>
                         <CInput v-model="form.email" placeholder="" type="email" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Telephone</label>
+                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
                         <CInput v-model="form.telephone" placeholder="" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Billing Address</label>
+                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ออกใบเสร็จ' }}</label>
                         <CTextarea v-model="form.bill" placeholder="" rows="3" class="bg-light border-0 shadow-none" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">Shipping Address</label>
+                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</label>
                         <CTextarea v-model="form.shipping" placeholder="" rows="3" class="bg-light border-0 shadow-none" />
                     </CCol>
                 </CRow>
 
                 <CButton block color="dark" size="lg" class="mt-4 py-3 font-weight-bold shadow-sm"
                     style="background-color: #1a1a2e; border: none;" @click="currentStep = 2">
-                    Continue to Payment
+                    {{ $i18n.locale === 'en' ? 'Continue to Payment' : 'ดำเนินการชำระเงิน' }}
                 </CButton>
             </CCardBody>
         </CCard>
@@ -47,7 +47,7 @@
             <CCardHeader class="bg-white border-bottom-0 p-4">
                 <h5 class="font-weight-bold mb-0 d-flex align-items-center" :class="currentStep === 2 ? 'text-dark' : 'text-muted'">
                     <span class="step-badge mr-3" :class="{ 'bg-success text-white': false }">2</span>
-                    <span>Payment Method</span>
+                    <span>{{ $i18n.locale === 'en' ? 'Payment Method' : 'ช่องทางการชำระเงิน' }}</span>
                 </h5>
             </CCardHeader>
             <CCardBody class="p-4 pt-0" v-show="currentStep === 2">
@@ -60,7 +60,7 @@
                         <div class="d-flex align-items-center">
                             <div class="radio-circle mr-3" :class="{ 'active': paymentMethod === 'qrcode' }">
                             </div>
-                            <span class="font-weight-bold">Scan QR Code</span>
+                            <span class="font-weight-bold">{{ $i18n.locale === 'en' ? 'Scan QR Code' : 'สแกนคิวอาร์โค้ด' }}</span>
                         </div>
                         <CIcon name="cil-qr-code" class="text-danger" />
                     </div>
@@ -71,7 +71,7 @@
                         <div class="d-flex align-items-center">
                             <div class="radio-circle mr-3" :class="{ 'active': paymentMethod === 'bank' }">
                             </div>
-                            <span class="font-weight-bold">Bank Transfer</span>
+                            <span class="font-weight-bold">{{ $i18n.locale === 'en' ? 'Bank Transfer' : 'โอนเงินผ่านธนาคาร' }}</span>
                         </div>
                         <CIcon name="cil-bank" class="text-muted" />
                     </div>
@@ -81,7 +81,7 @@
                 <!-- QR Code Content -->
                 <div v-if="paymentMethod === 'qrcode'" class="mb-4 ">
                     <div class="qr-container border-dashed text-center p-5 rounded-lg bg-white w-100">
-                        <h6 class="font-weight-bold mb-4" style="color: #2c3e50;">Scan this QR Code to pay
+                        <h6 class="font-weight-bold mb-4" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Scan this QR Code to pay' : 'สแกนคิวอาร์โค้ดนี้เพื่อชำระเงิน' }}
                         </h6>
 
                         <div class="qr-wrapper p-2 d-inline-block rounded mb-4 position-relative">
@@ -92,7 +92,7 @@
                                 width="180" height="180" alt="QR Code" class="d-block p-2">
                         </div>
 
-                        <p class="text-muted mb-0">Amount to pay: <span
+                        <p class="text-muted mb-0">{{ $i18n.locale === 'en' ? 'Amount to pay:' : 'ยอดที่ต้องชำระ:' }} <span
                                 class="text-danger font-weight-bold h5 ml-1">฿{{ formatPrice(total) }}</span></p>
                     </div>
                 </div>
@@ -100,7 +100,7 @@
                 <!-- Bank Transfer Content -->
                 <div v-if="paymentMethod === 'bank'" class="mb-4">
                     <div class="bg-white p-4 rounded-lg border">
-                        <h6 class="font-weight-bold mb-4 text-dark">Bank Account Details</h6>
+                        <h6 class="font-weight-bold mb-4 text-dark">{{ $i18n.locale === 'en' ? 'Bank Account Details' : 'รายละเอียดบัญชีธนาคาร' }}</h6>
 
                         <div class="d-flex align-items-start p-4 mb-4 rounded-lg" style="background-color: #f8fafc;">
                             <div class="mr-4 d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 shadow-sm"
@@ -108,7 +108,7 @@
                                 <CIcon name="cil-bank" size="xl" style="color: #38b2ac;" />
                             </div>
                             <div>
-                                <div class="font-weight-bold text-dark h5 mb-1">Kasikorn Bank (KBank)</div>
+                                <div class="font-weight-bold text-dark h5 mb-1">{{ $i18n.locale === 'en' ? 'Kasikorn Bank (KBank)' : 'ธนาคารกสิกรไทย' }}</div>
                                 <div class="text-muted mb-2">Artsy Studio Co., Ltd.</div>
                                 <div class="bg-white px-3 py-1 rounded border d-inline-block font-weight-bold text-dark h5 mb-0 shadow-sm"
                                     style="letter-spacing: 0.5px;">
@@ -118,13 +118,13 @@
                         </div>
 
                         <div class="p-3 rounded-lg small border-0" style="background-color: #ebf8ff; color: #4a5568;">
-                            กรุณาโอนเงินตามยอดที่ระบุ และ <strong>หลังโอนเงินกรุณา อัพ ใบเสร็จด้วยครับ</strong>
+                            {{ $i18n.locale === 'en' ? 'Please transfer the specified amount and' : 'กรุณาโอนเงินตามยอดที่ระบุ และ' }} <strong>{{ $i18n.locale === 'en' ? 'upload the payment slip after transfer.' : 'หลังโอนเงินกรุณาอัพโหลดใบเสร็จด้วยครับ' }}</strong>
                         </div>
                     </div>
                 </div>
 
                 <!-- Upload Payment Proof -->
-                <h6 class="font-weight-bold mb-3">Upload Payment Proof</h6>
+                <h6 class="font-weight-bold mb-3">{{ $i18n.locale === 'en' ? 'Upload Payment Proof' : 'อัพโหลดหลักฐานการชำระเงิน' }}</h6>
 
                 <!-- Hidden File Input -->
                 <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" class="d-none">
@@ -133,9 +133,9 @@
                 <div v-if="!paymentProofImage" @click="triggerUpload"
                     class="upload-area border-dashed rounded p-5 text-center mb-4 bg-white cursor-pointer position-relative">
                     <CIcon name="cil-cloud-upload" size="xl" class="text-muted mb-3" />
-                    <div class="text-danger font-weight-bold">Upload a file</div>
-                    <p class="text-muted small mb-0">or drag and drop</p>
-                    <p class="text-muted small">PNG, JPG, GIF up to 10MB</p>
+                    <div class="text-danger font-weight-bold">{{ $i18n.locale === 'en' ? 'Upload a file' : 'อัพโหลดไฟล์' }}</div>
+                    <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'or drag and drop' : 'หรือลากและวาง' }}</p>
+                    <p class="text-muted small">{{ $i18n.locale === 'en' ? 'PNG, JPG, GIF up to 10MB' : 'รองรับ PNG, JPG, GIF ขนาดไม่เกิน 10MB' }}</p>
                 </div>
 
                 <!-- File Info (Success State) -->
@@ -147,15 +147,14 @@
                         <div class="text-muted small">{{ paymentProofSize }}</div>
                     </div>
                     <div class="mt-2 text-left">
-                        <a href="#" @click.prevent="removeImage" class="text-danger small text-decoration-none">Remove
-                            file</a>
+                        <a href="#" @click.prevent="removeImage" class="text-danger small text-decoration-none">{{ $i18n.locale === 'en' ? 'Remove file' : 'ลบไฟล์' }}</a>
                     </div>
                 </div>
 
                 <!-- Confirm Button -->
                 <CButton block color="danger" size="lg" class="py-3 font-weight-bold shadow-sm"
                     style="background-color: #E55B5B; border: none;" @click="onConfirmPayment">
-                    Confirm Payment
+                    {{ $i18n.locale === 'en' ? 'Confirm Payment' : 'ยืนยันการชำระเงิน' }}
                 </CButton>
 
             </CCardBody>
@@ -247,7 +246,7 @@ export default {
             if (file) {
                 // Validate file type and size if needed
                 if (file.size > 10 * 1024 * 1024) {
-                    alert('File size exceeds 10MB limit.');
+                    alert(this.$i18n.locale === 'en' ? 'File size exceeds 10MB limit.' : 'ขนาดไฟล์เกิน 10MB');
                     return;
                 }
 
@@ -285,14 +284,14 @@ export default {
         onConfirmPayment() {
             // Check Login Status first
             if (!this.isLoggedIn) {
-                this.$store.commit('dialog/showToast', { title: 'Authentication Required', message: 'กรุณาเข้าสู่ระบบก่อนยืนยันคำสั่งซื้อ', variant: 'warning' });
+                this.$store.commit('dialog/showToast', { title: 'Authentication Required', message: this.$i18n.locale === 'en' ? 'Please login before confirming the order' : 'กรุณาเข้าสู่ระบบก่อนยืนยันคำสั่งซื้อ', variant: 'warning' });
                 this.$store.commit('auth/isSignIn', true);
                 return;
             }
 
             // Basic validation
             if (!this.form.name || !this.form.email || !this.form.shipping) {
-                alert('Please fill in all required shipping information.');
+                alert(this.$i18n.locale === 'en' ? 'Please fill in all required shipping information.' : 'กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
                 this.currentStep = 1;
                 return;
             }

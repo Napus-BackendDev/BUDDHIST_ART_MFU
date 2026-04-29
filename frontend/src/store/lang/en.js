@@ -7,6 +7,20 @@ const en = {
     semester:"ภาคการศึกษา",
     course:"เลือกรายวิชา",
 
+    header: {
+        home: "Home",
+        artworks: "Artworks",
+        news: "News",
+        about: "About Us",
+        login: "Login",
+        profile: "Profile",
+        history: "History",
+        submissions: "Submissions",
+        dashboard: "Dashboard",
+        logout: "Logout",
+        cart: "Cart"
+    },
+
     button: {
         setting:"Setting",
         create :"Create"

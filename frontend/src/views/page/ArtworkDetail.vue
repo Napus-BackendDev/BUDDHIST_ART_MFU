@@ -7,7 +7,7 @@
             <!-- Loading State -->
             <div v-if="loading" class="loading-state-premium">
                 <CSpinner color="danger" variant="grow" style="width: 4rem; height: 4rem;" />
-                <h3 class="mt-4 text-dark font-weight-light">Gathering masterpiece details...</h3>
+                <h3 class="mt-4 text-dark font-weight-light">{{ $i18n.locale === 'en' ? 'Gathering masterpiece details...' : 'กำลังดึงข้อมูลผลงาน...' }}</h3>
             </div>
 
             <template v-else-if="artwork && artwork._id">
@@ -15,12 +15,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
                     <CLink @click="$router.push({ name: 'Artworks' })" class="back-link-premium">
                         <CIcon name="cilArrowLeft" size="lg" class="mr-2" />
-                        <span>Return to Gallery</span>
+                        <span>{{ $i18n.locale === 'en' ? 'Return to Gallery' : 'กลับไปหน้ารวมผลงาน' }}</span>
                     </CLink>
                     
                     <div class="d-flex align-items-center" v-if="isPreview">
-                        <span class="preview-tag mr-3">PREVIEW MODE</span>
-                        <CButton color="dark" shape="pill" size="sm" @click="closePreview">Exit</CButton>
+                        <span class="preview-tag mr-3">{{ $i18n.locale === 'en' ? 'PREVIEW MODE' : 'โหมดดูตัวอย่าง' }}</span>
+                        <CButton color="dark" shape="pill" size="sm" @click="closePreview">{{ $i18n.locale === 'en' ? 'Exit' : 'ออก' }}</CButton>
                     </div>
                 </div>
 
@@ -30,7 +30,7 @@
                         <div class="artwork-visual-container shadow-premium position-relative">
                             <!-- Category & Status -->
                             <div class="artwork-image-wrapper position-relative">
-                                <img :src="artwork.image" :alt="getName('en', artwork)" class="img-fluid main-artwork-img">
+                                <img :src="artwork.image" :alt="getName($i18n.locale, artwork)" class="img-fluid main-artwork-img">
                                 
                                 <!-- Zoom Button -->
                                 <button v-if="!showZoomModal" class="btn-zoom-float shadow-lg" @click="zoomImg" title="Zoom Image">
@@ -38,7 +38,7 @@
                                 </button>
                             </div>
                             <div v-if="isSoldOut" class="sold-out-badge-premium">
-                                <span>PRIVATE COLLECTION</span>
+                                <span>{{ $i18n.locale === 'en' ? 'PRIVATE COLLECTION' : 'เก็บเข้าคอลเลกชันส่วนตัว' }}</span>
                             </div>
                         </div>
                     </CCol>
@@ -49,24 +49,24 @@
                             <div class="artwork-info-content p-4 p-md-5">
                                 <!-- Category & Status -->
                                 <div class="d-flex align-items-center mb-3">
-                                    <span class="info-pill category-pill">{{ artwork.category ? getName('en', artwork.category) : 'Artwork' }}</span>
+                                    <span class="info-pill category-pill">{{ artwork.category ? getName($i18n.locale, artwork.category) : ($i18n.locale === 'en' ? 'Artwork' : 'ผลงานศิลปะ') }}</span>
                                     <span v-if="artwork.status && artwork.status.approval" class="info-pill status-pill ml-2" :style="getStatusBadgeStyle()">
-                                        {{ getName('en', artwork.status.approval) }}
+                                        {{ getName($i18n.locale, artwork.status.approval) }}
                                     </span>
                                 </div>
 
                                 <!-- Title & Artist -->
-                                <h1 class="artwork-master-title text-dark mb-2">{{ getName('en', artwork) }}</h1>
+                                <h1 class="artwork-master-title text-dark mb-2">{{ getName($i18n.locale, artwork) }}</h1>
                                 <div class="artist-signature-block mb-4">
-                                    <span class="label">Artist</span>
+                                    <span class="label">{{ $i18n.locale === 'en' ? 'Artist' : 'ศิลปิน' }}</span>
                                     <h4 class="artist-name clickable" @click="goToArtistProfile">
-                                        {{ artwork.artist ? getName('en', artwork.artist) : 'Unknown Artist' }}
+                                        {{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Unknown Artist' : 'ศิลปินนิรนาม') }}
                                     </h4>
                                 </div>
 
                                 <!-- Price Display -->
                                 <div class="valuation-block mb-5">
-                                    <div class="valuation-label">Collector's Value</div>
+                                    <div class="valuation-label">{{ $i18n.locale === 'en' ? "Collector's Value" : 'มูลค่าของผลงาน' }}</div>
                                     <div class="valuation-price">
                                         <span class="currency">฿</span>
                                         <span class="amount">{{ formatPrice(artwork.price) }}</span>
@@ -78,21 +78,21 @@
                                     <div class="spec-item">
                                         <div class="spec-icon"><CIcon name="cil-brush" /></div>
                                         <div class="spec-text">
-                                            <label>Technique</label>
-                                            <span>{{ getName('en', artwork, 'technique') || 'Mixed Media' }}</span>
+                                            <label>{{ $i18n.locale === 'en' ? 'Technique' : 'เทคนิค' }}</label>
+                                            <span>{{ getName($i18n.locale, artwork, 'technique') || ($i18n.locale === 'en' ? 'Mixed Media' : 'สื่อผสม') }}</span>
                                         </div>
                                     </div>
                                     <div class="spec-item">
                                         <div class="spec-icon"><CIcon name="cil-resize-both" /></div>
                                         <div class="spec-text">
-                                            <label>Size</label>
-                                            <span>{{ getName('en', artwork, 'size') || 'N/A' }}</span>
+                                            <label>{{ $i18n.locale === 'en' ? 'Size' : 'ขนาด' }}</label>
+                                            <span>{{ getName($i18n.locale, artwork, 'size') || 'N/A' }}</span>
                                         </div>
                                     </div>
                                     <div class="spec-item">
                                         <div class="spec-icon"><CIcon name="cil-history" /></div>
                                         <div class="spec-text">
-                                            <label>Created</label>
+                                            <label>{{ $i18n.locale === 'en' ? 'Created' : 'สร้างเมื่อ' }}</label>
                                             <span>{{ formatDate(artwork.createdAt) }}</span>
                                         </div>
                                     </div>
@@ -102,10 +102,10 @@
                                 <div class="curator-description mb-5">
                                     <div class="description-header d-flex align-items-center mb-3">
                                         <span class="dot mr-2"></span>
-                                        <h6>Concept & Narrative</h6>
+                                        <h6>{{ $i18n.locale === 'en' ? 'Concept & Narrative' : 'แนวความคิด' }}</h6>
                                     </div>
                                     <p class="description-body">
-                                        {{ getName('en', artwork, 'description') || 'No description provided for this artwork.' }}
+                                        {{ getName($i18n.locale, artwork, 'description') || ($i18n.locale === 'en' ? 'No description provided for this artwork.' : 'ไม่มีรายละเอียดสำหรับผลงานชิ้นนี้') }}
                                     </p>
                                 </div>
 
@@ -125,7 +125,7 @@
                                     
                                     <div class="d-flex align-items-center justify-content-between">
                                         <CButton color="outline-dark" shape="pill" class="btn-action-secondary px-4 mr-2 flex-grow-1 d-flex align-items-center justify-content-center" @click="contactInquiry">
-                                            <CIcon name="cilChatBubble" class="mr-2" /> Inquiry
+                                            <CIcon name="cilChatBubble" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Inquiry' : 'สอบถาม' }}
                                         </CButton>
                                         <CButton color="outline-secondary" shape="pill" class="btn-action-icon d-flex align-items-center justify-content-center" @click="shareArtwork">
                                             <CIcon name="cilShare" />
@@ -141,20 +141,20 @@
             <!-- Not Found State -->
             <div v-else class="not-found-premium text-center py-5">
                 <CIcon name="cil-mood-bad" size="4xl" class="text-muted mb-4" />
-                <h2>Artwork Missing</h2>
-                <p class="text-muted">The piece you're seeking is currently not in our catalog.</p>
+                <h2>{{ $i18n.locale === 'en' ? 'Artwork Missing' : 'ไม่พบผลงานศิลปะ' }}</h2>
+                <p class="text-muted">{{ $i18n.locale === 'en' ? "The piece you're seeking is currently not in our catalog." : 'ไม่พบผลงานศิลปะที่คุณกำลังค้นหาในขณะนี้' }}</p>
                 <CButton color="danger" variant="outline" shape="pill" class="mt-4 px-5 py-2" @click="$router.push({ name: 'Artworks' })">
-                    Discover More Artworks
+                    {{ $i18n.locale === 'en' ? 'Discover More Artworks' : 'ค้นหาผลงานศิลปะอื่นๆ' }}
                 </CButton>
             </div>
 
             <!-- Image Zoom Lightbox (Same style as NewsDetail.vue) -->
             <div v-if="showZoomModal" class="lightbox-overlay" @click="showZoomModal = false">
                 <div class="lightbox-content" @click.stop>
-                    <img :src="artwork.image" :alt="getName('en', artwork)" class="img-fluid zoom-img-main shadow-lg">
+                    <img :src="artwork.image" :alt="getName($i18n.locale, artwork)" class="img-fluid zoom-img-main shadow-lg">
                     <div class="lightbox-caption text-center py-3">
-                        <h4 class="mb-1 text-white font-weight-bold">{{ getName('en', artwork) }}</h4>
-                        <p class="text-white-50 mb-0">{{ artwork.artist ? getName('en', artwork.artist) : 'Artist' }}</p>
+                        <h4 class="mb-1 text-white font-weight-bold">{{ getName($i18n.locale, artwork) }}</h4>
+                        <p class="text-white-50 mb-0">{{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Artist' : 'ศิลปิน') }}</p>
                     </div>
                     <button class="lightbox-close-btn" @click="showZoomModal = false">
                         <CIcon name="cilX" size="xl" />
@@ -195,11 +195,11 @@ export default {
             return status === 'Available';
         },
         getButtonText() {
-            if (this.isPreview) return 'Preview Mode';
-            if (this.isSoldOut) return 'Already Sold Out';
-            if (!this.isPurchasable) return 'Not for Sale';
-            if (this.isInCart) return 'In Collection (Remove?)';
-            return 'Add in cart';
+            if (this.isPreview) return this.$i18n.locale === 'en' ? 'Preview Mode' : 'โหมดดูตัวอย่าง';
+            if (this.isSoldOut) return this.$i18n.locale === 'en' ? 'Already Sold Out' : 'ขายแล้ว';
+            if (!this.isPurchasable) return this.$i18n.locale === 'en' ? 'Not for Sale' : 'ไม่ได้มีไว้เพื่อขาย';
+            if (this.isInCart) return this.$i18n.locale === 'en' ? 'In Collection (Remove?)' : 'อยู่ในตะกร้า (นำออก?)';
+            return this.$i18n.locale === 'en' ? 'Add in cart' : 'หยิบใส่ตะกร้า';
         }
     },
     methods: {
@@ -256,35 +256,16 @@ export default {
                 this.$store.dispatch('cart/setShowCart', true);
             }
         },
-        getName(lang, item, field = null) {
-            if (!item) return '';
-            if (typeof item === 'string') return item;
-
-            const target = field ? item[field] : (item.title || item.name || item.description || item.technique);
-            if (!target) return '';
-            if (typeof target === 'string') return target;
-            
-            if (Array.isArray(target)) {
-                const nameObj = target.find(n => n.key === lang);
-                if (nameObj) return nameObj.value;
-                if (target[0] && target[0].value) return target[0].value;
-                if (typeof target[0] === 'string') return target.join(', ');
-            }
-            if (typeof target === 'object') {
-                return target[lang] || target['en'] || target['th'] || '';
-            }
-            return '';
-        },
         closePreview() {
             window.close();
         },
         contactInquiry() {
-            alert('Opening contact inquiry for: ' + this.getName('en', this.artwork));
+            alert('Opening contact inquiry for: ' + this.getName(this.$i18n.locale, this.artwork));
         },
         shareArtwork() {
             if (navigator.share) {
                 navigator.share({
-                    title: this.getName('en', this.artwork),
+                    title: this.getName(this.$i18n.locale, this.artwork),
                     url: window.location.href
                 });
             } else {

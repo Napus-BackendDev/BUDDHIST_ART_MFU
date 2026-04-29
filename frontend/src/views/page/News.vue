@@ -9,7 +9,7 @@
                 <CCol lg="9" class="mb-4">
                     <div v-if="loading" class="text-center py-5">
                         <CSpinner color="danger" variant="grow" />
-                        <p class="mt-3 text-muted">กำลังโหลดข่าวสาร...</p>
+                        <p class="mt-3 text-muted">{{ $i18n.locale === 'en' ? 'Loading news...' : 'กำลังโหลดข่าวสาร...' }}</p>
                     </div>
                     <div v-else>
                         <div v-if="displayNews.length > 0">
@@ -18,14 +18,14 @@
                             <!-- Load More -->
                             <div v-if="visibleCount < filteredNews.length" class="text-center mt-5 pt-4">
                                 <CButton @click="loadMore" color="outline-dark" shape="pill" class="px-5 py-2 font-weight-bold btn-load-more">
-                                    ดูข่าวสารเพิ่มเติม
+                                    {{ $i18n.locale === 'en' ? 'Load More' : 'ดูข่าวสารเพิ่มเติม' }}
                                 </CButton>
                             </div>
                         </div>
                         <div v-else class="text-center py-5 bg-white rounded-xl shadow-sm border mt-3">
                             <CIcon name="cil-find-in-page" size="xl" class="text-muted mb-3" />
-                            <h5 class="text-muted">ไม่พบข้อมูลข่าวสาร</h5>
-                            <p class="text-muted small">ลองเปลี่ยนคำค้นหาหรือเลือกหมวดหมู่อื่น</p>
+                            <h5 class="text-muted">{{ $i18n.locale === 'en' ? 'No news found' : 'ไม่พบข้อมูลข่าวสาร' }}</h5>
+                            <p class="text-muted small">{{ $i18n.locale === 'en' ? 'Try changing the search keyword or selecting a different category' : 'ลองเปลี่ยนคำค้นหาหรือเลือกหมวดหมู่อื่น' }}</p>
                         </div>
                     </div>
                 </CCol>
@@ -35,12 +35,12 @@
                     <div class="sidebar-filter sticky-top bg-white p-4 rounded-xl shadow-sm border" style="top: 100px;">
                         <!-- Search Section -->
                         <div class="filter-section mb-5">
-                            <h5 class="section-title mb-4">ค้นหาข่าวสาร</h5>
+                            <h5 class="section-title mb-4">{{ $i18n.locale === 'en' ? 'Search News' : 'ค้นหาข่าวสาร' }}</h5>
                             <div class="search-box">
                                 <input 
                                     type="text" 
                                     v-model="searchQuery"
-                                    placeholder="พิมพ์คำค้นหา..."
+                                    :placeholder="$i18n.locale === 'en' ? 'Type keyword...' : 'พิมพ์คำค้นหา...'"
                                     class="form-control rounded-pill border-0 shadow-sm px-4 py-3"
                                     @input="resetVisibleCount"
                                 />
@@ -49,14 +49,14 @@
 
                         <!-- Categories Section -->
                         <div class="filter-section">
-                            <h5 class="section-title mb-4">หมวดหมู่</h5>
+                            <h5 class="section-title mb-4">{{ $i18n.locale === 'en' ? 'Categories' : 'หมวดหมู่' }}</h5>
                             <div class="category-list">
                                 <div 
                                     class="category-item d-flex justify-content-between align-items-center p-3 rounded-lg mb-2 transition-all cursor-pointer"
                                     :class="{ 'active shadow': selectedCategory === 'ทั้งหมด' }"
                                     @click="selectCategory('ทั้งหมด')"
                                 >
-                                    <span class="cat-name">ทั้งหมด</span>
+                                    <span class="cat-name">{{ $i18n.locale === 'en' ? 'All' : 'ทั้งหมด' }}</span>
                                     <span class="cat-count">{{ newsData.length }}</span>
                                 </div>
                                 
@@ -66,7 +66,7 @@
                                     :class="{ 'active shadow': selectedCategory._id === cat._id }"
                                     @click="selectCategory(cat)"
                                 >
-                                    <span class="cat-name">{{ getLang(cat.title) }}</span>
+                                    <span class="cat-name">{{ getName($i18n.locale, cat.title) }}</span>
                                     <span class="cat-count">{{ getCategoryCount(cat) }}</span>
                                 </div>
                             </div>
@@ -109,8 +109,8 @@ export default {
             if (this.searchQuery) {
                 const query = this.searchQuery.toLowerCase();
                 list = list.filter(item => 
-                    this.getLang(item.title).toLowerCase().includes(query) ||
-                    this.getLang(item.description).toLowerCase().includes(query)
+                    this.getName(this.$i18n.locale, item.title).toLowerCase().includes(query) ||
+                    this.getName(this.$i18n.locale, item.description).toLowerCase().includes(query)
                 );
             }
             if (this.selectedCategory !== 'ทั้งหมด') {
@@ -128,10 +128,10 @@ export default {
             return this.displayNews.map(item => ({
                 _id: item._id,
                 image: (item.images && item.images.length > 0) ? item.images[0] : 'https://via.placeholder.com/800x600?text=No+Image',
-                category: item.category ? this.getLang(item.category.title) : 'ทั่วไป',
+                category: item.category ? this.getName(this.$i18n.locale, item.category.title) : (this.$i18n.locale === 'en' ? 'General' : 'ทั่วไป'),
                 date: this.formatDate(item.create ? item.create.datetime : null),
-                title: this.getLang(item.title),
-                summary: this.getLang(item.description)
+                title: this.getName(this.$i18n.locale, item.title),
+                summary: this.getName(this.$i18n.locale, item.description)
             }));
         }
     },
@@ -150,12 +150,6 @@ export default {
             } finally {
                 this.loading = false;
             }
-        },
-        getLang(arr) {
-            if (!arr || !Array.isArray(arr) || arr.length === 0) return '';
-            const lang = this.$i18n.locale || 'th';
-            const item = arr.find(i => i.key === lang) || arr.find(i => i.key === 'th') || arr[0];
-            return item ? item.value : '';
         },
         formatDate(dateStr) {
             if (!dateStr) return '';

@@ -3,16 +3,16 @@
         <CContainer fluid class="px-md-5">
             <!-- Left-aligned Header with View All Button -->
             <div class="d-flex align-items-center justify-content-between mb-4">
-                <h2 class="font-weight-bold mb-0 mr-2 section-title-home">ข่าวประชาสัมพันธ์</h2>
+                <h2 class="font-weight-bold mb-0 mr-2 section-title-home">{{ $i18n.locale === 'en' ? 'News & PR' : 'ข่าวประชาสัมพันธ์' }}</h2>
                 <CButton color="danger" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold" @click="$router.push('/news')">
-                    ดูข่าวทั้งหมด
+                    {{ $i18n.locale === 'en' ? 'View All News' : 'ดูข่าวทั้งหมด' }}
                 </CButton>
             </div>
 
             <!-- Category Filters (Pills) -->
             <div class="d-flex mb-5 news-pill-wrapper" style="gap: 12px;">
                 <CButton 
-                    v-for="cat in ['ล่าสุด', 'กิจกรรม', 'นิทรรศการ']" 
+                    v-for="cat in newsCategories" 
                     :key="cat"
                     :class="['news-pill px-4 font-weight-bold shadow-sm', selectedNewsCategory === cat ? 'news-pill-active' : 'news-pill-inactive']"
                     shape="pill"
@@ -36,7 +36,7 @@
                         <div class="card-img-wrapper position-relative">
                             <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${getNewsImage(news)})` }"></div>
                             <div class="card-img-overlay-custom"></div>
-                            <span class="category-badge">{{ getName('th', news.category) }}</span>
+                            <span class="category-badge">{{ getName($i18n.locale, news.category) }}</span>
                         </div>
 
                         <!-- Content Section -->
@@ -52,13 +52,13 @@
                             </div>
 
                             <h5 class="news-title mb-3 cursor-pointer">
-                                {{ getName('th', news.title) }}
+                                {{ getName($i18n.locale, news.title) }}
                             </h5>
-                            <p class="news-summary text-muted mb-4">{{ getName('th', news.description) }}</p>
+                            <p class="news-summary text-muted mb-4">{{ getName($i18n.locale, news.description) }}</p>
 
                             <div class="mt-auto">
                                 <div class="read-more-btn">
-                                    <span>อ่านต่อ</span>
+                                    <span>{{ $i18n.locale === 'en' ? 'Read More' : 'อ่านต่อ' }}</span>
                                     <CIcon name="cil-arrow-right" class="ml-2 arrow-icon" />
                                 </div>
                             </div>
@@ -78,8 +78,21 @@ export default {
     name: 'SectionNews',
     data() {
         return {
-            selectedNewsCategory: 'ล่าสุด',
+            selectedNewsCategory: 'ล่าสุด', // will adapt via watcher if needed
             loading: false
+        }
+    },
+    watch: {
+        '$i18n.locale': function(newVal) {
+            if (newVal === 'en' && ['ล่าสุด', 'กิจกรรม', 'นิทรรศการ'].includes(this.selectedNewsCategory)) {
+                if (this.selectedNewsCategory === 'ล่าสุด') this.selectedNewsCategory = 'Latest';
+                else if (this.selectedNewsCategory === 'กิจกรรม') this.selectedNewsCategory = 'Activities';
+                else if (this.selectedNewsCategory === 'นิทรรศการ') this.selectedNewsCategory = 'Exhibitions';
+            } else if (newVal === 'th' && ['Latest', 'Activities', 'Exhibitions'].includes(this.selectedNewsCategory)) {
+                if (this.selectedNewsCategory === 'Latest') this.selectedNewsCategory = 'ล่าสุด';
+                else if (this.selectedNewsCategory === 'Activities') this.selectedNewsCategory = 'กิจกรรม';
+                else if (this.selectedNewsCategory === 'Exhibitions') this.selectedNewsCategory = 'นิทรรศการ';
+            }
         }
     },
     async created() {
@@ -96,6 +109,11 @@ export default {
         ...mapGetters({
             newsList: 'news/news'
         }),
+        newsCategories() {
+            return this.$i18n.locale === 'en' 
+                ? ['Latest', 'Activities', 'Exhibitions'] 
+                : ['ล่าสุด', 'กิจกรรม', 'นิทรรศการ'];
+        },
         filteredNews() {
             if (!this.newsList) return [];
             
@@ -108,11 +126,12 @@ export default {
                 return dateB - dateA;
             });
 
-            if (this.selectedNewsCategory === 'ล่าสุด') return list;
+            if (this.selectedNewsCategory === 'ล่าสุด' || this.selectedNewsCategory === 'Latest') return list;
             
             return list.filter(item => {
-                const categoryName = this.getName('th', item.category);
-                return categoryName === this.selectedNewsCategory;
+                const categoryNameTh = this.getName('th', item.category);
+                const categoryNameEn = this.getName('en', item.category);
+                return categoryNameTh === this.selectedNewsCategory || categoryNameEn === this.selectedNewsCategory;
             });
         }
     },
@@ -122,38 +141,6 @@ export default {
         }),
         explore(id) {
             this.$router.push({ name: 'NewsDetail', params: { id } });
-        },
-        getName(lang, item) {
-            if (!item) return 'N/A';
-            if (typeof item === 'string') return item;
-            
-            // If item itself is the localized array
-            if (Array.isArray(item)) {
-                const nameObj = item.find(n => n.key === lang) || item[0];
-                return nameObj ? nameObj.value : 'N/A';
-            }
-            
-            const titleField = item.title || item.name || item.value || '';
-            if (typeof titleField === 'string' && titleField) return titleField;
-            
-            if (Array.isArray(titleField)) {
-                const nameObj = titleField.find(n => n.key === lang);
-                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
-                return nameObj ? nameObj.value : firstVal;
-            }
-
-            // For categories that might be populated objects
-            if (item.name && Array.isArray(item.name)) {
-                const nameObj = item.name.find(n => n.key === lang);
-                return nameObj ? nameObj.value : item.name[0]?.value || 'N/A';
-            }
-
-            // If item is an object with a direct value
-            if (typeof item === 'object' && item.value) {
-                return item.value;
-            }
-
-            return 'N/A';
         },
         getNewsImage(news) {
             if (news.images && news.images.length > 0) return news.images[0];

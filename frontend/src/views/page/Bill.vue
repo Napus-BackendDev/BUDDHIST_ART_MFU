@@ -10,9 +10,9 @@
                 </div>
             </div>
 
-            <h2 class="font-weight-bold mb-3" style="color: #2c3e50;">Order Confirmed!</h2>
+            <h2 class="font-weight-bold mb-3" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Order Confirmed!' : 'ยืนยันคำสั่งซื้อสำเร็จ!' }}</h2>
             <p class="text-muted mb-5">
-                Thank you for your purchase. Your order {{ order._id }} has been received and is being processed.
+                {{ $i18n.locale === 'en' ? 'Thank you for your purchase. Your order' : 'ขอบคุณสำหรับการสั่งซื้อ หมายเลขคำสั่งซื้อของคุณ' }} {{ order._id }} {{ $i18n.locale === 'en' ? 'has been received and is being processed.' : 'ได้รับการยืนยันและกำลังดำเนินการ' }}
             </p>
 
             <!-- Order Details Card -->
@@ -23,23 +23,23 @@
                 </CCardHeader>
                 <CCardHeader
                     class="bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
-                    <h5 class="font-weight-bold mb-0">Order Details</h5>
+                    <h5 class="font-weight-bold mb-0">{{ $i18n.locale === 'en' ? 'Order Details' : 'รายละเอียดคำสั่งซื้อ' }}</h5>
                     <CLink href="#" class="text-danger small font-weight-bold text-decoration-none">
-                        <CIcon name="cil-cloud-download" size="sm" class="mr-1" /> Download Receipt
+                        <CIcon name="cil-cloud-download" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Download Receipt' : 'ดาวน์โหลดใบเสร็จ' }}
                     </CLink>
                 </CCardHeader>
                 <CCardBody class="p-4">
 
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Order Number</span>
+                        <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Order Number' : 'หมายเลขคำสั่งซื้อ' }}</span>
                         <span class="font-weight-bold text-dark small">{{ order._id }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Date</span>
+                        <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Date' : 'วันที่' }}</span>
                         <span class="font-weight-bold text-dark small">{{ order.date }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-4">
-                        <span class="text-muted small">Payment Method</span>
+                        <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Payment Method' : 'ช่องทางการชำระเงิน' }}</span>
                         <span class="font-weight-bold text-dark small text-capitalize">{{ order.paymentMethod }}</span>
                     </div>
 
@@ -51,8 +51,8 @@
                         <div class="w-100">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <div class="font-weight-bold text-dark small">{{ getName('th', item.title) }}</div>
-                                    <div class="text-muted" style="font-size: 0.75rem;" v-if="item.artist">โดย {{ getName('th', item.artist) }}</div>
+                                    <div class="font-weight-bold text-dark small">{{ getName($i18n.locale, item.title) }}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;" v-if="item.artist">{{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getName($i18n.locale, item.artist) }}</div>
                                 </div>
                                 <div class="font-weight-bold text-danger">฿{{ formatPrice(item.price) }} <span
                                         class="text-muted small" v-if="item.quantity > 1">x{{ item.quantity }}</span>
@@ -64,16 +64,16 @@
                     <hr class="border-light my-3">
 
                     <div class="d-flex justify-content-between mb-2 text-muted small">
-                        <span>Subtotal</span>
+                        <span>{{ $i18n.locale === 'en' ? 'Subtotal' : 'ยอดรวม' }}</span>
                         <span class="font-weight-bold text-dark">฿{{ formatPrice(order.subtotal) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2 text-muted small">
-                        <span>Shipping</span>
+                        <span>{{ $i18n.locale === 'en' ? 'Shipping' : 'ค่าจัดส่ง' }}</span>
                         <span class="font-weight-bold text-dark">฿{{ formatPrice(order.shipping) }}</span>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                        <span class="font-weight-bold text-dark">Total Paid</span>
+                        <span class="font-weight-bold text-dark">{{ $i18n.locale === 'en' ? 'Total Paid' : 'ยอดสุทธิ' }}</span>
                         <span class="font-weight-bold text-danger h5 mb-0">฿{{ formatPrice(order.total) }}</span>
                     </div>
                 </CCardBody>
@@ -83,11 +83,11 @@
             <div class="d-flex justify-content-center">
                 <CButton color="danger" class="px-4 py-2 font-weight-bold shadow-sm mr-3"
                     style="background-color: #E55B5B; border: none; min-width: 150px;" to="/">
-                    Return to Home
+                    {{ $i18n.locale === 'en' ? 'Return to Home' : 'กลับหน้าหลัก' }}
                 </CButton>
                 <CButton color="white" class="px-4 py-2 font-weight-bold shadow-sm border"
                     style="color: #2c3e50; min-width: 150px;" @click="downloadBilling">
-                    <CIcon name="cil-cloud-download" class="mr-2" /> Download Billing
+                    <CIcon name="cil-cloud-download" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Download Billing' : 'ดาวน์โหลดใบเสร็จ' }}
                 </CButton>
             </div>
 
@@ -110,26 +110,6 @@ export default {
         downloadBilling() {
             // Logic for downloading billing
             console.log('Download Billing');
-        },
-        getName(lang, item) {
-            if (!item) return '';
-            if (typeof item === 'string') return item;
-            
-            if (Array.isArray(item)) {
-                let obj = item.find(n => n.key === lang);
-                if (!obj) obj = item.find(n => n.key === 'th');
-                return obj ? obj.value : (item[0] ? item[0].value : '');
-            }
-
-            const dataField = item.title || item.name || '';
-            if (typeof dataField === 'string' && dataField) return dataField;
-            
-            if (Array.isArray(dataField)) {
-                let obj = dataField.find(n => n.key === lang);
-                if (!obj) obj = dataField.find(n => n.key === 'th');
-                return obj ? obj.value : (dataField[0] ? dataField[0].value : '');
-            }
-            return '';
         },
         formatPrice(value) {
             if (value === undefined || value === null) return '0';

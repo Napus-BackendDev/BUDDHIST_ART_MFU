@@ -7,7 +7,7 @@
                     <div class="card-img-wrapper position-relative">
                         <!-- Category Badge -->
                         <div class="position-absolute glass-pill-badge px-3 py-1 m-3 rounded-pill" style="top: 0; left: 0; z-index: 2;">
-                            <span class="small font-weight-bold">{{ art.category ? getName('th', art.category) : 'ผลงาน' }}</span>
+                            <span class="small font-weight-bold">{{ art.category ? getName($i18n.locale, art.category) : ($i18n.locale === 'en' ? 'Artwork' : 'ผลงาน') }}</span>
                         </div>
                         <!-- Full Cover Image Background -->
                         <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${art.image || 'https://via.placeholder.com/800x800?text=No+Image'})` }">
@@ -19,13 +19,13 @@
                     <CCardBody class="p-4 bg-white">
                         <!-- Title, Artist and Technique -->
                         <div class="mb-3">
-                            <h4 class="font-weight-bold art-title mb-1 text-truncate">{{ getName('th', art) }}</h4>
+                            <h4 class="font-weight-bold art-title mb-1 text-truncate">{{ getName($i18n.locale, art) }}</h4>
                             <div class="art-technique text-muted mb-1" v-if="art.technique">
                                 <small class="d-flex align-items-center">
-                                    {{ getName('th', art.technique) }}
+                                    {{ getName($i18n.locale, art.technique) }}
                                 </small>
                             </div>
-                            <p class="text-muted small art-artist mb-0">โดย {{ art.artist ? getName('th', art.artist) : 'ศิลปินนิรนาม' }}</p>
+                            <p class="text-muted small art-artist mb-0">{{ $i18n.locale === 'en' ? 'By' : 'โดย' }} {{ art.artist ? getName($i18n.locale, art.artist) : ($i18n.locale === 'en' ? 'Anonymous' : 'ศิลปินนิรนาม') }}</p>
                         </div>
 
                         <hr class="my-3 opacity-50">
@@ -33,16 +33,16 @@
                         <!-- Price and Action -->
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="price-box">
-                                <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">ราคาปัจจุบัน</small>
+                                <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">{{ $i18n.locale === 'en' ? 'Current Price' : 'ราคาปัจจุบัน' }}</small>
                                 <span class="price-value font-weight-bold text-danger">{{ formatPrice(art.price) }}</span>
-                                <small class="price-unit ml-1 font-weight-bold">บาท</small>
+                                <small class="price-unit ml-1 font-weight-bold">{{ $i18n.locale === 'en' ? 'THB' : 'บาท' }}</small>
                             </div>
                             
                             <!-- Action Button: Add to Cart / In Cart Status -->
                             <div v-if="isPurchasable(art)" class="action-btn-container" @click.stop="handleCartAction(art)">
                                 <div v-if="isInCart(art._id)" class="in-cart-label">
                                     <CIcon name="cil-check-circle" class="mr-1" />
-                                    <span>อยู่ในตะกร้าแล้ว</span>
+                                    <span>{{ $i18n.locale === 'en' ? 'In Cart' : 'อยู่ในตะกร้าแล้ว' }}</span>
                                 </div>
                                 <div v-else class="action-btn-circle">
                                     <CIcon name="cil-cart" />
@@ -56,8 +56,8 @@
     </div>
     <div v-else class="text-center py-5 no-results-box bg-light rounded-xl mt-4">
         <CIcon name="cil-brush" size="3xl" class="text-muted mb-3 opacity-30" />
-        <h4 class="text-muted font-weight-bold">ไม่พบผลงานที่ต้องการ</h4>
-        <p class="text-muted max-w-lg mx-auto">ขออภัย เราไม่พบผลงานที่ตรงตามเงื่อนไขที่คุณเลือกในขณะนี้</p>
+        <h4 class="text-muted font-weight-bold">{{ $i18n.locale === 'en' ? 'No Artworks Found' : 'ไม่พบผลงานที่ต้องการ' }}</h4>
+        <p class="text-muted max-w-lg mx-auto">{{ $i18n.locale === 'en' ? "Sorry, we couldn't find any artworks matching your criteria at this time." : 'ขออภัย เราไม่พบผลงานที่ตรงตามเงื่อนไขที่คุณเลือกในขณะนี้' }}</p>
     </div>
 </template>
 
@@ -73,28 +73,6 @@ export default {
     methods: {
         getDetail(id) {
             this.$router.push(`/artwork/${id}`);
-        },
-        getName(lang, item) {
-            if (!item) return '';
-            if (typeof item === 'string') return item;
-            
-            // If item is already the array of {key, value}
-            if (Array.isArray(item)) {
-                let obj = item.find(n => n.key === lang);
-                if (!obj) obj = item.find(n => n.key === 'th');
-                return obj ? obj.value : (item[0] ? item[0].value : '');
-            }
-
-            // Check for title or name fields if it's an object
-            const dataField = item.title || item.name || '';
-            if (typeof dataField === 'string' && dataField) return dataField;
-            
-            if (Array.isArray(dataField)) {
-                let obj = dataField.find(n => n.key === lang);
-                if (!obj) obj = dataField.find(n => n.key === 'th');
-                return obj ? obj.value : (dataField[0] ? dataField[0].value : '');
-            }
-            return '';
         },
         formatPrice(value) {
             if (value === undefined || value === null) return '0';

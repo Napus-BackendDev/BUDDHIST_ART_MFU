@@ -7,12 +7,10 @@
                     <CCol lg="4" class="mb-4 mb-lg-0 pr-lg-5">
                         <div class="footer-brand mb-4">
                             <h2 class="brand-title">BUDDHIST <span class="highlight">ART MFU</span></h2>
-                            <div class="brand-sub">ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง</div>
+                            <div class="brand-sub">{{ $i18n.locale === 'en' ? 'Center for Buddhist Art, Mae Fah Luang University' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }}</div>
                         </div>
                         <p class="brand-description">
-                            แหล่งเรียนรู้และอนุรักษ์พุทธศิลปกรรมล้านนาและร่วมสมัย 
-                            มุ่งเน้นการเผยแพร่ สืบทอด และสร้างสรรค์ผลงานพุทธศิลป์ 
-                            เพื่อสืบสานมรดกทางวัฒนธรรมอันล้ำค่าของชาติ
+                            {{ $i18n.locale === 'en' ? 'A center for learning and preserving Lanna and contemporary Buddhist art. Dedicated to the dissemination, inheritance, and creation of Buddhist artworks to sustain the nation\'s invaluable cultural heritage.' : 'แหล่งเรียนรู้และอนุรักษ์พุทธศิลปกรรมล้านนาและร่วมสมัย มุ่งเน้นการเผยแพร่ สืบทอด และสร้างสรรค์ผลงานพุทธศิลป์ เพื่อสืบสานมรดกทางวัฒนธรรมอันล้ำค่าของชาติ' }}
                         </p>
                         <div class="social-links mt-4">
                             <a href="#" class="social-btn"><CIcon name="cib-facebook" /></a>
@@ -24,26 +22,26 @@
 
                     <!-- Column 2: Quick Links -->
                     <CCol md="4" lg="2" class="mb-4 mb-lg-0">
-                        <h5 class="footer-heading text-uppercase mb-4">เมนูแนะนำ</h5>
+                        <h5 class="footer-heading text-uppercase mb-4">{{ $i18n.locale === 'en' ? 'Quick Links' : 'เมนูแนะนำ' }}</h5>
                         <ul class="footer-nav list-unstyled">
-                            <li><router-link to="/">หน้าหลัก</router-link></li>
-                            <li><router-link to="/artworks">ผลงานพุทธศิลป์</router-link></li>
-                            <li><router-link to="/news">ข่าวสารและกิจกรรม</router-link></li>
-                            <li><router-link to="/track-order">เช็คสถานะคำสั่งซื้อ</router-link></li>
-                            <li><router-link to="/login">เข้าสู่ระบบ (ศิลปิน/แอดมิน)</router-link></li>
+                            <li><router-link to="/">{{ $i18n.locale === 'en' ? 'Home' : 'หน้าหลัก' }}</router-link></li>
+                            <li><router-link to="/artworks">{{ $i18n.locale === 'en' ? 'Artworks' : 'ผลงานพุทธศิลป์' }}</router-link></li>
+                            <li><router-link to="/news">{{ $i18n.locale === 'en' ? 'News & Events' : 'ข่าวสารและกิจกรรม' }}</router-link></li>
+                            <li><router-link to="/track-order">{{ $i18n.locale === 'en' ? 'Track Order' : 'เช็คสถานะคำสั่งซื้อ' }}</router-link></li>
+                            <li><router-link to="/login">{{ $i18n.locale === 'en' ? 'Login (Artist/Admin)' : 'เข้าสู่ระบบ (ศิลปิน/แอดมิน)' }}</router-link></li>
                         </ul>
                     </CCol>
 
                     <!-- Column 3: Contact Info -->
                     <CCol md="8" lg="6" class="mb-4 mb-lg-0 pl-lg-5">
-                        <h5 class="footer-heading text-uppercase mb-4">ติดต่อเรา</h5>
+                        <h5 class="footer-heading text-uppercase mb-4">{{ $i18n.locale === 'en' ? 'Contact Us' : 'ติดต่อเรา' }}</h5>
                         <div class="contact-info">
                             <div class="contact-item d-flex mb-3">
                                 <div class="contact-icon mr-3">
                                     <CIcon name="cil-location-pin" />
                                 </div>
                                 <div class="contact-text">
-                                    มหาวิทยาลัยแม่ฟ้าหลวง 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100
+                                    {{ $i18n.locale === 'en' ? 'Mae Fah Luang University 333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'มหาวิทยาลัยแม่ฟ้าหลวง 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
                                 </div>
                             </div>
                             <div class="contact-item d-flex mb-3">
@@ -51,7 +49,7 @@
                                     <CIcon name="cil-phone" />
                                 </div>
                                 <div class="contact-text">
-                                    โทรศัพท์: 0-5391-6000, 0-5391-7034
+                                    {{ $i18n.locale === 'en' ? 'Tel:' : 'โทรศัพท์:' }} 0-5391-6000, 0-5391-7034
                                 </div>
                             </div>
                             <div class="contact-item d-flex">
@@ -59,7 +57,7 @@
                                     <CIcon name="cil-clock" />
                                 </div>
                                 <div class="contact-text">
-                                    เวลาทำการ: จันทร์ - ศุกร์ | 08:00 - 16:00 น.
+                                    {{ $i18n.locale === 'en' ? 'Office Hours: Mon - Fri | 08:00 - 16:00' : 'เวลาทำการ: จันทร์ - ศุกร์ | 08:00 - 16:00 น.' }}
                                 </div>
                             </div>
                         </div>
@@ -68,7 +66,7 @@
                         <div class="footer-map-deco mt-4 rounded-lg overflow-hidden border border-secondary shadow-sm">
                             <div class="map-overlay d-flex align-items-center justify-content-center">
                                 <CIcon name="cil-map" size="xl" class="mr-2" />
-                                <span>แผนที่มหาวิทยาลัยแม่ฟ้าหลวง</span>
+                                <span>{{ $i18n.locale === 'en' ? 'Mae Fah Luang University Map' : 'แผนที่มหาวิทยาลัยแม่ฟ้าหลวง' }}</span>
                             </div>
                         </div>
                     </CCol>
@@ -84,8 +82,8 @@
                         &copy; {{ new Date().getFullYear() }} Center for Buddhist Art, Mae Fah Luang University. All rights reserved.
                     </p>
                     <div class="footer-policy mt-3 mt-md-0">
-                        <a href="#" class="small text-muted mr-3">Privacy Policy</a>
-                        <a href="#" class="small text-muted">Terms of Service</a>
+                        <a href="#" class="small text-muted mr-3">{{ $i18n.locale === 'en' ? 'Privacy Policy' : 'นโยบายความเป็นส่วนตัว' }}</a>
+                        <a href="#" class="small text-muted">{{ $i18n.locale === 'en' ? 'Terms of Service' : 'ข้อกำหนดการให้บริการ' }}</a>
                     </div>
                 </div>
             </CContainer>
