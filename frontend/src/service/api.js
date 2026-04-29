@@ -255,6 +255,8 @@ export default {
                 return instance.post("/api/v1/user/auth/2fa", data);
             case '2fa-send':
                 return instance.post("/api/v1/user/auth/2fa-send", data);
+            case 'google-auth':
+                return instance.post("/api/v1/google/auth", data);
             default:
                 break;
         }

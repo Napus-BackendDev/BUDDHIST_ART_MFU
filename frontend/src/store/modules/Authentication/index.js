@@ -96,6 +96,52 @@ const LoginModule = {
         onLogin({ dispatch }, data) {
             return dispatch('singIn', data);
         },
+        onGoogleLogin({ commit }, data) {
+            store.commit("dialog/loading", true)
+            return Service.authen("google-auth", data)
+                .then((response) => {
+                    store.commit("dialog/loading", false)
+                    const user = response.data.data;
+                    const role = user.role || 'Customer';
+
+                    console.log("GOOGLE LOGIN SUCCESS! Received User:", user);
+
+                    // Store user data properly
+                    localStorage.setItem('objs', JSON.stringify({
+                        xAccessToken: response.data.token || response.data.data.token,
+                        accounts: user._id,
+                        role: role
+                    }));
+
+                    store.commit("auth/isSignIn", false); 
+                    store.commit("auth/userId", user._id);
+
+                    // Redirection Logic
+                    if (router.currentRoute.path !== '/payment') {
+                        const userRole = (role || 'Customer').toLowerCase();
+                        if (userRole === 'admin') {
+                            router.push('/admin');
+                        } else if (userRole === 'artist' || userRole === 'evaluator') {
+                            router.push('/artist/profile');
+                        } else {
+                            router.push('/user');
+                        }
+                    }
+
+                    return response;
+                })
+                .catch((err) => {
+                    store.commit("dialog/loading", false)
+                    const dialog = {
+                        message: err.response?.data?.message || "Google Authentication Failed. Please ensure your email is registered.",
+                        code: "40100",
+                        number: "1",
+                        status: true
+                    }
+                    store.commit("dialog/dialog", dialog)
+                    throw err;
+                });
+        },
 
 
         twofa({ commit }, data) {
