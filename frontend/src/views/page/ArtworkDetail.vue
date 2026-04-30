@@ -111,13 +111,14 @@
 
                                 <!-- Purchase Actions -->
                                 <div class="action-stack-premium pt-4 border-top">
-                                    <CButton block :color="isSoldOut || isPreview || !isPurchasable ? 'secondary' : (isInCart ? 'dark' : 'danger')" size="lg" shape="pill"
-                                        :disabled="isSoldOut || isPreview || !isPurchasable"
+                                    <CButton block :color="isSoldOut || isPreview || !isPurchasable || (isApprovalInCart && !isInCart) ? 'secondary' : (isInCart ? 'dark' : 'danger')" size="lg" shape="pill"
+                                        :disabled="isSoldOut || isPreview || !isPurchasable || (isApprovalInCart && !isInCart)"
                                         class="btn-purchase-premium shadow-lg mb-3"
-                                        :style="isSoldOut || isPreview || !isPurchasable || isInCart ? 'background: #e2e8f0 !important; color: #94a3b8 !important;' : 'background: linear-gradient(135deg, #4a1d18, #612721); color: white !important;'"
+                                        :style="isSoldOut || isPreview || !isPurchasable || (isApprovalInCart && !isInCart) || isInCart ? 'background: #e2e8f0 !important; color: #94a3b8 !important;' : 'background: linear-gradient(135deg, #4a1d18, #612721); color: white !important;'"
                                         @click="addToCart">
-                                        <CIcon v-if="!isSoldOut && !isPreview && isPurchasable && !isInCart" name="cilCart" size="xl" class="mr-3" />
+                                        <CIcon v-if="!isSoldOut && !isPreview && isPurchasable && !isInCart && !isApprovalInCart" name="cilCart" size="xl" class="mr-3" />
                                         <CIcon v-else-if="isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
+                                        <CIcon v-else-if="isApprovalInCart && !isInCart" name="cilCart" size="xl" class="mr-3" />
                                         <CIcon v-else-if="!isPurchasable && !isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
                                         <CIcon v-else-if="isInCart" name="cilCheck" size="xl" class="mr-3" />
                                         {{ getButtonText }}
@@ -175,7 +176,8 @@ export default {
             loading: true,
             isPreview: false,
             showZoomModal: false,
-            artwork: {}
+            artwork: {},
+            polling: null
         }
     },
     computed: {
@@ -194,16 +196,24 @@ export default {
             // ONLY 'Available' status is purchasable.
             return status === 'Available';
         },
+        isApprovalInCart() {
+            if (!this.artwork || !this.artwork.status || !this.artwork.status.approval) return false;
+            return this.getName('en', this.artwork.status.approval) === 'In Cart';
+        },
         getButtonText() {
             if (this.isPreview) return this.$i18n.locale === 'en' ? 'Preview Mode' : 'โหมดดูตัวอย่าง';
             if (this.isSoldOut) return this.$i18n.locale === 'en' ? 'Already Sold Out' : 'ขายแล้ว';
+            
+            // If it's in SOMEONE ELSE'S cart
+            if (this.isApprovalInCart && !this.isInCart) return this.$i18n.locale === 'en' ? 'Being Ordered' : 'อยู่ในช่วงสั่งซื้อ';
+
             if (!this.isPurchasable) return this.$i18n.locale === 'en' ? 'Not for Sale' : 'ไม่ได้มีไว้เพื่อขาย';
             if (this.isInCart) return this.$i18n.locale === 'en' ? 'In Collection (Remove?)' : 'อยู่ในตะกร้า (นำออก?)';
             return this.$i18n.locale === 'en' ? 'Add in cart' : 'หยิบใส่ตะกร้า';
         }
     },
     methods: {
-        async fetchArtwork() {
+        async fetchArtwork(silent = false) {
             const id = this.$route.params.id;
             if (id === 'preview') {
                 const previewData = sessionStorage.getItem('artwork_preview');
@@ -215,7 +225,7 @@ export default {
                 return;
             }
 
-            this.loading = true;
+            if (!silent) this.loading = true;
             try {
                 const result = await this.$store.dispatch('artwork/explore', { _id: id });
                 if (result) {
@@ -224,7 +234,7 @@ export default {
             } catch (error) {
                 console.error('Error fetching artwork details:', error);
             } finally {
-                this.loading = false;
+                if (!silent) this.loading = false;
             }
         },
         formatPrice(price) {
@@ -246,7 +256,7 @@ export default {
             }
         },
         addToCart() {
-            if (this.isPreview || this.isSoldOut || !this.isPurchasable) return;
+            if (this.isPreview || this.isSoldOut || !this.isPurchasable || (this.isApprovalInCart && !this.isInCart)) return;
             if (this.isInCart) {
                 this.$store.dispatch('cart/removeFromCart', this.artwork._id);
             } else {
@@ -283,6 +293,16 @@ export default {
     },
     mounted() {
         this.fetchArtwork();
+        this.polling = setInterval(() => {
+            if (!this.isPreview) {
+                this.fetchArtwork(true);
+            }
+        }, 5000);
+    },
+    beforeDestroy() {
+        if (this.polling) {
+            clearInterval(this.polling);
+        }
     }
 }
 </script>

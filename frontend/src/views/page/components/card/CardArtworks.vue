@@ -44,6 +44,10 @@
                                     <CIcon name="cil-check-circle" class="mr-1" />
                                     <span>{{ $i18n.locale === 'en' ? 'In Cart' : 'อยู่ในตะกร้าแล้ว' }}</span>
                                 </div>
+                                <div v-else-if="isApprovalInCart(art)" class="in-cart-label" style="color: #ff9800; border-color: #ff9800; background-color: #fff3e0; cursor: not-allowed;">
+                                    <CIcon name="cil-cart" class="mr-1" />
+                                    <span>{{ $i18n.locale === 'en' ? 'Being Ordered' : 'อยู่ในช่วงสั่งซื้อ' }}</span>
+                                </div>
                                 <div v-else class="action-btn-circle">
                                     <CIcon name="cil-cart" />
                                 </div>
@@ -84,6 +88,10 @@ export default {
         },
         handleCartAction(art) {
             if (!this.isPurchasable(art)) return;
+            // Prevent adding to cart if it's already in someone else's cart
+            if (this.isApprovalInCart(art) && !this.isInCart(art._id)) {
+                return;
+            }
             if (this.isInCart(art._id)) {
                 // If already in cart, remove it
                 this.$store.dispatch('cart/removeFromCart', art._id);
@@ -94,6 +102,10 @@ export default {
                 // Automatically open the cart sidebar (A-side)
                 this.$store.dispatch('cart/setShowCart', true);
             }
+        },
+        isApprovalInCart(art) {
+            if (!art || !art.status || !art.status.approval) return false;
+            return this.getName('en', art.status.approval) === 'In Cart';
         },
         isPurchasable(art) {
             if (!art || !art.status || !art.status.sale) return false;

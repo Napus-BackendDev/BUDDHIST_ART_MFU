@@ -6,42 +6,56 @@
     :centered="true"
   >
     <div v-if="order" class="p-4 bg-light-empty">
-       <CRow class="mb-4">
-          <CCol sm="6">
-             <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Order ID</h6>
-             <h5 class="font-weight-bold text-dark">#{{ order.orderId }}</h5>
-          </CCol>
-          <CCol sm="6" class="text-sm-right">
-             <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Order Date</h6>
-             <h5 class="font-weight-bold text-dark">{{ order.date }}</h5>
-          </CCol>
-       </CRow>
+       <div class="d-flex flex-column flex-sm-row justify-content-between mb-5">
+          <div class="mb-3 mb-sm-0">
+             <h6 class="text-muted text-uppercase mb-1 font-weight-bold">Order ID</h6>
+             <h5 class="font-weight-bold text-dark mb-0">#{{ order.orderId }}</h5>
+          </div>
+          <div class="text-sm-right">
+             <h6 class="text-muted text-uppercase mb-1 font-weight-bold">Order Date</h6>
+             <h5 class="font-weight-bold text-dark mb-0">{{ order.date }}</h5>
+          </div>
+       </div>
 
        <!-- Document Downloads -->
-          <div class="mb-4 px-1">
-              <h6 class="text-muted text-uppercase mb-3 small font-weight-bold">Documents</h6>
-              <CRow>
-                  <CCol sm="4" class="mb-2">
-                      <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
-                          <CIcon name="cil-file" class="mr-2"/> Receipt
-                      </CButton>
-                  </CCol>
-                  <CCol sm="4" class="mb-2">
-                      <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
-                          <CIcon name="cil-description" class="mr-2"/> Certificate
-                      </CButton>
-                  </CCol>
-                  <CCol sm="4" class="mb-2">
-                      <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
-                          <CIcon name="cil-cloud-download" class="mr-2"/> Invoice
-                      </CButton>
-                  </CCol>
-              </CRow>
-          </div>
+       <div class="mb-5">
+           <h6 class="text-muted text-uppercase mb-3 font-weight-bold">Documents</h6>
+           <CRow>
+               <CCol sm="4" class="mb-2">
+                   <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
+                       <CIcon name="cil-file" class="mr-2"/> Receipt
+                   </CButton>
+               </CCol>
+               <CCol sm="4" class="mb-2">
+                   <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
+                       <CIcon name="cil-description" class="mr-2"/> Certificate
+                   </CButton>
+               </CCol>
+               <CCol sm="4" class="mb-2">
+                   <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
+                       <CIcon name="cil-cloud-download" class="mr-2"/> Invoice
+                   </CButton>
+               </CCol>
+           </CRow>
+       </div>
+
+       <!-- Addresses -->
+       <div class="mb-5" v-if="order.address">
+           <CRow>
+               <CCol sm="6" class="mb-3 mb-sm-0">
+                   <h6 class="text-muted text-uppercase mb-2 font-weight-bold">Billing Address</h6>
+                   <div class="small text-dark mb-0 bg-white p-3 rounded shadow-sm h-100">{{ order.address.bill || '-' }}</div>
+               </CCol>
+               <CCol sm="6">
+                   <h6 class="text-muted text-uppercase mb-2 font-weight-bold">Shipping Address</h6>
+                   <div class="small text-dark mb-0 bg-white p-3 rounded shadow-sm h-100">{{ order.address.shipping || '-' }}</div>
+               </CCol>
+           </CRow>
+       </div>
 
        <!-- Artwork List -->
-       <div class="mb-4">
-          <h6 class="text-muted text-uppercase mb-3 small font-weight-bold">Items</h6>
+       <div class="mb-5">
+          <h6 class="text-muted text-uppercase mb-3 font-weight-bold">Items</h6>
           <div v-for="art in order.artwork" :key="art._id" class="d-flex align-items-center mb-3 bg-white p-3 rounded-lg shadow-sm">
               <div class="art-img-preview mr-3 rounded overflow-hidden" style="width: 60px; height: 60px;">
                   <img :src="art.image" class="w-100 h-100" style="object-fit: cover;" />
@@ -59,14 +73,13 @@
           </div>
        </div>
 
-       <CCard class="border-0 shadow-sm rounded-lg mb-0">
-           <CCardBody>
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="font-weight-bold text-dark mb-0">Total Amount</h5>
-                    <h4 class="font-weight-bold text-primary mb-0">฿{{ order.total.toLocaleString() }}</h4>
-                </div>
-           </CCardBody>
-       </CCard>
+       <!-- Total Amount -->
+       <div class="bg-white p-3 rounded-lg shadow-sm mb-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="font-weight-bold text-dark mb-0">Total Amount</h5>
+                <h4 class="font-weight-bold text-primary mb-0">฿{{ order.total.toLocaleString() }}</h4>
+            </div>
+       </div>
     </div>
     <template #footer>
       <CButton @click="localShow = false" color="dark" shape="pill" class="px-4 font-weight-bold shadow-sm hover-lift btn-premium w-100">

@@ -140,11 +140,22 @@ export default {
                 sort: 'Newest'
             },
             categories: [],
-            maxAvailablePrice: 50000 // Default, will be updated from data
+            maxAvailablePrice: 50000, // Default, will be updated from data
+            polling: null
         }
     },
     created() {
         this.fetchInitialData();
+    },
+    mounted() {
+        this.polling = setInterval(() => {
+            this.$store.dispatch('artwork/get');
+        }, 5000);
+    },
+    beforeDestroy() {
+        if (this.polling) {
+            clearInterval(this.polling);
+        }
     },
     watch: {
         'filters.minPrice'(val) {
@@ -177,7 +188,7 @@ export default {
         approvedArtworks() {
             return this.allArtworks.filter(art => {
                 const status = this.getStatusLabel(art);
-                return ['Approved', 'Success'].includes(status);
+                return ['Approved', 'Success', 'In Cart'].includes(status);
             });
         },
         trackStyle() {

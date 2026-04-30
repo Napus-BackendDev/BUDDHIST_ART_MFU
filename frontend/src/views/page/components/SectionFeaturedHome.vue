@@ -37,7 +37,8 @@ export default {
     },
     data() {
         return {
-            loading: true
+            loading: true,
+            polling: null
         }
     },
     computed: {
@@ -45,10 +46,10 @@ export default {
             return this.$store.getters['artwork/artworks'] || [];
         },
         filteredArtworks() {
-            // Only show approved artworks
+            // Only show approved/in cart artworks
             let result = this.allArtworks.filter(art => {
                 const status = this.getStatusLabel(art);
-                return ['Approved', 'Success'].includes(status);
+                return ['Approved', 'Success', 'In Cart'].includes(status);
             });
             
             // Limit to top 8 (2 rows)
@@ -56,12 +57,12 @@ export default {
         }
     },
     methods: {
-        async fetchArtworks() {
-            this.loading = true;
+        async fetchArtworks(silent = false) {
+            if (!silent) this.loading = true;
             try {
                 await this.$store.dispatch('artwork/get');
             } finally {
-                this.loading = false;
+                if (!silent) this.loading = false;
             }
         },
         getStatusLabel(art) {
@@ -71,6 +72,14 @@ export default {
     },
     mounted() {
         this.fetchArtworks();
+        this.polling = setInterval(() => {
+            this.fetchArtworks(true);
+        }, 5000);
+    },
+    beforeDestroy() {
+        if (this.polling) {
+            clearInterval(this.polling);
+        }
     }
 }
 </script>

@@ -14,7 +14,12 @@
                             <span class="font-weight-bold text-danger">฿{{ formatPrice(item.price) }}</span>
                         </div>
                         <small class="text-muted d-block mb-2" v-if="item.artist">{{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getName($i18n.locale, item.artist) }}</small>
-                        <div class="d-flex justify-content-end">
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <div class="text-warning small font-weight-bold" v-if="item.addedAt">
+                                <CIcon name="cil-clock" size="sm" class="mr-1"/> 
+                                <CartItemTimer :addedAt="item.addedAt" />
+                            </div>
+                            <div v-else></div>
                             <CLink href="#" @click.prevent="removeItem(item._id)"
                                 class="text-danger small text-decoration-none d-flex align-items-center">
                                 <CIcon name="cil-trash" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Remove' : 'ลบ' }}
@@ -54,9 +59,13 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import CartItemTimer from '@/components/CartItemTimer.vue';
 
 export default {
     name: 'CardOrderSummary',
+    components: {
+        CartItemTimer
+    },
     computed: {
         ...mapGetters('cart', ['cartItems', 'cartTotal', 'cartShippingCost', 'cartFinalTotal']),
         subtotal() {

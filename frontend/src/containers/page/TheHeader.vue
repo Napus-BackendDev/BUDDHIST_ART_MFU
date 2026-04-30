@@ -169,6 +169,10 @@
                             <h6 class="font-weight-bold mb-0">{{ getName($i18n.locale, item.title) }}</h6>
                             <div class="text-muted small mb-1" v-if="item.artist">{{ $i18n.locale === 'th' ? 'โดย' : 'By' }} {{ getName($i18n.locale, item.artist) }}</div>
                             <div class="font-weight-bold text-danger h6 mb-0">฿{{ formatPrice(item.price) }}</div>
+                            <div class="text-warning small mt-1 font-weight-bold" v-if="item.addedAt">
+                                <CIcon name="cil-clock" size="sm" class="mr-1"/> 
+                                <CartItemTimer :addedAt="item.addedAt" />
+                            </div>
                         </div>
                         <div class="text-right">
                             <CButton size="sm" color="link" class="text-danger" @click="removeFromCart(item._id)">
@@ -193,9 +197,13 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
+import CartItemTimer from '@/components/CartItemTimer.vue';
 
 export default {
     name: 'TheHeaderUser',
+    components: {
+        CartItemTimer
+    },
     data() {
         return {
             mobileMenu: false,

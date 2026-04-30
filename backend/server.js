@@ -50,8 +50,8 @@ var io = require('socket.io')(server,{
     }})
 require('./server/routes/socket.js')(io);
 
-
-
+// Initialize Cron Jobs
+require('./server/crons/cartTimeout.js')();
 /**
  * Listen on provided port, on all network interfaces.
  */

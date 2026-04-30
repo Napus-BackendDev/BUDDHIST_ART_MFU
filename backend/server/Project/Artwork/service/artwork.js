@@ -78,6 +78,10 @@ exports.onUpdate = async function (request, response) {
     let query = {};
     query._id = new mongo.ObjectId(request.body._id);
 
+    if (request.body.previousApprovalId) {
+        query['status.approval'] = new mongo.ObjectId(request.body.previousApprovalId);
+    }
+
     const data = { ...request.body };
     // Clean up empty strings for ObjectId fields to allow schema defaults/nulls to work
     if (data.status) {
@@ -86,8 +90,14 @@ exports.onUpdate = async function (request, response) {
     }
     if (data.category === "") delete data.category;
     if (data.artist === "") delete data.artist;
+    if (data.previousApprovalId) delete data.previousApprovalId;
 
     const doc = await Artwork.onUpdate(query, data);
+    
+    if (!doc && request.body.previousApprovalId) {
+        return ResMessage.sendResponse(response, 0, 40000, null); // Bad Request (Already taken)
+    }
+
     return ResMessage.sendResponse(response, 0, 20000, doc);
   } catch (err) {
     console.error(err);
