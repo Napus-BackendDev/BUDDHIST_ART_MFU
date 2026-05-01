@@ -5,7 +5,7 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'All Statuses' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total Submitted' : 'ส่งงานแล้วทั้งหมด' }}</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total Student' : 'นักเรียนที่ส่งงานแล้ว' }}</div>
                         <div class="widget-value">{{ stats.totalSubmitted }} <span class="text-muted small">/ {{ stats.totalExpected }}</span></div>
                     </div>
                     <div class="icon-wrapper bg-blue-light text-blue">

@@ -8,7 +8,7 @@
                     <div class="title-separator mb-4"></div>
                     <p class="hero-subtitle mb-4">
                         {{ $i18n.locale === 'en' ? 'Buddhist Art Center, Mae Fah Luang University' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }} <br class="d-none d-md-block">
-                        {{ $i18n.locale === 'en' ? 'A center for learning and preserving Lanna and contemporary Buddhist art' : 'แหล่งเรียนรู้และอนุรักษ์พุทธศิลปกรรมล้านนาและร่วมสมัย' }}
+                        {{ $i18n.locale === 'en' ? 'A center for learning and preserving Lanna and contemporary Buddhist art' : 'ร่วมสมัย เป็น หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง' }}
                     </p>
                     <div class="d-flex gap-3">
                         <CButton color="danger" shape="pill" class="px-5 py-3 font-weight-bold shadow-lg mr-3 btn-main" @click="$router.push('/artworks')">

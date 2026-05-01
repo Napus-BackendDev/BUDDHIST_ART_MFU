@@ -40,6 +40,7 @@ var objsSchema = new Schema({
             image: { type: String, default: null },
             owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
             status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status' },
+            report: { type: String, default: null },
             create: {
                 at: { type: Date, default: Date.now },
             },

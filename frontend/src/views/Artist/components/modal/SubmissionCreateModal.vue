@@ -1,20 +1,21 @@
 <template>
     <CModal 
+        title="Edit Artwork" 
         :show="show" 
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="submission-modal-premium"
+        class="edit-artwork-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <div class="icon-square bg-success-light text-success mr-3">
-                        <CIcon name="cil-cloud-upload" size="lg" />
+                    <div class="icon-square bg-red-light text-red mr-3">
+                        <CIcon name="cil-pencil" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Submit Artwork Work</h5>
-                        <p class="text-muted small mb-0">{{ assignmentTitle }}</p>
+                        <h5 class="modal-title font-weight-bold">Edit Artwork</h5>
+                        <p class="text-muted small mb-0">Modify the details of this artwork.</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -24,36 +25,37 @@
         </template>
 
         <div class="px-3 py-2">
-            <!-- Row 1: Titles -->
+            <!-- Basic Info Row -->
+            <!-- Titles EN/TH -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
                         <label class="form-label">Artwork Title (EN)</label>
                         <CInput 
                             v-model="form.title.en" 
-                            placeholder="e.g. The Morning Light" 
+                            placeholder="e.g. The Golden Serenity" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">ชื่อผลงาน (TH)</label>
+                        <label class="form-label">Artwork Title (TH)</label>
                         <CInput 
                             v-model="form.title.th" 
-                            placeholder="ระบุชื่อผลงานภาษาไทย" 
+                            placeholder="ชื่อผลงานภาษาไทย" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
             </CRow>
 
-            <!-- Row 2: Category -->
+            <!-- Category Row -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Category</label>
-                        <CDropdown :caret="false" class="w-100">
+                        <CDropdown :key="form.category" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
                                     <span class="text-dark">{{ selectedCategoryName }}</span>
@@ -74,7 +76,8 @@
                 </CCol>
             </CRow>
 
-            <!-- Row 3: Technique -->
+            <!-- Technique & Status Row -->
+            <!-- Technique Row EN/TH -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
@@ -88,53 +91,64 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">เทคนิค (TH)</label>
+                        <label class="form-label">Technique (TH)</label>
                         <CInput 
                             v-model="form.technique.th" 
-                            placeholder="ระบุเทคนิคภาษาไทย" 
+                            placeholder="เช่น สีน้ำมันบนผ้าใบ" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
             </CRow>
 
-            <!-- Row 4: Size -->
+            <!-- Size Row EN/TH -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
                         <label class="form-label">Size (EN)</label>
                         <CInput 
                             v-model="form.size.en" 
-                            placeholder="e.g. 60 x 80 cm" 
+                            placeholder="e.g. 100 x 150 cm" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">ขนาด (TH)</label>
+                        <label class="form-label">Size (TH)</label>
                         <CInput 
                             v-model="form.size.th" 
-                            placeholder="ระบุขนาดภาษาไทย" 
+                            placeholder="เช่น 100 x 150 ซม." 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
             </CRow>
 
-            <!-- Row 5: Sale Status & Price -->
             <CRow>
-                <CCol md="6">
+                <CCol :md="isPriceVisible ? '6' : '12'">
                     <div class="form-group-custom">
                         <label class="form-label">Sale Status</label>
-                        <CInput 
-                            value="Available" 
-                            disabled 
-                            class="custom-input mb-0 bg-light-premium"
-                        />
+                        <CDropdown :key="form.status.sale" :caret="false" class="w-100">
+                            <template #toggler>
+                                <CButton class="custom-select-btn">
+                                    <span class="text-dark">{{ selectedSaleStatusName }}</span>
+                                    <CIcon name="cil-filter" class="dropdown-icon" />
+                                </CButton>
+                            </template>
+                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                                <CDropdownItem 
+                                    v-for="status in saleStatuses" 
+                                    :key="status._id" 
+                                    @click="handleSaleStatusSelect(status._id)"
+                                >
+                                    {{ getName('en', status) }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
+                        </CDropdown>
                     </div>
                 </CCol>
-                <CCol md="6">
+                <CCol md="6" v-if="isPriceVisible">
                     <div class="form-group-custom">
                         <label class="form-label">Price</label>
                         <div class="input-group-custom">
@@ -148,29 +162,28 @@
                         </div>
                     </div>
                 </CCol>
+                
             </CRow>
 
-            <!-- Row 6: Artwork Image -->
+            <!-- File Upload Row -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Artwork Image</label>
-                        <div class="file-upload-container-premium" :class="{ 'has-image': imagePreview }">
+                        <div class="file-upload-container" :class="{ 'has-image': imagePreview }">
                             <input 
                                 type="file" 
-                                id="submission-image-upload-premium" 
+                                id="artwork-image-edit-upload" 
                                 @change="handleFileUpload" 
                                 accept="image/*"
                                 class="file-input-hidden"
                             />
-                            <label for="submission-image-upload-premium" class="file-upload-label w-100">
+                            <label for="artwork-image-edit-upload" class="file-upload-label w-100">
                                 <template v-if="!imagePreview">
-                                    <div class="upload-placeholder py-5 text-center">
-                                        <div class="icon-circle bg-success-light text-success mb-3">
-                                            <CIcon name="cil-cloud-upload" size="xl" />
-                                        </div>
-                                        <div class="font-weight-bold h6 text-dark-premium">Click to upload artwork</div>
-                                        <div class="text-muted small">PNG, JPG or JPEG (Max 10MB)</div>
+                                    <div class="upload-placeholder py-4 text-center">
+                                        <CIcon name="cil-cloud-upload" size="xl" class="text-red mb-2" />
+                                        <div class="font-weight-bold">Click to upload image</div>
+                                        <div class="text-muted small">PNG, JPG or JPEG (Max 5MB)</div>
                                     </div>
                                 </template>
                                 <template v-else>
@@ -181,14 +194,6 @@
                                                 <CIcon name="cil-pencil" class="mr-2" /> Change Image
                                             </div>
                                         </div>
-                                        <button 
-                                            type="button" 
-                                            class="btn-remove-image-premium shadow-sm" 
-                                            @click.stop.prevent="removeImage"
-                                            title="Remove image"
-                                        >
-                                            <CIcon name="cil-trash" size="sm" />
-                                        </button>
                                     </div>
                                 </template>
                             </label>
@@ -197,14 +202,15 @@
                 </CCol>
             </CRow>
 
-            <!-- Row 7: Description (EN) -->
+            <!-- Description Row -->
+            <!-- Description Row (EN) -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Description (EN)</label>
                         <CTextarea 
                             v-model="form.description.en" 
-                            placeholder="Enter artwork concept or details in English..." 
+                            placeholder="English description..." 
                             rows="4"
                             class="custom-textarea"
                         />
@@ -212,14 +218,14 @@
                 </CCol>
             </CRow>
 
-            <!-- Row 8: Description (TH) -->
+            <!-- Description Row (TH) -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">รายละเอียดเพิ่มเติม (TH)</label>
+                        <label class="form-label">Description (TH)</label>
                         <CTextarea 
                             v-model="form.description.th" 
-                            placeholder="ระบุแนวคิดหรือรายละเอียดผลงานภาษาไทย..." 
+                            placeholder="รายละเอียดภาษาไทย..." 
                             rows="4"
                             class="custom-textarea"
                         />
@@ -229,23 +235,28 @@
         </div>
 
         <template #footer>
-            <div class="w-100 d-flex justify-content-end align-items-center py-2 px-3">
+            <div class="w-100 d-flex justify-content-end align-items-center py-2">
                 <CButton 
                     variant="ghost" 
                     @click="$emit('update:show', false)"
-                    class="btn-cancel-premium mr-3"
+                    class="btn-cancel mr-3"
                 >
                     Cancel
                 </CButton>
                 <CButton 
-                    color="success" 
-                    @click="handleSubmit"
-                    class="btn-submit-premium-modal"
-                    :disabled="!isFormValid || loading"
+                    variant="ghost" 
+                    @click="handlePreview"
+                    class="btn-preview mr-3"
                 >
-                    <CSpinner v-if="loading" size="sm" class="mr-2" />
-                    <CIcon v-else name="cil-check" class="mr-2" />
-                    Submit Artwork
+                    Preview Mode
+                </CButton>
+                <CButton 
+                    color="primary" 
+                    @click="handleSave"
+                    class="btn-save-artwork"
+                    :disabled="!isFormValid"
+                >
+                    Save Changes
                 </CButton>
             </div>
         </template>
@@ -256,7 +267,7 @@
 import { mapGetters } from 'vuex';
 
 export default {
-    name: 'SubmissionModal',
+    name: 'ArtworkEditModal',
     components: {
     },
     props: {
@@ -264,27 +275,25 @@ export default {
             type: Boolean,
             default: false
         },
-        assignmentTitle: {
-            type: String,
-            default: ''
-        },
-        loading: {
-            type: Boolean,
-            default: false
+        artwork: {
+            type: Object,
+            default: () => null
         }
     },
     data() {
         return {
-            imagePreview: null,
             categories: [],
             statuses: [],
+            imagePreview: null,
             form: {
+                id: null,
                 title: { en: '', th: '' },
-                description: { en: '', th: '' },
+                artist: '',
                 category: '',
                 technique: { en: '', th: '' },
                 size: { en: '', th: '' },
                 price: '',
+                description: { en: '', th: '' },
                 status: {
                     approval: '',
                     sale: ''
@@ -294,22 +303,46 @@ export default {
         }
     },
     async created() {
-        this.fetchInitialData();
+        await this.fetchInitialData();
+    },
+    watch: {
+        artwork: {
+            immediate: true,
+            handler(newVal) {
+                if (newVal) {
+                    this.populateForm(newVal);
+                }
+            }
+        },
+        show(newVal) {
+            if (newVal && this.artwork) {
+                this.populateForm(this.artwork);
+            }
+        }
     },
     computed: {
         ...mapGetters({
-            userId: 'auth/userId'
+            userId: 'auth/userId',
+            allUsers: 'user/user'
         }),
         isFormValid() {
-            return (this.form.title.en.trim() !== '' || this.form.title.th.trim() !== '') && 
-                   this.form.category !== '' &&
-                   this.imagePreview !== null;
+            const basicValid = this.form.title.en.trim() !== '' && 
+                               this.form.title.th.trim() !== '' && 
+                               this.form.artist !== '' && 
+                               this.form.category !== '' && 
+                               this.imagePreview !== null;
+            
+            if (this.isPriceVisible) {
+                return basicValid && this.form.price !== '' && parseFloat(this.form.price) >= 0;
+            }
+            return basicValid;
         },
         saleStatuses() {
             if (!this.statuses) return [];
             return this.statuses.filter(s => {
                 const groupName = s.group ? this.getName('en', s.group).trim() : '';
-                return groupName === 'Sale Status';
+                const statusName = this.getName('en', s).trim();
+                return groupName === 'Sale Status' && statusName === 'Available';
             });
         },
         approvalStatuses() {
@@ -320,57 +353,104 @@ export default {
             });
         },
         selectedCategoryName() {
-            const cat = this.categories.find(c => c._id === this.form.category);
+            const cat = this.categories.find(c => String(c._id) === String(this.form.category));
             return cat ? this.getName('en', cat) : 'Select Category';
         },
         selectedSaleStatusName() {
-            const status = this.statuses.find(s => s._id === this.form.status.sale);
-            return status ? this.getName('en', status) : 'Select Sale Status';
+            const status = this.saleStatuses.find(s => String(s._id) === String(this.form.status.sale));
+            return status ? this.getName('en', status) : 'Select Status';
+        },
+        selectedApprovalStatusName() {
+            const status = this.statuses.find(s => s._id === this.form.status.approval);
+            return status ? this.getName('en', status) : 'Select Approval Status';
+        },
+        isPriceVisible() {
+            if (!this.form.status.sale) return false;
+            return this.selectedSaleStatusName === 'Available';
         }
     },
     methods: {
         handleCategorySelect(id) {
+            console.log('Category selected:', id);
             this.$set(this.form, 'category', id);
+        },
+        handleSaleStatusSelect(id) {
+            console.log('Sale Status selected:', id);
+            this.$set(this.form.status, 'sale', id);
         },
         async fetchInitialData() {
             try {
-                // Fetch Categories
-                const categories = await this.$store.dispatch('artwork/category', { method: 'get' });
-                this.categories = categories || [];
-                if (this.categories.length > 0) this.form.category = this.categories[0]._id;
+                this.$store.dispatch('user/get', {});
 
-                // Fetch Statuses
+                const categories = await this.$store.dispatch('artwork/category', { method: 'get' });
+                console.log('--- Edit Artwork Categories ---', categories);
+                this.categories = categories || [];
+
                 await this.$store.dispatch('setting/status/get');
                 this.statuses = this.$store.getters['setting/status/item'] || [];
+                console.log('--- Edit Artwork Statuses ---', this.statuses);
                 
-                // Set default statuses
-                const defaultSale = this.saleStatuses.find(s => this.getName('en', s) === 'Available');
-                if (defaultSale) this.form.status.sale = defaultSale._id;
-                
-                const defaultApproval = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
-                if (defaultApproval) this.form.status.approval = defaultApproval._id;
-
+                if (this.artwork) {
+                    console.log('--- Populating Form with Artwork ---', this.artwork);
+                    this.populateForm(this.artwork);
+                } else {
+                    // Set current user as artist for new submissions
+                    this.form.artist = this.userId;
+                }
             } catch (error) {
                 console.error('Error fetching initial data:', error);
             }
         },
-        getName(lang, item) {
-            if (!item) return 'N/A';
-            if (typeof item === 'string') return item;
-            const titleField = item.title || item.name || '';
-            if (typeof titleField === 'string' && titleField) return titleField;
-            if (Array.isArray(titleField)) {
-                const nameObj = titleField.find(n => n.key === lang);
-                return nameObj ? nameObj.value : (titleField[0] ? titleField[0].value : 'N/A');
-            }
-            return 'N/A';
+        populateForm(artwork) {
+            const getVal = (field, lang) => {
+                if (!field) return '';
+                if (typeof field === 'string') return field;
+                if (Array.isArray(field)) {
+                    const obj = field.find(n => n.key === lang);
+                    return obj ? obj.value : '';
+                }
+                return '';
+            };
+
+            this.form = {
+                id: artwork._id,
+                title: {
+                    en: getVal(artwork.title, 'en'),
+                    th: getVal(artwork.title, 'th')
+                },
+                artist: artwork.artist ? artwork.artist._id : '',
+                category: artwork.category ? artwork.category._id : '',
+                technique: {
+                    en: getVal(artwork.technique, 'en'),
+                    th: getVal(artwork.technique, 'th')
+                },
+                size: {
+                    en: getVal(artwork.size, 'en'),
+                    th: getVal(artwork.size, 'th')
+                },
+                price: this.cleanPrice(artwork.price),
+                description: {
+                    en: getVal(artwork.description, 'en'),
+                    th: getVal(artwork.description, 'th')
+                },
+                status: {
+                    approval: artwork.status?.approval?._id || '',
+                    sale: artwork.status?.sale?._id || ''
+                },
+                image: null
+            };
+            this.imagePreview = artwork.image || null;
+        },
+        cleanPrice(price) {
+            if (!price) return '';
+            return String(price).replace(/[^0-9.]/g, '');
         },
         handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             if (!file.type.match('image.*')) {
-                alert('Please select an image file only');
+                alert('Please select an image file');
                 return;
             }
 
@@ -382,75 +462,58 @@ export default {
             };
             reader.readAsDataURL(file);
         },
-        removeImage() {
-            this.form.image = null;
-            this.imagePreview = null;
-            const input = document.getElementById('submission-image-upload-premium');
-            if (input) input.value = '';
+        handlePreview() {
+            const artist = this.form.artist;
+            if (!this.form.title.en && !this.form.title.th || !artist || !this.form.price || !this.imagePreview) {
+                alert('Please fill in all required fields (Title, Price, and Image) before previewing.');
+                return;
+            }
+            
+            const previewData = {
+                ...this.form,
+                artist: artist,
+                image: this.imagePreview, 
+                medium: this.form.technique || 'N/A',
+                dimensions: '60 x 80 cm', 
+            };
+            
+            sessionStorage.setItem('artwork_preview', JSON.stringify(previewData));
+            this.$router.push({ 
+                name: 'ArtworkDetail', 
+                params: { id: 'preview' } 
+            });
         },
-        handleSubmit() {
+        handleSave() {
             if (!this.isFormValid) return;
             
-            // Reformat for parent and backend consistency
-            const finalData = {
-                title: [
-                    { key: 'en', value: this.form.title.en },
-                    { key: 'th', value: this.form.title.th }
-                ],
-                description: [
-                    { key: 'en', value: this.form.description.en },
-                    { key: 'th', value: this.form.description.th }
-                ],
+            // Find the "Pending" status to reset approval upon edit
+            const pendingStatus = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
+            if (pendingStatus) {
+                this.form.status.approval = pendingStatus._id;
+            }
+
+            const payload = {
+                _id: this.form.id,
+                title: [{ key: 'en', value: this.form.title.en }, { key: 'th', value: this.form.title.th }],
+                description: [{ key: 'en', value: this.form.description.en }, { key: 'th', value: this.form.description.th }],
+                artist: this.form.artist,
                 category: this.form.category,
-                technique: [
-                    { key: 'en', value: this.form.technique.en },
-                    { key: 'th', value: this.form.technique.th }
-                ],
-                size: [
-                    { key: 'en', value: this.form.size.en },
-                    { key: 'th', value: this.form.size.th }
-                ],
-                price: this.form.price ? parseFloat(this.form.price) : 0,
-                status: {
-                    approval: this.form.status.approval,
-                    sale: this.form.status.sale
-                },
+                technique: [{ key: 'en', value: this.form.technique.en }, { key: 'th', value: this.form.technique.th }],
+                size: [{ key: 'en', value: this.form.size.en }, { key: 'th', value: this.form.size.th }],
+                price: this.isPriceVisible ? parseFloat(this.form.price) : 0,
+                status: this.form.status,
                 _image: this.form.image
             };
-            
-            this.$emit('submit', finalData);
-        },
-        resetForm() {
-            const defaultSale = this.saleStatuses.find(s => this.getName('en', s) === 'Available');
-            const defaultApproval = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
 
-            this.form = {
-                title: { en: '', th: '' },
-                description: { en: '', th: '' },
-                category: this.categories.length > 0 ? this.categories[0]._id : '',
-                technique: { en: '', th: '' },
-                size: { en: '', th: '' },
-                price: '',
-                status: {
-                    approval: defaultApproval ? defaultApproval._id : '',
-                    sale: defaultSale ? defaultSale._id : ''
-                },
-                image: null
-            };
-            this.imagePreview = null;
-        }
-    },
-    watch: {
-        show(newVal) {
-            if (!newVal) {
-                setTimeout(this.resetForm, 300);
-            }
+            this.$emit('submit', payload);
+            this.$emit('update:show', false);
         }
     }
 }
 </script>
 
 <style scoped>
+/* Reusing styles from ArtworkCreateModal.vue for consistency */
 .form-group-custom {
     margin-bottom: 1.25rem;
 }
@@ -479,9 +542,9 @@ export default {
 
 .custom-input ::v-deep .form-control:focus,
 .custom-textarea ::v-deep .form-control:focus {
-    border-color: #10b98133;
+    border-color: #8c151533;
     background-color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.05);
+    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05);
 }
 
 .input-group-custom {
@@ -507,6 +570,12 @@ export default {
     border: 1px solid #f1f5f9 !important;
     background-color: #f8fafc !important;
     font-size: 1rem !important;
+}
+
+.custom-input-with-prefix ::v-deep .form-control:focus {
+    background-color: #ffffff !important;
+    border-color: #8c151533 !important;
+    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05) !important;
 }
 
 .custom-select-btn {
@@ -535,8 +604,8 @@ export default {
     width: 14px;
 }
 
-/* File Upload Premium Styling */
-.file-upload-container-premium {
+/* File Upload Stying */
+.file-upload-container {
     border: 2px dashed #e2e8f0;
     border-radius: 16px;
     background-color: #f8fafc;
@@ -544,9 +613,9 @@ export default {
     overflow: hidden;
 }
 
-.file-upload-container-premium:hover {
-    border-color: #10b981;
-    background-color: #ecfdf5;
+.file-upload-container:hover {
+    border-color: #8c1515;
+    background-color: #f1f5f9;
 }
 
 .file-input-hidden {
@@ -559,27 +628,9 @@ export default {
     margin-bottom: 0;
 }
 
-.upload-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.icon-circle {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.bg-success-light { background-color: #ecfdf5; }
-.text-success { color: #10b981; }
-
 .preview-container {
     width: 100%;
-    height: 280px;
+    height: 180px;
 }
 
 .upload-preview {
@@ -614,37 +665,22 @@ export default {
     align-items: center;
 }
 
-.btn-remove-image-premium {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background-color: #ef4444;
-    color: white;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    transition: all 0.2s;
-    cursor: pointer;
-}
-
-.btn-remove-image-premium:hover {
-    background-color: #dc2626;
-    transform: scale(1.1);
-}
-
-/* Header & Modal Styling */
+/* Header & Modal Stying */
 .icon-square {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.bg-red-light {
+    background-color: #8c151511;
+}
+
+.text-red {
+    color: #8c1515;
 }
 
 .close-btn {
@@ -655,43 +691,46 @@ export default {
     transition: color 0.2s;
 }
 
-.close-btn:hover { color: #64748b; }
-
-.btn-submit-premium-modal {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    border: none;
-    color: white;
-    padding: 0.75rem 2rem;
-    border-radius: 50px;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-    transition: all 0.2s;
-}
-
-.btn-submit-premium-modal:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
-}
-
-.btn-cancel-premium {
+.close-btn:hover {
     color: #64748b;
-    font-weight: 600;
 }
-
-.bg-light-premium {
-    background-color: #f1f5f9 !important;
-    opacity: 0.8;
-}
-
-.text-dark-premium { color: #1e293b; }
 
 ::v-deep .modal-content {
-    border-radius: 24px;
+    border-radius: 20px;
     border: none;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
-.shadow-premium-sm {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+::v-deep .modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1.5rem 2rem;
+}
+
+::v-deep .modal-footer {
+    border-top: 1px solid #f1f5f9;
+    padding: 1.5rem 2.5rem;
+}
+
+.btn-cancel {
+    color: #94a3b8 !important;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.btn-save-artwork {
+    background-color: #8c1515 !important;
+    border-color: #8c1515 !important;
+    color: white !important;
+    border-radius: 30px !important;
+    padding: 0.8rem 2.5rem !important;
+    font-weight: 600 !important;
+    font-size: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(140, 21, 21, 0.2);
+}
+
+.btn-preview {
+    color: #8c1515 !important;
+    font-weight: 600;
+    font-size: 1rem;
 }
 </style>

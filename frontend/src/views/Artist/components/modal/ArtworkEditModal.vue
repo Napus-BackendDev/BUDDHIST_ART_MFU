@@ -26,12 +26,13 @@
 
         <div class="px-3 py-2">
             <!-- Basic Info Row -->
+            <!-- Titles EN/TH -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Artwork Title</label>
+                        <label class="form-label">Artwork Title (EN)</label>
                         <CInput 
-                            v-model="form.title" 
+                            v-model="form.title.en" 
                             placeholder="e.g. The Golden Serenity" 
                             class="custom-input mb-0"
                         />
@@ -39,67 +40,19 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Price</label>
-                        <div class="input-group-custom">
-                            <span class="currency-prefix">฿</span>
-                            <CInput 
-                                type="number"
-                                v-model="form.price" 
-                                placeholder="0.00" 
-                                class="custom-input-with-prefix text-right mb-0"
-                            />
-                        </div>
+                        <label class="form-label">Artwork Title (TH)</label>
+                        <CInput 
+                            v-model="form.title.th" 
+                            placeholder="ชื่อผลงานภาษาไทย" 
+                            class="custom-input mb-0"
+                        />
                     </div>
                 </CCol>
             </CRow>
 
-            <!-- Artist & Category Row -->
+            <!-- Category Row -->
             <CRow>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Artist Name</label>
-                        <div class="searchable-dropdown">
-                            <div class="search-input-wrapper position-relative">
-                                <CIcon name="cil-user" class="input-icon-left" />
-                                <CInput 
-                                    v-model="artistSearchQuery" 
-                                    placeholder="Search or select artist..." 
-                                    class="custom-input-searchable mb-0"
-                                    @focus="showArtistDropdown = true"
-                                    @input="handleArtistSearch"
-                                    @blur="handleArtistBlur"
-                                />
-                                <div class="dropdown-arrow-wrapper" @click="toggleArtistDropdown">
-                                    <CIcon 
-                                        :name="showArtistDropdown ? 'cil-chevron-top' : 'cil-chevron-bottom'" 
-                                        class="dropdown-arrow-icon" 
-                                    />
-                                </div>
-                            </div>
-                            
-                            <!-- Search Results List -->
-                            <div v-if="showArtistDropdown" class="artist-results-list shadow-lg">
-                                <div 
-                                    v-for="artist in filteredArtists" 
-                                    :key="artist._id" 
-                                    class="artist-result-item"
-                                    :class="{ 'active': form.artist === artist._id }"
-                                    @mousedown="selectArtist(artist)"
-                                >
-                                    <div class="d-flex flex-column">
-                                        <span class="artist-name">{{ getArtistName(artist) }}</span>
-                                        <span class="artist-id text-muted extra-small">ID: {{ artist.studentId || 'N/A' }}</span>
-                                    </div>
-                                    <CIcon v-if="form.artist === artist._id" name="cil-check" class="ml-auto text-red" size="sm" />
-                                </div>
-                                <div v-if="filteredArtists.length === 0" class="artist-result-item text-muted">
-                                    No artists found
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </CCol>
-                <CCol md="6">
+                <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Category</label>
                         <CDropdown :key="form.category" :caret="false" class="w-100">
@@ -124,18 +77,57 @@
             </CRow>
 
             <!-- Technique & Status Row -->
+            <!-- Technique Row EN/TH -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Technique</label>
+                        <label class="form-label">Technique (EN)</label>
                         <CInput 
-                            v-model="form.technique" 
+                            v-model="form.technique.en" 
                             placeholder="e.g. Oil on Canvas" 
-                            class="custom-input"
+                            class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Technique (TH)</label>
+                        <CInput 
+                            v-model="form.technique.th" 
+                            placeholder="เช่น สีน้ำมันบนผ้าใบ" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Size Row EN/TH -->
+            <CRow>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Size (EN)</label>
+                        <CInput 
+                            v-model="form.size.en" 
+                            placeholder="e.g. 100 x 150 cm" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Size (TH)</label>
+                        <CInput 
+                            v-model="form.size.th" 
+                            placeholder="เช่น 100 x 150 ซม." 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Price & Sale Status Row -->
+            <CRow>
+                <CCol :md="isPriceVisible ? '6' : '12'">
                     <div class="form-group-custom">
                         <label class="form-label">Sale Status</label>
                         <CDropdown :key="form.status.sale" :caret="false" class="w-100">
@@ -157,6 +149,21 @@
                         </CDropdown>
                     </div>
                 </CCol>
+                <CCol md="6" v-if="isPriceVisible">
+                    <div class="form-group-custom">
+                        <label class="form-label">Price</label>
+                        <div class="input-group-custom">
+                            <span class="currency-prefix">฿</span>
+                            <CInput 
+                                type="number"
+                                v-model="form.price" 
+                                placeholder="0.00" 
+                                class="custom-input-with-prefix text-right mb-0"
+                            />
+                        </div>
+                    </div>
+                </CCol>
+                
             </CRow>
 
             <!-- File Upload Row -->
@@ -197,13 +204,29 @@
             </CRow>
 
             <!-- Description Row -->
+            <!-- Description Row (EN) -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">Description (EN)</label>
                         <CTextarea 
-                            v-model="form.description" 
-                            placeholder="Write a brief description of the artwork..." 
+                            v-model="form.description.en" 
+                            placeholder="English description..." 
+                            rows="4"
+                            class="custom-textarea"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Description Row (TH) -->
+            <CRow>
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">Description (TH)</label>
+                        <CTextarea 
+                            v-model="form.description.th" 
+                            placeholder="รายละเอียดภาษาไทย..." 
                             rows="4"
                             class="custom-textarea"
                         />
@@ -263,16 +286,15 @@ export default {
             categories: [],
             statuses: [],
             imagePreview: null,
-            artistSearchQuery: '',
-            showArtistDropdown: false,
             form: {
                 id: null,
-                title: '',
+                title: { en: '', th: '' },
                 artist: '',
                 category: '',
-                technique: '',
+                technique: { en: '', th: '' },
+                size: { en: '', th: '' },
                 price: '',
-                description: '',
+                description: { en: '', th: '' },
                 status: {
                     approval: '',
                     sale: ''
@@ -304,18 +326,15 @@ export default {
             allUsers: 'user/user'
         }),
         isFormValid() {
-            return this.form.title.trim() !== '' && 
-                   this.form.artist !== '' && 
-                   this.form.price !== '' && 
-                   this.imagePreview !== null;
-        },
-        filteredArtists() {
-            if (!this.allUsers) return [];
-            const q = this.artistSearchQuery.toLowerCase();
-            return this.allUsers.filter(artist => {
-                const name = this.getArtistName(artist).toLowerCase();
-                return name.includes(q);
-            });
+            const basicValid = this.form.title.en.trim() !== '' && 
+                               this.form.title.th.trim() !== '' && 
+                               this.form.artist !== '' && 
+                               this.imagePreview !== null;
+            
+            if (this.isPriceVisible) {
+                return basicValid && this.form.price !== '' && parseFloat(this.form.price) >= 0;
+            }
+            return basicValid;
         },
         saleStatuses() {
             if (!this.statuses) return [];
@@ -342,6 +361,10 @@ export default {
         selectedApprovalStatusName() {
             const status = this.statuses.find(s => s._id === this.form.status.approval);
             return status ? this.getName('en', status) : 'Select Approval Status';
+        },
+        isPriceVisible() {
+            if (!this.form.status.sale) return true;
+            return this.selectedSaleStatusName === 'Available';
         }
     },
     methods: {
@@ -374,50 +397,44 @@ export default {
             }
         },
         populateForm(artwork) {
+            const getVal = (field, lang) => {
+                if (!field) return '';
+                if (typeof field === 'string') return field;
+                if (Array.isArray(field)) {
+                    const obj = field.find(n => n.key === lang);
+                    return obj ? obj.value : '';
+                }
+                return '';
+            };
+
             this.form = {
                 id: artwork._id,
-                title: this.getName('en', artwork),
+                title: {
+                    en: getVal(artwork.title, 'en'),
+                    th: getVal(artwork.title, 'th')
+                },
                 artist: artwork.artist ? artwork.artist._id : '',
                 category: artwork.category ? artwork.category._id : '',
-                technique: this.getName('en', { title: artwork.technique }),
+                technique: {
+                    en: getVal(artwork.technique, 'en'),
+                    th: getVal(artwork.technique, 'th')
+                },
+                size: {
+                    en: getVal(artwork.size, 'en'),
+                    th: getVal(artwork.size, 'th')
+                },
                 price: this.cleanPrice(artwork.price),
-                description: this.getName('en', { title: artwork.description }),
+                description: {
+                    en: getVal(artwork.description, 'en'),
+                    th: getVal(artwork.description, 'th')
+                },
                 status: {
                     approval: artwork.status?.approval?._id || '',
                     sale: artwork.status?.sale?._id || ''
                 },
                 image: null
             };
-            this.artistSearchQuery = artwork.artist ? this.getArtistDisplay(artwork.artist) : '';
             this.imagePreview = artwork.image || null;
-        },
-        getName(lang, item) {
-            if (!item) return 'N/A';
-            if (typeof item === 'string') return item;
-            
-            const titleField = item.title || item.name || '';
-            if (typeof titleField === 'string' && titleField) return titleField;
-            
-            if (Array.isArray(titleField)) {
-                const nameObj = titleField.find(n => n.key === lang);
-                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
-                return nameObj ? nameObj.value : firstVal;
-            }
-            return 'N/A';
-        },
-        getArtistName(artist) {
-            if (!artist) return 'N/A';
-            if (Array.isArray(artist.name)) {
-                const nameObj = artist.name.find(n => n.key === 'en') || artist.name[0];
-                return nameObj ? nameObj.value : (artist.studentId || 'N/A');
-            }
-            return artist.studentId || 'N/A';
-        },
-        getArtistDisplay(artist) {
-            if (!artist) return 'N/A';
-            const name = this.getArtistName(artist);
-            const id = artist.studentId ? ` (${artist.studentId})` : '';
-            return name + id;
         },
         cleanPrice(price) {
             if (!price) return '';
@@ -440,26 +457,10 @@ export default {
             };
             reader.readAsDataURL(file);
         },
-        handleArtistSearch() {
-            this.showArtistDropdown = true;
-        },
-        handleArtistBlur() {
-            setTimeout(() => {
-                this.showArtistDropdown = false;
-            }, 200);
-        },
-        selectArtist(artist) {
-            this.form.artist = artist._id;
-            this.artistSearchQuery = this.getArtistDisplay(artist);
-            this.showArtistDropdown = false;
-        },
-        toggleArtistDropdown() {
-            this.showArtistDropdown = !this.showArtistDropdown;
-        },
         handlePreview() {
-            const artist = this.form.artist || this.artistSearchQuery;
-            if (!this.form.title || !artist || !this.form.price || !this.imagePreview) {
-                alert('Please fill in all required fields (Title, Artist, Price, and Image) before previewing.');
+            const artist = this.form.artist;
+            if (!this.form.title.en && !this.form.title.th || !artist || !this.form.price || !this.imagePreview) {
+                alert('Please fill in all required fields (Title, Price, and Image) before previewing.');
                 return;
             }
             
@@ -488,12 +489,13 @@ export default {
 
             const payload = {
                 _id: this.form.id,
-                title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
-                description: [{ key: 'en', value: this.form.description }, { key: 'th', value: this.form.description }],
+                title: [{ key: 'en', value: this.form.title.en }, { key: 'th', value: this.form.title.th }],
+                description: [{ key: 'en', value: this.form.description.en }, { key: 'th', value: this.form.description.th }],
                 artist: this.form.artist,
                 category: this.form.category,
-                technique: [{ key: 'en', value: this.form.technique }, { key: 'th', value: this.form.technique }],
-                price: parseFloat(this.form.price),
+                technique: [{ key: 'en', value: this.form.technique.en }, { key: 'th', value: this.form.technique.th }],
+                size: [{ key: 'en', value: this.form.size.en }, { key: 'th', value: this.form.size.th }],
+                price: this.isPriceVisible ? parseFloat(this.form.price) : 0,
                 status: this.form.status,
                 _image: this.form.image
             };
@@ -595,99 +597,6 @@ export default {
 .dropdown-icon {
     color: #94a3b8;
     width: 14px;
-}
-
-/* Searchable Dropdown Styling */
-.searchable-dropdown {
-    position: relative;
-    width: 100%;
-}
-
-.search-input-wrapper {
-    position: relative;
-    width: 100%;
-    display: block;
-}
-
-.input-icon-left {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
-    color: #94a3b8;
-    width: 16px;
-    pointer-events: none;
-}
-
-.dropdown-arrow-wrapper {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    cursor: pointer;
-}
-
-.dropdown-arrow-icon {
-    color: #94a3b8;
-    width: 14px;
-    transition: transform 0.2s ease;
-}
-
-.custom-input-searchable {
-    width: 100% !important;
-}
-
-.custom-input-searchable ::v-deep .form-control {
-    padding-left: 2.85rem !important;
-    padding-right: 2.85rem !important;
-    height: 52px !important;
-    border-radius: 12px !important;
-    border: 1px solid #f1f5f9 !important;
-    background-color: #f8fafc !important;
-}
-
-.custom-input-searchable ::v-deep .form-control:focus {
-    background-color: #ffffff !important;
-    border-color: #8c151533 !important;
-    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05) !important;
-}
-
-.artist-results-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    z-index: 1000;
-    border-radius: 12px;
-    margin-top: 5px;
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #f1f5f9;
-}
-
-.artist-result-item {
-    padding: 0.75rem 1.25rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.95rem;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.artist-result-item:hover,
-.artist-result-item.active {
-    background: #f1f5f9;
-    color: #8c1515;
-    font-weight: 600;
 }
 
 /* File Upload Stying */

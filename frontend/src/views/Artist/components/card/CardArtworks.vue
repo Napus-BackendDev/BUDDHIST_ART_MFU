@@ -68,8 +68,13 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="price-box">
                                 <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Price</small>
-                                <span class="price-value font-weight-bold text-danger">{{ formatPrice(art.price) }}</span>
-                                <small class="price-unit ml-1 font-weight-bold text-danger">฿</small>
+                                <template v-if="isForSale(art)">
+                                    <span class="price-value font-weight-bold text-danger">{{ formatPrice(art.price) }}</span>
+                                    <small class="price-unit ml-1 font-weight-bold text-danger">฿</small>
+                                </template>
+                                <template v-else>
+                                    <span class="price-value font-weight-bold text-danger" style="font-size: 1.1rem;">{{ currentLocale === 'en' ? 'Not for Sale' : 'ไม่ขาย' }}</span>
+                                </template>
                             </div>
                             
                             <!-- Add to Cart Button (Only in Public Mode) -->
@@ -140,10 +145,6 @@ export default {
             if (value === undefined || value === null) return '0.00';
             return parseFloat(value).toLocaleString('en-US');
         },
-        isInCart(id) {
-            const cartItems = this.$store.getters['cart/cartItems'] || [];
-            return cartItems.some(item => item._id === id);
-        },
         handleCartAction(art) {
             if (this.isInCart(art._id)) {
                 this.$store.dispatch('cart/removeFromCart', art._id);
@@ -197,6 +198,11 @@ export default {
                 ? this.getName('en', art.status.approval).toLowerCase() 
                 : (typeof art.status === 'string' ? art.status.toLowerCase() : '');
             return statusEn.includes('reject');
+        },
+        isForSale(art) {
+            if (!art || !art.status || !art.status.sale) return true;
+            const statusEn = this.getName('en', art.status.sale);
+            return statusEn === 'Available' || statusEn === 'Select Status' || statusEn === 'N/A' || statusEn === '';
         }
     }
 }

@@ -61,8 +61,11 @@ export default {
             const artworks = this.mappedArtworks;
             const totalArtists = (this.submission && this.submission.artist) ? this.submission.artist.length : 0;
             
+            // Count unique students who have submitted
+            const uniqueSubmitters = new Set(artworks.map(aw => aw.student_id)).size;
+            
             return {
-                totalSubmitted: artworks.length,
+                totalSubmitted: uniqueSubmitters,
                 totalExpected: totalArtists,
                 passed: artworks.filter(aw => aw.status === 'Approved').length,
                 pending: artworks.filter(aw => aw.status === 'Pending').length,
@@ -115,7 +118,19 @@ export default {
                     on_time: aw.create && this.assignment.create ? moment(aw.create.at).isBefore(moment(this.assignment.create.endAt)) : true,
                     status: statusName,
                     deadline: this.assignment.create ? moment(this.assignment.create.endAt).format('MMM DD, YYYY hh:mm A') : 'N/A',
-                    description: this.getName('en', { title: aw.description })
+                    
+                    // Detailed Fields
+                    title_en: this.getName('en', { title: aw.title }),
+                    title_th: this.getName('th', { title: aw.title }),
+                    description_en: this.getName('en', { title: aw.description }),
+                    description_th: this.getName('th', { title: aw.description }),
+                    technique_en: this.getName('en', { title: aw.technique }),
+                    technique_th: this.getName('th', { title: aw.technique }),
+                    size_en: this.getName('en', { title: aw.size }),
+                    size_th: this.getName('th', { title: aw.size }),
+                    price: aw.price || 0,
+                    category: aw.category ? (this.getName('en', aw.category) || 'General') : 'General',
+                    artist_name: aw.artist ? this.getName('en', aw.artist) : studentName
                 };
             });
         }

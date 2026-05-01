@@ -14,7 +14,7 @@
                     </div>
                     <div>
                         <h5 class="modal-title font-weight-bold">Artwork Details</h5>
-                        <p class="text-muted small mb-0">Detailed view of the selected artwork.</p>
+                        <p class="text-muted small mb-0">Detailed view of your submitted artwork.</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -23,94 +23,141 @@
             </div>
         </template>
 
-        <div class="px-3 py-2" v-if="artwork">
-            <CRow>
-                <!-- Image Section -->
-                <CCol md="5" class="mb-4 mb-md-0">
-                    <div class="artwork-image-view rounded-xl overflow-hidden shadow-sm border">
+        <div class="px-4 py-3" v-if="artwork">
+            <div class="artwork-detail-container">
+                <!-- 1) Image Section -->
+                <div class="view-section mb-4 text-center">
+                    <div class="artwork-image-view rounded-xl overflow-hidden shadow-sm border mx-auto">
                         <img 
-                            :src="artwork.image || `https://via.placeholder.com/400/e2e8f0/808080?text=${getName('en', artwork).charAt(0)}`" 
+                            :src="artwork.image || `https://via.placeholder.com/600/e2e8f0/808080?text=${getName('en', artwork).charAt(0)}`" 
                             class="w-100 h-100 object-fit-contain bg-white" 
                             :alt="getName('en', artwork)"
                         />
                     </div>
-                    <div class="mt-4 d-flex flex-wrap align-items-center justify-content-center status-container">
-                        <div class="mr-4 mb-2 d-flex align-items-center justify-content-between">
-                            <span class="status-label-text mr-2">Approval:</span>
-                            <CBadge :class="['status-badge-lg px-3 py-2', getStatusInfo(artwork).approval.class]">
+                </div>
+
+                <!-- 2) Status Section -->
+                <div class="view-section mb-4">
+                    <div class="d-flex flex-wrap align-items-center justify-content-center gap-4 status-container-stacked">
+                        <div class="status-item text-center px-3">
+                            <label class="view-label-center">Approval Status</label>
+                            <CBadge :class="['status-badge-lg px-4 py-2', getStatusInfo(artwork).approval.class]">
                                 <CIcon :name="getStatusInfo(artwork).approval.icon" size="sm" class="status-icon-lg" />
                                 {{ getStatusInfo(artwork).approval.label }}
                             </CBadge>
                         </div>
-                        <div class="mb-2 d-flex align-items-center justify-content-between">
-                            <span class="status-label-text mr-2">Sale:</span>
-                            <CBadge :class="['status-badge-lg px-3 py-2', getStatusInfo(artwork).sale.class]">
+                        <div class="status-item text-center px-3 border-left-light">
+                            <label class="view-label-center">Sale Status</label>
+                            <CBadge :class="['status-badge-lg px-4 py-2', getStatusInfo(artwork).sale.class]">
                                 <CIcon :name="getStatusInfo(artwork).sale.icon" size="sm" class="status-icon-lg" />
                                 {{ getStatusInfo(artwork).sale.label }}
                             </CBadge>
                         </div>
                     </div>
-                </CCol>
+                </div>
 
-                <!-- Info Section -->
-                <CCol md="7">
-                    <div class="view-group mb-4">
-                        <label class="view-label">Artwork Title</label>
-                        <h3 class="view-value-title font-weight-bold">{{ getName('en', artwork) }}</h3>
+                <hr class="my-4 opacity-5">
+
+                <!-- 3) Artwork Title (TH, EN) -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <div class="view-section">
+                            <label class="view-label">Artwork Title (Thai)</label>
+                            <h2 class="view-value-title font-weight-bold mb-0 text-dark">{{ getName('th', artwork) }}</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="view-section">
+                            <label class="view-label">Artwork Title (English)</label>
+                            <h2 class="view-value-title font-weight-bold mb-0 text-muted">{{ getName('en', artwork) }}</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 4) Artist -->
+                    <div class="col-md-6 mb-4">
+                        <div class="view-section">
+                            <label class="view-label">Artist</label>
+                            <div class="d-flex align-items-center">
+                                <div class="artist-avatar-md mr-3" :style="{ backgroundColor: getAvatarColor(artwork.artist || artwork.owner) }">
+                                    {{ getInitials(artwork.artist || artwork.owner) }}
+                                </div>
+                                <div class="view-value">
+                                    <div class="font-weight-bold text-dark h5 mb-0">
+                                        {{ (artwork.artist || artwork.owner) ? getName('en', artwork.artist || artwork.owner) : 'N/A' }}
+                                    </div>
+                                    <div v-if="(artwork.artist || artwork.owner) && (artwork.artist || artwork.owner).studentId" class="small text-muted">ID: {{ (artwork.artist || artwork.owner).studentId }}</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <CRow class="mb-4">
-                        <CCol sm="6">
-                            <div class="view-group">
-                                <label class="view-label">Artist</label>
-                                <div class="d-flex align-items-center">
-                                    <div class="artist-avatar-sm mr-2" :style="{ backgroundColor: getAvatarColor(artwork.artist) }">
-                                        {{ getInitials(artwork.artist) }}
-                                    </div>
-                                    <div class="view-value font-weight-bold text-dark">
-                                        {{ artwork.artist ? getName('en', artwork.artist) : 'N/A' }}
-                                        <div v-if="artwork.artist && artwork.artist.studentId" class="small text-muted">ID: {{ artwork.artist.studentId }}</div>
-                                    </div>
-                                </div>
+                    <!-- 5) Category -->
+                    <div class="col-md-6 mb-4">
+                        <div class="view-section">
+                            <label class="view-label">Category</label>
+                            <div class="view-value font-weight-bold text-dark h5">
+                                {{ artwork.category ? getName('en', artwork.category) : 'N/A' }}
                             </div>
-                        </CCol>
-                        <CCol sm="6">
-                            <div class="view-group">
-                                <label class="view-label">Category</label>
-                                <div class="view-value font-weight-bold text-dark">
-                                    {{ artwork.category ? getName('en', artwork.category) : 'N/A' }}
-                                </div>
-                            </div>
-                        </CCol>
-                    </CRow>
-
-                    <CRow class="mb-4">
-                        <CCol sm="6">
-                            <div class="view-group">
-                                <label class="view-label">Technique</label>
-                                <div class="view-value text-muted">
-                                    {{ artwork.technique ? getName('en', artwork.technique) : 'N/A' }}
-                                </div>
-                            </div>
-                        </CCol>
-                        <CCol sm="6">
-                            <div class="view-group">
-                                <label class="view-label">Price / Value</label>
-                                <div class="view-value-price font-weight-bold h4 mb-0 text-primary">
-                                    ฿ {{ formatPrice(artwork.price) }}
-                                </div>
-                            </div>
-                        </CCol>
-                    </CRow>
-
-                    <div class="view-group">
-                        <label class="view-label">Description</label>
-                        <p class="view-description text-muted">
-                            {{ artwork.description && artwork.description.length > 0 ? getName('en', artwork.description) : 'No additional description provided for this artwork.' }}
-                        </p>
+                        </div>
                     </div>
-                </CCol>
-            </CRow>
+                </div>
+
+                <!-- 6) Technique & Size -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm">
+                            <label class="view-label">Technique</label>
+                            <div class="view-value text-dark mb-2 d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">TH</span> 
+                                <span class="font-weight-bold">{{ artwork.technique ? getName('th', artwork.technique) : 'N/A' }}</span>
+                            </div>
+                            <div class="view-value text-muted d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">EN</span> 
+                                <span>{{ artwork.technique ? getName('en', artwork.technique) : 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm">
+                            <label class="view-label">Size</label>
+                            <div class="view-value text-dark mb-2 d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">TH</span> 
+                                <span class="font-weight-bold">{{ artwork.size ? getName('th', artwork.size) : 'N/A' }}</span>
+                            </div>
+                            <div class="view-value text-muted d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">EN</span> 
+                                <span>{{ artwork.size ? getName('en', artwork.size) : 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7) Price / Value -->
+                <div class="view-section mb-4 p-3 border rounded-xl bg-primary-faded">
+                    <label class="view-label mb-1">Price / Value</label>
+                    <div class="view-value-price font-weight-bold h2 mb-0 text-primary">
+                        ฿ {{ formatPrice(artwork.price) }}
+                    </div>
+                </div>
+
+                <!-- 8) Description (EN) -->
+                <div class="view-section mb-4">
+                    <label class="view-label">Description (English)</label>
+                    <div class="view-description-box p-3 border rounded-lg bg-white shadow-sm">
+                        {{ (artwork.description && artwork.description.length > 0) ? getName('en', artwork.description) : 'No English description provided.' }}
+                    </div>
+                </div>
+
+                <!-- 9) Description (TH) -->
+                <div class="view-section mb-4">
+                    <label class="view-label">Description (Thai)</label>
+                    <div class="view-description-box p-3 border rounded-lg bg-white shadow-sm">
+                        {{ (artwork.description && artwork.description.length > 0) ? getName('th', artwork.description) : 'ไม่มีคำอธิบายภาษาไทย.' }}
+                    </div>
+                </div>
+            </div>
         </div>
 
         <template #footer>
@@ -121,13 +168,6 @@
                     class="btn-close-view px-4"
                 >
                     Close
-                </CButton>
-                <CButton 
-                    color="primary" 
-                    class="btn-edit-shortcut ml-3"
-                    @click="$emit('edit', artwork)"
-                >
-                    <CIcon name="cil-pencil" class="mr-2" /> Edit Artwork
                 </CButton>
             </div>
         </template>
@@ -204,8 +244,18 @@ export default {
             const defaultStatus = { label: 'N/A', class: 'status-pending', icon: 'cil-question-mark' };
             if (!item || !item.status) return { approval: defaultStatus, sale: defaultStatus };
             
-            // Approval Status Logic - Directly passing populated status object
-            const appLabel = item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
+            let approvalStatus = null;
+            let saleStatus = null;
+
+            if (item.status && item.status.approval) {
+                approvalStatus = item.status.approval;
+                saleStatus = item.status.sale;
+            } else if (item.status) {
+                approvalStatus = item.status;
+            }
+
+            // Approval Status Logic
+            const appLabel = approvalStatus ? this.getName('en', approvalStatus) : 'Pending';
             let approval = { ...defaultStatus, label: appLabel };
             
             switch (appLabel) {
@@ -215,8 +265,8 @@ export default {
                 default: approval = { label: appLabel, class: 'status-pending', icon: 'cil-clock' };
             }
 
-            // Sale Status Logic - Directly passing populated status object
-            const saleLabel = item.status.sale ? this.getName('en', item.status.sale) : 'Not for Sale';
+            // Sale Status Logic
+            const saleLabel = saleStatus ? this.getName('en', saleStatus) : 'Not for Sale';
             let sale = { ...defaultStatus, label: saleLabel };
 
             switch (saleLabel) {
@@ -234,112 +284,78 @@ export default {
 
 <style scoped>
 .view-artwork-modal {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.modal-header-custom {
-    padding: 0.5rem 0.5rem;
+.artwork-detail-container {
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-.icon-square {
+.artwork-image-view {
+    max-width: 100%;
+    height: 450px;
+    background-color: #f8fafc;
+}
+
+.view-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 0.6rem;
+    letter-spacing: 0.08em;
+}
+
+.view-label-center {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+.view-value-title {
+    color: #0f172a;
+    font-size: 1.75rem;
+    line-height: 1.2;
+}
+
+.view-value-subtitle {
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.artist-avatar-md {
     width: 48px;
     height: 48px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.bg-blue-light {
-    background-color: #3b82f611;
-}
-
-.text-blue {
-    color: #3b82f6;
-}
-
-.close-btn {
-    background: transparent;
-    border: none;
-    padding: 8px;
-    color: #94a3b8;
-    transition: color 0.2s;
-}
-
-.close-btn:hover {
-    color: #64748b;
-}
-
-.artwork-image-view {
-    height: 300px;
-    background-color: #f8fafc;
-}
-
-.object-fit-contain {
-    object-fit: contain;
-}
-
-.view-label {
-    display: block;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #94a3b8;
-    margin-bottom: 0.5rem;
-    letter-spacing: 0.05em;
-}
-
-.view-value-title {
-    color: #1e293b;
-    font-size: 1.5rem;
-}
-
-.view-value {
     font-size: 1rem;
-}
-
-.view-value-price {
-    color: #3b82f6;
-}
-
-.view-description {
-    line-height: 1.6;
-    font-size: 0.95rem;
-}
-
-.artist-avatar-sm {
-    width: 32px;
-    height: 32px;
-    background: #e2e8f0;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
     font-weight: 700;
-    color: #475569;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.status-container-stacked {
+    padding: 1rem 0;
 }
 
 .status-badge-lg {
     display: inline-flex;
     align-items: center;
-    border-radius: 50px;
+    border-radius: 99px;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.85rem;
     letter-spacing: 0.5px;
-    padding: 0.5rem 1.75rem !important;
-    border-width: 1px;
-    border-style: solid;
-    transition: all 0.2s;
-}
-
-.status-label-text {
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #64748b;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
+    border: 1px solid transparent;
 }
 
 .status-icon-lg {
@@ -348,64 +364,86 @@ export default {
     margin-right: 8px;
 }
 
-.status-container {
-    padding: 4px;
+.border-left-light {
+    border-left: 1px solid #f1f5f9;
+}
+
+.bg-primary-faded {
+    background-color: #3b82f608;
+    border-color: #3b82f622 !important;
+}
+
+.view-description-box {
+    line-height: 1.7;
+    font-size: 1rem;
+    color: #334155;
+    white-space: pre-line;
+}
+
+.badge-white-outline {
+    background: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-weight: 800;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 6px;
+    min-width: 32px;
+    text-align: center;
+}
+
+.border-premium-sm {
+    border: 2px solid #f1f5f9 !important;
 }
 
 .status-completed {
-    background-color: #f0fff4;
-    color: #38a169;
-    border-color: rgba(56, 161, 105, 0.4);
+    background-color: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
 }
 
 .status-pending {
-    background-color: #fffaf0;
-    color: #d69e2e;
-    border-color: rgba(214, 158, 46, 0.4);
+    background-color: #fffbeb;
+    color: #92400e;
+    border-color: #fef3c7;
 }
 
 .status-cancelled {
-    background-color: #fff5f5;
-    color: #e53e3e;
-    border-color: rgba(229, 62, 62, 0.4);
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-color: #fee2e2;
 }
 
 .status-update {
-    background-color: #ebf8ff;
-    color: #3182ce;
-    border-color: rgba(49, 130, 206, 0.4);
+    background-color: #eff6ff;
+    color: #1e40af;
+    border-color: #dbeafe;
 }
 
 .btn-close-view {
-    border-radius: 30px;
+    border-radius: 12px;
     font-weight: 600;
-    border: 1px solid #e2e8f0;
-}
-
-.btn-edit-shortcut {
-    border-radius: 30px;
-    padding: 0.6rem 2rem;
-    font-weight: 600;
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+    padding: 0.6rem 2.5rem;
 }
 
 ::v-deep .modal-content {
-    border-radius: 20px;
+    border-radius: 24px;
     border: none;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
-::v-deep .modal-header {
-    border-bottom: 1px solid #f1f5f9;
-    padding: 1.5rem 2rem;
-}
+.rounded-xl { border-radius: 20px; }
+.rounded-lg { border-radius: 12px; }
 
-::v-deep .modal-footer {
-    border-top: 1px solid #f1f5f9;
-    padding: 1.25rem 2.5rem;
-}
-
-.rounded-xl {
-    border-radius: 16px;
+@media (max-width: 768px) {
+    .border-left-light {
+        border-left: none;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 1.5rem;
+        width: 100%;
+    }
+    .artwork-image-view {
+        height: 300px;
+    }
 }
 </style>

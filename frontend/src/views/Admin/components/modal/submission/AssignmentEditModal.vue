@@ -14,7 +14,7 @@
                     </div>
                     <div>
                         <h5 class="modal-title font-weight-bold">Edit Assignment Task</h5>
-                        <p class="text-muted small mb-0">Update the details and target students for this specific task.</p>
+                        <p class="text-muted small mb-0">Update the title and deadline for this specific task.</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -23,7 +23,7 @@
             </div>
         </template>
 
-        <div class="px-3 py-2">
+        <div class="px-3 py-2 pb-4">
             <!-- Basic Info Row -->
             <CRow>
                 <CCol md="12">
@@ -61,102 +61,6 @@
                     </div>
                 </CCol>
             </CRow>
-
-
-            <!-- Enrollment Metric -->
-            <CRow class="mb-4">
-                <CCol md="12">
-                    <div class="form-group-custom mb-3">
-                        <label class="form-label">Target Students</label>
-                        <div class="custom-input-readonly d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <span class="font-weight-bold text-orange h5 mb-0 mr-2">{{ selectedStudents.length }}</span>
-                                <span class="text-muted small uppercase font-weight-bold">Students targeted for this task</span>
-                            </div>
-                            
-                            <!-- Selected Avatars Preview -->
-                            <div v-if="selectedStudents.length > 0" class="selected-avatars-preview d-flex align-items-center">
-                                <div class="avatar-stack mr-2">
-                                    <div 
-                                        v-for="(student, idx) in selectedStudentDetails.slice(0, 5)" 
-                                        :key="student._id"
-                                        class="avatar-preview-sm"
-                                        :style="{ backgroundColor: getAvatarColor(getStudentName(student)), zIndex: 10 - idx }"
-                                        v-c-tooltip="getStudentName(student)"
-                                    >
-                                        {{ getInitials(getStudentName(student)) }}
-                                    </div>
-                                    <div v-if="selectedStudents.length > 5" class="avatar-more-sm">
-                                        +{{ selectedStudents.length - 5 }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Detailed Selection Box (Wrapping) -->
-                    <div v-if="selectedStudents.length > 0" class="selection-summary-box mb-4 animate-in">
-                        <div class="d-flex flex-wrap py-1 px-1">
-                            <div 
-                                v-for="student in selectedStudentDetails" 
-                                :key="'sel-' + student._id"
-                                class="selected-tag mr-2 mb-2 d-flex align-items-center"
-                            >
-                                <div class="avatar-xs mr-2" :style="{ backgroundColor: getAvatarColor(getStudentName(student)) }">
-                                    {{ getInitials(getStudentName(student)) }}
-                                </div>
-                                <span class="tag-name mr-2 text-truncate">{{ getStudentName(student) }}</span>
-                                <button class="btn-remove-tag" @click="toggleStudent(student)">
-                                    <CIcon name="cil-x" size="custom-sm" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Student Selection Section -->
-            <div class="student-selection-wrapper mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <label class="form-label mb-0">Assign to Students</label>
-                    <div class="select-all-toggle" @click="toggleSelectAll">
-                        <span class="text-orange small font-weight-bold pointer">{{ allSelected ? 'Deselect All' : 'Select All' }}</span>
-                    </div>
-                </div>
-                
-                <div class="search-box-orange mb-3">
-                    <CIcon name="cil-search" class="search-icon-orange" />
-                    <input 
-                        type="text" 
-                        v-model="studentSearch" 
-                        placeholder="Search students by name or ID..."
-                        class="search-input-orange"
-                    />
-                </div>
-
-                <div class="student-list-container">
-                    <div 
-                        v-for="student in enrolledStudents" 
-                        :key="student._id"
-                        class="student-item"
-                        :class="{ 'selected': isSelected(student._id) }"
-                        @click="toggleStudent(student)"
-                    >
-                        <div class="d-flex align-items-center">
-                            <div class="check-box-custom mr-3" :class="{ 'checked': isSelected(student._id) }">
-                                <CIcon v-if="isSelected(student._id)" name="cil-check" size="sm" />
-                            </div>
-                            <div class="avatar-sm mr-3" :style="{ backgroundColor: getAvatarColor(getStudentName(student)) }">
-                                {{ getInitials(getStudentName(student)) }}
-                            </div>
-                            <div>
-                                <div class="student-name-text">{{ getStudentName(student) }}</div>
-                                <div class="student-id-text">ID: {{ student.studentId }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <template #footer>
@@ -223,7 +127,7 @@ export default {
     },
     computed: {
         isFormValid() {
-            return this.form.title && this.form.startDateTime && this.form.endDateTime && this.selectedStudents.length > 0;
+            return this.form.title && this.form.startDateTime && this.form.endDateTime;
         },
         filteredStudents() {
             if (!this.studentSearch) return this.enrolledStudents;

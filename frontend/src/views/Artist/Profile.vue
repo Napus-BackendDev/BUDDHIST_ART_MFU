@@ -47,26 +47,6 @@
             </CCardBody>
           </CCard>
       
-          <!-- Submissions Section (Preview - Only for own profile) -->
-          <CCard v-if="!isPublic" class="profile-portfolio-card mt-5 border-0 shadow-premium rounded-xl overflow-hidden">
-            <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
-              <div class="header-title-group mb-3 mb-md-0">
-                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ $i18n.locale === 'en' ? 'Recent Submissions' : 'รายการส่งงานล่าสุด' }}</h3>
-                <p class="text-muted mb-0 portfolio-subtitle">{{ $i18n.locale === 'en' ? 'A quick overview of your latest certification tasks.' : 'ภาพรวมการส่งมอบหมายงานล่าสุดของคุณ' }}</p>
-              </div>
-              <CButton color="dark" variant="outline" shape="pill" class="btn-sm px-3 font-weight-bold" @click="activeView = 'submissions'">
-                {{ $i18n.locale === 'en' ? 'View All Submissions' : 'ดูรายการส่งงานทั้งหมด' }}
-              </CButton>
-            </CCardHeader>
-            
-            <CCardBody class="p-4 p-md-5 pt-0">
-              <SubmissionTable 
-                @view="handleViewSubmission" 
-                @edit="handleEditSubmission" 
-                @delete="handleDeleteSubmission" 
-              />
-            </CCardBody>
-          </CCard>
         </div>
 
         <div v-else-if="activeView === 'submissions'" key="submissions" class="mt-4">
@@ -116,11 +96,20 @@
                 <template #orderIdDisplay="{item}">
                   <td class="align-middle py-3 px-4">
                     <div class="d-flex align-items-center">
-                      <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 45px; height: 45px; background-color: #f8fafc;">
+                      <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 45px; height: 45px; background-color: #f8fafc; min-width: 45px;">
                         <img v-if="item.artwork && item.artwork[0]" :src="item.artwork[0].image" class="w-100 h-100 object-fit-cover" />
                         <CIcon v-else name="cil-image" class="text-muted m-2" />
                       </div>
-                      <span class="font-weight-bold text-dark">#{{ item.orderIdDisplay }}</span>
+                      <div>
+                        <div class="font-weight-bold text-dark mb-0 line1" style="max-width: 200px;">
+                          {{ item.artwork && item.artwork[0] ? getName($i18n.locale, item.artwork[0]) : '#' + item.orderIdDisplay }}
+                        </div>
+                        <div class="small text-muted d-flex align-items-center">
+                          <span v-if="item.artwork && item.artwork[0] && item.artwork[0].artist">
+                            {{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getName($i18n.locale, item.artwork[0].artist) }}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </td>
                 </template>
@@ -132,7 +121,8 @@
                 </template>
                 <template #statusName="{item}">
                   <td class="align-middle px-4">
-                    <div :class="['status-badge-inline', item.statusName.toLowerCase()]">
+                    <div :class="['status-badge', getStatusBadge(item.statusName).class]">
+                      <CIcon :name="getStatusBadge(item.statusName).icon" class="status-icon mr-1" />
                       {{ item.statusName }}
                     </div>
                   </td>
@@ -156,109 +146,14 @@
       :order="selectedOrder" 
     />
 
-    <CModal
-      :title="$i18n.locale === 'en' ? 'Edit Artist Profile' : 'แก้ไขโปรไฟล์ศิลปิน'"
-      :show.sync="isEditing"
-      size="xl"
-      :centered="true"
-    >
-      <div class="modal-bg-wrapper">
-        <CRow>
-        <!-- Left Column: Avatar & Bio -->
-        <CCol lg="4" class="mb-4 mb-lg-0">
-          <CCard class="border-0 shadow-sm rounded-xl h-100 mb-0">
-            <CCardBody class="text-center p-4 p-md-5">
-            <div class="avatar-upload-wrapper mb-4">
-              <div 
-                class="avatar-preview shadow-lg"
-                :style="{ backgroundColor: getAvatarColor(form.nameEn) }"
-              >
-                <img v-if="form.image" :src="form.image" class="avatar-img" />
-                <span v-else class="avatar-initials">{{ initials }}</span>
-              </div>
-              <CButton variant="outline" shape="pill" class="btn-sm btn-upload mt-3 shadow-sm" @click="triggerUpload">
-                <CIcon name="cil-camera" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Change Photo' : 'เปลี่ยนรูปโปรไฟล์' }}
-              </CButton>
-              <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept="image/*" />
-            </div>
-
-            <h4 class="font-weight-bold mb-1">{{ displayName }}</h4>
-            <p class="text-muted small mb-4">{{ studentId }}</p>
-            
-            <div class="text-left mt-4 border-top pt-4">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="section-label mb-0">{{ $i18n.locale === 'en' ? 'Biography' : 'ประวัติส่วนตัว' }}</label>
-                <small class="text-muted">{{ form.bio ? form.bio.length : 0 }} / 200</small>
-              </div>
-              <CTextarea 
-                v-model="form.bio"
-                :placeholder="$i18n.locale === 'en' ? 'Tell us about yourself and your artistic style...' : 'บอกเล่าเกี่ยวกับตัวคุณและสไตล์ศิลปะของคุณ...'"
-                class="bio-textarea"
-                rows="4"
-                maxlength="200"
-              />
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
-      <!-- Right Column: Personal Information -->
-      <CCol lg="8">
-        <CCard class="border-0 shadow-sm rounded-xl h-100 mb-0">
-          <CCardHeader class="bg-white border-bottom py-3 px-4 px-md-5">
-            <h5 class="mb-0 font-weight-bold text-dark">{{ $i18n.locale === 'en' ? 'Personal Information' : 'ข้อมูลส่วนตัว' }}</h5>
-          </CCardHeader>
-          <CCardBody class="p-4 p-md-5">
-            <CRow>
-              <!-- Name Fields -->
-              <CCol md="6" class="mb-4">
-                <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
-                <CInput v-model="form.nameTh" placeholder="ชื่อ-นามสกุล" class="custom-input shadow-none" />
-              </CCol>
-              <CCol md="6" class="mb-4">
-                <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
-                <CInput v-model="form.nameEn" placeholder="Full Name" class="custom-input shadow-none" />
-              </CCol>
-
-              <!-- Email Fields -->
-              <CCol md="6" class="mb-4">
-                <label class="form-label">{{ $i18n.locale === 'en' ? 'University Email' : 'อีเมลมหาวิทยาลัย' }}</label>
-                <CInput v-model="form.email" placeholder="student@lamduan.mfu.ac.th" disabled class="custom-input shadow-none bg-light" />
-                <small class="text-muted">{{ $i18n.locale === 'en' ? 'Cannot be changed' : 'ไม่สามารถแก้ไขได้' }}</small>
-              </CCol>
-              <CCol md="6" class="mb-4">
-                <label class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
-                <CInput v-model="form.personalEmail" placeholder="example@gmail.com" class="custom-input shadow-none" />
-              </CCol>
-
-              <!-- Phone & ID -->
-              <CCol md="6" class="mb-4">
-                <label class="form-label">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
-                <CInput v-model="form.telephone" placeholder="08x-xxx-xxxx" class="custom-input shadow-none" />
-              </CCol>
-              <CCol md="6" class="mb-4">
-                <label class="form-label">{{ $i18n.locale === 'en' ? 'Artist ID / Student ID' : 'รหัสศิลปิน / รหัสนักศึกษา' }}</label>
-                <CInput v-model="form.studentId" placeholder="64xxxxxxx" disabled class="custom-input shadow-none bg-light" />
-              </CCol>
-            </CRow>
-
-          </CCardBody>
-        </CCard>
-      </CCol>
-      </CRow>
-      </div>
-
-      <template #footer>
-        <div class="d-flex w-100 justify-content-end p-2">
-          <CButton @click="cancelEdit" variant="outline" shape="pill" class="btn-modal-action mr-3">
-            {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
-          </CButton>
-          <CButton @click="handleSave" shape="pill" class="btn-modal-action btn-save-action font-weight-bold">
-            <CIcon name="cil-save" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการเปลี่ยนแปลง' }}
-          </CButton>
-        </div>
-      </template>
-    </CModal>
+    <EditProfileModal 
+      v-if="form"
+      :show.sync="isEditing" 
+      :initialData="form"
+      :loading="loading"
+      @save="onProfileSave"
+      @cancel="fetchProfile"
+    />
     
     <ArtworkCreateModal 
       :show="showArtworkModal" 
@@ -283,13 +178,16 @@ import ArtworkCard from './components/card/CardArtworks.vue'
 import SubmissionTable from './components/table/SubmissionTable.vue'
 import ArtistSubmissions from './Submissions.vue'
 import ArtistSubmissionsDetail from './SubmissionsDetail.vue'
-import OrderModal from '../User/components/modal/OrderModal.vue'
+import OrderModal from './components/modal/OrderModal.vue'
 import ArtworkCreateModal from './components/modal/ArtworkCreateModal.vue'
 import ArtworkEditModal from './components/modal/ArtworkEditModal.vue'
+import EditProfileModal from './components/modal/EditProfileModal.vue'
 import { mapGetters } from 'vuex';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
   name: 'ArtistProfile',
+  mixins: [statusBadgeMixin],
   components: {
     ArtistProfileHeader,
     ArtworkCard,
@@ -298,7 +196,8 @@ export default {
     ArtistSubmissionsDetail,
     OrderModal,
     ArtworkCreateModal,
-    ArtworkEditModal
+    ArtworkEditModal,
+    EditProfileModal
   },
   data() {
     return {
@@ -384,19 +283,11 @@ export default {
         return dateB - dateA;
       });
     },
-    nameEn() {
-      return this.form ? this.form.nameEn : '';
-    },
-    displayName() {
-      if (!this.form) return '';
-      return this.$i18n.locale === 'th' && this.form.nameTh ? this.form.nameTh : this.form.nameEn;
-    },
-    studentId() {
-      return this.form ? this.form.studentId : '';
-    },
-    initials() {
-      const name = this.displayName || 'A';
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    paginatedArtworks() {
+      if (!this.artistArtworks) return [];
+      const start = (this.activePage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.artistArtworks.slice(start, end);
     },
     totalArtworksPages() {
       if (!this.artistArtworks) return 0;
@@ -479,33 +370,26 @@ export default {
       this.showEditModal = true;
     },
     handleDeleteArtwork(art) {
-      this.artworkToDelete = art;
-      
-      // Reset dialog state
-      this.$store.commit('dialog/isCode', null);
-      
-      // Show confirmation dialog
-      this.$store.commit('dialog/dialog', {
-        title: 'Confirm Deletion',
-        message: `Are you sure you want to delete "${this.getName('en', art)}"? This action cannot be undone.`,
-        number: '001',
-        code: 'DELETE_ARTWORK',
-        status: true,
-        button: [
-          {
-            label: 'CANCEL',
-            icon: 'cil-ban',
-            color: 'secondary',
-            code: 'cancel'
-          },
-          {
-            label: 'DELETE',
-            icon: 'cil-trash',
-            color: 'danger',
-            code: 'confirm_delete'
-          }
-        ]
-      });
+      if (confirm(`Are you sure you want to delete "${this.getName('en', art)}"? This action cannot be undone.`)) {
+        this.$store.dispatch('artwork/delete', { _id: art._id })
+          .then(() => {
+            this.$store.commit('dialog/showToast', {
+              title: 'Deleted',
+              message: 'Artwork has been removed from your portfolio.',
+              variant: 'success'
+            });
+            // Refresh list
+            this.$store.dispatch('artwork/get');
+          })
+          .catch(err => {
+            console.error('Delete failed:', err);
+            this.$store.commit('dialog/showToast', {
+              title: 'Error',
+              message: 'Failed to delete artwork.',
+              variant: 'danger'
+            });
+          });
+      }
     },
     getName(lang, item) {
       if (!item) return '';
@@ -545,7 +429,9 @@ export default {
             email: currentUser.contact ? currentUser.contact.studentEmail : '',
             personalEmail: currentUser.contact ? currentUser.contact.personalEmail : '',
             telephone: currentUser.contact ? currentUser.contact.telephone : '',
-            bio: currentUser.bio || ''
+            bio: currentUser.bio || '',
+            addressBill: currentUser.address ? currentUser.address.bill : '',
+            addressShipping: currentUser.address ? currentUser.address.shipping : ''
           };
         } else {
           console.error("Profile Error: User not found in database matching ID:", this.profileUserId);
@@ -554,76 +440,52 @@ export default {
         console.error('Error fetching profile:', error);
       }
     },
-    getAvatarColor(name) {
-      const colors = ['#321fdb', '#f97316', '#10b981', '#ef4444', '#8b5cf6'];
-      if (!name) return colors[0];
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return colors[Math.abs(hash) % colors.length];
-    },
-    triggerUpload() {
-      this.$refs.fileInput.click();
-    },
-    onFileChange(e) {
-      const file = e.target.files[0];
-      if (file) {
-        // Provide instant local preview
-        this.form.image = URL.createObjectURL(file);
-        
-        // Save the file for actual upload later when Save Changes is clicked
-        this.selectedFile = file;
-
-        // Reset file input so same file can be selected again
-        this.$refs.fileInput.value = '';
-      }
-    },
-    async cancelEdit() {
-      this.isEditing = false;
-      this.selectedFile = null;
-      await this.fetchProfile(); // Reset the data to current database state
-    },
-    async handleSave() {
+    async onProfileSave({ form, file }) {
       try {
+        this.loading = true;
         const payload = {
-          _id: this.form._id,
+          _id: form._id,
           name: [
-            { key: 'th', value: this.form.nameTh },
-            { key: 'en', value: this.form.nameEn }
+            { key: 'th', value: form.nameTh },
+            { key: 'en', value: form.nameEn }
           ],
           contact: {
-            studentEmail: this.form.email,
-            personalEmail: this.form.personalEmail,
-            telephone: this.form.telephone
+            studentEmail: form.email,
+            personalEmail: form.personalEmail,
+            telephone: form.telephone
           },
-          bio: this.form.bio
+          bio: form.bio,
+          address: {
+            bill: form.addressBill,
+            shipping: form.addressShipping
+          }
         };
 
-        if (this.form.image && !this.selectedFile) {
-          payload.image = this.form.image;
+        if (form.image && !file) {
+          payload.image = form.image;
         }
 
         // 1. Update text data first
         await this.$store.dispatch('user/update', payload);
 
         // 2. Upload image if a new photo was selected
-        if (this.selectedFile) {
+        if (file) {
           const formData = new FormData();
           formData.append('_id', this.userId);
-          formData.append('image', this.selectedFile);
+          formData.append('image', file);
 
           await this.$store.dispatch('user/upload', formData);
-          this.selectedFile = null;
         }
         
-        alert('Profile updated successfully!');
+        this.$store.commit('dialog/showToast', { title: 'Success', message: 'Profile updated successfully!', variant: 'success' });
         
         await this.fetchProfile();
         this.isEditing = false;
       } catch (error) {
         console.error('Error updating profile:', error);
-        alert('Failed to update profile.');
+        this.$store.commit('dialog/showToast', { title: 'Error', message: 'Failed to update profile.', variant: 'danger' });
+      } finally {
+        this.loading = false;
       }
     },
     handleAddNewArtwork() {
@@ -641,6 +503,7 @@ export default {
           technique: payload.technique,
           artist: payload.artist,
           category: payload.category,
+          size: payload.size,
           price: payload.price,
           status: payload.status
         };
@@ -719,6 +582,7 @@ export default {
           technique: payload.technique,
           artist: payload.artist,
           category: payload.category,
+          size: payload.size,
           price: payload.price,
           status: payload.status
         };
@@ -770,36 +634,6 @@ export default {
     }
   },
   watch: {
-    dialogCode(val) {
-      if (val === 'confirm_delete' && this.artworkToDelete) {
-        const artId = this.artworkToDelete._id;
-        
-        // Execute delete
-        this.$store.dispatch('artwork/delete', { _id: artId })
-          .then(() => {
-            this.$store.commit('dialog/showToast', {
-              title: 'Deleted',
-              message: 'Artwork has been removed from your portfolio.',
-              variant: 'success'
-            });
-            
-            // Refresh list
-            this.$store.dispatch('artwork/get');
-          })
-          .catch(err => {
-            console.error('Delete failed:', err);
-            this.$store.commit('dialog/showToast', {
-              title: 'Error',
-              message: 'Failed to delete artwork.',
-              variant: 'danger'
-            });
-          })
-          .finally(() => {
-            this.artworkToDelete = null;
-            this.$store.commit('dialog/isCode', null);
-          });
-      }
-    },
     profileUserId: {
       handler: 'fetchProfile',
       immediate: true
@@ -844,136 +678,6 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.avatar-preview {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  border: 4px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-initials {
-  font-size: 3rem;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -2px;
-}
-
-.btn-upload {
-  color: #8c1515 !important;
-  border-color: #8c1515 !important;
-  background-color: transparent !important;
-  font-weight: 600 !important;
-}
-
-.btn-upload:hover {
-  background-color: #fff1f1 !important;
-  color: #701111 !important;
-  border-color: #701111 !important;
-}
-
-/* Form Styles */
-.form-label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.75rem;
-}
-
-.custom-input ::v-deep .form-control {
-  padding: 0.85rem 1.25rem;
-  height: auto;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  background-color: #f8fafc;
-  color: #1e293b;
-}
-
-.custom-input ::v-deep .form-control:focus {
-  border-color: #321fdb33;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 4px rgba(50, 31, 219, 0.05);
-}
-
-.bio-textarea ::v-deep .form-control {
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
-  background-color: #f8fafc;
-  padding: 1rem;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  resize: none;
-}
-
-.section-label {
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.btn-modal-action {
-  padding: 0.75rem 2.5rem !important;
-  font-size: 0.95rem !important;
-  min-width: 180px;
-  transition: all 0.3s ease;
-  border-width: 2px !important;
-}
-
-.btn-modal-action:not(.btn-save-action) {
-  color: #8c1515 !important;
-  border-color: #8c1515 !important;
-  background-color: transparent !important;
-}
-
-.btn-modal-action:not(.btn-save-action):hover {
-  background-color: #fff1f1 !important;
-  transform: translateY(-2px);
-}
-
-.btn-save-action {
-  background-color: #8c1515 !important;
-  border: 2px solid #8c1515 !important;
-  color: white !important;
-  box-shadow: 0 4px 12px rgba(140, 21, 21, 0.2) !important;
-}
-
-.btn-save-action:hover {
-  background-color: #701111 !important;
-  border-color: #701111 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(140, 21, 21, 0.3) !important;
-}
-
-/* Modal Specific Adjustments */
-::v-deep .modal-body {
-  padding: 0 !important;
-}
-
-.modal-bg-wrapper {
-  background-color: #f8fafc;
-  padding: 2rem;
-}
-
-@media (max-width: 992px) {
-  .modal-bg-wrapper {
-    padding: 1rem;
-  }
 }
 
 /* Portfolio Section Styling */

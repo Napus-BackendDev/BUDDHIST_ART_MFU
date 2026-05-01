@@ -1,144 +1,97 @@
 <template>
-    <div class="row m-0">
-        <!-- Main Table Area (Expands if no item selected, shrinks if item selected) -->
-        <div :class="[selectedItem ? 'col-md-8' : 'col-12', 'pl-0 pr-0 pr-md-3 transition-width']">
-            <CCard class="assignment-table-card mb-4">
-                <div>
-                    <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
-                        :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
+    <div class="assignment-table-container">
+        <div class="row m-0">
+            <!-- Main Table Area -->
+            <div class="col-12 pl-0 pr-0 transition-width">
+                <CCard class="assignment-table-card mb-4">
+                    <div>
+                        <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
+                            :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange"
+                            @row-clicked="selectItem">
 
-                        <!-- Preview Image Column -->
-                        <template #preview="{ item }">
-                            <td class="text-center align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                <img :src="item.preview" alt="Artwork Preview" class="preview-img" />
-                            </td>
-                        </template>
+                            <!-- Preview Image Column -->
+                            <template #preview="{ item }">
+                                <td class="text-center align-middle" @click="selectItem(item)" style="cursor: pointer;">
+                                    <img :src="item.preview" alt="Artwork Preview" class="preview-img" />
+                                </td>
+                            </template>
 
-                        <!-- Student Name Column -->
-                        <template #student_name="{ item }">
-                            <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                <div class="font-weight-bold" style="color: #2c3e50;">{{ item.student_name }}</div>
-                                <div class="small text-muted">{{ item.student_id }}</div>
-                            </td>
-                        </template>
+                            <!-- Student Name Column -->
+                            <template #student_name="{ item }">
+                                <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
+                                    <div class="font-weight-bold" style="color: #2c3e50;">{{ item.student_name }}</div>
+                                    <div class="small text-muted">{{ item.student_id }}</div>
+                                </td>
+                            </template>
 
-                        <!-- Submitted Date Column -->
-                        <template #submitted_date="{ item }">
-                            <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                {{ item.submitted_date }}
-                            </td>
-                        </template>
+                            <!-- Submitted Date Column -->
+                            <template #submitted_date="{ item }">
+                                <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
+                                    {{ item.submitted_date }}
+                                </td>
+                            </template>
 
-                        <!-- Status Column -->
-                        <template #status="{ item }">
-                            <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                <div :class="['status-badge', getStatusBadge(item.status).class]">
-                                    <CIcon :name="getStatusBadge(item.status).icon" size="sm" class="status-icon" />
-                                    {{ item.status }}
-                                </div>
-                            </td>
-                        </template>
+                            <!-- Status Column -->
+                            <template #status="{ item }">
+                                <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
+                                    <div :class="['status-badge', getStatusBadge(item.status).class]">
+                                        <CIcon :name="getStatusBadge(item.status).icon" size="sm" class="status-icon" />
+                                        {{ item.status }}
+                                    </div>
+                                </td>
+                            </template>
 
-                        <!-- Deadline Column -->
-                        <template #deadline="{ item }">
-                            <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                <div :class="['status-badge', item.on_time ? 'badge-passed' : 'badge-fail']">
-                                    <CIcon :name="item.on_time ? 'cil-check' : 'cil-warning'" size="sm" class="status-icon" />
-                                    {{ item.on_time ? 'On Time' : 'Late' }}
-                                </div>
-                            </td>
-                        </template>
-                    </CDataTable>
-                </div>
-
-                <CCardFooter
-                    class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-                    <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                        Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} submissions
+                            <!-- Deadline Column -->
+                            <template #deadline="{ item }">
+                                <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
+                                    <div :class="['status-badge', item.on_time ? 'badge-passed' : 'badge-fail']">
+                                        <CIcon :name="item.on_time ? 'cil-check' : 'cil-warning'" size="sm" class="status-icon" />
+                                        {{ item.on_time ? 'On Time' : 'Late' }}
+                                    </div>
+                                </td>
+                            </template>
+                        </CDataTable>
                     </div>
-                    <div class="text-muted text-sm" v-else>
-                        Showing 0 submissions
-                    </div>
-                    <CPagination
-                        :active-page.sync="activePage"
-                        :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
-                        size="sm"
-                        align="end"
-                        class="mb-0 pill-pagination"
-                    />
-                </CCardFooter>
-            </CCard>
+
+                    <CCardFooter
+                        class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
+                        <div class="text-muted text-sm" v-if="filteredItems.length > 0">
+                            Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} submissions
+                        </div>
+                        <div class="text-muted text-sm" v-else>
+                            Showing 0 submissions
+                        </div>
+                        <CPagination
+                            :active-page.sync="activePage"
+                            :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
+                            size="sm"
+                            align="end"
+                            class="mb-0 pill-pagination"
+                        />
+                    </CCardFooter>
+                </CCard>
+            </div>
         </div>
 
-        <!-- Right Side Panel (Split-View Card) -->
-        <div v-if="selectedItem" class="col-md-4 p-0 mt-4 mt-md-0 slide-in">
-            <CCard class="preview-card h-100 border-0 shadow-sm">
-                <CCardHeader class="bg-white border-0 d-flex justify-content-between align-items-center pt-4 px-4 pb-0">
-                    <h6 class="m-0 font-weight-bold panel-title">Submission Detail</h6>
-                    <button class="close-panel-btn" @click="closePanel">
-                        <CIcon name="cil-x" size="custom" height="18" />
-                    </button>
-                </CCardHeader>
-
-                <CCardBody class="p-4 d-flex flex-column">
-                    <!-- Artwork Image -->
-                    <div class="image-section mb-4">
-                        <div class="detail-image-wrapper shadow-sm custom-img-hover">
-                            <img :src="selectedItem.preview" alt="Student Submission" class="img-fluid detail-image" />
-                            <div class="img-overlay d-flex align-items-center justify-content-center">
-                                <a :href="selectedItem.preview" target="_blank" class="btn btn-light rounded-pill font-weight-bold shadow-sm px-4">
-                                    View Fullscreen
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Student & Submission Details -->
-                    <div class="d-flex justify-content-between align-items-start mb-4 pb-4 border-bottom-light">
-                        <div class="student-info-block">
-                            <h3 class="student-name mb-1">{{ selectedItem.student_name }}</h3>
-                            <p class="submission-date mb-0">Submitted on {{ selectedItem.submitted_date }}</p>
-                        </div>
-                        <div class="status-badges-group d-flex flex-column align-items-end">
-                            <div :class="['status-badge status-badge-sm mb-2', getStatusBadge(selectedItem.status).class]">
-                                <CIcon :name="getStatusBadge(selectedItem.status).icon" size="sm" class="status-icon" />
-                                {{ selectedItem.status }}
-                            </div>
-                            <div v-if="selectedItem.on_time" class="status-badge status-badge-sm badge-passed">
-                                <CIcon name="cil-check" size="sm" class="status-icon" /> On-time
-                            </div>
-                            <div v-else class="status-badge status-badge-sm badge-fail">
-                                <CIcon name="cil-warning" size="sm" class="status-icon" /> Late
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Artwork Detail Block -->
-                    <div class="mb-4">
-                        <p class="detail-label mb-2">ARTWORK DETAIL</p>
-                        <div class="artwork-description-box">
-                            <p class="description-text m-0">
-                                {{ selectedItem.description || 'No description provided.' }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="d-flex justify-content-between action-buttons mt-auto pt-2">
-                        <CButton class="btn-action btn-passed flex-grow-1 mr-3" variant="outline" @click="$emit('update-status', { artworkId: selectedItem.id, statusName: 'Approved' })">Mark Passed</CButton>
-                        <CButton class="btn-action btn-failed flex-grow-1" variant="outline" @click="$emit('update-status', { artworkId: selectedItem.id, statusName: 'Rejected' })">Mark Fail</CButton>
-                    </div>
-                </CCardBody>
-            </CCard>
-        </div>
+        <!-- Submission Review Modal (Placed outside for reliability) -->
+        <SubmissionReviewModal 
+            :show.sync="modalShow" 
+            :artwork="selectedItem"
+            :isUpdating="isUpdating"
+            @update-status="handleAction"
+        />
     </div>
 </template>
 
 <script>
 import moment from 'moment'
+import SubmissionReviewModal from '../modal/submission/SubmissionReviewModal.vue'
 
 export default {
     name: 'AssignmentTable',
+    components: {
+        SubmissionReviewModal
+    },
     props: {
         items: {
             type: Array,
@@ -159,6 +112,7 @@ export default {
     data() {
         return {
             selectedItem: null,
+            isUpdating: null, // Stores 'Approved' or 'Rejected' during update
             fields: [
                 { key: 'preview', label: 'Preview', _classes: 'font-weight-bold' },
                 { key: 'student_name', label: 'Student Name', _classes: 'font-weight-bold' },
@@ -166,7 +120,8 @@ export default {
                 { key: 'status', label: 'Status' },
                 { key: 'deadline', label: 'Deadline' }
             ],
-            activePage: 1
+            activePage: 1,
+            modalShow: false
         }
     },
     watch: {
@@ -210,9 +165,32 @@ export default {
     methods: {
         selectItem(item) {
             this.selectedItem = item;
+            this.modalShow = true;
         },
         closePanel() {
-            this.selectedItem = null;
+            this.modalShow = false;
+            // Delay clearing item to allow modal exit animation
+            setTimeout(() => {
+                if (!this.modalShow) this.selectedItem = null;
+            }, 300);
+        },
+        async handleAction(statusName) {
+            if (this.isUpdating) return;
+            
+            this.isUpdating = statusName;
+            try {
+                await this.$emit('update-status', { 
+                    artworkId: this.selectedItem.id, 
+                    statusName: statusName 
+                });
+                // The update happens in parent, we wait a bit or let parent signal completion
+                // For UX, we'll keep loading for a short duration or until selectedItem changes
+            } finally {
+                // We'll reset this after parent updates
+                setTimeout(() => {
+                    this.isUpdating = null;
+                }, 1000);
+            }
         },
         getStatusBadge(status) {
             if (status === 'Passed') return { class: 'badge-passed', icon: 'cil-check-circle' };
@@ -317,10 +295,59 @@ export default {
 }
 
 .description-text {
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.88rem;
+    line-height: 1.5;
     color: #5c6873;
     font-weight: 500;
+}
+
+.artwork-detail-scroll {
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.artwork-detail-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.artwork-detail-scroll::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.detail-value-box {
+    background: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    font-weight: 600;
+    border: 1px solid #f1f3f5;
+}
+
+.lang-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #ffffff;
+    background: #8c98a9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 6px;
+}
+
+.detail-info-mini {
+    background: #ffffff;
+    border: 1px solid #f0f2f5;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: #4f5d73;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .btn-action {
@@ -498,5 +525,6 @@ export default {
 
 ::v-deep tr:hover td {
     background-color: #f8f9fa;
+    cursor: pointer;
 }
 </style>

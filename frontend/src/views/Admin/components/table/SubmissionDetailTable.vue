@@ -26,18 +26,18 @@
                     </td>
                 </template>
 
-                <template #submission="{ item }">
-                    <td style="min-width: 150px;">
+
+
+                <template #studentSubmit="{ item }">
+                    <td>
                         <div class="d-flex align-items-center">
-                            <div class="flex-grow-1 mr-3">
-                                <CProgress 
-                                    :value="getEffectiveTotalStudents(item) > 0 ? Math.round(((item.artworks ? item.artworks.length : 0) / getEffectiveTotalStudents(item)) * 100) : 0" 
-                                    :color="getProgressColor(getEffectiveTotalStudents(item) > 0 ? Math.round(((item.artworks ? item.artworks.length : 0) / getEffectiveTotalStudents(item)) * 100) : 0)" 
-                                    height="6px" 
-                                    class="progress-premium"
-                                />
+                            <div class="status-box bg-info-premium mr-2">
+                                <CIcon name="cil-people" size="lg" />
                             </div>
-                            <span class="progress-label">{{ getEffectiveTotalStudents(item) > 0 ? Math.round(((item.artworks ? item.artworks.length : 0) / getEffectiveTotalStudents(item)) * 100) : 0 }}%</span>
+                            <div class="d-flex align-items-center">
+                                <span class="status-count mr-1">{{ getUniqueSubmitters(item) }}</span>
+                                <span class="text-muted text-xs mt-1">/ {{ getEffectiveTotalStudents(item) }} {{ $i18n.locale === 'en' ? 'students' : 'คน' }}</span>
+                            </div>
                         </div>
                     </td>
                 </template>
@@ -149,7 +149,7 @@ export default {
                 { key: 'assignmentTitle', label: 'ASSIGNMENT TITLE', _classes: 'border-top-0 border-bottom w-25' },
                 { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
                 { key: 'datetime', label: 'DATE & TIME', _classes: 'border-top-0 border-bottom' },
-                { key: 'submission', label: 'SUBMISSION', _classes: 'border-top-0 border-bottom' },
+                { key: 'studentSubmit', label: 'STUDENT SUBMIT', _classes: 'border-top-0 border-bottom' },
                 { key: 'respon', label: 'RESPOND', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
             ],
@@ -198,6 +198,15 @@ export default {
                 pending: artworks.filter(a => a.status === 'Pending').length,
                 error: artworks.filter(a => a.status === 'Rejected').length
             };
+        },
+        getUniqueSubmitters(item) {
+            if (!item || !item.artworks) return 0;
+            const submittedOwners = new Set();
+            item.artworks.forEach(aw => {
+                const ownerId = (aw.owner?._id || aw.owner)?.toString();
+                if (ownerId) submittedOwners.add(ownerId);
+            });
+            return submittedOwners.size;
         },
         pageChange(val) {
             this.activePage = val;
@@ -312,6 +321,10 @@ export default {
     background-color: #f1c40f;
 }
 
+.bg-info-premium {
+    background-color: #3498db;
+}
+
 .bg-danger-premium {
     background-color: #e74c3c;
 }
@@ -368,6 +381,10 @@ export default {
 }
 .text-sm {
     font-size: 0.9rem;
+}
+
+.text-xs {
+    font-size: 0.75rem;
 }
 
 .pill-badge {

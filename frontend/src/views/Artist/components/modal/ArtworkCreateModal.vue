@@ -26,12 +26,13 @@
 
         <div class="px-3 py-2">
             <!-- Basic Info Row -->
+            <!-- Titles EN/TH -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Artwork Title</label>
+                        <label class="form-label">Artwork Title (EN)</label>
                         <CInput 
-                            v-model="form.title" 
+                            v-model="form.title.en" 
                             placeholder="e.g. The Golden Serenity" 
                             class="custom-input mb-0"
                         />
@@ -39,37 +40,19 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Price</label>
-                        <div class="input-group-custom">
-                            <span class="currency-prefix">฿</span>
-                            <CInput 
-                                type="number"
-                                v-model="form.price" 
-                                placeholder="0.00" 
-                                class="custom-input-with-prefix text-right mb-0"
-                            />
-                        </div>
+                        <label class="form-label">Artwork Title (TH)</label>
+                        <CInput 
+                            v-model="form.title.th" 
+                            placeholder="ชื่อผลงานภาษาไทย" 
+                            class="custom-input mb-0"
+                        />
                     </div>
                 </CCol>
             </CRow>
 
-            <!-- Artist & Category Row -->
+            <!-- Category Row -->
             <CRow>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Artist Name</label>
-                        <div class="search-input-wrapper position-relative">
-                            <CIcon name="cil-user" class="input-icon-left" />
-                            <CInput 
-                                :value="artistSearchQuery" 
-                                class="custom-input-searchable mb-0"
-                                disabled
-                                read-only
-                            />
-                        </div>
-                    </div>
-                </CCol>
-                <CCol md="6">
+                <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">Category</label>
                         <CDropdown :key="form.category" :caret="false" class="w-100">
@@ -83,7 +66,7 @@
                                 <CDropdownItem 
                                     v-for="cat in categories" 
                                     :key="cat._id" 
-                                    @click="form.category = cat._id"
+                                    @click="handleCategorySelect(cat._id)"
                                 >
                                     {{ getName('en', cat) }}
                                 </CDropdownItem>
@@ -94,18 +77,58 @@
             </CRow>
 
             <!-- Technique & Status Row -->
+            <!-- Technique Row EN/TH -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Technique</label>
+                        <label class="form-label">Technique (EN)</label>
                         <CInput 
-                            v-model="form.technique" 
+                            v-model="form.technique.en" 
                             placeholder="e.g. Oil on Canvas" 
-                            class="custom-input"
+                            class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Technique (TH)</label>
+                        <CInput 
+                            v-model="form.technique.th" 
+                            placeholder="เช่น สีน้ำมันบนผ้าใบ" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Size Row EN/TH -->
+            <CRow>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Size (EN)</label>
+                        <CInput 
+                            v-model="form.size.en" 
+                            placeholder="e.g. 100 x 150 cm" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+                <CCol md="6">
+                    <div class="form-group-custom">
+                        <label class="form-label">Size (TH)</label>
+                        <CInput 
+                            v-model="form.size.th" 
+                            placeholder="เช่น 100 x 150 ซม." 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Price & Sale Status Row -->
+            <CRow>
+                
+                <CCol :md="isPriceVisible ? '6' : '12'">
                     <div class="form-group-custom">
                         <label class="form-label">Sale Status</label>
                         <CDropdown :key="form.status.sale" :caret="false" class="w-100">
@@ -125,6 +148,20 @@
                                 </CDropdownItem>
                             </CDropdownMenu>
                         </CDropdown>
+                    </div>
+                </CCol>
+                <CCol md="6" v-if="isPriceVisible">
+                    <div class="form-group-custom">
+                        <label class="form-label">Price</label>
+                        <div class="input-group-custom">
+                            <span class="currency-prefix">฿</span>
+                            <CInput 
+                                type="number"
+                                v-model="form.price" 
+                                placeholder="0.00" 
+                                class="custom-input-with-prefix text-right mb-0"
+                            />
+                        </div>
                     </div>
                 </CCol>
             </CRow>
@@ -167,13 +204,29 @@
             </CRow>
 
             <!-- Description Row -->
+            <!-- Description Row (EN) -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">Description (EN)</label>
                         <CTextarea 
-                            v-model="form.description" 
-                            placeholder="Write a brief description of the artwork..." 
+                            v-model="form.description.en" 
+                            placeholder="English description..." 
+                            rows="4"
+                            class="custom-textarea"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Description Row (TH) -->
+            <CRow>
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">Description (TH)</label>
+                        <CTextarea 
+                            v-model="form.description.th" 
+                            placeholder="รายละเอียดภาษาไทย..." 
                             rows="4"
                             class="custom-textarea"
                         />
@@ -242,15 +295,15 @@ export default {
             categories: [],
             statuses: [],
             imagePreview: null,
-            artistSearchQuery: '',
-            showArtistDropdown: false,
+            imagePreview: null,
             form: {
-                title: '',
+                title: { en: '', th: '' },
                 artist: '',
                 category: '',
-                technique: '',
+                technique: { en: '', th: '' },
+                size: { en: '', th: '' },
                 price: '',
-                description: '',
+                description: { en: '', th: '' },
                 status: {
                     approval: '',
                     sale: ''
@@ -267,18 +320,15 @@ export default {
             allUsers: 'user/user'
         }),
         isFormValid() {
-            return this.form.title.trim() !== '' && 
-                   this.form.artist !== '' && 
-                   this.form.price !== '' && 
-                   this.imagePreview !== null;
-        },
-        filteredArtists() {
-            if (!this.allUsers) return [];
-            const q = this.artistSearchQuery.toLowerCase();
-            return this.allUsers.filter(artist => {
-                const name = this.getArtistName(artist).toLowerCase();
-                return name.includes(q);
-            });
+            const basicValid = this.form.title.en.trim() !== '' && 
+                               this.form.title.th.trim() !== '' && 
+                               this.form.artist !== '' && 
+                               this.imagePreview !== null;
+            
+            if (this.isPriceVisible) {
+                return basicValid && this.form.price !== '' && parseFloat(this.form.price) >= 0;
+            }
+            return basicValid;
         },
         saleStatuses() {
             if (!this.statuses) return [];
@@ -305,9 +355,19 @@ export default {
         selectedApprovalStatusName() {
             const status = this.statuses.find(s => s._id === this.form.status.approval);
             return status ? this.getName('en', status) : 'Select Approval Status';
+        },
+        isPriceVisible() {
+            if (!this.form.status.sale) return true;
+            return this.selectedSaleStatusName === 'Available';
         }
     },
     methods: {
+        handleCategorySelect(id) {
+            this.$set(this.form, 'category', id);
+        },
+        handleSaleStatusSelect(id) {
+            this.$set(this.form.status, 'sale', id);
+        },
         async fetchInitialData() {
             try {
                 // Fetch Users (Artists)
@@ -329,13 +389,8 @@ export default {
                 const defaultApproval = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
                 if (defaultApproval) this.form.status.approval = defaultApproval._id;
                 
-                // Pre-select Artist if initialArtistId is provided
                 if (this.initialArtistId) {
-                    const artist = this.allUsers.find(u => u._id === this.initialArtistId);
-                    if (artist) {
-                        this.form.artist = artist._id;
-                        this.artistSearchQuery = this.getArtistDisplay(artist);
-                    }
+                    this.form.artist = this.initialArtistId;
                 }
 
             } catch (error) {
@@ -365,24 +420,8 @@ export default {
             };
             reader.readAsDataURL(file);
         },
-        handleArtistSearch() {
-            this.showArtistDropdown = true;
-            // Clear current artist ID if searching again, or keep it until selection
-            // We set it when they click selectArtist
-        },
-        handleArtistBlur() {
-            // Slight timeout to allow the click on the result item to register
-            setTimeout(() => {
-                this.showArtistDropdown = false;
-            }, 200);
-        },
-        selectArtist(artist) {
-            this.form.artist = artist._id;
-            this.artistSearchQuery = this.getArtistDisplay(artist);
-            this.showArtistDropdown = false;
-        },
         toggleArtistDropdown() {
-            this.showArtistDropdown = !this.showArtistDropdown;
+            // Deprecated for Artist-facing modal
         },
         getName(lang, item) {
             if (!item) return 'N/A';
@@ -398,24 +437,10 @@ export default {
             }
             return 'N/A';
         },
-        getArtistName(artist) {
-            if (!artist) return 'N/A';
-            if (Array.isArray(artist.name)) {
-                const nameObj = artist.name.find(n => n.key === 'en') || artist.name[0];
-                return nameObj ? nameObj.value : (artist.studentId || 'N/A');
-            }
-            return artist.studentId || 'N/A';
-        },
-        getArtistDisplay(artist) {
-            if (!artist) return 'N/A';
-            const name = this.getArtistName(artist);
-            const id = artist.studentId ? ` (${artist.studentId})` : '';
-            return name + id;
-        },
         handlePreview() {
-            const artist = this.form.artist || this.artistSearchQuery;
-            if (!this.form.title || !artist || !this.form.price || !this.imagePreview) {
-                alert('Please fill in all required fields (Title, Artist, Price, and Image) before previewing.');
+            const artist = this.form.artist;
+            if (!this.form.title.en && !this.form.title.th || !artist || !this.form.price || !this.imagePreview) {
+                alert('Please fill in all required fields (Title, Price, and Image) before previewing.');
                 return;
             }
             
@@ -442,12 +467,13 @@ export default {
             
             // Reformat for API
             const payload = {
-                title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
-                description: [{ key: 'en', value: this.form.description }, { key: 'th', value: this.form.description }],
+                title: [{ key: 'en', value: this.form.title.en }, { key: 'th', value: this.form.title.th }],
+                description: [{ key: 'en', value: this.form.description.en }, { key: 'th', value: this.form.description.th }],
                 artist: this.form.artist,
                 category: this.form.category,
-                technique: [{ key: 'en', value: this.form.technique }, { key: 'th', value: this.form.technique }],
-                price: parseFloat(this.form.price),
+                technique: [{ key: 'en', value: this.form.technique.en }, { key: 'th', value: this.form.technique.th }],
+                size: [{ key: 'en', value: this.form.size.en }, { key: 'th', value: this.form.size.th }],
+                price: this.isPriceVisible ? parseFloat(this.form.price) : 0,
                 status: {
                     approval: this.form.status.approval,
                     sale: this.form.status.sale
@@ -463,12 +489,13 @@ export default {
             const defaultApproval = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
 
             this.form = {
-                title: '',
+                title: { en: '', th: '' },
                 artist: this.initialArtistId || '',
                 category: this.categories.length > 0 ? this.categories[0]._id : '',
-                technique: '',
+                technique: { en: '', th: '' },
+                size: { en: '', th: '' },
                 price: '',
-                description: '',
+                description: { en: '', th: '' },
                 status: {
                     approval: defaultApproval ? defaultApproval._id : '',
                     sale: defaultSale ? defaultSale._id : ''
@@ -476,16 +503,8 @@ export default {
                 image: null
             };
             this.imagePreview = null;
-            this.artistSearchQuery = '';
-            this.showArtistDropdown = false;
 
-            // Re-set artist display if we have an initial ID
-            if (this.initialArtistId && this.allUsers) {
-                const artist = this.allUsers.find(u => u._id === this.initialArtistId);
-                if (artist) {
-                    this.artistSearchQuery = this.getArtistDisplay(artist);
-                }
-            }
+
         },
         formatPrice(value) {
             if (!value) return '0.00';
@@ -603,111 +622,6 @@ export default {
 .dropdown-icon {
     color: #94a3b8;
     width: 14px;
-}
-
-/* Searchable Dropdown Styling */
-.searchable-dropdown {
-    position: relative;
-    width: 100%;
-}
-
-.search-input-wrapper {
-    position: relative;
-    width: 100%;
-    display: block;
-}
-
-.input-icon-left {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
-    color: #94a3b8;
-    width: 16px;
-    pointer-events: none;
-}
-
-.dropdown-arrow-wrapper {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    cursor: pointer;
-}
-
-.dropdown-arrow-icon {
-    color: #94a3b8;
-    width: 14px;
-    transition: transform 0.2s ease;
-}
-
-.custom-input-searchable {
-    width: 100% !important;
-    margin-bottom: 0 !important;
-}
-
-.custom-input-searchable ::v-deep .form-control {
-    padding-left: 2.85rem !important;
-    padding-right: 2.85rem !important;
-    width: 100% !important;
-    height: 52px !important; /* Match other inputs */
-    border-radius: 12px !important;
-    border: 1px solid #f1f5f9 !important;
-    background-color: #f8fafc !important;
-    font-size: 1rem !important;
-    transition: all 0.2s ease !important;
-}
-
-.custom-input-searchable ::v-deep .form-control:focus {
-    background-color: #ffffff !important;
-    border-color: #8c151533 !important;
-    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05) !important;
-}
-
-.artist-results-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    z-index: 1000;
-    border-radius: 12px;
-    margin-top: 5px;
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #f1f5f9;
-}
-
-.artist-result-item {
-    padding: 0.75rem 1.25rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.95rem;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.artist-result-item:hover,
-.artist-result-item.active {
-    background: #f1f5f9;
-    color: #8c1515;
-    font-weight: 600;
-}
-
-.artist-result-item:not(:last-child) {
-    border-bottom: 1px solid #f8fafc;
-}
-
-.ml-auto {
-    margin-left: auto;
 }
 
 /* File Upload Stying */

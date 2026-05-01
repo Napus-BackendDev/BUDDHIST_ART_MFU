@@ -5,8 +5,8 @@
             <CHeaderBrand class="d-flex align-items-center text-decoration-none brand-link-custom" to="/">
                 <img src="@/assets/icons/logo.png" height="55" class="mr-3 brand-logo-img">
                 <div class="brand-text-wrapper d-flex flex-column justify-content-center">
-                    <span class="brand-main-title">Buddhist Art MFU</span>
-                    <span class="brand-subtitle">พุทธศิลป์</span>
+                    <span class="brand-main-title">Buddhist Art Mea Fah Luang University</span>
+                    <span class="brand-subtitle">หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง</span>
                 </div>
             </CHeaderBrand>
 
@@ -37,17 +37,11 @@
                         <CDropdownItem @click="handleNavigateTo('/user/profile')" class="font-weight-bold">
                             <CIcon name="cil-user" class="mr-3" /> Profile
                         </CDropdownItem>
-                        <CDropdownItem @click="handleNavigateTo('/user/order')" class="font-weight-bold">
-                            <CIcon name="cil-history" class="mr-3" /> History
-                        </CDropdownItem>
                     </template>
                     <!-- Artist Role Links -->
                     <template v-else-if="userRole === 'artist'">
                         <CDropdownItem @click="handleNavigateTo('/artist/profile')" class="font-weight-bold">
                             <CIcon name="cil-user" class="mr-3" /> Profile
-                        </CDropdownItem>
-                        <CDropdownItem @click="handleNavigateTo('/artist/submissions')" class="font-weight-bold">
-                            <CIcon name="cil-brush" class="mr-3" /> Submissions
                         </CDropdownItem>
                     </template>
                     <!-- Admin Role Links -->
@@ -305,7 +299,6 @@ export default {
     font-weight: 800;
     font-size: 1.4rem;
     line-height: 1;
-    border-bottom: 2px solid #3c4b64;
     display: inline-block;
 }
 

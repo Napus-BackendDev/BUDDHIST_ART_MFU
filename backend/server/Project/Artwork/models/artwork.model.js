@@ -28,6 +28,8 @@ var objsSchema = new Schema({
         approval: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69677d4de5f76f7a8c42dbf6" }, // Pending 
         sale: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69678075e5f76f7a8c42dc12" }, // Not for sale
     },
+    submissionArtworkId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    artworkPiece: { type: String, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Artwork', objsSchema, 'Artwork');

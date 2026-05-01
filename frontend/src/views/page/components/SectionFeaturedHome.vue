@@ -49,7 +49,12 @@ export default {
             // Only show approved/in cart artworks
             let result = this.allArtworks.filter(art => {
                 const status = this.getStatusLabel(art);
-                return ['Approved', 'Success', 'In Cart'].includes(status);
+                const isApproved = ['Approved', 'Success', 'In Cart'].includes(status);
+                
+                // Only show artworks WITHOUT submission provenance (Direct uploads/Featured)
+                const isFeatured = !art.submissionArtworkId && !art.artworkPiece;
+                
+                return isApproved && isFeatured;
             });
             
             // Limit to top 8 (2 rows)

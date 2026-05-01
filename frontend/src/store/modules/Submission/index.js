@@ -66,11 +66,6 @@ const SubmissionModule = {
 
             const currentUserId = rootGetters['auth/userId'];
             
-            const existingArtworkIndex = assignment.artworks.findIndex(art => {
-                const ownerId = art.owner?._id || art.owner;
-                return ownerId === currentUserId;
-            });
-
             const newArtwork = {
                 title: artwork.title,
                 description: artwork.description,
@@ -79,18 +74,14 @@ const SubmissionModule = {
                 size: artwork.size,
                 price: artwork.price,
                 status: artwork.status.approval,
-                image: imageUrl || (existingArtworkIndex !== -1 ? assignment.artworks[existingArtworkIndex].image : ''),
+                image: imageUrl,
                 owner: currentUserId,
                 create: {
                     at: new Date()
                 }
             };
 
-            if (existingArtworkIndex !== -1) {
-                assignment.artworks.splice(existingArtworkIndex, 1, newArtwork);
-            } else {
-                assignment.artworks.push(newArtwork);
-            }
+            assignment.artworks.push(newArtwork);
 
             return dispatch('update', { _id: submissionId, assignments });
         }
