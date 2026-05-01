@@ -4,88 +4,8 @@ const Status = require('../../Settings/models/status.model');
 const Artwork = require("../../Artwork/models/artwork.model");
 const User = require("../../User/models/user.model");
 const ResMessage = require("../../Settings/service/message");
-const { sendMail } = require("../../../../helpers/google/Mail");
-const { approvedSubmissionMail, rejectedSubmissionMail } = require("../../Mail");
+const { processApprovals, processRejections, getNewlyChangedArtworks } = require('../../Mail/service/email.util');
 
-/** 
- * HELPER FUNCTIONS (Internal)
- */
-
-// Extract artworks from a submission document matching a specific status ID
-const getArtworksByStatus = (doc, statusId) => {
-    if (!doc?.assignments || !statusId) return [];
-    const targetId = statusId.toString();
-    
-    return doc.assignments.flatMap(assignment => 
-        (assignment.artworks || []).filter(artwork => {
-            const currentId = (artwork.status?._id || artwork.status)?.toString();
-            return currentId === targetId;
-        })
-    );
-};
-
-// Process email notifications and listing on Sell Page for approved artworks
-const processApprovals = async (doc, approvedArtworks, statuses) => {
-    const { Approved, Available } = statuses;
-    if (!Approved || approvedArtworks.length === 0 || !doc.artist?.length) return;
-
-    for (const artist of doc.artist) {
-        const email = artist.contact?.studentEmail || artist.email;
-        if (!email) continue;
-
-        const artistName = (artist.name && artist.name[0]?.value) || "Artist";
-        const submissionTitle = (doc.title && doc.title[0]?.value) || "Your Artwork";
-        const html = approvedSubmissionMail({ 
-            artistName, 
-            submissionTitle, 
-            approvalDate: new Date().toLocaleString() 
-        });
-
-        await sendMail(email, 'Submission Approved - Buddhist Art MFU', '', html);
-        console.log(`Approval email sent to ${email}`);
-
-        // List approved artworks in the main collection
-        for (const artwork of approvedArtworks) {
-            const existing = await Artwork.findOne({ image: artwork.image });
-            if (existing) continue;
-
-            await Artwork.create({
-                image: artwork.image,
-                title: artwork.title,
-                description: artwork.description,
-                artist: artist._id,
-                technique: artwork.technique,
-                size: artwork.size,
-                price: artwork.price || 0,
-                category: artwork.category,
-                status: {
-                    approval: Approved._id,
-                    sale: Available?._id || null
-                }
-            });
-        }
-    }
-};
-
-// Process email notifications for rejected artworks
-const processRejections = async (doc, rejectedArtworks) => {
-    if (rejectedArtworks.length === 0 || !doc.artist?.length) return;
-
-    for (const artist of doc.artist) {
-        const email = artist.contact?.studentEmail || artist.email;
-        if (!email) continue;
-
-        const artistName = (artist.name && artist.name[0]?.value) || "Artist";
-        const submissionTitle = (doc.title && doc.title[0]?.value) || "Your Artwork";
-        const html = rejectedSubmissionMail({ 
-            artistName, 
-            submissionTitle, 
-            reason: "Does not meet our current collection requirements." 
-        });
-
-        await sendMail(email, 'Update on Your Submission - Buddhist Art MFU', '', html);
-    }
-};
 
 // Handle student status transition (NewStudent -> OldStudent) after deadline
 const processStudentStatus = async (doc, statuses) => {
@@ -97,9 +17,9 @@ const processStudentStatus = async (doc, statuses) => {
 
     for (const artist of doc.artist) {
         const artistId = artist._id || artist;
-        
+
         // Check if artist participated in this submission
-        const hasSubmitted = (doc.assignments || []).some(assign => 
+        const hasSubmitted = (doc.assignments || []).some(assign =>
             (assign.artworks || []).some(aw => {
                 const ownerId = (aw.owner?._id || aw.owner)?.toString();
                 return ownerId === artistId.toString();
@@ -152,13 +72,14 @@ exports.onCreate = async (request, response) => {
 exports.onUpdate = async (request, response) => {
     try {
         const query = { _id: new mongo.ObjectId(request.body._id) };
+        const oldDoc = await Submission.onQuery(query);
         const doc = await Submission.onUpdate(query, request.body);
         if (!doc) return ResMessage.sendResponse(response, 0, 40400);
 
         // Fetch all relevant statuses in parallel
         const statusValues = ["Approved", "Rejected", "Available", "NewStudent", "OldStudent"];
         const statusDocs = await Status.find({ "title.value": { $in: statusValues } });
-        
+
         const statuses = statusDocs.reduce((acc, s) => {
             const titleEn = s.title.find(t => t.key === 'en')?.value;
             if (titleEn) acc[titleEn] = s;
@@ -166,8 +87,8 @@ exports.onUpdate = async (request, response) => {
         }, {});
 
         // Extract artworks by category
-        const approvedArtworks = getArtworksByStatus(doc, statuses.Approved?._id);
-        const rejectedArtworks = getArtworksByStatus(doc, statuses.Rejected?._id);
+        const approvedArtworks = getNewlyChangedArtworks(oldDoc, doc, statuses.Approved?._id);
+        const rejectedArtworks = getNewlyChangedArtworks(oldDoc, doc, statuses.Rejected?._id);
 
         // Process various side-effects
         await Promise.all([

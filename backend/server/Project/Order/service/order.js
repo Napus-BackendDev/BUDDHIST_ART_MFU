@@ -4,7 +4,7 @@ const Artwork = require('../../Artwork/controller/artwork');
 const Status = require('../../Settings/controller/status');
 const ResMessage = require("../../Settings/service/message");
 const { sendMail } = require("../../../../helpers/google/Mail");
-const { confirmationOrderMail } = require("../../Mail");
+const { confirmationOrderMail } = require("../../Mail/template");
 
 exports.onQuery = async function (request, response) {
     try {

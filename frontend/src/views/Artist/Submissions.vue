@@ -53,6 +53,9 @@ export default {
         },
         handleView(item) {
             this.$emit('view-detail', item._id);
+            if (this.$route.name === 'ArtistSubmissions') {
+                this.$router.push({ name: 'ArtistSubmissionsDetail', params: { id: item._id } });
+            }
         }
     }
 }
