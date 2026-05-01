@@ -117,9 +117,11 @@
             <!-- Student Selection Section -->
             <div class="student-selection-wrapper mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <label class="form-label mb-0">Select Students to Enroll</label>
-                    <div class="select-all-toggle" @click="toggleSelectAll">
-                        <span class="text-purple small font-weight-bold pointer">{{ allSelected ? 'Deselect All' : 'Select All' }}</span>
+                    <label class="form-label mb-0">Enroll Students</label>
+                    <div class="d-flex align-items-center">
+                        <div class="select-all-toggle" @click="toggleSelectAll">
+                            <span class="text-purple small font-weight-bold pointer">{{ allSelected ? 'Deselect New' : 'Select All New' }}</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -134,9 +136,13 @@
                 </div>
 
                 <div class="student-list-container">
+                    <!-- New Students Section -->
+                    <div v-if="newStudents.length > 0" class="student-group-divider mb-3">
+                        <span class="divider-text">New Students ({{ newStudents.length }})</span>
+                    </div>
                     <div 
-                        v-for="student in filteredStudents" 
-                        :key="student._id"
+                        v-for="student in newStudents" 
+                        :key="'new-'+student._id"
                         class="student-item"
                         :class="{ 'selected': isSelected(student._id) }"
                         @click="toggleStudent(student)"
@@ -153,6 +159,36 @@
                                 <div class="student-id-text">ID: {{ student.studentId }}</div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Old Students Section -->
+                    <div v-if="oldStudents.length > 0" class="student-group-divider mb-3 mt-4">
+                        <span class="divider-text">Returning Students ({{ oldStudents.length }})</span>
+                    </div>
+                    <div 
+                        v-for="student in oldStudents" 
+                        :key="'old-'+student._id"
+                        class="student-item"
+                        :class="{ 'selected': isSelected(student._id) }"
+                        @click="toggleStudent(student)"
+                    >
+                        <div class="d-flex align-items-center">
+                            <div class="check-box-custom mr-3" :class="{ 'checked': isSelected(student._id) }">
+                                <CIcon v-if="isSelected(student._id)" name="cil-check" size="sm" />
+                            </div>
+                            <div class="avatar-sm mr-3" :style="{ backgroundColor: getAvatarColor(getStudentName(student)) }">
+                                {{ getInitials(getStudentName(student)) }}
+                            </div>
+                            <div>
+                                <div class="student-name-text">{{ getStudentName(student) }}</div>
+                                <div class="student-id-text">ID: {{ student.studentId }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="filteredStudents.length === 0" class="text-center py-5">
+                        <CIcon name="cil-user-x" size="xl" class="text-muted mb-2" />
+                        <p class="text-muted small">No students found matching your search.</p>
                     </div>
                 </div>
             </div>
@@ -294,9 +330,23 @@ export default {
                 return name.includes(q) || studentId.includes(q);
             });
         },
+        newStudents() {
+            return this.filteredStudents.filter(s => this.isNewStudent(s));
+        },
+        oldStudents() {
+            return this.filteredStudents.filter(s => !this.isNewStudent(s));
+        },
         allSelected() {
-            const artists = this.availableStudents.filter(s => this.getRoleName(s.role) === 'Artist');
-            return artists.length > 0 && this.selectedStudents.length === artists.length;
+            // Updated to check only for New Students as per request
+            if (!this.availableStudents) return false;
+            const newArtists = this.availableStudents.filter(s => this.getRoleName(s.role) === 'Artist' && this.isNewStudent(s));
+            if (newArtists.length === 0) return false;
+            
+            const selectedNewIds = this.selectedStudents.filter(id => {
+                const s = this.availableStudents.find(st => st._id === id);
+                return s && this.isNewStudent(s);
+            });
+            return selectedNewIds.length === newArtists.length;
         },
         selectedStudentDetails() {
             if (!this.availableStudents) return [];
@@ -318,6 +368,17 @@ export default {
             }
             return 'User';
         },
+        isNewStudent(student) {
+            if (!student.status) return true;
+            let statusStr = '';
+            if (typeof student.status === 'string') statusStr = student.status;
+            else if (typeof student.status === 'object' && student.status.title && Array.isArray(student.status.title)) {
+                const titleEn = student.status.title.find(t => t.key === 'en');
+                if (titleEn) statusStr = titleEn.value;
+            }
+            const name = statusStr.toLowerCase();
+            return name.includes('new') || name.includes('ใหม่');
+        },
         addAssignment() {
             this.form.assignments.push({ id: Date.now(), title: '', startDateTime: '', endDateTime: '' });
         },
@@ -337,10 +398,19 @@ export default {
         },
         toggleSelectAll() {
             if (this.allSelected) {
-                this.selectedStudents = [];
+                // Remove only New Students from selection, keep Old ones
+                this.selectedStudents = this.selectedStudents.filter(id => {
+                    const s = this.availableStudents.find(st => st._id === id);
+                    return s && !this.isNewStudent(s);
+                });
             } else {
-                const artists = this.availableStudents.filter(s => this.getRoleName(s.role) === 'Artist');
-                this.selectedStudents = artists.map(s => s._id);
+                // Select all New Students and preserve current Old selections
+                const newArtists = this.availableStudents.filter(s => 
+                    this.getRoleName(s.role) === 'Artist' && this.isNewStudent(s)
+                );
+                const newIds = newArtists.map(s => s._id);
+                this.selectedStudents = [...new Set([...this.selectedStudents, ...newIds])];
+                this.$toast?.success(`Enrolled all ${newIds.length} new students.`);
             }
         },
         getInitials(name) {
@@ -796,6 +866,53 @@ export default {
 .student-id-text {
     font-size: 0.75rem;
     color: #64748b;
+}
+
+.student-group-divider {
+    display: flex;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.divider-text {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    background: #f8fafc;
+    padding-right: 12px;
+}
+
+.student-group-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.student-item-new {
+    border-left: 4px solid #10b981 !important;
+}
+
+.badge-new-pulse {
+    animation: badge-pulse 2s infinite;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+@keyframes badge-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.btn-pill-sm {
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 12px;
+    text-transform: uppercase;
 }
 
 .pointer { cursor: pointer; }
