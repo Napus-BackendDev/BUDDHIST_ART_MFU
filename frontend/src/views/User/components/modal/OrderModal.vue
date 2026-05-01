@@ -21,17 +21,12 @@
           <div class="mb-4 px-1">
               <h6 class="text-muted text-uppercase mb-3 small font-weight-bold">Documents</h6>
               <CRow>
-                  <CCol sm="4" class="mb-2">
+                  <CCol sm="6" class="mb-2">
                       <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
                           <CIcon name="cil-file" class="mr-2"/> Receipt
                       </CButton>
                   </CCol>
-                  <CCol sm="4" class="mb-2">
-                      <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
-                          <CIcon name="cil-description" class="mr-2"/> Certificate
-                      </CButton>
-                  </CCol>
-                  <CCol sm="4" class="mb-2">
+                  <CCol sm="6" class="mb-2">
                       <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
                           <CIcon name="cil-cloud-download" class="mr-2"/> Invoice
                       </CButton>
@@ -54,7 +49,18 @@
                   </div>
               </div>
               <div class="text-right">
-                  <span class="font-weight-bold text-primary">฿{{ art.price.toLocaleString() }}</span>
+                  <div class="font-weight-bold text-primary mb-1">฿{{ art.price.toLocaleString() }}</div>
+                  <CButton 
+                      v-if="order.statusName === 'Approved' || order.statusName === 'Completed'"
+                      size="sm" 
+                      color="dark" 
+                      variant="outline"
+                      class="px-2 py-1 text-nowrap"
+                      style="font-size: 0.75rem;"
+                      @click="downloadCertificate(art._id)"
+                  >
+                      <CIcon name="cil-description" class="mr-1" size="sm"/> Certificate
+                  </CButton>
               </div>
           </div>
        </div>
@@ -77,6 +83,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
@@ -100,6 +107,40 @@ export default {
       set(val) {
         this.$emit('update:show', val);
       }
+    }
+  },
+  methods: {
+    async downloadCertificate(art_id,order_id) {
+        const art = this.order.artwork.find(a => a._id === art_id);
+        if (!art) {
+          this.$store.commit('dialog/showToast', {
+            title: 'Error',
+            message: 'Artwork not found.',
+            variant: 'danger'
+          });
+          return;
+        }
+        const baseUrl = (process.env.VUE_APP_API_URL || '').replace(/\/$/, '');
+        try {
+          const response = await axios.post(
+            baseUrl + '/api/v1/order/generate-pdf',
+            {
+              artworkPath: art.image,
+              artwork_id: art_id,
+              order_id: this.order.orderId
+            },
+            { responseType: 'blob' }
+          );
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const blobUrl = window.URL.createObjectURL(blob);
+          window.open(blobUrl, '_blank');
+        } catch (error) {
+          this.$store.commit('dialog/showToast', {
+            title: 'Error',
+            message: 'Failed to generate certificate.',
+            variant: 'danger'
+          });
+        }
     }
   }
 }

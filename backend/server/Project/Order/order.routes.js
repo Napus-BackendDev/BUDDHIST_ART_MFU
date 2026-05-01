@@ -10,5 +10,6 @@ router.post("", orderService.onCreate);
 router.put("/upload", uploadImage("order", "image"), orderService.onUpload);
 router.put("", orderService.onUpdate);
 router.delete("", orderService.onDelete);
+router.post("/generate-pdf", orderService.onGeneratePDF);
 
 module.exports = router;

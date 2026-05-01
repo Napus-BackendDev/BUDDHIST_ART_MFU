@@ -20,6 +20,7 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
         news: "../public/data/uploads/news/",
         order: "../public/data/uploads/order/",
         submission: "../public/data/uploads/submission/",
+        certificate: "../public/data/uploads/certificate/"
       };
 
       const relativePath = paths[folderType];

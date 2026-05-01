@@ -5,6 +5,9 @@ const Status = require('../../Settings/controller/status');
 const ResMessage = require("../../Settings/service/message");
 const { sendMail } = require("../../../../helpers/google/Mail");
 const { confirmationOrderMail } = require("../../Mail/template");
+const { generateCertificate } = require('../../../../helpers/document/composite');
+const { getLangValue } = require('../../../../helpers/language');
+const fs = require('fs');
 
 exports.onQuery = async function (request, response) {
     try {
@@ -61,7 +64,7 @@ exports.onCreate = async function (request, response) {
         if (doc.artwork && doc.artwork.length > 0) {
             let artworkObj = doc.artwork[0];
             if (artworkObj.title && Array.isArray(artworkObj.title)) {
-                artworkTitle = artworkObj.title[0]?.value || "Artwork";
+                artworkTitle = getLangValue(artworkObj.title, 'en') || "Artwork";
             } else if (artworkObj.title) {
                 artworkTitle = artworkObj.title;
             }
@@ -146,6 +149,74 @@ exports.onDelete = async function (request, response) {
         const doc = await Order.onDelete(query);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
+        return ResMessage.sendResponse(response, 0, 40400);
+    }
+};
+
+exports.onGeneratePDF = async function (request, response) {
+    const { artworkPath, artwork_id, order_id } = request.body;
+    try {
+        // Query artwork by ID
+        const artwork = await Artwork.onQuery({ _id: new mongo.ObjectId(artwork_id) });
+        
+        if (!artwork) {
+            return ResMessage.sendResponse(response, 0, 40404, "Artwork not found");
+        }
+
+        // Build info from artwork
+        const info = {
+            artistName: (artwork.artist && (Array.isArray(artwork.artist.name) ? (artwork.artist.name.find(n => n.key === 'en')?.value || artwork.artist.name[0]?.value) : artwork.artist.name)) || 'Unknown Artist',
+            year: artwork.createdAt ? new Date(artwork.createdAt).getFullYear().toString() : '',
+            artworkNameTH: getLangValue(artwork.title, 'th') || '',
+            artworkNameEN: getLangValue(artwork.title, 'en') || '',
+            size: getLangValue(artwork.size, 'en') || '',
+            technique: getLangValue(artwork.technique, 'en') || '',
+            price: artwork.price || '',
+            description: getLangValue(artwork.description, 'en') || ''
+        };  
+
+        console.log("Info for PDF generation:", info);
+        console.log("Artwork path for PDF generation:", artworkPath);
+
+        const path = require('path');
+        let localArtworkPath = artworkPath;
+        // Convert HTTP URL from frontend to local absolute path
+        try {
+            let p = artworkPath;
+            if (artworkPath.startsWith('http')) {
+                p = new URL(artworkPath).pathname;
+            }
+            // If the path uses the /uploads alias, map it to the actual /data/uploads directory
+            if (p.startsWith('/uploads/')) {
+                p = '/data' + p;
+            }
+            if (p.startsWith('/')) {
+                localArtworkPath = path.join(__dirname, '../../../../public', p);
+            }
+        } catch (e) {
+            console.error("Path parsing error:", e);
+        }
+        const outputDir = path.join(__dirname, '../../../../public/certificates');
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+        const filename = `certificate-${order_id}-${artwork_id}-${Date.now()}.pdf`;
+        const outputPath = path.join(outputDir, filename);
+
+        // Signatures and outputPath left null/empty per user request
+        const docBuffer = await generateCertificate({
+            artworkPath: localArtworkPath,
+            signature1Path: null,
+            signature2Path: null,
+            info,
+            outputPath: null
+        });
+        fs.writeFileSync(outputPath, docBuffer);
+        response.setHeader('Content-Type', 'application/pdf');
+        response.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        return response.send(docBuffer);
+    } catch (err) {
+        console.error('Certificate Generation Error:', err);
         return ResMessage.sendResponse(response, 0, 40400);
     }
 };

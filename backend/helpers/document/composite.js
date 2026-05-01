@@ -120,11 +120,14 @@ const generateCertificate = async ({ artworkPath, signature1Path, signature2Path
 
             // 7. Save and Return
             const pdfBytes = await pdfDoc.save();
-            fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-            fs.writeFileSync(outputPath, pdfBytes);
-            
-            console.log(`Success: ${outputPath}`);
-            resolve(outputPath);
+            if (outputPath) {
+                fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+                fs.writeFileSync(outputPath, pdfBytes);
+                console.log(`Success: ${outputPath}`);
+                resolve(outputPath);
+            } else {
+                resolve(Buffer.from(pdfBytes));
+            }
 
         } catch (err) {
             console.error('Certificate Generation Error:', err);
