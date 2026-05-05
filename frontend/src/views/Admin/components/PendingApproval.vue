@@ -5,90 +5,74 @@
             <a href="#" class="view-all-link">View All</a>
         </CCardHeader>
         <CCardBody>
-            <div class="scrollable-list">
-                <!-- List Item 1 -->
-                <div class="pending-item">
+            <div class="scrollable-list" v-if="stats.latestPending && stats.latestPending.length > 0">
+                <div v-for="(item, index) in stats.latestPending" :key="index" class="pending-item">
                     <div class="d-flex align-items-center flex-grow-1">
-                        <div class="image-placeholder"></div>
+                        <div class="image-wrapper">
+                            <img v-if="item.image" :src="item.image" class="item-img" alt="Artwork">
+                            <div v-else class="image-placeholder"></div>
+                        </div>
                         <div class="ml-3">
-                            <div class="item-title">Abstract #44</div>
-                            <div class="item-subtitle">Mike Smith &bull; 5h ago</div>
+                            <div class="item-title">{{ getName('en', item.title) }}</div>
+                            <div class="item-subtitle">{{ item.artist ? getName('en', item.artist.name) : 'Unknown' }} &bull; {{ formatTimeAgo(item.createdAt) }}</div>
                         </div>
                     </div>
                     <div class="action-buttons">
-                        <CButton color="transparent" class="btn-icon p-1 text-success">
+                        <CButton color="transparent" class="btn-icon p-1 text-success" @click="onApprove(item)">
                             <CIcon name="cil-check-circle" size="lg" />
                         </CButton>
-                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2">
+                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2" @click="onReject(item)">
                             <CIcon name="cil-x-circle" size="lg" />
                         </CButton>
                     </div>
                 </div>
-
-                <!-- List Item 2 -->
-                <div class="pending-item">
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <div class="image-placeholder"></div>
-                        <div class="ml-3">
-                            <div class="item-title">Urban Chaos</div>
-                            <div class="item-subtitle">Sarah Lee &bull; 1d ago</div>
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <CButton color="transparent" class="btn-icon p-1 text-success">
-                            <CIcon name="cil-check-circle" size="lg" />
-                        </CButton>
-                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2">
-                            <CIcon name="cil-x-circle" size="lg" />
-                        </CButton>
-                    </div>
-                </div>
-
-                <!-- List Item 3 -->
-                <div class="pending-item">
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <div class="image-placeholder"></div>
-                        <div class="ml-3">
-                            <div class="item-title">Mountain Mist</div>
-                            <div class="item-subtitle">John Art &bull; 1d ago</div>
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <CButton color="transparent" class="btn-icon p-1 text-success">
-                            <CIcon name="cil-check-circle" size="lg" />
-                        </CButton>
-                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2">
-                            <CIcon name="cil-x-circle" size="lg" />
-                        </CButton>
-                    </div>
-                </div>
-
-                <!-- List Item 4 -->
-                <div class="pending-item">
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <div class="image-placeholder"></div>
-                        <div class="ml-3">
-                            <div class="item-title">Golden Hour</div>
-                            <div class="item-subtitle">Emily Rose &bull; 2d ago</div>
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <CButton color="transparent" class="btn-icon p-1 text-success">
-                            <CIcon name="cil-check-circle" size="lg" />
-                        </CButton>
-                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2">
-                            <CIcon name="cil-x-circle" size="lg" />
-                        </CButton>
-                    </div>
-                </div>
+            </div>
+            <div v-else class="text-center py-4 text-muted">
+                No pending approvals
             </div>
         </CCardBody>
     </CCard>
 </template>
 
 <script>
+import { mapState } from 'vuex';
+import moment from 'moment';
+
 export default {
-    name: 'PendingApproval'
+    name: 'PendingApproval',
+    computed: {
+        ...mapState('dashboard', ['stats', 'loading'])
+    },
+    methods: {
+        formatTimeAgo(date) {
+            return moment(date).fromNow();
+        },
+        getName(lang, obj) {
+            if (Array.isArray(obj)) {
+                return obj.find(i => i.key === lang)?.value || obj[0]?.value || 'N/A';
+            }
+            return obj || 'N/A';
+        },
+        async onApprove(item) {
+            if (confirm(`Are you sure you want to approve "${this.getName('en', item.title)}"?`)) {
+                try {
+                    await this.$store.dispatch('dashboard/approveArtwork', item);
+                    alert('Artwork approved successfully!');
+                } catch (err) {
+                    console.error('Approval Error:', err);
+                    alert('Failed to approve artwork.');
+                }
+            }
+        },
+        onReject(item) {
+            // Navigate to the related submission page
+            this.$router.push({
+                name: 'SubmissionsDetail',
+                params: { id: item.submissionId },
+                query: { highlight: item._id }
+            });
+        }
+    }
 }
 </script>
 
@@ -140,12 +124,24 @@ export default {
     background-color: #f1f3f5;
 }
 
-.image-placeholder {
+.image-wrapper {
     width: 48px;
     height: 48px;
-    background-color: #e2e4e8;
     border-radius: 10px;
+    overflow: hidden;
     flex-shrink: 0;
+}
+
+.item-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-placeholder {
+    width: 100%;
+    height: 100%;
+    background-color: #e2e4e8;
 }
 
 .item-title {

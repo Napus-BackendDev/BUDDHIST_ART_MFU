@@ -8,13 +8,24 @@ let transporter = nodemailer.createTransport({
     },
 });
 
-exports.sendMail = async function (to, subject, text, html) {
+/**
+ * Send an email with optional file attachments.
+ *
+ * @param {string}   to          - Recipient email address
+ * @param {string}   subject     - Email subject
+ * @param {string}   text        - Plain-text body (can be empty string)
+ * @param {string}   html        - HTML body
+ * @param {Array}    attachments - Optional nodemailer attachments array
+ *   e.g. [{ filename: 'reservation.pdf', content: <Buffer>, contentType: 'application/pdf' }]
+ */
+exports.sendMail = async function (to, subject, text, html, attachments = []) {
     let mailOptions = {
         from: `"Buddhist Art MFU" <${process.env.SMTP_USER}>`,
-        to,          // ผู้รับ
-        subject,     // หัวข้อ
-        text,        // ข้อความธรรมดา
-        html,        // ข้อความแบบ HTML
+        to,
+        subject,
+        text,
+        html,
+        ...(attachments.length > 0 && { attachments }),
     };
 
     try {

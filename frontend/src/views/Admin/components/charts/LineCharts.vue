@@ -18,7 +18,7 @@
                     </div>
                 </CCol>
             </CRow>
-            <CChartLine :datasets="defaultDatasets" :options="defaultOptions" :labels="labels"
+            <CChartLine :datasets="datasets" :options="defaultOptions" :labels="chartLabels"
                 style="height: 350px; margin-top: 20px;" />
         </CCardBody>
     </CCard>
@@ -26,6 +26,8 @@
 
 <script>
 import { CChartLine } from '@coreui/vue-chartjs'
+import { mapState } from 'vuex';
+import moment from 'moment';
 
 export default {
     name: 'LineCharts',
@@ -34,26 +36,51 @@ export default {
     },
     data() {
         return {
-            selectedPeriod: 'Month',
-            labels: [],
-            defaultDatasets: [
+            selectedPeriod: 'Month'
+        }
+    },
+    computed: {
+        ...mapState('dashboard', ['stats', 'loading']),
+        chartData() {
+            if (this.selectedPeriod === 'Month' && this.stats.charts.orders && this.stats.charts.orders.length > 0) {
+                return {
+                    labels: this.stats.charts.orders.map(o => moment(o._id).format('D MMM')),
+                    data: this.stats.charts.orders.map(o => o.count)
+                };
+            }
+            
+            // Fallback/Default mock logic for Day/Year or if Month has no data yet
+            let labels = [];
+            let data = [];
+
+            if (this.selectedPeriod === 'Month') {
+                labels = Array.from({ length: 30 }, (_, i) => `Day ${i + 1}`);
+                data = Array.from({ length: 30 }, () => Math.floor(Math.random() * 50));
+            } else if (this.selectedPeriod === 'Day') {
+                labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+                data = Array.from({ length: 24 }, () => Math.floor(Math.random() * 40) + 10);
+            } else if (this.selectedPeriod === 'Year') {
+                labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                data = Array.from({ length: 12 }, () => Math.floor(Math.random() * 50) + 20);
+            }
+
+            return { labels, data };
+        },
+        chartLabels() {
+            return this.chartData.labels;
+        },
+        datasets() {
+            return [
                 {
                     label: 'Orders',
                     backgroundColor: 'rgba(235, 97, 97, 0.05)',
                     borderColor: '#eb6161',
                     pointHoverBackgroundColor: '#eb6161',
                     borderWidth: 2,
-                    data: []
+                    data: this.chartData.data
                 }
-            ]
-        }
-    },
-    watch: {
-        selectedPeriod() {
-            this.updateChartData();
-        }
-    },
-    computed: {
+            ];
+        },
         defaultOptions() {
             return {
                 maintainAspectRatio: false,
@@ -69,7 +96,8 @@ export default {
                         },
                         ticks: {
                             fontColor: '#97a0ac',
-                            autoSkip: false,
+                            autoSkip: true,
+                            maxTicksLimit: 12,
                             maxRotation: 0,
                             minRotation: 0
                         }
@@ -113,51 +141,6 @@ export default {
                 }
             }
         }
-    },
-    methods: {
-        updateChartData() {
-            if (this.selectedPeriod === 'Month') {
-                // Generate labels mimicking the graph: 'Day 1', 'Day 3', ...
-                this.labels = Array.from({ length: 30 }, (_, i) => {
-                    const day = i + 1;
-                    if ([1, 3, 5, 7, 9, 12, 15, 18, 21, 24, 27, 30].includes(day)) {
-                        return `Day ${day}`;
-                    }
-                    return '';
-                });
-
-                // Smooth data curve mimicking the image peaks and valleys
-                const initialData = [
-                    31, 54, 28, 25, 43, 14, 13, 33, 57, 15,
-                    14, 13, 45, 47, 30, 17, 58, 31, 51, 39,
-                    38, 24, 45, 52, 53, 27, 41, 15, 12, 16
-                ];
-                this.defaultDatasets[0].data = initialData;
-
-            } else if (this.selectedPeriod === 'Day') {
-                // Labels for 24 hours in a day
-                this.labels = Array.from({ length: 24 }, (_, i) => {
-                    if (i % 3 === 0) return `${i}:00`;
-                    return '';
-                });
-
-                // Randomly generated hourly data
-                this.defaultDatasets[0].data = Array.from({ length: 24 }, () => Math.floor(Math.random() * 40) + 10);
-
-            } else if (this.selectedPeriod === 'Year') {
-                // Labels for 12 months
-                this.labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-                // Randomly generated monthly data
-                this.defaultDatasets[0].data = Array.from({ length: 12 }, () => Math.floor(Math.random() * 50) + 20);
-            }
-
-            // Force chart update by slightly mutating the dataset reference
-            this.defaultDatasets = [...this.defaultDatasets];
-        }
-    },
-    created() {
-        this.updateChartData();
     }
 }
 </script>

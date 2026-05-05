@@ -1,13 +1,15 @@
+const path = require('path');
 const mongo = require('mongodb');
-const Order = require('../controller/order');
-const Artwork = require('../../Artwork/controller/artwork');
-const Status = require('../../Settings/controller/status');
-const ResMessage = require("../../Settings/service/message");
-const { sendMail } = require("../../../../helpers/google/Mail");
-const { confirmationOrderMail } = require("../../Mail/template");
-const { generateCertificate } = require('../../../../helpers/document/composite');
-const { getLangValue } = require('../../../../helpers/language');
-const fs = require('fs');
+const fs    = require('fs');
+const Order    = require('../controller/order');
+const Artwork  = require('../../Artwork/controller/artwork');
+const Status   = require('../../Settings/controller/status');
+const ResMessage         = require('../../Settings/service/message');
+const { sendMail }       = require('../../../../helpers/google/Mail');
+const { confirmationOrderMail } = require('../../Mail/template');
+const { generateCertificate }   = require('../../../../helpers/document/composite');
+const { generateReservationPDF } = require('../../../../helpers/document/appointment');
+const { getLangValue }   = require('../../../../helpers/language');
 
 exports.onQuery = async function (request, response) {
     try {
@@ -35,14 +37,12 @@ exports.onCreate = async function (request, response) {
 
         // After order is created, update artwork statuses to Sold Out
         if (doc && doc.artwork && doc.artwork.length > 0) {
-            // Find the "Sold Out" status
             const soldOutStatus = await Status.onQuery({
                 "title.value": "Sold Out",
                 "title.key": "en"
             });
 
             if (soldOutStatus) {
-                // Update each artwork status.sale
                 for (let artworkId of doc.artwork) {
                     await Artwork.onUpdate(
                         { _id: new mongo.ObjectId(artworkId) },
@@ -52,35 +52,57 @@ exports.onCreate = async function (request, response) {
             }
         }
 
-        // Prepare email data
-        const buyerName = doc.contact?.name || "Customer";
-        const to = doc.contact?.email;
-        const orderId = doc._id;
-        let artworkTitle = "";
-        let price = 0;
-        let orderDate = doc.createdAt ? new Date(doc.createdAt).toLocaleString() : new Date().toLocaleString();
+        // ── Email preparation ──────────────────────────────────────────────
+        const buyerName  = doc.contact?.name  || 'Customer';
+        const to         = doc.contact?.email;
+        const orderId    = doc._id;
+        const orderDate  = doc.createdAt
+            ? new Date(doc.createdAt).toLocaleString()
+            : new Date().toLocaleString();
 
-        // If artwork is populated and available
-        if (doc.artwork && doc.artwork.length > 0) {
-            let artworkObj = doc.artwork[0];
-            if (artworkObj.title && Array.isArray(artworkObj.title)) {
-                artworkTitle = getLangValue(artworkObj.title, 'en') || "Artwork";
-            } else if (artworkObj.title) {
-                artworkTitle = artworkObj.title;
+        // Collect all artworks for multi-item support
+        const artworkList = doc.artwork && doc.artwork.length > 0 ? doc.artwork : [];
+
+        // Build display values for the email template
+        const artworkTitle = artworkList
+            .map(a => {
+                if (a.title && Array.isArray(a.title)) return getLangValue(a.title, 'en') || 'Artwork';
+                if (a.title) return a.title;
+                return 'Artwork';
+            })
+            .join(', ') || 'Artwork';
+
+        const totalPrice = artworkList.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+
+        // ── Generate reservation PDF ───────────────────────────────────────
+        let pdfAttachments = [];
+        if (to) {
+            try {
+                const pdfBuffer = await generateReservationPDF({
+                    order: doc,
+                    artworks: artworkList,
+                });
+                pdfAttachments = [{
+                    filename:    `reservation-${orderId}.pdf`,
+                    content:     pdfBuffer,
+                    contentType: 'application/pdf',
+                }];
+            } catch (pdfErr) {
+                console.error('Reservation PDF generation failed (email will send without attachment):', pdfErr.message);
             }
-            price = artworkObj.price || 0;
         }
 
-        // Send confirmation email if email exists
+        // ── Send confirmation email ────────────────────────────────────────
         if (to) {
             const html = confirmationOrderMail({
                 buyerName,
                 orderId,
                 artworkTitle,
-                price,
-                orderDate
+                price: totalPrice,
+                orderDate,
             });
-            sendMail(to, 'Order Confirmation - Buddhist Art MFU', '', html);
+            sendMail(to, 'Order Confirmation - Buddhist Art MFU', '', html, pdfAttachments)
+                .catch(err => console.error('Confirmation email failed:', err.message));
         }
 
         return ResMessage.sendResponse(response, 0, 20000, doc);
@@ -128,7 +150,7 @@ exports.onUpdate = async function (request, response) {
                         // So art is an object, we need art._id
                         await Artwork.onUpdate(
                             { _id: new mongo.ObjectId(art._id) },
-                            { "status.sale": availableStatus._id }
+                        { "status.sale": availableStatus._id }
                         );
                     }
                 }
@@ -175,10 +197,6 @@ exports.onGeneratePDF = async function (request, response) {
             description: getLangValue(artwork.description, 'en') || ''
         };  
 
-        console.log("Info for PDF generation:", info);
-        console.log("Artwork path for PDF generation:", artworkPath);
-
-        const path = require('path');
         let localArtworkPath = artworkPath;
         // Convert HTTP URL from frontend to local absolute path
         try {
@@ -197,9 +215,7 @@ exports.onGeneratePDF = async function (request, response) {
             console.error("Path parsing error:", e);
         }
         const outputDir = path.join(__dirname, '../../../../public/certificates');
-        if (!fs.existsSync(outputDir)) {
-            fs.mkdirSync(outputDir, { recursive: true });
-        }
+        fs.mkdirSync(outputDir, { recursive: true });
         const filename = `certificate-${order_id}-${artwork_id}-${Date.now()}.pdf`;
         const outputPath = path.join(outputDir, filename);
 

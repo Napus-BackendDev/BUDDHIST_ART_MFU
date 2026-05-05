@@ -4,6 +4,7 @@ const createBaseService = require('../../../../helpers/base.service')
 
 const defaultPopulate = [
     { path: 'artist' },
+    { path: 'assignments.artist' },
     { path: 'assignments.artworks.owner' },
     { path: 'assignments.artworks.status' }
 ];

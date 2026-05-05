@@ -14,7 +14,7 @@
                 <PendingApproval class="h-100" />
             </CCol>
         </CRow>
-        <OrderTable />
+        <OrderTable :items="artworks" />
     </div>
 </template>
 
@@ -24,6 +24,7 @@ import HeaderHero from './components/HeaderHero.vue'
 import LineCharts from './components/charts/LineCharts.vue';
 import PendingApproval from './components/PendingApproval.vue';
 import OrderTable from './components/table/AdminTable.vue';
+import { mapState, mapActions } from 'vuex';
 
 export default {
     name: 'Overview',
@@ -34,8 +35,14 @@ export default {
         PendingApproval,
         OrderTable
     },
-    data() {
-        return {}
+    computed: {
+        ...mapState('artwork', ['artworks'])
+    },
+    methods: {
+        ...mapActions('artwork', ['get'])
+    },
+    mounted() {
+        this.get();
     }
 }
 </script>
