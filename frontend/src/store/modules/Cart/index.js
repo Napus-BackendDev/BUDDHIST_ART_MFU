@@ -70,7 +70,7 @@ const actions = {
                     }, 15 * 60 * 1000);
                 } catch (apiError) {
                     // API returned error (e.g., 400 Bad Request because someone else took it)
-                    alert('ขออภัย ผลงานชิ้นนี้ถูกผู้อื่นหยิบใส่ตะกร้าไปแล้วเมื่อสักครู่นี้');
+                    alert('ขออภัย ผลงานชิ้นนี้ถูกผู้อื่นหยิบใส่ตะกร้าไปแล้วเมื่อสักครู่นี้ กรุณาติดต่อเจ้าหน้าที่');
                     dispatch('artwork/get', null, { root: true });
                     return; // exit without committing to cart
                 }
