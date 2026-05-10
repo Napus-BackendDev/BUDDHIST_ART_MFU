@@ -50,10 +50,6 @@ const SubmissionModule = {
             let imageUrl = '';
             if (artwork._image) {
                 const formData = new FormData();
-                formData.append('image', artwork._image);
-
-                // --- เพิ่มข้อมูลประกอบเพื่อให้ Backend จัดการโฟลเดอร์ได้ ---
-                formData.append('_id', submissionId); // ID ของ Submission หลัก
 
                 // หาชื่อ Assignment และ Artwork เพื่อส่งไปเป็นชื่อโฟลเดอร์/ไฟล์
                 const submission = state.submissions.find(s => s._id === submissionId);
@@ -65,8 +61,13 @@ const SubmissionModule = {
                     return field.en || field.th || '';
                 };
 
+                // --- ใส่ข้อมูลข้อความก่อนเพื่อให้ Multer อ่านเจอตอนทำ Destination ---
+                formData.append('_id', submissionId);
                 formData.append('assignmentTitle', getVal(assignment?.title));
                 formData.append('artworkTitle', getVal(artwork.title));
+
+                // --- รูปต้องอยู่บรรทัดสุดท้ายเสมอ ---
+                formData.append('image', artwork._image);
                 // --------------------------------------------------
 
                 const uploadRes = await Service.submission('upload', formData);

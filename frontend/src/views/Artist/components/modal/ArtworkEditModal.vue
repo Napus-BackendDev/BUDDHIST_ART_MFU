@@ -340,7 +340,8 @@ export default {
             if (!this.statuses) return [];
             return this.statuses.filter(s => {
                 const groupName = s.group ? this.getName('en', s.group).trim() : '';
-                return groupName === 'Sale Status';
+                const statusName = this.getName('en', s).trim();
+                return groupName === 'Sale Status' && statusName !== 'Sold Out';
             });
         },
         approvalStatuses() {
