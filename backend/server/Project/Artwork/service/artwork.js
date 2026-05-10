@@ -40,13 +40,11 @@ exports.onCreate = async function (request, response) {
     };
 
     if (isArray) {
-      const results = [];
-      for (const item of data) {
-        const cleaned = cleanObject(item);
-        const doc = await Artwork.onCreate(cleaned);
-        results.push(doc);
-      }
-      console.log(`Backend Bulk Create - Success count: ${results.length}`);
+      // ใช้ Promise.all เพื่อให้รันขนานกันและทำงานผ่าน Mongoose Hooks ทุกตัว
+      const results = await Promise.all(
+        data.map(item => Artwork.onCreate(cleanObject(item)))
+      );
+      console.log(`Backend Bulk Create (Parallel) - Success count: ${results.length}`);
       return ResMessage.sendResponse(response, 0, 20000, results);
     } else {
       const cleaned = cleanObject(data);
@@ -63,7 +61,9 @@ exports.onUpload = async function (request, response) {
   try {
     let query = {};
     query._id = new mongo.ObjectId(request.body._id);
-    const imagePath = `${request.protocol}://${request.get('host')}/uploads/artwork/${request.file.filename}`;
+    
+    // ใช้ Helper แทนการ Hardcode path
+    const imagePath = Artwork.getImageUrl(request, request.file.destination, request.file.filename);
 
     const doc = await Artwork.onUpdate(query, { image: imagePath }, [], "image");
     return ResMessage.sendResponse(response, 0, 20000, doc);

@@ -9,7 +9,7 @@ module.exports = {
     debug: true,
     key:process.env.KEY,
     mongoURI: process.env.MONGODB,
-    // mongoURI: 'mongodb+srv://'+process.env.MONGO_USER+':'+process.env.MONGO_PASS+'@'+process.env.MONGO_HOST+'/'+process.env.MONGO_NAME+'?authSource=admin',
+    jwtSecret: process.env.JWT_SECRET,
     timeout: process.env.TIMEOUT,
     tokenLength: process.env.TOKENLANGTH,
     tokenExpired: (86400000 * process.env.TOKENEXPIRED),

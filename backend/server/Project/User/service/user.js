@@ -23,6 +23,9 @@ exports.onQuerys = async function (request, response) {
     }
 };
 
+const cfg = require('../../../../config/config');
+const jwt = require('jsonwebtoken');
+
 exports.onSignIn = async function (request, response) {
     try {
         const { username, password } = request.body;
@@ -48,8 +51,12 @@ exports.onSignIn = async function (request, response) {
             // Overwrite role with the English string name for frontend routing logic
             userData.role = roleName;
             
-            // Append the dummy token
-            userData.token = "1a661eec9bf358b8567c3dc022146d19c69d2ceafe92f503e89391e5d9f9f739";
+            // Generate real JWT using global config
+            userData.token = jwt.sign(
+                { userId: user._id, role: roleName },
+                cfg.jwtSecret,
+                { expiresIn: cfg.tokenExpired / 1000 } // Convert ms to seconds
+            );
             
             return ResMessage.sendResponse(response, 0, 20000, userData);
         } else {

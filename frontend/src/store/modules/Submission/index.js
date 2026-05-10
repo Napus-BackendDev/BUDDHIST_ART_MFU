@@ -46,11 +46,29 @@ const SubmissionModule = {
         },
         async submitWork({ dispatch, state, rootGetters }, payload) {
             const { submissionId, assignmentId, artwork } = payload;
-            
+
             let imageUrl = '';
             if (artwork._image) {
                 const formData = new FormData();
                 formData.append('image', artwork._image);
+
+                // --- เพิ่มข้อมูลประกอบเพื่อให้ Backend จัดการโฟลเดอร์ได้ ---
+                formData.append('_id', submissionId); // ID ของ Submission หลัก
+
+                // หาชื่อ Assignment และ Artwork เพื่อส่งไปเป็นชื่อโฟลเดอร์/ไฟล์
+                const submission = state.submissions.find(s => s._id === submissionId);
+                const assignment = submission?.assignments?.find(a => a._id === assignmentId);
+                const getVal = (field) => {
+                    if (!field) return '';
+                    if (typeof field === 'string') return field;
+                    if (Array.isArray(field)) return field[0]?.value || '';
+                    return field.en || field.th || '';
+                };
+
+                formData.append('assignmentTitle', getVal(assignment?.title));
+                formData.append('artworkTitle', getVal(artwork.title));
+                // --------------------------------------------------
+
                 const uploadRes = await Service.submission('upload', formData);
                 imageUrl = uploadRes.data.data.url;
             }
@@ -65,7 +83,7 @@ const SubmissionModule = {
             if (!assignment.artworks) assignment.artworks = [];
 
             const currentUserId = rootGetters['auth/userId'];
-            
+
             const newArtwork = {
                 title: artwork.title,
                 description: artwork.description,

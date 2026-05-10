@@ -5,7 +5,6 @@
             :show.sync="isAuthe"
             :centered="true"
             :close-on-backdrop="true"
-            size="md"
         >
           <template #header-wrapper>
             <div class="px-4 pt-4 text-right">

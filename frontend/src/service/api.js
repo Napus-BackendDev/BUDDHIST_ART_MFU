@@ -44,7 +44,9 @@ instance.interceptors.response.use(
     },
     (error) => {
       if (error.response && error.response.status === 401) {
-          // Optional: handle unauthorized
+          // Clear local storage and redirect to login on unauthorized
+          localStorage.removeItem('objs');
+          window.location.href = '/#/pages/login';
       }
       return Promise.reject(error);
     }

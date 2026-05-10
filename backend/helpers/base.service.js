@@ -3,6 +3,22 @@ module.exports = function createBaseService(objSchema, defaultPopulate = []) {
 
     return {
         // ====================================
+        // 🔹 Helpers
+        // ====================================
+        getImageUrl: (request, folderPath, filename) => {
+            if (!filename) return null;
+            const baseUrl = `${request.protocol}://${request.get('host')}`;
+            
+            // Normalize path for Windows/Unix and extract web-relative path
+            let webPath = folderPath.replace(/\\/g, '/'); 
+            webPath = webPath.replace(/.*\/public\//, ''); 
+            
+            if (webPath && !webPath.endsWith('/')) webPath += '/';
+            
+            return `${baseUrl}/${webPath}${filename}`;
+        },
+
+        // ====================================
         // 🔹 Aggregate
         // ====================================
         onAggregate: async (pipeline = [], options = {}) => {
@@ -51,6 +67,13 @@ module.exports = function createBaseService(objSchema, defaultPopulate = []) {
                 }
             });
             return result;
+        },
+
+        // ====================================
+        // 🔹 Create Many (Bulk)
+        // ====================================
+        onCreateMany: async (dataList) => {
+            return objSchema.insertMany(dataList);
         },
 
         // ====================================

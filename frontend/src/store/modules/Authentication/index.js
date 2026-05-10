@@ -57,24 +57,26 @@ const LoginModule = {
                     // Clear any old corrupted state just to be safe
                     localStorage.removeItem('objs');
 
+                    const token = response.data.token || response.data.data.token;
                     // Store user data properly
                     localStorage.setItem('objs', JSON.stringify({
-                        xAccessToken: response.data.token || response.data.data.token,
+                        xAccessToken: token,
                         accounts: user._id,
                         role: role
                     }));
 
-                    store.commit("auth/isSignIn", false); // Close modal if used as modal
+                    store.commit('xAccessToken', token); // Update root store immediately
+                    store.commit("auth/isSignIn", false);
                     store.commit("auth/userId", user._id);
 
                     // Redirection Logic (Avoid NavigationDuplicated)
                     if (router.currentRoute.path !== '/payment') {
                         const userRole = (role || 'Customer').toLowerCase();
                         let target = '/user';
-                        
+
                         if (userRole === 'admin') target = '/admin';
                         else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
-                        
+
                         if (router.currentRoute.path !== target) {
                             router.push(target).catch(err => {
                                 if (err.name !== 'NavigationDuplicated') throw err;
@@ -107,24 +109,26 @@ const LoginModule = {
                     const user = response.data.data;
                     const role = user.role || 'Customer';
 
+                    const token = response.data.token || response.data.data.token;
                     // Store user data properly
                     localStorage.setItem('objs', JSON.stringify({
-                        xAccessToken: response.data.token || response.data.data.token,
+                        xAccessToken: token,
                         accounts: user._id,
                         role: role
                     }));
 
-                    store.commit("auth/isSignIn", false); 
+                    store.commit('xAccessToken', token); // Update root store immediately
+                    store.commit("auth/isSignIn", false);
                     store.commit("auth/userId", user._id);
 
                     // Redirection Logic (Avoid NavigationDuplicated)
                     if (router.currentRoute.path !== '/payment') {
                         const userRole = (role || 'Customer').toLowerCase();
                         let target = '/user';
-                        
+
                         if (userRole === 'admin') target = '/admin';
                         else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
-                        
+
                         if (router.currentRoute.path !== target) {
                             router.push(target).catch(err => {
                                 if (err.name !== 'NavigationDuplicated') throw err;

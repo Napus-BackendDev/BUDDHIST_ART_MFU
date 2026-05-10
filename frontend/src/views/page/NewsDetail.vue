@@ -132,6 +132,11 @@ export default {
 </script>
 
 <style scoped>
+.news-detail-wrapper {
+    padding-top: 0 !important;
+    margin-top: -2rem !important;
+}
+
 .article-content {
     font-size: 1.2rem;
     line-height: 1.8;
