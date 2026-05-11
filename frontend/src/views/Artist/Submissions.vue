@@ -93,7 +93,8 @@ export default {
     name: 'ArtistSubmissions',
     computed: {
         ...mapGetters({
-            submissions: 'submission/submissions'
+            submissions: 'submission/submissions',
+            userId: 'auth/userId'
         })
     },
     created() {
@@ -101,7 +102,7 @@ export default {
     },
     methods: {
         fetchSubmissions() {
-            const userId = this.$store.getters['auth/userId'];
+            const userId = this.userId;
             this.$store.dispatch('submission/get', { artist: userId });
         },
         handleView(item) {
@@ -130,13 +131,25 @@ export default {
             return item.assignments ? item.assignments.length : 0;
         },
         calculateProgress(item) {
-            if (!item.assignments || item.assignments.length === 0 || !item.artist || item.artist.length === 0) return 0;
-            const totalPossible = item.assignments.length * item.artist.length;
-            let totalSubmitted = 0;
+            if (!item.assignments || item.assignments.length === 0) return 0;
+            
+            const totalAssignments = item.assignments.length;
+            let submittedAssignmentsCount = 0;
+            const currentUserId = this.userId;
+
             item.assignments.forEach(assign => {
-                totalSubmitted += assign.artworks ? assign.artworks.length : 0;
+                // เช็คว่าในหัวข้อนี มีรูปทีเป็นของเรา (owner) ส่งไปแล้วอย่างน้อย 1 รูปหรือไม่
+                const hasMyWork = assign.artworks && assign.artworks.some(art => {
+                    const ownerId = art.owner?._id || art.owner;
+                    return String(ownerId) === String(currentUserId);
+                });
+
+                if (hasMyWork) {
+                    submittedAssignmentsCount++;
+                }
             });
-            return Math.round((totalSubmitted / totalPossible) * 100);
+
+            return Math.round((submittedAssignmentsCount / totalAssignments) * 100);
         },
         getStatusLabel(item, lang = 'en') {
             if (!item.create || !item.create.startAt || !item.create.endAt) return lang === 'en' ? 'N/A' : 'ไม่มีข้อมูล';

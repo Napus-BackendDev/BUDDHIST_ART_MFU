@@ -4,6 +4,8 @@ const uploadImage = require('../../../middleware/uploadMiddleware');
 
 const orderService = require("./service/order")
 
+router.get("/invoice/:id", orderService.onDownloadInvoice);
+router.get("/certificate/:id", orderService.onDownloadCertificate);
 router.get("", orderService.onQuerys);
 router.post("/order", orderService.onQuerys);
 router.post("", orderService.onCreate);

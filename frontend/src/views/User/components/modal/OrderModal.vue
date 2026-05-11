@@ -9,7 +9,7 @@
        <div class="d-flex flex-column flex-sm-row justify-content-between mb-5">
           <div class="mb-3 mb-sm-0">
              <h6 class="text-muted text-uppercase mb-1 font-weight-bold">Order ID</h6>
-             <h5 class="font-weight-bold text-dark mb-0">#{{ order.orderId }}</h5>
+             <h5 class="font-weight-bold text-dark mb-0">#{{ order.orderNumber || order.orderId }}</h5>
           </div>
           <div class="text-sm-right">
              <h6 class="text-muted text-uppercase mb-1 font-weight-bold">Order Date</h6>
@@ -20,67 +20,77 @@
        <!-- Document Downloads -->
        <div class="mb-5">
            <h6 class="text-muted text-uppercase mb-3 font-weight-bold">Documents</h6>
-           <CRow>
-               <CCol sm="4" class="mb-2">
-                   <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
-                       <CIcon name="cil-file" class="mr-2"/> Receipt
-                   </CButton>
-               </CCol>
-               <CCol sm="4" class="mb-2">
-                   <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
-                       <CIcon name="cil-description" class="mr-2"/> Certificate
-                   </CButton>
-               </CCol>
-               <CCol sm="4" class="mb-2">
-                   <CButton block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2">
-                       <CIcon name="cil-cloud-download" class="mr-2"/> Invoice
-                   </CButton>
-               </CCol>
-           </CRow>
-       </div>
+            <CRow>
+                <CCol sm="4" class="mb-2">
+                    <CButton 
+                        block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2"
+                        @click="downloadReceipt"
+                        :disabled="!order.image"
+                    >
+                        <CIcon name="cil-file" class="mr-2"/> Receipt
+                    </CButton>
+                </CCol>
+                <CCol sm="4" class="mb-2">
+                    <CButton 
+                        block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2"
+                        @click="downloadCertificate"
+                    >
+                        <CIcon name="cil-description" class="mr-2"/> Certificate
+                    </CButton>
+                </CCol>
+                <CCol sm="4" class="mb-2">
+                    <CButton 
+                        block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2"
+                        @click="downloadInvoice"
+                    >
+                        <CIcon name="cil-cloud-download" class="mr-2"/> Invoice
+                    </CButton>
+                </CCol>
+            </CRow>
+        </div>
 
-       <!-- Addresses -->
-       <div class="mb-5" v-if="order.address">
-           <CRow>
-               <CCol sm="6" class="mb-3 mb-sm-0">
-                   <h6 class="text-muted text-uppercase mb-2 font-weight-bold">Billing Address</h6>
-                   <div class="small text-dark mb-0 bg-white p-3 rounded shadow-sm h-100">{{ order.address.bill || '-' }}</div>
-               </CCol>
-               <CCol sm="6">
-                   <h6 class="text-muted text-uppercase mb-2 font-weight-bold">Shipping Address</h6>
-                   <div class="small text-dark mb-0 bg-white p-3 rounded shadow-sm h-100">{{ order.address.shipping || '-' }}</div>
-               </CCol>
-           </CRow>
-       </div>
+        <!-- Addresses -->
+        <div class="mb-5" v-if="order.address">
+            <CRow>
+                <CCol sm="6" class="mb-3 mb-sm-0">
+                    <h6 class="text-muted text-uppercase mb-2 font-weight-bold">Billing Address</h6>
+                    <div class="small text-dark mb-0 bg-white p-3 rounded shadow-sm h-100">{{ order.address.bill || '-' }}</div>
+                </CCol>
+                <CCol sm="6">
+                    <h6 class="text-muted text-uppercase mb-2 font-weight-bold">Shipping Address</h6>
+                    <div class="small text-dark mb-0 bg-white p-3 rounded shadow-sm h-100">{{ order.address.shipping || '-' }}</div>
+                </CCol>
+            </CRow>
+        </div>
 
-       <!-- Artwork List -->
-       <div class="mb-5">
-          <h6 class="text-muted text-uppercase mb-3 font-weight-bold">Items</h6>
-          <div v-for="art in order.artwork" :key="art._id" class="d-flex align-items-center mb-3 bg-white p-3 rounded-lg shadow-sm">
-              <div class="art-img-preview mr-3 rounded overflow-hidden" style="width: 60px; height: 60px;">
-                  <img :src="art.image" class="w-100 h-100" style="object-fit: cover;" />
-              </div>
-              <div class="flex-grow-1">
-                  <h6 class="font-weight-bold mb-0 text-dark">{{ getName('en', art) }}</h6>
-                  <div class="small text-muted">
-                    {{ art.category ? getName('en', art.category) : '' }}
-                    <span v-if="art.artist">by {{ getName('en', art.artist) }}</span>
-                  </div>
-              </div>
-              <div class="text-right">
-                  <span class="font-weight-bold text-primary">฿{{ art.price.toLocaleString() }}</span>
-              </div>
-          </div>
-       </div>
+        <!-- Artwork List -->
+        <div class="mb-5">
+           <h6 class="text-muted text-uppercase mb-3 font-weight-bold">Items</h6>
+           <div v-for="art in order.artwork" :key="art._id" class="d-flex align-items-center mb-3 bg-white p-3 rounded-lg shadow-sm">
+               <div class="art-img-preview mr-3 rounded overflow-hidden" style="width: 60px; height: 60px;">
+                   <img :src="art.image" class="w-100 h-100" style="object-fit: cover;" />
+               </div>
+               <div class="flex-grow-1">
+                   <h6 class="font-weight-bold mb-0 text-dark">{{ getName('en', art) }}</h6>
+                   <div class="small text-muted">
+                     {{ art.category ? getName('en', art.category) : '' }}
+                     <span v-if="art.artist">by {{ getName('en', art.artist) }}</span>
+                   </div>
+               </div>
+               <div class="text-right">
+                   <span class="font-weight-bold text-primary">฿{{ art.price.toLocaleString() }}</span>
+               </div>
+           </div>
+        </div>
 
-       <!-- Total Amount -->
-       <div class="bg-white p-3 rounded-lg shadow-sm mb-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="font-weight-bold text-dark mb-0">Total Amount</h5>
-                <h4 class="font-weight-bold text-primary mb-0">฿{{ order.total.toLocaleString() }}</h4>
-            </div>
-       </div>
-    </div>
+        <!-- Total Amount -->
+        <div class="bg-white p-3 rounded-lg shadow-sm mb-0">
+             <div class="d-flex justify-content-between align-items-center">
+                 <h5 class="font-weight-bold text-dark mb-0">Total Amount</h5>
+                 <h4 class="font-weight-bold text-primary mb-0">฿{{ order.total.toLocaleString() }}</h4>
+             </div>
+        </div>
+     </div>
     <template #footer>
       <CButton @click="localShow = false" color="dark" shape="pill" class="px-4 font-weight-bold shadow-sm hover-lift btn-premium w-100">
         Close
@@ -91,6 +101,7 @@
 
 <script>
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import Service from '@/service/api';
 
 export default {
   name: 'OrderModal',
@@ -113,6 +124,38 @@ export default {
       set(val) {
         this.$emit('update:show', val);
       }
+    }
+  },
+  methods: {
+    downloadReceipt() {
+        if (this.order.image) {
+            window.open(this.order.image, '_blank');
+        }
+    },
+    async downloadInvoice() {
+        try {
+            const res = await Service.order('invoice', this.order._id);
+            this.downloadFile(res.data, `Invoice_${this.order.orderNumber || this.order._id}.pdf`);
+        } catch (error) {
+            console.error('Download Invoice Error:', error);
+        }
+    },
+    async downloadCertificate() {
+        try {
+            const res = await Service.order('certificate', this.order._id);
+            this.downloadFile(res.data, `Certificate_${this.order.orderNumber || this.order._id}.pdf`);
+        } catch (error) {
+            console.error('Download Certificate Error:', error);
+        }
+    },
+    downloadFile(data, fileName) {
+        const url = window.URL.createObjectURL(new Blob([data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
   }
 }

@@ -23,8 +23,8 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
       const resolvePath = async () => {
         try {
           const id = req.body._id;
-          // Default path if something goes wrong
-          let relativePath = `../public/data/uploads/${folderType}/`;
+          // Default path for system docs
+          let relativePath = `../public/system/doc/`;
 
           if (id && mongoose.Types.ObjectId.isValid(id)) {
             if (folderType === 'news') {
@@ -33,7 +33,7 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
               if (doc) {
                 const title = sanitize(doc.title);
                 const timestamp = doc.create?.datetime ? new Date(doc.create.datetime).getTime() : Date.now();
-                relativePath = `../public/data/uploads/news/${title}_${timestamp}/`;
+                relativePath = `../public/system/new/${title}_${timestamp}/`;
               }
             }
             else if (folderType === 'artwork') {
@@ -41,10 +41,11 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
               const doc = await Artwork.findById(id).populate('artist');
               if (doc && doc.artist) {
                 const artistName = sanitize(doc.artist.name);
-                const studentId = doc.artist.studentId || "unknown";
+                const studentId = doc.artist.studentId || doc.artist._id;
                 const artworkTitle = sanitize(doc.title);
-                relativePath = `../public/data/uploads/${studentId}_${artistName}/Artwork/`;
-                file.customFilename = artworkTitle; // Save for filename function
+                // Structure: Artist/[ID]_[Name]/Artwork/[Title]/
+                relativePath = `../public/account/Artist/${studentId}_${artistName}/Artwork/${artworkTitle}/`;
+                file.customFilename = artworkTitle;
               }
             }
             else if (folderType === 'submission') {
@@ -53,13 +54,13 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
               if (doc) {
                 const artist = Array.isArray(doc.artist) ? doc.artist[0] : doc.artist;
                 const artistName = sanitize(artist?.name || "Artist");
-                const studentId = artist?.studentId || "unknown";
+                const studentId = artist?.studentId || artist?._id || "unknown";
                 const subTitle = sanitize(doc.title);
-                // Get assignment and artwork title from request body if provided
                 const assignTitle = sanitize(req.body.assignmentTitle || "General");
                 const artworkTitle = sanitize(req.body.artworkTitle || "Submission_Work");
 
-                relativePath = `../public/data/uploads/${studentId}_${artistName}/Submission/${subTitle}/${assignTitle}/`;
+                // Structure: Artist/[ID]_[Name]/Submission/[SubTitle]/[AssignTitle]/
+                relativePath = `../public/account/Artist/${studentId}_${artistName}/Submission/${subTitle}/${assignTitle}/`;
                 file.customFilename = artworkTitle;
               }
             }
@@ -67,10 +68,28 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
               const User = mongoose.model('User');
               const user = await User.findById(id);
               if (user) {
-                const artistName = sanitize(user.name);
-                const studentId = user.studentId || "unknown";
-                relativePath = `../public/data/uploads/${studentId}_${artistName}/Profile/`;
+                const userName = sanitize(user.name);
+                const studentId = user.studentId;
+                if (studentId) {
+                  // Artist
+                  relativePath = `../public/account/Artist/${studentId}_${userName}/Profile/`;
+                } else {
+                  // Regular User
+                  relativePath = `../public/account/User/${user._id}_${userName}/Profile/`;
+                }
               }
+            }
+            else if (folderType === 'order') {
+                // If it's an order (slip upload), we need to find the user
+                const Order = mongoose.model('Order');
+                const orderDoc = await Order.findById(id).populate('user');
+                if (orderDoc && orderDoc.user) {
+                    const userName = sanitize(orderDoc.user.name || orderDoc.contact?.name || "Customer");
+                    const userId = orderDoc.user._id || orderDoc.user;
+                    relativePath = `../public/account/User/${userId}_${userName}/Order/`;
+                } else {
+                    relativePath = `../public/account/User/Guest/Order/`;
+                }
             }
           }
 
@@ -81,7 +100,7 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
           cb(null, folderPath);
         } catch (err) {
           console.error(`[UploadMiddleware] Error:`, err);
-          cb(null, path.join(__dirname, `../public/data/uploads/${folderType}/`));
+          cb(null, path.join(__dirname, `../public/System/doc/`));
         }
       };
 

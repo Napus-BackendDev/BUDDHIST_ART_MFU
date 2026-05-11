@@ -20,6 +20,8 @@ var objsSchema = new Schema({
     deliveryDate: { type: Date, default: null },
     artwork: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artwork', default: null }],
     status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "689c04cb255db4e56aea88ef" },
+    invoiceFile: { type: String, default: "" },
+    orderNumber: { type: String, default: "" },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Order', objsSchema, 'Order');

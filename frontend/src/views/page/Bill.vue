@@ -12,7 +12,7 @@
 
             <h2 class="font-weight-bold mb-3" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Order Confirmed!' : 'ยืนยันคำสั่งซื้อสำเร็จ!' }}</h2>
             <p class="text-muted mb-5">
-                {{ $i18n.locale === 'en' ? 'Thank you for your purchase. Your order' : 'ขอบคุณสำหรับการสั่งซื้อ หมายเลขคำสั่งซื้อของคุณ' }} {{ order._id }} {{ $i18n.locale === 'en' ? 'has been received and is being processed.' : 'ได้รับการยืนยันและกำลังดำเนินการ' }}
+                {{ $i18n.locale === 'en' ? 'Thank you for your purchase. Your order' : 'ขอบคุณสำหรับการสั่งซื้อ หมายเลขคำสั่งซื้อของคุณ' }} {{ order.orderNumber || order._id }} {{ $i18n.locale === 'en' ? 'has been received and is being processed.' : 'ได้รับการยืนยันและกำลังดำเนินการ' }}
             </p>
 
             <!-- Order Details Card -->
@@ -32,7 +32,7 @@
 
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Order Number' : 'หมายเลขคำสั่งซื้อ' }}</span>
-                        <span class="font-weight-bold text-dark small">{{ order._id }}</span>
+                        <span class="font-weight-bold text-dark small">{{ order.orderNumber || order._id }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Date' : 'วันที่' }}</span>
@@ -107,9 +107,20 @@ export default {
         }
     },
     methods: {
-        downloadBilling() {
-            // Logic for downloading billing
-            console.log('Download Billing');
+        async downloadBilling() {
+            try {
+                const response = await this.$store.dispatch('order/getInvoice', this.order._id);
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `Invoice_${this.order.orderNumber || this.order._id}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('Download failed:', error);
+                alert('Could not download invoice. Please try again.');
+            }
         },
         formatPrice(value) {
             if (value === undefined || value === null) return '0';

@@ -8,13 +8,14 @@ let transporter = nodemailer.createTransport({
     },
 });
 
-exports.sendMail = async function (to, subject, text, html) {
+exports.sendMail = async function (to, subject, text, html, attachments = []) {
     let mailOptions = {
         from: `"Buddhist Art MFU" <${process.env.SMTP_USER}>`,
         to,          // ผู้รับ
         subject,     // หัวข้อ
         text,        // ข้อความธรรมดา
         html,        // ข้อความแบบ HTML
+        attachments, // ไฟล์แนบ
     };
 
     try {

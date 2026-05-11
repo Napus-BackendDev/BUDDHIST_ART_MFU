@@ -46,6 +46,9 @@ const OrderModule = {
             formData.append('_id', data._id);
             formData.append('image', data.image);
             return Service.order('upload', formData, {});
+        },
+        getInvoice({ commit }, orderId) {
+            return Service.order('invoice', orderId, {});
         }
     },
 

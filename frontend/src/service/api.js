@@ -120,6 +120,14 @@ export default {
                 return instance.put("/api/v1/order/upload", data, {
                     headers: { 'Content-Type': undefined }
                 });
+            case 'invoice':
+                return instance.get(`/api/v1/order/invoice/${data}`, {
+                    responseType: 'blob'
+                });
+            case 'certificate':
+                return instance.get(`/api/v1/order/certificate/${data}`, {
+                    responseType: 'blob'
+                });
             default:
                 break;
         }

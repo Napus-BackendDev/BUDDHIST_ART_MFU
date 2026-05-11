@@ -59,6 +59,9 @@
                     <div class="small text-muted mb-1">
                       {{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName($i18n.locale, item.artwork[0].artist) : ($i18n.locale === 'en' ? 'Artist' : 'ศิลปิน') }}
                     </div>
+                    <div class="smallest text-muted font-family-mono">
+                      ID: {{ item.orderNumber || item._id.substring(item._id.length - 8).toUpperCase() }}
+                    </div>
                   </div>
                 </div>
               </td>
@@ -88,11 +91,18 @@
             <template #action="{item}">
               <td class="align-middle text-right">
                 <button 
-                    class="action-btn icon-view" 
+                    class="action-btn icon-view mr-2" 
                     v-c-tooltip="'View Details'"
                     @click="viewDetails(item)"
                 >
                     <CIcon name="cilMagnifyingGlass" size="lg" />
+                </button>
+                <button 
+                    class="action-btn icon-download" 
+                    v-c-tooltip="'Download Invoice'"
+                    @click="downloadInvoice(item)"
+                >
+                    <CIcon name="cil-file" size="lg" />
                 </button>
               </td>
             </template>
@@ -166,7 +176,7 @@ export default {
         .filter(order => order.user === this.userId || (order.user && order.user._id === this.userId))
         .map(order => ({
           ...order,
-          orderId: order._id.substring(order._id.length - 8).toUpperCase(),
+          orderId: order.orderNumber || order._id.substring(order._id.length - 8).toUpperCase(),
           date: new Date(order.createdAt).toLocaleDateString('en-GB', {
             day: '2-digit',
             month: 'short',
@@ -199,12 +209,43 @@ export default {
     viewDetails(item) {
       this.selectedOrder = item;
       this.showModal = true;
+    },
+    async downloadInvoice(item) {
+      try {
+        const orderId = item._id;
+        const response = await this.$store.dispatch('order/getInvoice', orderId);
+        
+        // Create a blob link to download the file
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Invoice_${item.orderId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('Download failed:', error);
+        alert('Could not download invoice. Please try again.');
+      }
     }
   }
 }
 </script>
 
 <style scoped>
+/* ... existing styles ... */
+.action-btn.icon-download {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.action-btn.icon-download:hover {
+    background-color: #8c1515;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(140, 21, 21, 0.2);
+}
+
 .bg-light-premium {
     background-color: #f8f9fa;
     margin-top: -2rem !important;

@@ -275,7 +275,8 @@ exports.onUpload = async (request, response) => {
         }
 
         const filename = request.file ? request.file.filename : request.files[0].filename;
-        const imagePath = `${request.protocol}://${request.get('host')}/data/uploads/submission/${filename}`;
+        const destination = request.file ? request.file.destination : request.files[0].destination;
+        const imagePath = Submission.getImageUrl(request, destination, filename);
 
         return ResMessage.sendResponse(response, 0, 20000, { url: imagePath });
     } catch (err) {

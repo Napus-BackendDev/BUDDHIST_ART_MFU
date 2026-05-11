@@ -58,6 +58,7 @@ exports.onQuery = async function (request, response, next) {
             
             // Find "Customer" Role
             const customerRole = await Role.findOne({ "title.value": "Customer" });
+            console.log("Customer Role found:", customerRole ? customerRole._id : "NOT FOUND");
             if (!customerRole) {
                 throw new Error("Default 'Customer' role not found in database. Please run seed:role.");
             }
@@ -67,9 +68,10 @@ exports.onQuery = async function (request, response, next) {
 
             // Extract studentId from email if it's an MFU email, otherwise use a timestamp
             const isMfuEmail = email.endsWith('@lamduan.mfu.ac.th');
-            const studentId = isMfuEmail ? email.split('@')[0] : `G-${Date.now().toString().slice(-8)}`;
+            const studentId = isMfuEmail ? email.split('@')[0] : `G-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`;
 
             // Create new user
+            console.log("Creating user with data:", JSON.stringify({ studentId, role: customerRole._id }, null, 2));
             user = await User.create({
                 studentId: studentId,
                 image: picture,
@@ -80,10 +82,10 @@ exports.onQuery = async function (request, response, next) {
                 role: customerRole._id,
                 status: newStatus ? newStatus._id : null,
                 contact: {
-                    studentEmail: isMfuEmail ? email : null,
-                    personalEmail: !isMfuEmail ? email : null
+                    ...(isMfuEmail ? { studentEmail: email } : { personalEmail: email })
                 }
             });
+            console.log("User created successfully:", user._id);
 
             // Populate role for the response
             user = await User.findById(user._id).populate('role');
@@ -116,6 +118,7 @@ exports.onQuery = async function (request, response, next) {
         return ResMessage.sendResponse(response, 0, 20000, userData);
 
     } catch (err) {
+        console.error("Google Auth Error:", err);
         if (err.response) console.error("Response Data:", err.response.data);
         
         return response.status(401).json({ 

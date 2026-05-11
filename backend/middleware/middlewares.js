@@ -47,8 +47,8 @@ module.exports = function (app) {
     app.use(express.static(path.join(__dirname, "../public")));
     app.use(express.static(path.join(__dirname, "../node_modules/bootstrap/dist")));
 
-    // Serve uploads folder directly if it exists, or aliased through public
-    app.use('/uploads', express.static(path.join(__dirname, "../public/data/uploads")));
+    // Serve uploads folder by aliasing it to the root public folder
+    app.use('/uploads', express.static(path.join(__dirname, "../public")));
 
     // การใช้งาน logger ใน Express
     // app.use(loggerMiddleware);

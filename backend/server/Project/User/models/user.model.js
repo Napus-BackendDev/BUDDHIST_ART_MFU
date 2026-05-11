@@ -14,7 +14,7 @@ var objsSchema = new Schema({
     bio: { type: String, default: null},
     contact: {
         telephone: { type: String, default: null },
-        studentEmail: { type: String, default: null, unique: true },
+        studentEmail: { type: String, unique: true, sparse: true },
         personalEmail: { type: String, default: null }
     },
     address: {

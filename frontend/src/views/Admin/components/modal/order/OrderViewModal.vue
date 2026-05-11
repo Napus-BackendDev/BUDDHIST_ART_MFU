@@ -14,8 +14,8 @@
                         <CIcon name="cil-file" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold" v-if="order && order._id">
-                            ORD-{{ order._id.substring(order._id.length - 8).toUpperCase() }}
+                        <h5 class="modal-title font-weight-bold" v-if="order && (order.orderNumber || order._id)">
+                            {{ order.orderNumber || ('ORD-' + order._id.substring(order._id.length - 8).toUpperCase()) }}
                         </h5>
                         <h5 class="modal-title font-weight-bold" v-else>Order Details</h5>
                         <div class="d-flex align-items-center mt-1">

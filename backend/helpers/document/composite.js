@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const FONT_URL = 'https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf';
-const TEMPLATE_PATH = path.join(__dirname, '../../public/template/template.pdf');
+const TEMPLATE_PATH = path.join(__dirname, '../../public/system/doc/Certification Tempate.pdf');
 
 const COORDS = {
     images: {
@@ -64,73 +64,73 @@ async function drawImage(pdfDoc, page, imgPath, box) {
 
 /** Main Certificate Generator */
 const generateCertificate = async ({ artworkPath, signature1Path, signature2Path, info, outputPath }) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            console.log('Generating Certificate...');
+    try {
+        console.log('Generating Certificate...');
 
-            // 1. Validations
-            if (!fs.existsSync(TEMPLATE_PATH)) return reject(new Error('PDF Template not found'));
-            if (!artworkPath || !fs.existsSync(artworkPath)) return reject(new Error('Artwork image not found'));
-            if (!info) return reject(new Error('Certificate information is missing'));
+        // 1. Validations
+        if (!fs.existsSync(TEMPLATE_PATH)) throw new Error('PDF Template not found');
+        if (!artworkPath || !fs.existsSync(artworkPath)) throw new Error('Artwork image not found');
+        if (!info) throw new Error('Certificate information is missing');
 
-            // 2. Load Template and Register Fontkit
-            const pdfDoc = await PDFDocument.load(fs.readFileSync(TEMPLATE_PATH));
-            pdfDoc.registerFontkit(fontkit);
-            const page = pdfDoc.getPages()[0];
+        // 2. Load Template and Register Fontkit
+        const pdfDoc = await PDFDocument.load(fs.readFileSync(TEMPLATE_PATH));
+        pdfDoc.registerFontkit(fontkit);
+        const page = pdfDoc.getPages()[0];
 
-            // 3. Load Custom Thai Font from URL
-            const fontRes = await axios.get(FONT_URL, { responseType: 'arraybuffer' });
-            const font = await pdfDoc.embedFont(fontRes.data);
+        // 3. Load Custom Thai Font from URL
+        const fontRes = await axios.get(FONT_URL, { responseType: 'arraybuffer' });
+        const font = await pdfDoc.embedFont(fontRes.data);
 
-            // 4. Smart Name Logic (Combine TH and EN only if they fit on one line)
-            const displayInfo = { ...info };
-            if (info.artworkNameTH && info.artworkNameEN) {
-                const combinedName = `${info.artworkNameTH} (${info.artworkNameEN})`;
-                const slot = COORDS.text.artworkNameTH;
-                const textWidth = font.widthOfTextAtSize(combinedName, slot.size);
-                
-                // If combined fits in one line (with padding), use it. Otherwise, TH only.
-                if (textWidth <= (slot.maxWidth - 15)) {
-                    displayInfo.artworkNameTH = combinedName;
-                } else {
-                    displayInfo.artworkNameTH = info.artworkNameTH;
-                }
+        // 4. Smart Name Logic (Combine TH and EN only if they fit on one line)
+        const displayInfo = { ...info };
+        if (info.artworkNameTH && info.artworkNameEN) {
+            const combinedName = `${info.artworkNameTH} (${info.artworkNameEN})`;
+            const slot = COORDS.text.artworkNameTH;
+            const textWidth = font.widthOfTextAtSize(combinedName, slot.size);
+            
+            // If combined fits in one line (with padding), use it. Otherwise, TH only.
+            if (textWidth <= (slot.maxWidth - 15)) {
+                displayInfo.artworkNameTH = combinedName;
+            } else {
+                displayInfo.artworkNameTH = info.artworkNameTH;
             }
+        }
 
-            // 5. Draw Images
-            await drawImage(pdfDoc, page, artworkPath, COORDS.images.artwork);
-            await drawImage(pdfDoc, page, signature1Path, COORDS.images.signature1);
-            await drawImage(pdfDoc, page, signature2Path, COORDS.images.signature2);
+        // 5. Draw Images
+        await drawImage(pdfDoc, page, artworkPath, COORDS.images.artwork);
+        await drawImage(pdfDoc, page, signature1Path, COORDS.images.signature1);
+        await drawImage(pdfDoc, page, signature2Path, COORDS.images.signature2);
 
-            // 6. Draw Text Fields with Wrapping
-            Object.entries(COORDS.text).forEach(([key, slot]) => {
-                const val = displayInfo[key];
-                if (!val) return;
-                const lines = wrapText(val, slot.maxWidth, font, slot.size);
-                lines.forEach((line, i) => {
-                    page.drawText(line, { 
-                        x: slot.x, 
-                        y: slot.y - (i * slot.size * 1.2), 
-                        size: slot.size, 
-                        font, 
-                        color: rgb(0,0,0) 
-                    });
+        // 6. Draw Text Fields with Wrapping
+        Object.entries(COORDS.text).forEach(([key, slot]) => {
+            const val = displayInfo[key];
+            if (!val) return;
+            const lines = wrapText(val, slot.maxWidth, font, slot.size);
+            lines.forEach((line, i) => {
+                page.drawText(line, { 
+                    x: slot.x, 
+                    y: slot.y - (i * slot.size * 1.2), 
+                    size: slot.size, 
+                    font, 
+                    color: rgb(0,0,0) 
                 });
             });
+        });
 
-            // 7. Save and Return
-            const pdfBytes = await pdfDoc.save();
+        // 7. Save and Return
+        const pdfBytes = await pdfDoc.save();
+        if (outputPath) {
             fs.mkdirSync(path.dirname(outputPath), { recursive: true });
             fs.writeFileSync(outputPath, pdfBytes);
-            
-            console.log(`Success: ${outputPath}`);
-            resolve(outputPath);
-
-        } catch (err) {
-            console.error('Certificate Generation Error:', err);
-            reject(err);
+            console.log(`Success saved to: ${outputPath}`);
         }
-    });
+        
+        return pdfBytes;
+
+    } catch (err) {
+        console.error('Certificate Generation Error:', err);
+        throw err;
+    }
 };
 
 module.exports = { generateCertificate };

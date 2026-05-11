@@ -5,7 +5,7 @@
                 :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
                 <template #id="{ item }">
-                    <td class="text-muted text-sm">{{ item._id.substring(item._id.length - 8).toUpperCase() }}</td>
+                    <td class="text-muted text-sm">{{ item.orderNumber || item._id.substring(item._id.length - 8).toUpperCase() }}</td>
                 </template>
 
                 <template #datetime="{ item }">
@@ -65,13 +65,19 @@
                             <button class="action-btn icon-success mx-2" v-c-tooltip="'Approve'" @click="$emit('approve', item)">
                                 <CIcon name="cil-check" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger" v-c-tooltip="'Reject'" @click="$emit('reject', item)">
+                            <button class="action-btn icon-danger mr-2" v-c-tooltip="'Reject'" @click="$emit('reject', item)">
                                 <CIcon name="cil-x" size="lg" />
+                            </button>
+                            <button class="action-btn icon-download" v-c-tooltip="'Download Invoice'" @click="downloadInvoice(item)">
+                                <CIcon name="cil-file" size="lg" />
                             </button>
                         </div>
                         <div v-else class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" v-c-tooltip="'View Details'" @click="$emit('view-order', item)">
+                            <button class="action-btn icon-view mr-2" v-c-tooltip="'View Details'" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
+                            </button>
+                            <button class="action-btn icon-download" v-c-tooltip="'Download Invoice'" @click="downloadInvoice(item)">
+                                <CIcon name="cil-file" size="lg" />
                             </button>
                         </div>
                     </td>
@@ -198,6 +204,26 @@ export default {
             XLSX.utils.book_append_sheet(wb, ws, 'Orders');
             XLSX.writeFile(wb, `Orders_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
         },
+        async downloadInvoice(item) {
+            try {
+                const response = await this.$store.dispatch('order/getInvoice', item._id);
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                const orderIdShort = item._id.substring(item._id.length - 8).toUpperCase();
+                link.href = url;
+                link.setAttribute('download', `Invoice_${orderIdShort}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('Download failed:', error);
+                this.$store.commit('dialog/showToast', {
+                    title: 'Error',
+                    message: 'Could not download invoice.',
+                    variant: 'danger'
+                });
+            }
+        },
         pageChange(val) {
             this.activePage = val;
         }
@@ -206,6 +232,33 @@ export default {
 </script>
 
 <style scoped>
+/* ... existing styles ... */
+.action-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.icon-view { background-color: #f0f7ff; color: #007bff; }
+.icon-view:hover { background-color: #007bff; color: white; }
+
+.icon-download { background-color: #f1f5f9; color: #475569; }
+.icon-download:hover { background-color: #8c1515; color: white; }
+
+.icon-edit { background-color: #fff9db; color: #f59f00; }
+.icon-edit:hover { background-color: #f59f00; color: white; }
+
+.icon-success { background-color: #ebfbee; color: #40c057; }
+.icon-success:hover { background-color: #40c057; color: white; }
+
+.icon-danger { background-color: #fff5f5; color: #fa5252; }
+.icon-danger:hover { background-color: #fa5252; color: white; }
+</style>
 .order-table-card {
     border-radius: 12px;
     border: 1px solid #eef0f3;
