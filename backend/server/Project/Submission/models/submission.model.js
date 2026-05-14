@@ -1,9 +1,7 @@
-'use strict';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-
-var objsSchema = new Schema({
+const objsSchema = new Schema({
     title: [{
         key: { type: String, default: null },
         value: { type: String, default: null },
@@ -41,6 +39,8 @@ var objsSchema = new Schema({
             owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
             status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status' },
             report: { type: String, default: null },
+            remark: { type: String, default: null },
+            rejectionReason: { type: String, default: null },
             create: {
                 at: { type: Date, default: Date.now },
             },

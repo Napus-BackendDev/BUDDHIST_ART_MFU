@@ -107,6 +107,7 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
                 image: artwork.image,
                 title: artwork.title,
                 description: artwork.description,
+                remark: artwork.remark,
                 artist: ownerId,
                 technique: artwork.technique,
                 size: artwork.size,
@@ -138,10 +139,15 @@ const processRejections = async (doc, rejectedArtworks) => {
 
         const artistName = (artist.name && artist.name[0]?.value) || "Artist";
         const submissionTitle = (doc.title && doc.title[0]?.value) || "Your Artwork";
+        
+        // ดึงเหตุผลจาก artwork ชิ้นแรกที่ถูก Reject (หรือรวมจากหลายชิ้นก็ได้ แต่เบื้องต้นดึงจากตัวแรกที่มีเหตุผล)
+        const specificReason = rejectedArtworks.find(art => art.rejectionReason)?.rejectionReason;
+        const finalReason = specificReason || "Does not meet our current collection requirements.";
+
         const html = rejectedSubmissionMail({ 
             artistName, 
             submissionTitle, 
-            reason: "Does not meet our current collection requirements." 
+            reason: finalReason 
         });
 
         await sendMail(email, 'Update on Your Submission - Buddhist Art MFU', '', html);

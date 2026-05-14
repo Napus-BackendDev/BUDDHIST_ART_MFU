@@ -95,12 +95,6 @@ export default {
             icon: 'cil-cloud-upload'
           },
           {
-            _name: 'CSidebarNavItem',
-            name: 'Certification',
-            to: '/admin/certification',
-            icon: 'cil-task'
-          },
-          {
             _name: 'CSidebarNavTitle',
             _children: ['Data Center']
           },

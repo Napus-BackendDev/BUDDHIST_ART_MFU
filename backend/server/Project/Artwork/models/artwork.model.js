@@ -1,9 +1,7 @@
-'use strict';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-
-var objsSchema = new Schema({
+const objsSchema = new Schema({
     image: { type: String, default: null },
     title: [{
         key: { type: String, default: null },
@@ -25,11 +23,13 @@ var objsSchema = new Schema({
     price: { type: Number, default: 0 },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: "69b917247aa08919285fb7ee" },
     status: {
-        approval: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69677d4de5f76f7a8c42dbf6" }, // Pending 
-        sale: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69678075e5f76f7a8c42dc12" }, // Not for sale
+        approval: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69677d4de5f76f7a8c42dbf6" },
+        sale: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: "69678075e5f76f7a8c42dc12" },
     },
     submissionArtworkId: { type: mongoose.Schema.Types.ObjectId, default: null },
     artworkPiece: { type: String, default: null },
+    remark: { type: String, default: null },
+    rejectionReason: { type: String, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Artwork', objsSchema, 'Artwork');
