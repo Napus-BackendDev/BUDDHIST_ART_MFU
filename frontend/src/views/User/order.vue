@@ -88,6 +88,14 @@
               </td>
             </template>
 
+            <template #timeLeft="{item}">
+              <td class="align-middle">
+                <span :class="item.timeLeftDisplay === 'Expired' || item.timeLeftDisplay === 'หมดเวลา' ? 'text-danger font-weight-bold' : 'text-primary font-family-mono'">
+                  {{ item.timeLeftDisplay }}
+                </span>
+              </td>
+            </template>
+
             <template #action="{item}">
               <td class="align-middle text-right">
                 <button 
@@ -152,7 +160,9 @@ export default {
       showModal: false,
       selectedOrder: null,
       search: '',
-      activePage: 1
+      activePage: 1,
+      now: Date.now(),
+      timer: null
     }
   },
   computed: {
@@ -166,6 +176,7 @@ export default {
         { key: 'date', label: this.$i18n.locale === 'en' ? 'Date Purchased' : 'วันที่สั่งซื้อ' },
         { key: 'total', label: this.$i18n.locale === 'en' ? 'Total Amount' : 'ยอดสุทธิ' },
         { key: 'status', label: this.$i18n.locale === 'en' ? 'Status' : 'สถานะ' },
+        { key: 'timeLeft', label: this.$i18n.locale === 'en' ? 'Time Left' : 'เวลาที่เหลือ' },
         { key: 'action', label: this.$i18n.locale === 'en' ? 'Actions' : 'การกระทำ', sorter: false, filter: false, _classes: 'text-right' }
       ]
     },
@@ -189,7 +200,8 @@ export default {
             if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
             if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
             return 'Pending';
-          })()
+          })(),
+          timeLeftDisplay: this.calculateTimeLeft(order)
         }));
     },
     filteredOrders() {
@@ -204,8 +216,34 @@ export default {
   },
   async created() {
     await this.$store.dispatch('order/get', {});
+    this.timer = setInterval(() => {
+      this.now = Date.now();
+    }, 1000);
+  },
+  beforeDestroy() {
+    if (this.timer) clearInterval(this.timer);
   },
   methods: {
+    calculateTimeLeft(order) {
+      // Only show countdown for Pending/Reserved items without a slip
+      const statusLabel = this.getName('en', order.status);
+      const isPending = statusLabel && (statusLabel.toLowerCase().includes('pending') || statusLabel.toLowerCase().includes('reserved'));
+      const hasNoSlip = !order.image;
+
+      if (!isPending || !hasNoSlip) return '-';
+
+      const createdAt = new Date(order.createdAt).getTime();
+      const deadline = createdAt + (24 * 60 * 60 * 1000);
+      const diff = deadline - this.now;
+
+      if (diff <= 0) return this.$i18n.locale === 'en' ? 'Expired' : 'หมดเวลา';
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      return `${hours}h ${minutes}m ${seconds}s`;
+    },
     viewDetails(item) {
       this.selectedOrder = item;
       this.showModal = true;

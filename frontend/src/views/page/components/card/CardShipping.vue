@@ -153,8 +153,10 @@
 
                 <!-- Confirm Button -->
                 <CButton block color="danger" size="lg" class="py-3 font-weight-bold shadow-sm"
-                    style="background-color: #E55B5B; border: none;" @click="onConfirmPayment">
-                    {{ $i18n.locale === 'en' ? 'Confirm Payment' : 'ยืนยันการชำระเงิน' }}
+                    style="background-color: #E55B5B; border: none;" @click="onConfirmPayment"
+                    :disabled="loading || hasReservedItems">
+                    <CIcon v-if="loading" name="cil-reload" class="mr-2 spinner-animation" />
+                    {{ loading ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังดำเนินการ...') : (hasReservedItems ? ($i18n.locale === 'en' ? 'Unavailable' : 'ไม่พร้อมสั่งซื้อ') : ($i18n.locale === 'en' ? 'Confirm Order' : 'ยืนยันการสั่งซื้อ')) }}
                 </CButton>
 
             </CCardBody>
@@ -168,6 +170,16 @@ import { mapGetters } from 'vuex';
 
 export default {
     name: 'CardShipping',
+    props: {
+        loading: {
+            type: Boolean,
+            default: false
+        },
+        hasReservedItems: {
+            type: Boolean,
+            default: false
+        }
+    },
     data() {
         return {
             currentStep: 1,
@@ -296,6 +308,15 @@ export default {
                 return;
             }
 
+            // Note: We removed mandatory slip validation to allow "Book now, pay later" logic.
+            // But we can show a confirmation if they haven't uploaded yet.
+            if (!this.paymentProofFile) {
+                const confirmNoSlip = confirm(this.$i18n.locale === 'en' 
+                    ? 'You haven\'t uploaded a payment slip. You can still confirm the order and upload it later in your Profile. Continue?' 
+                    : 'คุณยังไม่ได้อัปโหลดสลิปชำระเงิน คุณสามารถยืนยันรายการเพื่อจองสินค้าไว้ก่อน แล้วค่อยอัปโหลดภายหลังได้ที่หน้าโปรไฟล์ของคุณ ยืนยันการจองหรือไม่?');
+                if (!confirmNoSlip) return;
+            }
+
             this.$emit('confirm-payment', {
                 paymentMethod: this.paymentMethod,
                 paymentProofImage: this.paymentProofImage,
@@ -361,6 +382,20 @@ export default {
 .upload-area:hover {
     border-color: #E55B5B;
     background-color: #fcfcfc;
+}
+
+::v-deep .form-control:focus {
+    background-color: #fff;
+    box-shadow: 0 0 0 0.2rem rgba(229, 91, 91, 0.25);
+    border-color: #E55B5B;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner-animation {
+  animation: spin 1s linear infinite;
 }
 
 .qr-container {

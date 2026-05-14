@@ -253,7 +253,7 @@ export default {
         filtered = filtered.filter(art => {
           if (!art.status || !art.status.approval) return false;
           const status = this.getName('en', art.status.approval);
-          return ['Approved', 'Success'].includes(status);
+          return ['Approved', 'Success', 'Reserved'].includes(status);
         });
       }
 

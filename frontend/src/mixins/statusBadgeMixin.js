@@ -14,7 +14,7 @@ export const statusBadgeMixin = {
             if (s.includes('processing') || s.includes('รอดำเนินการ') || s.includes('pending') || s.includes('oldstudent')) {
                 return { label: status, class: 'badge-pending', icon: 'cil-clock' };
             }
-            if (s.includes('shipped') || s.includes('จัดส่งแล้ว') || s.includes('revised') || s.includes('admin')) {
+            if (s.includes('shipped') || s.includes('จัดส่งแล้ว') || s.includes('revised') || s.includes('admin') || s.includes('reserved')) {
                 return { label: status, class: 'badge-update', icon: s.includes('admin') ? 'cil-shield-check' : 'cil-sync' };
             }
             if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('suspended') || s.includes('fail')) {

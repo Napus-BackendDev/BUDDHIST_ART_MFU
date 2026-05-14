@@ -37,9 +37,9 @@
                                     <CIcon name="cilMagnifyingGlass" />
                                 </button>
                             </div>
-                            <div v-if="isSoldOut" class="sold-out-badge-premium">
+                            <!-- <div v-if="isSoldOut" class="sold-out-badge-premium">
                                 <span>{{ $i18n.locale === 'en' ? 'PRIVATE COLLECTION' : 'เก็บเข้าคอลเลกชันส่วนตัว' }}</span>
-                            </div>
+                            </div> -->
                         </div>
                     </CCol>
 
@@ -50,7 +50,7 @@
                                 <!-- Category & Status -->
                                 <div class="d-flex align-items-center mb-3">
                                     <span class="info-pill category-pill">{{ artwork.category ? getName($i18n.locale, artwork.category) : ($i18n.locale === 'en' ? 'Artwork' : 'ผลงานศิลปะ') }}</span>
-                                    <span v-if="artwork.status && artwork.status.approval" class="info-pill status-pill ml-2" :style="getStatusBadgeStyle()">
+                                    <span v-if="artwork.status && artwork.status.approval && getName('en', artwork.status.approval) !== 'Approved'" class="info-pill status-pill ml-2" :style="getStatusBadgeStyle()">
                                         {{ getName($i18n.locale, artwork.status.approval) }}
                                     </span>
                                 </div>
@@ -111,17 +111,20 @@
 
                                 <!-- Purchase Actions -->
                                 <div class="action-stack-premium pt-4 border-top">
-                                    <CButton block :color="isSoldOut || isPreview || !isPurchasable || (isApprovalInCart && !isInCart) ? 'secondary' : (isInCart ? 'dark' : 'danger')" size="lg" shape="pill"
-                                        :disabled="isSoldOut || isPreview || !isPurchasable || (isApprovalInCart && !isInCart)"
+                                    <CButton block :color="isSoldOut || isPreview || !isPurchasable || (isApprovalReserved && !isInCart) ? 'secondary' : (isInCart ? 'dark' : 'danger')" size="lg" shape="pill"
+                                        :disabled="isSoldOut || isPreview || !isPurchasable || (isApprovalReserved && !isInCart) || isAddingToCart"
                                         class="btn-purchase-premium shadow-lg mb-3"
-                                        :style="isSoldOut || isPreview || !isPurchasable || (isApprovalInCart && !isInCart) || isInCart ? 'background: #e2e8f0 !important; color: #94a3b8 !important;' : 'background: linear-gradient(135deg, #4a1d18, #612721); color: white !important;'"
+                                        :style="isSoldOut || isPreview || !isPurchasable || (isApprovalReserved && !isInCart) || isInCart ? 'background: #e2e8f0 !important; color: #94a3b8 !important;' : 'background: linear-gradient(135deg, #4a1d18, #612721); color: white !important;'"
                                         @click="addToCart">
-                                        <CIcon v-if="!isSoldOut && !isPreview && isPurchasable && !isInCart && !isApprovalInCart" name="cilCart" size="xl" class="mr-3" />
-                                        <CIcon v-else-if="isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
-                                        <CIcon v-else-if="isApprovalInCart && !isInCart" name="cilCart" size="xl" class="mr-3" />
-                                        <CIcon v-else-if="!isPurchasable && !isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
-                                        <CIcon v-else-if="isInCart" name="cilCheck" size="xl" class="mr-3" />
-                                        {{ getButtonText }}
+                                        <CIcon v-if="isAddingToCart" name="cil-reload" size="xl" class="mr-3 spinner-animation" />
+                                        <template v-else>
+                                            <CIcon v-if="!isSoldOut && !isPreview && isPurchasable && !isInCart && !isApprovalReserved" name="cilCart" size="xl" class="mr-3" />
+                                            <CIcon v-else-if="isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
+                                            <CIcon v-else-if="isApprovalReserved && !isInCart" name="cilCart" size="xl" class="mr-3" />
+                                            <CIcon v-else-if="!isPurchasable && !isSoldOut" name="cilLockLocked" size="xl" class="mr-3" />
+                                            <CIcon v-else-if="isInCart" name="cilCheck" size="xl" class="mr-3" />
+                                        </template>
+                                        {{ isAddingToCart ? ($i18n.locale === 'en' ? 'Checking status...' : 'กำลังตรวจสอบ...') : getButtonText }}
                                     </CButton>
                                     
                                     <div class="d-flex align-items-center justify-content-between">
@@ -177,7 +180,8 @@ export default {
             isPreview: false,
             showZoomModal: false,
             artwork: {},
-            polling: null
+            polling: null,
+            isAddingToCart: false
         }
     },
     computed: {
@@ -196,16 +200,16 @@ export default {
             // ONLY 'Available' status is purchasable.
             return status === 'Available';
         },
-        isApprovalInCart() {
+        isApprovalReserved() {
             if (!this.artwork || !this.artwork.status || !this.artwork.status.approval) return false;
-            return this.getName('en', this.artwork.status.approval) === 'In Cart';
+            return this.getName('en', this.artwork.status.approval) === 'Reserved';
         },
         getButtonText() {
             if (this.isPreview) return this.$i18n.locale === 'en' ? 'Preview Mode' : 'โหมดดูตัวอย่าง';
             if (this.isSoldOut) return this.$i18n.locale === 'en' ? 'Already Sold Out' : 'ขายแล้ว';
             
-            // If it's in SOMEONE ELSE'S cart
-            if (this.isApprovalInCart && !this.isInCart) return this.$i18n.locale === 'en' ? 'Being Ordered' : 'อยู่ในช่วงสั่งซื้อ';
+            // If it's in SOMEONE ELSE'S cart (Reserved)
+            if (this.isApprovalReserved && !this.isInCart) return this.$i18n.locale === 'en' ? 'Being Ordered' : 'จองแล้ว';
 
             if (!this.isPurchasable) return this.$i18n.locale === 'en' ? 'Not for Sale' : 'ไม่ได้มีไว้เพื่อขาย';
             if (this.isInCart) return this.$i18n.locale === 'en' ? 'In Collection (Remove?)' : 'อยู่ในตะกร้า (นำออก?)';
@@ -255,15 +259,28 @@ export default {
                 this.showZoomModal = true;
             }
         },
-        addToCart() {
-            if (this.isPreview || this.isSoldOut || !this.isPurchasable || (this.isApprovalInCart && !this.isInCart)) return;
-            if (this.isInCart) {
-                this.$store.dispatch('cart/removeFromCart', this.artwork._id);
-            } else {
-                this.$store.dispatch('cart/addToCart', this.artwork);
-
-                // Automatically open the cart sidebar (A-side)
-                this.$store.dispatch('cart/setShowCart', true);
+        async addToCart() {
+            if (this.isPreview || this.isSoldOut || !this.isPurchasable || (this.isApprovalReserved && !this.isInCart) || this.isAddingToCart) return;
+            
+            try {
+                this.isAddingToCart = true;
+                
+                if (!this.isInCart) {
+                    // Check latest status before adding
+                    const result = await this.$store.dispatch('artwork/explore', { _id: this.artwork._id });
+                    if (result && this.getName('en', result.status.approval) === 'Reserved') {
+                        alert(this.$i18n.locale === 'en' ? 'Sorry, this artwork was just reserved.' : 'ขออภัย ผลงานนี้เพิ่งถูกจองไป');
+                        return;
+                    }
+                    this.$store.dispatch('cart/addToCart', result || this.artwork);
+                    this.$store.dispatch('cart/setShowCart', true);
+                } else {
+                    this.$store.dispatch('cart/removeFromCart', this.artwork._id);
+                }
+            } catch (error) {
+                console.error('Add to cart failed:', error);
+            } finally {
+                this.isAddingToCart = false;
             }
         },
         closePreview() {
@@ -676,5 +693,12 @@ export default {
     .pl-lg-5 { padding-left: 15px !important; }
     .specs-grid-premium { grid-template-columns: 1fr; }
     .valuation-price .amount { font-size: 2.2rem; }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner-animation {
+  animation: spin 1s linear infinite;
 }
 </style>

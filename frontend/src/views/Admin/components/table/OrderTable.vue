@@ -56,19 +56,21 @@
                 <template #actions="{ item }">
                     <td class="text-right">
                         <div v-if="(item.status ? getName('en', item.status) : 'Pending') === 'Pending'" class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" v-c-tooltip="'View Details'" @click="$emit('view-order', item)">
+                            <button class="action-btn icon-view" v-c-tooltip="'View Details'" @click="$emit('view-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit ml-2" v-c-tooltip="'Edit'" @click="$emit('edit-order', item)">
+                            <button class="action-btn icon-edit ml-2" v-c-tooltip="'Edit'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-success mx-2" v-c-tooltip="'Approve'" @click="$emit('approve', item)">
-                                <CIcon name="cil-check" size="lg" />
+                            <button class="action-btn icon-success mx-2" v-c-tooltip="'Approve'" @click="$emit('approve', item)" :disabled="loadingItems.includes(item._id)">
+                                <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
+                                <CIcon v-else name="cil-check" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger mr-2" v-c-tooltip="'Reject'" @click="$emit('reject', item)">
-                                <CIcon name="cil-x" size="lg" />
+                            <button class="action-btn icon-danger mr-2" v-c-tooltip="'Reject'" @click="$emit('reject', item)" :disabled="loadingItems.includes(item._id)">
+                                <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
+                                <CIcon v-else name="cil-x" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" v-c-tooltip="'Download Invoice'" @click="downloadInvoice(item)">
+                            <button class="action-btn icon-download" v-c-tooltip="'Download Invoice'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cil-file" size="lg" />
                             </button>
                         </div>
@@ -125,6 +127,10 @@ export default {
                 startDate: null,
                 endDate: null
             })
+        },
+        loadingItems: {
+            type: Array,
+            default: () => []
         }
     },
     data() {
@@ -190,19 +196,57 @@ export default {
             });
         },
         exportExcel() {
-            const dataToExport = this.filteredItems.map(item => ({
-                'Order ID': item._id,
-                'Date & Time': this.formatDate(item.createdAt),
-                'Customer': item.contact ? item.contact.name : 'N/A',
-                'Artwork': item.artwork && item.artwork[0] ? this.getName('en', item.artwork[0]) : 'N/A',
-                'Amount': item.artwork && item.artwork[0] ? item.artwork[0].price : 0,
-                'Status': this.getStatusBadge(item.status ? this.getName('en', item.status) : 'Pending').label
-            }));
+            const baseUrl = process.env.VUE_APP_API_URL || window.location.origin;
 
-            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const headers = [
+                'Order Number', 'Date & Time', 'Customer', 'Artwork', 'Artist', 
+                'Amount', 'Status', 'Artwork Image', 'Receipt (Slip)', 
+                'Invoice File', 'Certificate File'
+            ];
+
+            const data = this.filteredItems.map(item => {
+                const buyerName = this.sanitizeForPath(item.contact?.name || (item.user && item.user.name) || "Customer");
+                const buyerId = item.user?._id || item.user || "Guest";
+                const orderIdentifier = item.orderNumber ? item.orderNumber.replace(/-/g, '_') : item._id;
+
+                const invoiceUrl = item.invoiceFile 
+                    ? `${baseUrl}/account/User/${buyerId}_${buyerName}/Invoice/${item.invoiceFile}` 
+                    : null;
+                const certificateUrl = `${baseUrl}/account/User/${buyerId}_${buyerName}/Certificate/Certificate_${orderIdentifier}.pdf`;
+                const slipUrl = item.image ? (item.image.startsWith('http') ? item.image : `${baseUrl}${item.image}`) : null;
+                const artworkUrl = item.artwork && item.artwork[0] ? (item.artwork[0].image.startsWith('http') ? item.artwork[0].image : `${baseUrl}${item.artwork[0].image}`) : null;
+
+                const statusInfo = this.getStatusBadge(item.status ? this.getName('en', item.status) : 'Pending');
+
+                return [
+                    item.orderNumber || item._id,
+                    this.formatDate(item.createdAt),
+                    item.contact ? item.contact.name : 'N/A',
+                    item.artwork && item.artwork[0] ? this.getName('en', item.artwork[0]) : 'N/A',
+                    item.artwork && item.artwork[0] && item.artwork[0].artist ? this.getName('en', item.artwork[0].artist) : 'N/A',
+                    item.artwork && item.artwork[0] ? item.artwork[0].price : 0,
+                    statusInfo.label,
+                    // Link columns using SheetJS cell objects
+                    artworkUrl ? { t: 's', v: 'View Artwork', l: { Target: artworkUrl } } : 'N/A',
+                    slipUrl ? { t: 's', v: 'View Slip', l: { Target: slipUrl } } : 'No slip',
+                    invoiceUrl ? { t: 's', v: 'Download Invoice', l: { Target: invoiceUrl } } : 'Not Generated',
+                    statusInfo.label === 'Approved' ? { t: 's', v: 'Download Certificate', l: { Target: certificateUrl } } : 'N/A'
+                ];
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Orders');
             XLSX.writeFile(wb, `Orders_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
+        },
+        sanitizeForPath(text) {
+            if (!text) return "";
+            if (Array.isArray(text)) {
+                const enVal = text.find(t => t.key === 'en')?.value;
+                const thVal = text.find(t => t.key === 'th')?.value;
+                return String(enVal || thVal || text[0]?.value || "").trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "");
+            }
+            return String(text).trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "");
         },
         async downloadInvoice(item) {
             try {
@@ -258,7 +302,7 @@ export default {
 
 .icon-danger { background-color: #fff5f5; color: #fa5252; }
 .icon-danger:hover { background-color: #fa5252; color: white; }
-</style>
+
 .order-table-card {
     border-radius: 12px;
     border: 1px solid #eef0f3;
@@ -284,5 +328,12 @@ export default {
 .rounded-bottom {
     border-bottom-left-radius: 12px !important;
     border-bottom-right-radius: 12px !important;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner-animation {
+  animation: spin 1s linear infinite;
 }
 </style>

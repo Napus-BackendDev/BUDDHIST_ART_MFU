@@ -108,16 +108,26 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
     },
     filename: function (req, file, cb) {
       const ext = path.extname(file.originalname);
-
+      
       if (folderType === 'news') {
+        // Use a request-level counter to ensure sequential naming without collisions during parallel processing
+        req._fileCounter = (req._fileCounter || 0) + 1;
         try {
           const files = fs.readdirSync(file.destination);
-          cb(null, `${files.length + 1}${ext}`);
+          const nextIndex = files.length + req._fileCounter;
+          cb(null, `${nextIndex}${ext}`);
         } catch (e) {
-          cb(null, `1${ext}`);
+          cb(null, `${req._fileCounter}${ext}`);
         }
       } else if (file.customFilename) {
-        cb(null, `${file.customFilename}${ext}`);
+        // For artwork/submission, keep the custom name
+        // If it's multiple, we still need a unique suffix to avoid overwriting same custom name
+        if (isMultiple) {
+          req._fileCounter = (req._fileCounter || 0) + 1;
+          cb(null, `${file.customFilename}-${req._fileCounter}${ext}`);
+        } else {
+          cb(null, `${file.customFilename}${ext}`);
+        }
       } else {
         const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
         cb(null, `${folderType}-${uniqueSuffix}${ext}`);

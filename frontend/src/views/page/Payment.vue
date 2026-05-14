@@ -1,6 +1,20 @@
 <template>
     <div class="payment-page bg-light min-vh-100 py-5">
         <CContainer>
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- AVAILABILITY WARNING -->
+                    <transition name="fade">
+                        <div v-if="hasReservedItems" class="alert alert-danger mb-4 shadow-sm border-0 d-flex align-items-center" style="border-radius: 12px; background-color: #fff5f5; color: #e55b5b;">
+                            <CIcon name="cil-warning" class="mr-3" size="xl" />
+                            <div>
+                                <h6 class="font-weight-bold mb-1">{{ $i18n.locale === 'en' ? 'Items Unavailable' : 'สินค้าไม่พร้อมสั่งซื้อ' }}</h6>
+                                <p class="small mb-0">{{ $i18n.locale === 'en' ? 'One or more items in your cart have just been reserved by someone else. Please return to cart.' : 'มีสินค้าบางรายการในตะกร้าของคุณถูกจองโดยผู้อื่นแล้วเมื่อสักครู่ กรุณากลับไปที่ตะกร้าสินค้า' }}</p>
+                            </div>
+                        </div>
+                    </transition>
+                </div>
+            </div>
 
             <div class="mb-4">
                 <CLink href="#" @click.native.prevent="$router.go(-1)" class="text-muted small text-decoration-none">
@@ -10,7 +24,7 @@
             </div>
 
             <CRow>
-                <CardShipping @confirm-payment="handleConfirmPayment" />
+                <CardShipping :loading="loading" :hasReservedItems="hasReservedItems" @confirm-payment="handleConfirmPayment" />
                 <CardOrderSummary />
             </CRow>
         </CContainer>
@@ -29,7 +43,9 @@ export default {
         CardOrderSummary
     },
     data() {
-        return {}
+        return {
+            loading: false
+        }
     },
     computed: {
         ...mapGetters('cart', ['cartItems', 'cartTotal']),
@@ -51,7 +67,21 @@ export default {
             }
 
             try {
-                // 1. Prepare order data for backend (matching Order model)
+                this.loading = true;
+                // 1. Final check for Reserved status (someone might have bought it while you were filling the form)
+                for (let item of this.cartItems) {
+                    const latest = await this.$store.dispatch('artwork/explore', { _id: item._id });
+                    if (latest && latest.status && latest.status.approval) {
+                        const status = latest.status.approval.title.find(t => t.key === 'en')?.value;
+                        if (status === 'Reserved') {
+                            alert(this.$i18n.locale === 'en' ? `Artwork "${item.title[0].value}" has just been reserved by someone else. Please return to cart.` : `ผลงาน "${item.title[0].value}" เพิ่งถูกจองโดยผู้อื่น กรุณากลับไปที่ตะกร้าสินค้า`);
+                            this.loading = false;
+                            return;
+                        }
+                    }
+                }
+
+                // 2. Prepare order data for backend (matching Order model)
                 const userId = this.$store.getters['auth/userId'];
                 const orderData = {
                     artwork: this.cartItems.map(item => item._id),
@@ -98,8 +128,56 @@ export default {
 
             } catch (error) {
                 console.error('Order creation failed:', error);
-                alert(this.$i18n.locale === 'en' ? 'Error creating order. Please try again.' : 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
+                const msg = error.response?.data?.message || error.message || '';
+                if (msg.includes('RESERVED_ALREADY') || msg.includes('Reserved') || msg.includes('Sold Out')) {
+                    alert(this.$i18n.locale === 'en' ? 'One of your items has just been reserved by someone else. Returning to cart.' : 'ขออภัย สินค้าบางรายการในตะกร้าของคุณเพิ่งถูกผู้อื่นจองตัดหน้าไป ระบบจะพากลับไปที่ตะกร้าสินค้า');
+                    this.$router.push('/');
+                } else {
+                    alert(this.$i18n.locale === 'en' ? 'Error creating order. Please try again.' : 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
+                }
+            } finally {
+                this.loading = false;
             }
+        },
+        async refreshStatuses() {
+            if (this.cartItems.length === 0) return;
+            try {
+                const promises = this.cartItems.map(item => 
+                    this.$store.dispatch('artwork/explore', { _id: item._id })
+                );
+                const results = await Promise.all(promises);
+                results.forEach((latest) => {
+                    if (latest) {
+                        const artwork = Array.isArray(latest) ? latest[0] : latest;
+                        if (artwork) this.$store.dispatch('cart/updateCartItem', artwork);
+                    }
+                });
+            } catch (e) {
+                console.error('Sync failed', e);
+            }
+        }
+    },
+    computed: {
+        ...mapGetters('cart', ['cartItems', 'cartTotal', 'cartShippingCost', 'cartFinalTotal']),
+        hasReservedItems() {
+            return this.cartItems.some(item => {
+                if (!item.status) return false;
+                const appEn = this.getName('en', item.status.approval);
+                const appTh = this.getName('th', item.status.approval);
+                const saleEn = this.getName('en', item.status.sale);
+                const saleTh = this.getName('th', item.status.sale);
+                return appEn === 'Reserved' || appTh === 'รอชำระเงิน' || saleEn === 'Sold Out' || saleTh === 'ขายแล้ว';
+            });
+        }
+    },
+    mounted() {
+        // Refresh once on entry and then every 5 seconds for visual updates
+        this.refreshStatuses();
+        this.syncTimer = setInterval(this.refreshStatuses, 5000);
+    },
+    beforeDestroy() {
+        if (this.syncTimer) {
+            clearInterval(this.syncTimer);
         }
     }
 }

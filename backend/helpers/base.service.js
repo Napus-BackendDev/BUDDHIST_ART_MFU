@@ -53,13 +53,15 @@ module.exports = function createBaseService(objSchema, defaultPopulate = []) {
         // ====================================
         // 🔹 Create
         // ====================================
-        onCreate: async (data, populate = defaultPopulate, select = '') => {
-            const newObj = await objSchema.create(data);
+        onCreate: async (data, populate = defaultPopulate, select = '', options = {}) => {
+            // Mongoose's create handles an array of docs for transactions: create([data], options)
+            const results = await objSchema.create(Array.isArray(data) ? data : [data], options);
+            const newObj = Array.isArray(data) ? results : results[0];
+            
             const populated = await objSchema.populate(newObj, populate);
 
             if (!select) return populated;
 
-            // เลือกเฉพาะ fields ที่ต้องการ
             const result = {};
             select.split(' ').forEach(field => {
                 if (field && populated[field] !== undefined) {
@@ -72,16 +74,16 @@ module.exports = function createBaseService(objSchema, defaultPopulate = []) {
         // ====================================
         // 🔹 Create Many (Bulk)
         // ====================================
-        onCreateMany: async (dataList) => {
-            return objSchema.insertMany(dataList);
+        onCreateMany: async (dataList, options = {}) => {
+            return objSchema.insertMany(dataList, options);
         },
 
         // ====================================
         // 🔹 Update
         // ====================================
-        onUpdate: async (query, data, populate = defaultPopulate, select = '') => {
+        onUpdate: async (query, data, populate = defaultPopulate, select = '', options = {}) => {
             return objSchema
-                .findOneAndUpdate(query, data, { new: true })
+                .findOneAndUpdate(query, data, { new: true, ...options })
                 .select(select)
                 .populate(populate)
                 .lean();
@@ -90,8 +92,8 @@ module.exports = function createBaseService(objSchema, defaultPopulate = []) {
         // ====================================
         // 🔹 Delete
         // ====================================
-        onDelete: async (query) => {
-            return objSchema.deleteMany(query);
+        onDelete: async (query, options = {}) => {
+            return objSchema.deleteMany(query, options);
         }
     };
 };

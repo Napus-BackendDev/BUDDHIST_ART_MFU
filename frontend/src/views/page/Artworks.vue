@@ -188,7 +188,7 @@ export default {
         approvedArtworks() {
             return this.allArtworks.filter(art => {
                 const status = this.getStatusLabel(art);
-                return ['Approved', 'Success', 'In Cart'].includes(status);
+                return ['Approved', 'Success', 'Reserved'].includes(status);
             });
         },
         trackStyle() {

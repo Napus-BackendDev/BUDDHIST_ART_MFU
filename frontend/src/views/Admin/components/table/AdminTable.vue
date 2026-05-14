@@ -62,6 +62,7 @@
                                 class="action-btn icon-view" 
                                 v-c-tooltip="'ดูรายละเอียด'"
                                 @click="onView(item)"
+                                :disabled="loadingItems.includes(item._id)"
                             >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
@@ -69,6 +70,7 @@
                                 class="action-btn icon-edit ml-2" 
                                 v-c-tooltip="'แก้ไข'"
                                 @click="onEdit(item)"
+                                :disabled="loadingItems.includes(item._id)"
                             >
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
@@ -76,20 +78,25 @@
                                 class="action-btn icon-success mx-2" 
                                 v-c-tooltip="'อนุมัติ'"
                                 @click="onApprove(item)"
+                                :disabled="loadingItems.includes(item._id)"
                             >
-                                <CIcon name="cil-check" size="lg" />
+                                <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
+                                <CIcon v-else name="cil-check" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-danger" 
                                 v-c-tooltip="'ปฏิเสธ'"
                                 @click="onReject(item)"
+                                :disabled="loadingItems.includes(item._id)"
                             >
-                                <CIcon name="cil-x" size="lg" />
+                                <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
+                                <CIcon v-else name="cil-x" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
                                 v-c-tooltip="'ลบ'"
                                 @click="onDelete(item)"
+                                :disabled="loadingItems.includes(item._id)"
                             >
                                 <CIcon name="cil-trash" size="lg" />
                             </button>
@@ -178,6 +185,10 @@ export default {
                 category: 'All Categories',
                 status: 'All Status'
             })
+        },
+        loadingItems: {
+            type: Array,
+            default: () => []
         }
     },
     data() {
@@ -268,17 +279,43 @@ export default {
             this.activePage = val;
         },
         exportExcel() {
-            const dataToExport = this.filteredItems.map(item => ({
-                'ID': item._id,
-                'Title': this.getName('en', item),
-                'Artist': item.artist ? this.getName('en', item.artist) : 'N/A',
-                'Category': item.category ? this.getName('en', item.category) : 'N/A',
-                'Price': item.price,
-                'Status': this.getStatusBadge(item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending').label,
-                'Created At': this.formatDate(item.createdAt)
-            }));
+            const baseUrl = process.env.VUE_APP_API_URL || window.location.origin;
 
-            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const headers = [
+                'Artwork Image', 'Title (TH)', 'Title (EN)', 
+                'Artist Name', 'Artist ID', 'Category', 
+                'Technique (TH)', 'Technique (EN)', 
+                'Size (TH)', 'Size (EN)', 'Price', 
+                'Approval Status', 'Sale Status', 'Created At'
+            ];
+
+            const data = this.filteredItems.map(item => {
+                const artworkUrl = item.image ? (item.image.startsWith('http') ? item.image : `${baseUrl}${item.image}`) : null;
+                
+                // Status Helpers
+                const approvalStatus = this.getStatusBadge(item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending').label;
+                const saleStatus = item.status && item.status.sale ? this.getName('en', item.status.sale) : 'N/A';
+
+                return [
+                    // Link column
+                    artworkUrl ? { t: 's', v: 'View Image', l: { Target: artworkUrl } } : 'No Image',
+                    this.getName('th', item),
+                    this.getName('en', item),
+                    item.artist ? this.getName('en', item.artist) : 'N/A',
+                    item.artist ? (item.artist.studentId || 'N/A') : 'N/A',
+                    item.category ? this.getName('en', item.category) : 'N/A',
+                    item.technique ? this.getName('th', item.technique) : 'N/A',
+                    item.technique ? this.getName('en', item.technique) : 'N/A',
+                    item.size ? this.getName('th', item.size) : 'N/A',
+                    item.size ? this.getName('en', item.size) : 'N/A',
+                    item.price || 0,
+                    approvalStatus,
+                    saleStatus,
+                    this.formatDate(item.createdAt)
+                ];
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Artworks');
             XLSX.writeFile(wb, `Artworks_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
@@ -373,5 +410,12 @@ export default {
     border: 1px solid #eef0f3;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
     margin-top: 1rem;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner-animation {
+  animation: spin 1s linear infinite;
 }
 </style>

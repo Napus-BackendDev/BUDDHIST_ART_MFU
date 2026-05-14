@@ -15,13 +15,13 @@ const COORDS = {
         signature2: { x: 100, y: 128, width: 85,  height: 40  }
     },
     text: {
-        artistName:    { x: 120, y: 630, size: 12, maxWidth: 150 },
-        year:          { x: 508, y: 605, size: 12, maxWidth: 50  },
-        artworkNameTH: { x: 365, y: 550, size: 12, maxWidth: 200 },
-        size:          { x: 375, y: 520, size: 12, maxWidth: 150 },
-        technique:     { x: 375, y: 497, size: 12, maxWidth: 150 },
-        price:         { x: 375, y: 473, size: 12, maxWidth: 150 },
-        description:   { x: 365, y: 450, size: 10, maxWidth: 200 }
+        artistName:    { x: 120, y: 620, size: 12, maxWidth: 150 },
+        year:          { x: 508, y: 595, size: 12, maxWidth: 50  },
+        artworkNameTH: { x: 365, y: 538, size: 12, maxWidth: 200 },
+        size:          { x: 375, y: 508, size: 12, maxWidth: 150 },
+        technique:     { x: 375, y: 478, size: 12, maxWidth: 150 },
+        price:         { x: 375, y: 448, size: 12, maxWidth: 150 },
+        description:   { x: 365, y: 418, size: 10, maxWidth: 200 }
     }
 };
 
@@ -31,20 +31,20 @@ function wrapText(text, maxWidth, font, fontSize) {
     const lines = [];
     let currentLine = '';
 
-    String(text || '').split(' ').forEach(word => {
-        if (font.widthOfTextAtSize(word, fontSize) > limit) {
-            for (const char of word) {
-                if (font.widthOfTextAtSize(currentLine + char, fontSize) > limit) {
-                    lines.push(currentLine);
-                    currentLine = char;
-                } else currentLine += char;
-            }
+    // Regex to split into Thai character clusters (base + vowels + tone marks)
+    // and English words/spaces
+    const segments = String(text || '').match(/[\u0E00-\u0E7F][\u0E30-\u0E3A\u0E47-\u0E4E]*|[a-zA-Z0-9]+|\s+/g) || [];
+
+    segments.forEach(segment => {
+        const test = currentLine + segment;
+        if (font.widthOfTextAtSize(test, fontSize) <= limit) {
+            currentLine = test;
         } else {
-            const test = currentLine ? `${currentLine} ${word}` : word;
-            if (font.widthOfTextAtSize(test, fontSize) <= limit) currentLine = test;
-            else { lines.push(currentLine); currentLine = word; }
+            if (currentLine) lines.push(currentLine);
+            currentLine = segment.trim() === '' ? '' : segment; // Skip leading spaces on new line
         }
     });
+
     if (currentLine) lines.push(currentLine);
     return lines;
 }

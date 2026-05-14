@@ -38,15 +38,15 @@
                                 <small class="price-unit ml-1 font-weight-bold">{{ $i18n.locale === 'en' ? 'THB' : 'บาท' }}</small>
                             </div>
                             
-                            <!-- Action Button: Add to Cart / In Cart Status -->
+                            <!-- Action Button: Add to Cart / Reserved Status -->
                             <div v-if="isPurchasable(art)" class="action-btn-container" @click.stop="handleCartAction(art)">
                                 <div v-if="isInCart(art._id)" class="in-cart-label">
                                     <CIcon name="cil-check-circle" class="mr-1" />
                                     <span>{{ $i18n.locale === 'en' ? 'In Cart' : 'อยู่ในตะกร้าแล้ว' }}</span>
                                 </div>
-                                <div v-else-if="isApprovalInCart(art)" class="in-cart-label" style="color: #ff9800; border-color: #ff9800; background-color: #fff3e0; cursor: not-allowed;">
+                                <div v-else-if="isApprovalReserved(art)" class="in-cart-label" style="color: #ff9800; border-color: #ff9800; background-color: #fff3e0; cursor: not-allowed;">
                                     <CIcon name="cil-cart" class="mr-1" />
-                                    <span>{{ $i18n.locale === 'en' ? 'Being Ordered' : 'อยู่ในช่วงสั่งซื้อ' }}</span>
+                                    <span>{{ $i18n.locale === 'en' ? 'Reserved' : 'จองแล้ว' }}</span>
                                 </div>
                                 <div v-else class="action-btn-circle">
                                     <CIcon name="cil-cart" />
@@ -88,8 +88,8 @@ export default {
         },
         handleCartAction(art) {
             if (!this.isPurchasable(art)) return;
-            // Prevent adding to cart if it's already in someone else's cart
-            if (this.isApprovalInCart(art) && !this.isInCart(art._id)) {
+            // Prevent adding to cart if it's already in someone else's cart (Reserved)
+            if (this.isApprovalReserved(art) && !this.isInCart(art._id)) {
                 return;
             }
             if (this.isInCart(art._id)) {
@@ -103,9 +103,9 @@ export default {
                 this.$store.dispatch('cart/setShowCart', true);
             }
         },
-        isApprovalInCart(art) {
+        isApprovalReserved(art) {
             if (!art || !art.status || !art.status.approval) return false;
-            return this.getName('en', art.status.approval) === 'In Cart';
+            return this.getName('en', art.status.approval) === 'Reserved';
         },
         isPurchasable(art) {
             if (!art || !art.status || !art.status.sale) return false;

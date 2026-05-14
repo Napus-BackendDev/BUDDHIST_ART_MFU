@@ -3,7 +3,7 @@
         <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานของคุณ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" @create="onAddArtwork" @export="handleExport" />
         <ArtworkWidget v-model="filters.status" :items="artworks" />
         <ArtworkFilter v-model="filters" />
-        <AdminTable ref="adminTable" :filters="filters" :items="artworks" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
+        <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
         <ArtworkCreateModal :show.sync="showCreateModal" @save="handleSaveArtwork"/>
         <ArtworkCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @download-template="downloadTemplate"/>
         <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView"/>
@@ -49,7 +49,8 @@ export default {
                 endDate: null,
                 quickRange: 'All Time'
             },
-            categories: []
+            categories: [],
+            loadingItems: []
         }
     },
     created() {
@@ -309,6 +310,7 @@ export default {
         },
         async updateStatus(artwork, statusName, toastTitle, toastMsg) {
             try {
+                this.loadingItems.push(artwork._id);
                 const statuses = this.$store.getters['setting/status/item'] || [];
                 const targetStatus = statuses.find(s => this.getName('en', s) === statusName);
                 
@@ -339,6 +341,8 @@ export default {
                     message: error.message || `Failed to update status to ${statusName}.`,
                     variant: 'danger'
                 });
+            } finally {
+                this.loadingItems = this.loadingItems.filter(id => id !== artwork._id);
             }
         },
         async handleDeleteArtwork(artwork) {

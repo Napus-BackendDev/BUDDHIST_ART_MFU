@@ -77,11 +77,21 @@
                                 </template>
                             </div>
                             
-                            <!-- Add to Cart Button (Only in Public Mode) -->
-                            <div v-if="isPublic" class="action-btn-container" @click.stop="handleCartAction(art)">
-                                <div v-if="isInCart(art._id)" class="in-cart-label">
+                            <!-- Add to Cart Button (Only in Public Mode AND if For Sale) -->
+                            <div v-if="isPublic && isForSale(art)" class="action-btn-container" @click.stop="handleCartAction(art)">
+                                <!-- Loading State -->
+                                <div v-if="loadingItems.includes(art._id)" class="in-cart-label" style="opacity: 0.7;">
+                                    <CIcon name="cil-reload" class="mr-1 spinner-animation" />
+                                    <span>{{ currentLocale === 'en' ? 'Syncing...' : 'กำลังตรวจสอบ...' }}</span>
+                                </div>
+                                <!-- Normal States -->
+                                <div v-else-if="isInCart(art._id)" class="in-cart-label">
                                     <CIcon name="cil-check-circle" class="mr-1" />
                                     <span>In Cart</span>
+                                </div>
+                                <div v-else-if="isApprovalReserved(art)" class="in-cart-label" style="color: #ff9800; border-color: #ff9800; background-color: #fff3e0; cursor: not-allowed;">
+                                    <CIcon name="cil-cart" class="mr-1" />
+                                    <span>{{ currentLocale === 'en' ? 'Reserved' : 'จองแล้ว' }}</span>
                                 </div>
                                 <div v-else class="action-btn-circle">
                                     <CIcon name="cil-cart" />
@@ -111,6 +121,12 @@ export default {
         isPublic: {
             type: Boolean,
             default: false
+        }
+    },
+    data() {
+        return {
+            isAdmin: false,
+            loadingItems: []
         }
     },
     computed: {
@@ -145,12 +161,34 @@ export default {
             if (value === undefined || value === null) return '0.00';
             return parseFloat(value).toLocaleString('en-US');
         },
-        handleCartAction(art) {
-            if (this.isInCart(art._id)) {
-                this.$store.dispatch('cart/removeFromCart', art._id);
-            } else {
-                this.$store.dispatch('cart/addToCart', art);
-                this.$store.dispatch('cart/setShowCart', true);
+        async handleCartAction(art) {
+            // Prevent if not for sale
+            if (!this.isForSale(art)) return;
+
+            // Prevent adding to cart if it's already in someone else's cart (Reserved)
+            if (this.isApprovalReserved(art) && !this.isInCart(art._id)) {
+                return;
+            }
+
+            try {
+                this.loadingItems.push(art._id);
+                
+                // Final sync check before adding
+                if (!this.isInCart(art._id)) {
+                    const latest = await this.$store.dispatch('artwork/explore', { _id: art._id });
+                    if (latest && this.isApprovalReserved(latest)) {
+                        alert(this.$i18n.locale === 'en' ? 'Sorry, this artwork was just reserved.' : 'ขออภัย ผลงานนี้เพิ่งถูกจองไป');
+                        return;
+                    }
+                    this.$store.dispatch('cart/addToCart', latest || art);
+                    this.$store.dispatch('cart/setShowCart', true);
+                } else {
+                    this.$store.dispatch('cart/removeFromCart', art._id);
+                }
+            } catch (error) {
+                console.error('Cart action failed:', error);
+            } finally {
+                this.loadingItems = this.loadingItems.filter(id => id !== art._id);
             }
         },
         isAvailable(art) {
@@ -159,6 +197,10 @@ export default {
         },
         isInCart(id) {
             return this.$store.getters['cart/isInCart'](id);
+        },
+        isApprovalReserved(art) {
+            if (!art || !art.status || !art.status.approval) return false;
+            return this.getName('en', art.status.approval) === 'Reserved';
         },
         getStatusLabel(art) {
             if (!art.status) return '';
@@ -407,5 +449,12 @@ export default {
 
 @media (min-width: 992px) {
     .col-custom-grid { flex: 0 0 25%; max-width: 25%; }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner-animation {
+  animation: spin 1s linear infinite;
 }
 </style>

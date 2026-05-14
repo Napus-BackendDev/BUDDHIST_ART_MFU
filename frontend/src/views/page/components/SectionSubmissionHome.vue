@@ -51,7 +51,7 @@ export default {
             // Only show approved artworks
             let result = this.allArtworks.filter(art => {
                 const status = this.getStatusLabel(art);
-                const isApproved = ['Approved', 'Success', 'In Cart'].includes(status);
+                const isApproved = ['Approved', 'Success', 'Reserved'].includes(status);
                 
                 // Only show artworks WITH submission provenance (Activities/Opportunities)
                 const isActivity = art.submissionArtworkId && art.artworkPiece;
