@@ -88,7 +88,7 @@
                            </div>
                            <div>
                                <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">{{ $i18n.locale === 'en' ? 'Member Since' : 'เป็นสมาชิกตั้งแต่' }}</h6>
-                               <h3 class="mb-0 font-weight-bold text-dark">2024</h3>
+                               <h3 class="mb-0 font-weight-bold text-dark">{{ memberSinceYear }}</h3>
                            </div>
                        </CCardBody>
                    </CCard>
@@ -263,6 +263,12 @@ export default {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
       }
       return parts[0].substring(0, 2).toUpperCase();
+    },
+    memberSinceYear() {
+      if (this.user && this.user.createdAt) {
+        return new Date(this.user.createdAt).getFullYear();
+      }
+      return new Date().getFullYear();
     }
   },
   async created() {
