@@ -5,7 +5,7 @@
             <CHeaderBrand class="d-flex align-items-center text-decoration-none brand-link-custom" to="/">
                 <img src="@/assets/icons/logo.png" height="55" class="mr-3 brand-logo-img">
                 <div class="brand-text-wrapper d-flex flex-column justify-content-center">
-                    <span class="brand-main-title">Buddhist Art Mea Fah Luang University</span>
+                    <span class="brand-main-title">Buddhist Art Mae Fah Luang University</span>
                     <span class="brand-subtitle">{{ $i18n.locale === 'en' ? 'Short Course Program in Buddhist Art, MFU' : 'หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง' }}</span>
                 </div>
             </CHeaderBrand>
