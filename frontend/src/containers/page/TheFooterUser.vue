@@ -21,7 +21,12 @@
                             <li><router-link to="/">{{ $t('header.home') }}</router-link></li>
                             <li><router-link to="/artworks">{{ $t('header.artworks') }}</router-link></li>
                             <li><router-link to="/news">{{ $t('header.news') }}</router-link></li>
-                            <li><a href="https://buddhistart.mfu.ac.th/" target="_blank" rel="noopener noreferrer">{{ $t('header.about') }}</a></li>
+                            <li>
+                                <a href="https://buddhistart.mfu.ac.th/" target="_blank" rel="noopener noreferrer">
+                                    {{ $t('header.about') }}
+                                    <CIcon name="cil-external-link" size="sm" class="ml-1" style="vertical-align: middle; opacity: 0.7; width: 11px; height: 11px;" />
+                                </a>
+                            </li>
                             <li><router-link to="/contact">{{ $t('header.contact') }}</router-link></li>
                         </ul>
                     </CCol>
