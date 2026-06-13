@@ -21,7 +21,7 @@
                             <li><router-link to="/">{{ $t('header.home') }}</router-link></li>
                             <li><router-link to="/artworks">{{ $t('header.artworks') }}</router-link></li>
                             <li><router-link to="/news">{{ $t('header.news') }}</router-link></li>
-                            <li><router-link to="/about">{{ $t('header.about') }}</router-link></li>
+                            <li><a href="https://buddhistart.mfu.ac.th/" target="_blank" rel="noopener noreferrer">{{ $t('header.about') }}</a></li>
                             <li><router-link to="/contact">{{ $t('header.contact') }}</router-link></li>
                         </ul>
                     </CCol>

@@ -96,7 +96,7 @@
                         <CHeaderNavLink to="/news" class="nav-link-custom">{{ $t('header.news') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                     <CHeaderNavItem class="px-4">
-                        <CHeaderNavLink to="/about" class="nav-link-custom">{{ $t('header.about') }}</CHeaderNavLink>
+                        <a href="https://buddhistart.mfu.ac.th/" target="_blank" rel="noopener noreferrer" class="c-header-nav-link nav-link-custom">{{ $t('header.about') }}</a>
                     </CHeaderNavItem>
                     <CHeaderNavItem class="px-4">
                         <CHeaderNavLink to="/contact" class="nav-link-custom">{{ $t('header.contact') }}</CHeaderNavLink>
@@ -126,7 +126,7 @@
                             <CHeaderNavLink to="/news" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.news') }}</CHeaderNavLink>
                         </li>
                         <li class="mb-4">
-                            <CHeaderNavLink to="/about" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.about') }}</CHeaderNavLink>
+                            <a href="https://buddhistart.mfu.ac.th/" target="_blank" rel="noopener noreferrer" class="text-dark h5 p-0 d-block text-decoration-none" @click="mobileMenu = false">{{ $t('header.about') }}</a>
                         </li>
                         <li class="mb-4">
                             <CHeaderNavLink to="/contact" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.contact') }}</CHeaderNavLink>
