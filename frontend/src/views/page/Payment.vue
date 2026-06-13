@@ -19,8 +19,11 @@
             <!-- BACK BUTTON AND HEADER -->
             <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap" v-if="currentStep !== 3">
                 <div>
-                    <CLink href="#" @click.prevent="$router.go(-1)" class="text-muted small text-decoration-none">
+                    <CLink v-if="currentStep === 1" href="#" @click.prevent="$router.go(-1)" class="text-muted small text-decoration-none">
                         <CIcon name="cil-arrow-left" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Back to Shopping' : 'กลับไปช้อปปิ้ง' }}
+                    </CLink>
+                    <CLink v-else-if="currentStep === 2" href="#" @click.prevent="currentStep = 1" class="text-muted small text-decoration-none">
+                        <CIcon name="cil-arrow-left" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Back to Information' : 'กลับไปแก้ไขข้อมูลผู้จัดส่ง' }}
                     </CLink>
                     <h2 class="font-weight-bold mt-2" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Checkout' : 'ชำระเงิน' }}</h2>
                 </div>
@@ -261,6 +264,27 @@ export default {
 
             try {
                 this.loading = true;
+
+                // If order was already created, update it instead of creating a new one
+                if (this.createdOrder && this.createdOrder._id) {
+                    const orderData = {
+                        _id: this.createdOrder._id,
+                        contact: {
+                            name: shippingForm.name,
+                            telephone: shippingForm.telephone,
+                            email: shippingForm.email
+                        },
+                        address: {
+                            shipping: shippingForm.shipping,
+                            bill: shippingForm.bill || shippingForm.shipping
+                        }
+                    };
+                    const response = await this.$store.dispatch('order/update', orderData);
+                    this.createdOrder = response.data.data;
+                    this.currentStep = 2;
+                    return;
+                }
+
                 // Final check for Reserved status
                 for (let item of this.cartItems) {
                     const latest = await this.$store.dispatch('artwork/explore', { _id: item._id });
