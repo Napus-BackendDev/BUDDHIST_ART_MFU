@@ -13,7 +13,6 @@ const ArtworkDetail = () => import('@/views/page/ArtworkDetail')
 const Payment = () => import('@/views/page/Payment')
 const Bill = () => import('@/views/page/Bill')
 const Artworks = () => import('@/views/page/Artworks')
-const About = () => import('@/views/page/About')
 const Contact = () => import('@/views/page/Contact')
 const NewsDetail = () => import('@/views/page/NewsDetail')
 
@@ -93,8 +92,7 @@ export default new Router({
                 },
                 {
                     path: 'about',
-                    name: 'About',
-                    component: About
+                    redirect: '/'
                 },
                 {
                     path: 'contact',
