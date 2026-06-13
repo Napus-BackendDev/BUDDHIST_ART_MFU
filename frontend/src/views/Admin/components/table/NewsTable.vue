@@ -9,7 +9,7 @@
                             <td>
                                 <div class="thumbnail-wrapper clickable" @click="zoomImg(getFirstImage(item))">
                                     <img :src="getFirstImage(item) || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName('en', item).charAt(0)}`"
-                                        :alt="getName('en', item)" class="thumbnail-img">
+                                        :alt="getName($i18n.locale, item) || getName('en', item)" class="thumbnail-img">
                                     <div class="zoom-overlay">
                                         <CIcon name="cil-search" />
                                     </div>
@@ -18,17 +18,9 @@
                         </template>
                         <template #title="{ item }">
                             <td>
-                                <div class="font-weight-bold text-dark mb-1">{{ getName('en', item) }}</div>
+                                <div class="font-weight-bold text-dark mb-1">{{ getName($i18n.locale, item) || getName('en', item) }}</div>
                                 <div class="text-muted small description-truncate">
-                                    {{ item.description || item.content ? getName('en', item.description || item.content) : 'N/A' }}
-                                </div>
-                            </td>
-                        </template>
-                        <template #category="{ item }">
-                            <td>
-                                <div class="category-badge">
-                                    <CIcon name="cil-tag" size="sm" class="category-icon" /> 
-                                    {{ item.category ? getName('en', item.category) : 'Uncategorized' }}
+                                    {{ item.description || item.content ? stripHtml(getName($i18n.locale, item.description || item.content) || getName('en', item.description || item.content)) : 'N/A' }}
                                 </div>
                             </td>
                         </template>
@@ -46,13 +38,13 @@
                         <template #actions="{ item }">
                             <td class="text-right">
                                 <div class="d-inline-flex align-items-center">
-                                    <button class="action-btn icon-view" v-c-tooltip="'ดูรายละเอียด'" @click="onView(item)">
+                                    <button class="action-btn icon-view" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="onView(item)">
                                         <CIcon name="cilMagnifyingGlass" size="lg" />
                                     </button>
-                                    <button class="action-btn icon-edit ml-2" v-c-tooltip="'แก้ไข'" @click="onEdit(item)">
+                                    <button class="action-btn icon-edit ml-2" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
                                         <CIcon name="cil-pencil" size="lg" />
                                     </button>
-                                    <button class="action-btn icon-trash ml-2" v-c-tooltip="'ลบ'" @click="onDelete(item)">
+                                    <button class="action-btn icon-trash ml-2" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="onDelete(item)">
                                         <CIcon name="cil-trash" size="lg" />
                                     </button>
                                 </div>
@@ -63,7 +55,9 @@
 
                 <CCardFooter
                     class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
-                    <div class="text-muted text-sm">Showing {{ paginatedItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }} to {{ Math.min(currentPage * itemsPerPage, filteredItems.length) }} of {{ filteredItems.length }} news articles</div>
+                    <div class="text-muted text-sm">
+                        {{ $i18n.locale === 'en' ? `Showing ${paginatedItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, filteredItems.length)} of ${filteredItems.length} news articles` : `แสดง ${paginatedItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} ถึง ${Math.min(currentPage * itemsPerPage, filteredItems.length)} จากทั้งหมด ${filteredItems.length} ข่าวสาร` }}
+                    </div>
                     <CPagination
                         :active-page.sync="currentPage"
                         :pages="Math.max(1, Math.ceil(filteredItems.length / itemsPerPage))"
@@ -78,7 +72,7 @@
             <CModal :show.sync="showZoomModal" centered size="xl" class="zoom-modal" hide-footer>
                 <template #header>
                     <div class="w-100 d-flex justify-content-between align-items-center">
-                        <h5 class="modal-title py-0">Zoom News Image</h5>
+                        <h5 class="modal-title py-0">{{ $i18n.locale === 'en' ? 'Zoom News Image' : 'ดูรูปภาพข่าวขนาดใหญ่' }}</h5>
                         <CButton close @click="showZoomModal = false" />
                     </div>
                 </template>
@@ -113,18 +107,19 @@ export default {
             currentPage: 1,
             itemsPerPage: 5,
             showZoomModal: false,
-            zoomImageUrl: '',
-            fields: [
-                { key: 'thumbnail', label: 'COVER', _classes: 'border-top-0 border-bottom' },
-                { key: 'title', label: 'NEWS TITLE', _classes: 'border-top-0 border-bottom' },
-                { key: 'category', label: 'CATEGORY', _classes: 'border-top-0 border-bottom' },
-                { key: 'createdAt', label: 'DATE CREATED', _classes: 'border-top-0 border-bottom' },
-                { key: 'views', label: 'VIEWS', _classes: 'border-top-0 border-bottom text-center' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ]
+            zoomImageUrl: ''
         }
     },
     computed: {
+        fields() {
+            return [
+                { key: 'thumbnail', label: this.$i18n.locale === 'en' ? 'COVER' : 'รูปหน้าปก', _classes: 'border-top-0 border-bottom' },
+                { key: 'title', label: this.$i18n.locale === 'en' ? 'NEWS TITLE' : 'หัวข้อข่าว', _classes: 'border-top-0 border-bottom' },
+                { key: 'createdAt', label: this.$i18n.locale === 'en' ? 'DATE CREATED' : 'วันที่สร้าง', _classes: 'border-top-0 border-bottom' },
+                { key: 'views', label: this.$i18n.locale === 'en' ? 'VIEWS' : 'ยอดเข้าชม', _classes: 'border-top-0 border-bottom text-center' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+            ];
+        },
         filteredItems() {
             return this.items.filter(item => {
                 const title = this.getName('en', item).toLowerCase();
@@ -134,9 +129,6 @@ export default {
                     title.includes(this.filters.search.toLowerCase()) ||
                     content.includes(this.filters.search.toLowerCase());
 
-                const categoryMatch = this.filters.category === 'All Categories' || 
-                                     (item.category && this.getName('en', item.category.title) === this.filters.category);
-
                 let dateMatch = true;
                 if (this.filters.startDate || this.filters.endDate) {
                     const itemDate = moment(item.createdAt);
@@ -144,7 +136,7 @@ export default {
                     if (this.filters.endDate) dateMatch = dateMatch && itemDate.isSameOrBefore(moment(this.filters.endDate).endOf('day'));
                 }
 
-                return searchMatch && categoryMatch && dateMatch;
+                return searchMatch && dateMatch;
             });
         },
         paginatedItems() {
@@ -161,10 +153,24 @@ export default {
         }
     },
     methods: {
+        stripHtml(val) {
+            if (!val) return '';
+            return val
+                .replace(/<[^>]*>/g, '')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"');
+        },
         onView(item) { this.$emit('view', item); },
         onEdit(item) { this.$emit('edit', item); },
         onDelete(item) {
-            if (confirm(`Are you sure you want to delete this news article?`)) {
+            const title = this.getName(this.$i18n.locale, item) || this.getName('en', item);
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to delete "${title}"?`
+                : `คุณแน่ใจหรือไม่ว่าต้องการลบ "${title}"?`;
+            if (confirm(confirmMsg)) {
                 this.$emit('delete', item);
             }
         },
@@ -183,7 +189,6 @@ export default {
             const dataToExport = this.filteredItems.map(item => ({
                 'ID': item._id,
                 'Title': this.getName('en', item.title),
-                'Category': item.category ? this.getName('en', item.category.title) : 'Uncategorized',
                 'Created At': this.formatDate(item.createdAt)
             }));
             const ws = XLSX.utils.json_to_sheet(dataToExport);

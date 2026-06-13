@@ -88,7 +88,7 @@
                            </div>
                            <div>
                                <h6 class="text-muted mb-1 text-uppercase font-weight-bold small tracking-wide">{{ $i18n.locale === 'en' ? 'Member Since' : 'เป็นสมาชิกตั้งแต่' }}</h6>
-                               <h3 class="mb-0 font-weight-bold text-dark">{{ memberSinceYear }}</h3>
+                               <h3 class="mb-0 font-weight-bold text-dark">{{ memberSinceDate }}</h3>
                            </div>
                        </CCardBody>
                    </CCard>
@@ -244,9 +244,14 @@ export default {
           statusName: (() => {
             const statusLabel = this.getName('en', order.status);
             const s = statusLabel ? statusLabel.toLowerCase() : '';
-            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
-            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
-            return 'Pending';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'เสร็จสิ้น';
+            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return this.$i18n.locale === 'en' ? 'Rejected' : 'ยกเลิก';
+            
+            if (!order.image) {
+                return this.$i18n.locale === 'en' ? 'Pending Payment' : 'รอชำระเงิน';
+            } else {
+                return this.$i18n.locale === 'en' ? 'Pending Verification' : 'รอดำเนินการ';
+            }
           })()
         }));
     },
@@ -254,7 +259,10 @@ export default {
       return this.form ? this.form.nameEn : '';
     },
     fullName() {
-      return this.form.nameTh || 'User Name';
+      if (this.$i18n.locale === 'en') {
+        return this.form.nameEn || this.form.nameTh || 'User Name';
+      }
+      return this.form.nameTh || this.form.nameEn || 'ชื่อผู้ใช้';
     },
     initials() {
       if (!this.form.nameTh) return 'US';
@@ -264,11 +272,15 @@ export default {
       }
       return parts[0].substring(0, 2).toUpperCase();
     },
-    memberSinceYear() {
+    memberSinceDate() {
       if (this.user && this.user.createdAt) {
-        return new Date(this.user.createdAt).getFullYear();
+        return new Date(this.user.createdAt).toLocaleDateString(this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
       }
-      return new Date().getFullYear();
+      return 'N/A';
     }
   },
   async created() {
@@ -423,6 +435,12 @@ export default {
 }
 
 /* Avatar Styles */
+.badge-info, .status-badge.badge-info {
+    background-color: rgba(52, 152, 219, 0.1) !important;
+    color: #2980b9 !important;
+    border: 1px solid #2980b9 !important;
+}
+
 .avatar-upload-wrapper {
     width: 120px;
     height: 120px;

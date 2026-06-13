@@ -1,42 +1,46 @@
 <template>
   <CModal
-    title="Edit Profile"
+    :title="$i18n.locale === 'en' ? 'Edit Profile' : 'แก้ไขโปรไฟล์'"
     :show.sync="localShow"
     size="lg"
     :centered="true"
   >
     <div class="p-4">
       <CRow>
-        <CCol md="12" class="mb-4">
-          <label class="form-label-custom">Full Name</label>
-          <CInput v-model="localForm.nameTh" placeholder="ชื่อ" class="custom-input-premium shadow-none" />
+        <CCol md="6" class="mb-4">
+          <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
+          <CInput v-model="localForm.nameTh" :placeholder="$i18n.locale === 'en' ? 'Full name in Thai' : 'ชื่อ-นามสกุลภาษาไทย'" class="custom-input-premium shadow-none" />
+        </CCol>
+        <CCol md="6" class="mb-4">
+          <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
+          <CInput v-model="localForm.nameEn" :placeholder="$i18n.locale === 'en' ? 'Full name in English' : 'ชื่อ-นามสกุลภาษาอังกฤษ'" class="custom-input-premium shadow-none" />
         </CCol>
 
         <CCol md="6" class="mb-4">
-          <label class="form-label-custom">Personal Email</label>
+          <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
           <CInput v-model="localForm.personalEmail" placeholder="example@gmail.com" type="email" class="custom-input-premium shadow-none" />
         </CCol>
         <CCol md="6" class="mb-4">
-          <label class="form-label-custom">Telephone</label>
+          <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
           <CInput v-model="localForm.telephone" placeholder="08x-xxx-xxxx" class="custom-input-premium shadow-none" />
         </CCol>
         <CCol md="6" class="mb-4">
-          <label class="form-label-custom">Billing Address</label>
-          <CTextarea v-model="localForm.bill" placeholder="Enter your billing address" rows="3" class="custom-input-premium shadow-none" />
+          <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ออกใบเสร็จ' }}</label>
+          <CTextarea v-model="localForm.bill" :placeholder="$i18n.locale === 'en' ? 'Enter your billing address' : 'กรอกที่อยู่สำหรับออกใบเสร็จ'" rows="3" class="custom-input-premium shadow-none" />
         </CCol>
         <CCol md="6" class="mb-4">
-          <label class="form-label-custom">Shipping Address</label>
-          <CTextarea v-model="localForm.shipping" placeholder="Enter your shipping address" rows="3" class="custom-input-premium shadow-none" />
+          <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</label>
+          <CTextarea v-model="localForm.shipping" :placeholder="$i18n.locale === 'en' ? 'Enter your shipping address' : 'กรอกที่อยู่สำหรับจัดส่ง'" rows="3" class="custom-input-premium shadow-none" />
         </CCol>
       </CRow>
     </div>
     <template #footer>
       <div class="d-flex w-100 justify-content-end p-3 rounded-bottom">
         <CButton @click="handleCancel" variant="outline" shape="pill" class="mr-3 hover-lift px-4">
-          Cancel
+          {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
         </CButton>
         <CButton color="dark" shape="pill" class="px-5 font-weight-bold shadow-sm hover-lift btn-premium" @click="handleSave">
-          Save Changes
+          {{ $i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการเปลี่ยนแปลง' }}
         </CButton>
       </div>
     </template>

@@ -104,10 +104,10 @@
                     </div>
                 </div>
 
-                <!-- 6) Technique & Size -->
+                <!-- 6) Technique, Size & Remark -->
                 <div class="row mb-4">
-                    <div class="col-md-6 mb-3 mb-md-0">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
                             <label class="view-label">Technique</label>
                             <div class="view-value text-dark mb-2 d-flex align-items-center">
                                 <span class="badge badge-white-outline mr-3">TH</span> 
@@ -119,8 +119,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
                             <label class="view-label">Size</label>
                             <div class="view-value text-dark mb-2 d-flex align-items-center">
                                 <span class="badge badge-white-outline mr-3">TH</span> 
@@ -129,6 +129,19 @@
                             <div class="view-value text-muted d-flex align-items-center">
                                 <span class="badge badge-white-outline mr-3">EN</span> 
                                 <span>{{ artwork.size ? getName('en', artwork.size) : 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
+                            <label class="view-label">Remark</label>
+                            <div class="view-value text-dark mb-2 d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">TH</span> 
+                                <span class="font-weight-bold">{{ artwork.remark ? getName('th', artwork.remark) : 'N/A' }}</span>
+                            </div>
+                            <div class="view-value text-muted d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">EN</span> 
+                                <span>{{ artwork.remark ? getName('en', artwork.remark) : 'N/A' }}</span>
                             </div>
                         </div>
                     </div>

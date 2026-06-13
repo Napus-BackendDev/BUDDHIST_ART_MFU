@@ -1,3 +1,5 @@
+import Service from "@/service/api";
+
 const MOCK_STATS = {
     summary: {
         artworks: 142,
@@ -31,8 +33,14 @@ const DashboardModule = {
             },
             charts: {
                 status: [],
-                category: []
-            }
+                category: [],
+                orderAnalytics: {
+                    year: new Array(12).fill(0),
+                    month: new Array(31).fill(0),
+                    day: new Array(24).fill(0)
+                }
+            },
+            pendingArtworks: []
         },
         loading: false
     },
@@ -49,16 +57,17 @@ const DashboardModule = {
     actions: {
         getStats({ commit }) {
             commit("SET_LOADING", true);
-            // Use mock data — swap to API call once backend endpoint is ready:
-            // return Service.dashboard('stats', {}, {})
-            //     .then((response) => { commit("SET_STATS", response.data.data); ... })
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    commit("SET_STATS", MOCK_STATS);
+            return Service.dashboard('stats', {}, {})
+                .then((response) => {
+                    commit("SET_STATS", response.data.data);
                     commit("SET_LOADING", false);
-                    resolve(MOCK_STATS);
-                }, 300);
-            });
+                    return response.data.data;
+                })
+                .catch((error) => {
+                    console.error("Error fetching dashboard stats:", error);
+                    commit("SET_LOADING", false);
+                    throw error;
+                });
         }
     },
 

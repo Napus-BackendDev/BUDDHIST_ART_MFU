@@ -42,7 +42,7 @@
                         <CDropdown :key="form.roleId" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ form.roleName || ($i18n.locale === 'en' ? 'Select Role' : 'เลือกบทบาท') }}</span>
+                                    <span class="text-dark">{{ getRoleLabel() || ($i18n.locale === 'en' ? 'Select Role' : 'เลือกบทบาท') }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
@@ -57,7 +57,7 @@
             </CRow>
 
             <!-- Status Row -->
-            <CRow v-if="form.roleName === 'Artist'">
+            <CRow v-if="form.roleNameEn === 'Artist'">
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Account Status' : 'สถานะบัญชี' }}</label>
@@ -65,8 +65,8 @@
                             <template #toggler>
                                 <CButton class="custom-select-btn">
                                     <div class="d-flex align-items-center">
-                                        <div :class="['status-dot mr-2', getStatusDotClass(form.statusName)]"></div>
-                                        <span class="text-dark">{{ form.statusName || ($i18n.locale === 'en' ? 'Select Status' : 'เลือกสถานะ') }}</span>
+                                        <div :class="['status-dot mr-2', getStatusDotClass(form.statusNameEn)]"></div>
+                                        <span class="text-dark">{{ getStatusLabel() || ($i18n.locale === 'en' ? 'Select Status' : 'เลือกสถานะ') }}</span>
                                     </div>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
@@ -74,7 +74,7 @@
                             <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
                                 <CDropdownItem v-for="s in statuses" :key="s._id" @click="handleStatusSelect(s)">
                                     <div class="d-flex align-items-center">
-                                        <div :class="['status-dot mr-2', getStatusDotClass(s.name)]"></div>
+                                        <div :class="['status-dot mr-2', getStatusDotClass(s.nameEn)]"></div>
                                         {{ s.name }}
                                     </div>
                                 </CDropdownItem>
@@ -86,7 +86,7 @@
 
             <!-- Names Row -->
             <CRow>
-                <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
+                <CCol :md="form.roleNameEn === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
                         <CInput 
@@ -96,7 +96,7 @@
                         />
                     </div>
                 </CCol>
-                <CCol md="6" v-if="form.roleName !== 'Customer'">
+                <CCol md="6" v-if="form.roleNameEn !== 'Customer'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
                         <CInput 
@@ -110,7 +110,7 @@
 
             <!-- Contacts Row -->
             <CRow>
-                <CCol md="6" v-if="form.roleName !== 'Customer'">
+                <CCol md="6" v-if="form.roleNameEn !== 'Customer'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Official Email' : 'อีเมลทางการ' }}</label>
                         <CInput 
@@ -121,7 +121,7 @@
                         />
                     </div>
                 </CCol>
-                <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
+                <CCol :md="form.roleNameEn === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
                         <CInput 
@@ -207,20 +207,38 @@ export default {
         isFormValid() {
             if (!this.form) return false;
             const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.form.email;
-            if (this.form.roleName === 'Artist') {
+            if (this.form.roleNameEn === 'Artist') {
                 return baseValid && this.form.statusId;
             }
             return baseValid;
         }
     },
     methods: {
+        getRoleLabel() {
+            if (!this.form || !this.form.roleId) return '';
+            const found = this.roles.find(r => r._id === this.form.roleId);
+            return found ? found.name : this.form.roleName;
+        },
+        getStatusLabel() {
+            if (!this.form || !this.form.statusId) return '';
+            const found = this.statuses.find(s => s._id === this.form.statusId);
+            return found ? found.name : this.form.statusName;
+        },
         handleRoleSelect(role) {
             this.$set(this.form, 'roleId', role._id);
             this.$set(this.form, 'roleName', role.name);
+            this.$set(this.form, 'roleNameEn', role.nameEn);
+            // If the role is not Artist, clear the status fields
+            if (role.nameEn !== 'Artist') {
+                this.$set(this.form, 'statusId', '');
+                this.$set(this.form, 'statusName', '');
+                this.$set(this.form, 'statusNameEn', '');
+            }
         },
         handleStatusSelect(status) {
             this.$set(this.form, 'statusId', status._id);
             this.$set(this.form, 'statusName', status.name);
+            this.$set(this.form, 'statusNameEn', status.nameEn);
         },
         initForm() {
             const getNameFromML = (lang) => {
@@ -235,38 +253,44 @@ export default {
 
             const getRoleInfo = () => {
                 const role = this.user.role;
-                if (!role) return { id: '', name: '' };
+                if (!role) return { id: '', name: '', nameEn: '' };
                 
                 // If role is an object with _id (populated)
                 if (typeof role === 'object' && role._id) {
                     const titleEn = role.title && Array.isArray(role.title) ? role.title.find(t => t.key === 'en') : null;
-                    const name = titleEn ? titleEn.value : (role.title && role.title[0] ? role.title[0].value : 'Unknown');
-                    return { id: role._id, name };
+                    const nameEn = titleEn ? titleEn.value : (role.title && role.title[0] ? role.title[0].value : 'Unknown');
+                    const lang = this.$i18n.locale || 'en';
+                    const titleLang = role.title && Array.isArray(role.title) ? (role.title.find(t => t.key === lang) || titleEn) : null;
+                    const name = titleLang ? titleLang.value : nameEn;
+                    return { id: role._id, name, nameEn };
                 }
                 
                 // If role is an ID string or Name string
-                const found = this.roles.find(r => r._id === role || r.name === role);
-                if (found) return { id: found._id, name: found.name };
+                const found = this.roles.find(r => r._id === role || r.nameEn === role || r.name === role);
+                if (found) return { id: found._id, name: found.name, nameEn: found.nameEn };
                 
-                return { id: role, name: role }; // Fallback
+                return { id: role, name: role, nameEn: role }; // Fallback
             };
 
             const getStatusInfo = () => {
                 const status = this.user.status;
-                if (!status) return { id: '', name: '' };
+                if (!status) return { id: '', name: '', nameEn: '' };
                 
                 // If status is an object with _id (populated)
                 if (typeof status === 'object' && status._id) {
                     const titleEn = status.title && Array.isArray(status.title) ? status.title.find(t => t.key === 'en') : null;
-                    const name = titleEn ? titleEn.value : (status.title && status.title[0] ? status.title[0].value : 'Unknown');
-                    return { id: status._id, name };
+                    const nameEn = titleEn ? titleEn.value : (status.title && status.title[0] ? status.title[0].value : 'Unknown');
+                    const lang = this.$i18n.locale || 'en';
+                    const titleLang = status.title && Array.isArray(status.title) ? (status.title.find(t => t.key === lang) || titleEn) : null;
+                    const name = titleLang ? titleLang.value : nameEn;
+                    return { id: status._id, name, nameEn };
                 }
                 
                 // If status is an ID string or Name string, find it in the statuses prop
-                const found = this.statuses.find(s => s._id === status || s.name === status);
-                if (found) return { id: found._id, name: found.name };
+                const found = this.statuses.find(s => s._id === status || s.nameEn === status || s.name === status);
+                if (found) return { id: found._id, name: found.name, nameEn: found.nameEn };
                 
-                return { id: status, name: status }; // Fallback
+                return { id: status, name: status, nameEn: status }; // Fallback
             };
 
             const roleInfo = getRoleInfo();
@@ -277,8 +301,10 @@ export default {
                 studentId: this.user.studentId || '',
                 roleId: roleInfo.id,
                 roleName: roleInfo.name,
+                roleNameEn: roleInfo.nameEn,
                 statusId: statusInfo.id,
                 statusName: statusInfo.name,
+                statusNameEn: statusInfo.nameEn,
                 nameTh: getNameFromML('th'),
                 nameEn: getNameFromML('en'),
                 email: (this.user.contact && this.user.contact.studentEmail) || '',
@@ -309,10 +335,12 @@ export default {
             this.$emit('update:show', false);
         },
         getStatusDotClass(status) {
-            switch(status) {
-                case 'Active': return 'bg-success';
-                case 'Inactive': return 'bg-warning';
-                case 'Suspended': return 'bg-danger';
+            if (!status) return 'bg-secondary';
+            const s = status.toLowerCase();
+            switch(s) {
+                case 'active': return 'bg-success';
+                case 'inactive': return 'bg-warning';
+                case 'suspended': return 'bg-danger';
                 default: return 'bg-secondary';
             }
         }

@@ -1,126 +1,152 @@
 <template>
-    <div class="artworks-page bg-light min-vh-100">
+    <div class="artworks-page bg-white min-vh-100 pb-5">
         <!-- Modular Hero Header -->
         <SectionHeaderArtworks />
 
-        <CContainer fluid class="pb-5 px-md-5 position-relative" style="z-index: 30; margin-top: -30px;">
-            <CRow>
-                <!-- Artwork Content -->
-                <CCol lg="9" class="mb-4">
-                    <div v-if="loading" class="text-center py-5">
-                        <CSpinner color="danger" variant="grow" />
-                        <p class="mt-3 text-muted">{{ $i18n.locale === 'en' ? 'Loading artworks...' : 'กำลังโหลดผลงาน...' }}</p>
-                    </div>
-                    <div v-else>
-                        <div v-if="filteredArtworks.length > 0">
-                            <ArtworkCard :artworks="filteredArtworks" />
-                        </div>
-                        <div v-else class="text-center py-5 bg-white rounded-xl shadow-sm border mt-3">
-                            <CIcon name="cil-search" size="xl" class="text-muted mb-3" />
-                            <h5 class="text-muted">{{ $i18n.locale === 'en' ? 'No artworks found in this category' : 'ไม่พบผลงานในหมวดหมู่นี้' }}</h5>
-                            <p class="text-muted small">{{ $i18n.locale === 'en' ? 'Try changing the search keyword or selecting a different category' : 'ลองเปลี่ยนคำค้นหาหรือเลือกหมวดหมู่อื่น' }}</p>
+        <CContainer class="pt-4 mt-2">
+            <!-- Filter Toolbar -->
+            <div class="filter-toolbar mb-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <!-- Search Widget -->
+                    <div class="search-widget-wrapper">
+                        <div class="search-box-modern">
+                            <CIcon name="cil-magnifying-glass" class="search-icon" />
+                            <input 
+                                type="text" 
+                                v-model="filters.searchQuery"
+                                :placeholder="$i18n.locale === 'en' ? 'Search artworks or artists...' : 'ค้นหาผลงานหรือศิลปิน...'"
+                                class="search-input"
+                            />
                         </div>
                     </div>
-                </CCol>
 
-                <!-- Sidebar Filter (Now on the Right) -->
-                <CCol lg="3" class="mb-4">
-                    <div class="sidebar-filter sticky-top bg-white p-4 rounded-xl shadow-sm border" style="top: 100px;">
-                        <!-- Search Section -->
-                        <div class="filter-section mb-5">
-                            <h5 class="section-title mb-4">{{ $i18n.locale === 'en' ? 'Search Artworks' : 'ค้นหาผลงาน' }}</h5>
-                            <div class="search-box">
-                                <input 
-                                    type="text" 
-                                    v-model="filters.searchQuery"
-                                    :placeholder="$i18n.locale === 'en' ? 'Type keyword...' : 'พิมพ์คำค้นหา...'"
-                                    class="form-control rounded-pill border-0 shadow-sm px-4 py-3"
-                                />
-                            </div>
-                        </div>
+                    <!-- Price Filter Toggle Button -->
+                    <button 
+                        @click="showPriceFilter = !showPriceFilter" 
+                        class="btn-filter-toggle d-flex align-items-center"
+                        :class="{ 'active': showPriceFilter }"
+                    >
+                        <CIcon name="cil-filter" class="mr-2" />
+                        <span>{{ $i18n.locale === 'en' ? 'Price Filter' : 'กรองช่วงราคา' }}</span>
+                        <span v-if="filters.minPrice > 0 || filters.maxPrice < maxAvailablePrice" class="active-dot"></span>
+                    </button>
+                </div>
 
-                        <!-- Categories Section -->
-                        <div class="filter-section mb-5">
-                            <h5 class="section-title mb-4">{{ $i18n.locale === 'en' ? 'Categories' : 'หมวดหมู่' }}</h5>
-                            <div class="category-list">
-                                <div 
-                                    class="category-item d-flex justify-content-between align-items-center p-3 rounded-lg mb-2 transition-all cursor-pointer"
-                                    :class="{ 'active shadow': filters.category === 'All Categories' }"
-                                    @click="filters.category = 'All Categories'"
-                                >
-                                    <span class="cat-name">{{ $i18n.locale === 'en' ? 'All Categories' : 'ทั้งหมด' }}</span>
-                                    <span class="cat-count">{{ approvedArtworks.length }}</span>
-                                </div>
-                                
-                                <div 
-                                    v-for="cat in categories" :key="cat._id"
-                                    class="category-item d-flex justify-content-between align-items-center p-3 rounded-xl-sm mb-2 transition-all cursor-pointer"
-                                    :class="{ 'active shadow': filters.category === getName($i18n.locale, cat) }"
-                                    @click="filters.category = getName($i18n.locale, cat)"
-                                >
-                                    <span class="cat-name">{{ getName($i18n.locale, cat) }}</span>
-                                    <span class="cat-count">{{ getCategoryCount(getName($i18n.locale, cat)) }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Price Filter Section (Dynamic Slider) -->
-                        <div class="filter-section">
-                            <h5 class="section-title mb-4">{{ $i18n.locale === 'en' ? 'Price Range' : 'ช่วงราคา' }}</h5>
-                            
-                            <div class="price-slider-container px-2">
-                                <div class="price-display d-flex justify-content-between mb-3">
-                                    <div class="price-box">
-                                        <span class="label">{{ $i18n.locale === 'en' ? 'Min' : 'เริ่มต้น' }}</span>
-                                        <span class="value">{{ formatPrice(filters.minPrice) }} ฿</span>
+                <!-- Expandable Price Slider Panel -->
+                <transition name="slide-fade">
+                    <div v-show="showPriceFilter" class="expandable-filter-panel mt-3 p-4 rounded-xl border">
+                        <div class="row align-items-center">
+                            <div class="col-md-8 col-sm-12">
+                                <div class="price-slider-container">
+                                    <div class="price-display d-flex justify-content-between mb-3">
+                                        <div class="price-box">
+                                            <span class="label">{{ $i18n.locale === 'en' ? 'Min Value' : 'ราคาเริ่มต้น' }}</span>
+                                            <span class="value">{{ formatPrice(filters.minPrice) }} ฿</span>
+                                        </div>
+                                        <div class="price-box text-right">
+                                            <span class="label">{{ $i18n.locale === 'en' ? 'Max Value' : 'ราคาสูงสุด' }}</span>
+                                            <span class="value">{{ formatPrice(filters.maxPrice) }} ฿</span>
+                                        </div>
                                     </div>
-                                    <div class="price-box text-right">
-                                        <span class="label">{{ $i18n.locale === 'en' ? 'Max' : 'สูงสุด' }}</span>
-                                        <span class="value">{{ formatPrice(filters.maxPrice) }} ฿</span>
+
+                                    <div class="slider-wrapper">
+                                        <input 
+                                            type="range" 
+                                            :min="0" 
+                                            :max="maxAvailablePrice" 
+                                            step="100" 
+                                            v-model.number="filters.minPrice"
+                                            class="slider min-slider"
+                                        />
+                                        <input 
+                                            type="range" 
+                                            :min="0" 
+                                            :max="maxAvailablePrice" 
+                                            step="100" 
+                                            v-model.number="filters.maxPrice"
+                                            class="slider max-slider"
+                                        />
+                                        <div class="slider-track" :style="trackStyle"></div>
                                     </div>
                                 </div>
-
-                                <div class="slider-wrapper">
-                                    <input 
-                                        type="range" 
-                                        :min="0" 
-                                        :max="maxAvailablePrice" 
-                                        step="100" 
-                                        v-model.number="filters.minPrice"
-                                        class="slider min-slider"
-                                    />
-                                    <input 
-                                        type="range" 
-                                        :min="0" 
-                                        :max="maxAvailablePrice" 
-                                        step="100" 
-                                        v-model.number="filters.maxPrice"
-                                        class="slider max-slider"
-                                    />
-                                    <div class="slider-track" :style="trackStyle"></div>
-                                </div>
                             </div>
-
-                            <CButton 
-                                block 
-                                color="light" 
-                                variant="outline" 
-                                size="sm" 
-                                class="mt-4 border-0 text-muted"
-                                @click="resetPriceFilter"
-                            >
-                                {{ $i18n.locale === 'en' ? 'Clear Price Filter' : 'ล้างตัวกรองราคา' }}
-                            </CButton>
+                            <div class="col-md-4 col-sm-12 text-md-right mt-3 mt-md-0">
+                                <button 
+                                    class="btn-clear-price" 
+                                    @click="resetPriceFilter"
+                                    :disabled="filters.minPrice === 0 && filters.maxPrice === maxAvailablePrice"
+                                >
+                                    {{ $i18n.locale === 'en' ? 'Reset Range' : 'รีเซ็ตช่วงราคา' }}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </CCol>
-            </CRow>
+                </transition>
+            </div>
+
+            <!-- Horizontal Category Chips -->
+            <div class="category-chips-wrapper mb-5">
+                <div class="d-flex flex-wrap gap-2 py-2 horizontal-scroll-chips">
+                    <!-- "All Categories" chip -->
+                    <button 
+                        class="chip-item"
+                        :class="{ 'active': filters.category === 'All Categories' }"
+                        @click="filters.category = 'All Categories'"
+                    >
+                        <span class="chip-name">{{ $i18n.locale === 'en' ? 'All Categories' : 'ทั้งหมด' }}</span>
+                        <span class="chip-count">{{ approvedArtworks.length }}</span>
+                    </button>
+
+                    <!-- Dynamic category chips -->
+                    <button 
+                        v-for="cat in categories" 
+                        :key="cat._id"
+                        v-if="getCategoryCount(getName($i18n.locale, cat)) > 0"
+                        class="chip-item"
+                        :class="{ 'active': filters.category === getName($i18n.locale, cat) }"
+                        @click="filters.category = getName($i18n.locale, cat)"
+                    >
+                        <span class="chip-name">{{ getName($i18n.locale, cat) }}</span>
+                        <span class="chip-count">{{ getCategoryCount(getName($i18n.locale, cat)) }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Artwork Content (Full-width Column) -->
+            <div class="artworks-content-area">
+                <div v-if="loading" class="text-center py-5">
+                    <CSpinner color="danger" variant="grow" style="width: 3.5rem; height: 3.5rem;" />
+                    <p class="mt-3 text-muted-soft font-weight-light">{{ $i18n.locale === 'en' ? 'Loading artworks...' : 'กำลังโหลดผลงาน...' }}</p>
+                </div>
+                <div v-else>
+                    <div v-if="filteredArtworks.length > 0">
+                        <ArtworkCard :artworks="filteredArtworks" :cols="4" />
+                    </div>
+                    <div v-else class="text-center py-5 no-results-box bg-white mt-3">
+                        <CIcon name="cil-magnifying-glass" size="xl" class="text-muted-soft mb-3" />
+                        <h4 class="text-dark font-weight-light mb-2">{{ $i18n.locale === 'en' ? 'No artworks found' : 'ไม่พบผลงานศิลปะ' }}</h4>
+                        <p class="text-muted small max-w-sm mx-auto">
+                            {{ $i18n.locale === 'en' ? 'Try changing your search keywords or resetting price filter.' : 'ลองเปลี่ยนคำค้นหาหรือรีเซ็ตการกรองราคาเพื่อค้นหาผลงาน' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Back to Top Button -->
+            <button 
+                v-show="showBackToTop" 
+                @click="scrollToTop" 
+                class="btn-back-to-top shadow-lg d-flex align-items-center justify-content-center"
+                title="Back to Top"
+            >
+                <CIcon name="cil-arrow-top" size="lg" />
+            </button>
         </CContainer>
     </div>
 </template>
 
 <script>
-import ArtworkCard from './components/card/CardArtworks.vue'
+import ArtworkCard from '@/components/CardArtwork.vue'
 import SectionHeaderArtworks from './components/SectionHeaderArtworks.vue'
 
 export default {
@@ -132,6 +158,8 @@ export default {
     data() {
         return {
             loading: false,
+            showPriceFilter: false,
+            showBackToTop: false,
             filters: {
                 searchQuery: '',
                 category: 'All Categories',
@@ -151,11 +179,13 @@ export default {
         this.polling = setInterval(() => {
             this.$store.dispatch('artwork/get');
         }, 5000);
+        window.addEventListener('scroll', this.handleScroll);
     },
     beforeDestroy() {
         if (this.polling) {
             clearInterval(this.polling);
         }
+        window.removeEventListener('scroll', this.handleScroll);
     },
     watch: {
         'filters.minPrice'(val) {
@@ -260,124 +290,180 @@ export default {
         getStatusLabel(art) {
             if (!art || !art.status || !art.status.approval) return 'Pending';
             return this.getName('en', art.status.approval); // Keep EN for internal filtering logic
+        },
+        handleScroll() {
+            this.showBackToTop = window.scrollY > 400;
+        },
+        scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         }
     }
 }
 </script>
 
 <style scoped>
-.section-title {
-    font-weight: 800;
-    color: #4a1d18;
+/* Minimalist Grid Redesign Styles */
+
+.artworks-page {
+    background-color: #ffffff; /* Pure white background */
+    font-family: 'Outfit', 'Inter', 'Sarabun', sans-serif;
+}
+
+/* Toolbar Layout */
+.filter-toolbar {
     position: relative;
-    padding-left: 20px;
-    font-family: 'Sarabun', sans-serif;
-    font-size: 1.5rem;
+    z-index: 100;
 }
 
-.section-title::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 4px;
-    bottom: 4px;
-    width: 5px;
-    background-color: #612721;
-    border-radius: 10px;
+.search-widget-wrapper {
+    flex-grow: 1;
+    max-width: 450px;
+    min-width: 280px;
 }
 
-.search-box input {
-    height: 60px;
-    font-size: 1rem;
+.search-box-modern {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 50px;
+    padding: 0 20px;
+    height: 52px;
     transition: all 0.3s ease;
-    border: 1px solid #eee !important;
-    background-color: #fff !important;
 }
 
-.search-box input:focus {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
-    border-color: #612721 !important;
+.search-box-modern:focus-within {
+    border-color: #4a1d18;
+    box-shadow: 0 4px 20px rgba(74, 29, 24, 0.05);
 }
 
-.category-item {
+.search-icon {
+    color: #9ca3af;
+    margin-right: 12px;
+    width: 18px;
+    height: 18px;
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    font-size: 0.95rem;
+    color: #1f2937;
+}
+
+.search-input::placeholder {
+    color: #9ca3af;
+}
+
+/* Filter Toggle Button */
+.btn-filter-toggle {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4b5563;
+    height: 52px;
     cursor: pointer;
-    background-color: transparent;
-    color: #555;
-    transition: all 0.25s ease;
-    border: 1px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
-.category-item:hover {
-    background-color: #fff;
-    color: #612721;
-    padding-left: 2rem !important;
+.btn-filter-toggle:hover {
+    border-color: #4a1d18;
+    color: #4a1d18;
+    background: rgba(74, 29, 24, 0.02);
 }
 
-.category-item.active {
-    background-color: #4a1d18;
-    color: white !important;
+.btn-filter-toggle.active {
+    background: #4a1d18;
+    border-color: #4a1d18;
+    color: #ffffff;
+}
+
+.active-dot {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    background-color: #ea580c;
+    border-radius: 50%;
+    border: 1.5px solid #ffffff;
+}
+
+.btn-filter-toggle.active .active-dot {
     border-color: #4a1d18;
 }
 
-.cat-name {
+/* Expandable filter panel */
+.expandable-filter-panel {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.03);
+    border-radius: 20px;
+    animation: slideDown 0.3s ease;
+}
+
+.btn-clear-price {
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-size: 0.85rem;
     font-weight: 600;
-    font-size: 1.05rem;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.cat-count {
-    font-size: 0.9rem;
-    font-weight: 700;
-    min-width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
+.btn-clear-price:hover:not(:disabled) {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.02);
 }
 
-.category-item:not(.active) .cat-count {
-    background: #612721;
-    color: #fff;
-}
-
-.category-item.active .cat-count {
-    background: #fff;
-    color: #4a1d18;
+.btn-clear-price:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Price Slider Styles */
 .price-slider-container {
-    padding: 10px 0;
-}
-
-.price-box {
-    flex: 1;
+    padding: 5px 0;
 }
 
 .price-box .label {
     display: block;
-    font-size: 0.75rem;
-    color: #888;
+    font-size: 0.72rem;
+    color: #9ca3af;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     margin-bottom: 2px;
 }
 
 .price-box .value {
-    font-size: 1.1rem;
-    font-weight: 800;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: #4a1d18;
 }
 
 .slider-wrapper {
     position: relative;
-    height: 30px;
-    margin-top: 10px;
+    height: 24px;
+    margin-top: 8px;
 }
 
 .slider-track {
     position: absolute;
-    height: 6px;
-    background: #612721;
+    height: 4px;
+    background: #4a1d18;
     border-radius: 5px;
     top: 50%;
     transform: translateY(-50%);
@@ -388,8 +474,8 @@ export default {
     content: "";
     position: absolute;
     width: 100%;
-    height: 6px;
-    background: #e9ecef;
+    height: 4px;
+    background: #f3f4f6;
     border-radius: 5px;
     top: 50%;
     transform: translateY(-50%);
@@ -398,7 +484,7 @@ export default {
 .slider {
     position: absolute;
     width: 100%;
-    height: 6px;
+    height: 4px;
     background: none;
     pointer-events: none;
     -webkit-appearance: none;
@@ -408,54 +494,165 @@ export default {
     margin: 0;
 }
 
-/* Chrome, Safari, Opera, Edge */
 .slider::-webkit-slider-thumb {
-    height: 22px;
-    width: 22px;
+    height: 20px;
+    width: 20px;
     border-radius: 50%;
-    background: #fff;
-    border: 3px solid #612721;
+    background: #ffffff;
+    border: 2px solid #4a1d18;
     cursor: pointer;
     pointer-events: auto;
     -webkit-appearance: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
     transition: all 0.2s ease;
 }
 
 .slider::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    transform: scale(1.15);
+    background: #4a1d18;
 }
 
-.slider::-webkit-slider-thumb:active {
-    background: #612721;
-}
-
-/* Firefox */
 .slider::-moz-range-thumb {
-    height: 18px;
-    width: 18px;
+    height: 16px;
+    width: 16px;
     border-radius: 50%;
-    background: #fff;
-    border: 3px solid #612721;
+    background: #ffffff;
+    border: 2px solid #4a1d18;
     cursor: pointer;
     pointer-events: auto;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
 
-.rounded-xl {
-    border-radius: 24px !important;
+/* Category Chips Styles */
+.category-chips-wrapper {
+    overflow-x: auto;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
 }
 
-.rounded-xl-sm {
-    border-radius: 14px !important;
+.category-chips-wrapper::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari */
 }
 
-.transition-all {
+.horizontal-scroll-chips {
+    flex-wrap: nowrap !important;
+    display: flex;
+}
+
+.chip-item {
+    display: inline-flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 8px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #4b5563;
+    font-weight: 500;
+    font-size: 0.9rem;
+    height: 40px;
+    outline: none;
+}
+
+.chip-item:hover {
+    border-color: #4a1d18;
+    color: #4a1d18;
+}
+
+.chip-item.active {
+    background: #4a1d18;
+    border-color: #4a1d18;
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(74, 29, 24, 0.15);
+}
+
+.chip-count {
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 50px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.3s ease;
 }
 
-.cursor-pointer {
+.chip-item.active .chip-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+/* No Results */
+.no-results-box {
+    border: 1px dashed #e5e7eb;
+    border-radius: 24px;
+    padding: 60px 20px;
+}
+
+.text-muted-soft {
+    color: #d1d5db;
+}
+
+/* Animations */
+.slide-fade-enter-active {
+    transition: all 0.3s ease;
+}
+.slide-fade-leave-active {
+    transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+.slide-fade-enter, .slide-fade-leave-to {
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 1rem; }
+
+@media (max-width: 768px) {
+    .search-widget-wrapper {
+        max-width: 100%;
+    }
+}
+
+/* Quick Back to Top Button */
+.btn-back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #4a1d18;
+    color: #ffffff;
+    border: none;
     cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-back-to-top:hover {
+    background-color: #612721;
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(74, 29, 24, 0.3) !important;
+}
+
+.btn-back-to-top:active {
+    transform: translateY(-1px);
 }
 </style>

@@ -3,17 +3,17 @@
         <CCardBody>
             <CRow class="mb-4 align-items-center">
                 <CCol sm="5">
-                    <h4 id="traffic" class="card-title mb-0">Order Analytics</h4>
+                    <h4 id="traffic" class="card-title mb-0">{{ $i18n.locale === 'en' ? 'Order Analytics' : 'การวิเคราะห์คำสั่งซื้อ' }}</h4>
                 </CCol>
                 <CCol sm="7" class="d-flex justify-content-end mt-3 mt-sm-0">
                     <div class="btn-group-wrapper">
                         <CButtonGroup class="custom-btn-group">
                             <CButton color="transparent" :class="{ active: selectedPeriod === 'Day' }"
-                                @click="selectedPeriod = 'Day'">Day</CButton>
+                                @click="selectedPeriod = 'Day'">{{ $i18n.locale === 'en' ? 'Day' : 'วัน' }}</CButton>
                             <CButton color="transparent" :class="{ active: selectedPeriod === 'Month' }"
-                                @click="selectedPeriod = 'Month'">Month</CButton>
+                                @click="selectedPeriod = 'Month'">{{ $i18n.locale === 'en' ? 'Month' : 'เดือน' }}</CButton>
                             <CButton color="transparent" :class="{ active: selectedPeriod === 'Year' }"
-                                @click="selectedPeriod = 'Year'">Year</CButton>
+                                @click="selectedPeriod = 'Year'">{{ $i18n.locale === 'en' ? 'Year' : 'ปี' }}</CButton>
                         </CButtonGroup>
                     </div>
                 </CCol>
@@ -26,6 +26,7 @@
 
 <script>
 import { CChartLine } from '@coreui/vue-chartjs'
+import { mapState } from 'vuex'
 
 export default {
     name: 'LineCharts',
@@ -34,7 +35,7 @@ export default {
     },
     data() {
         return {
-            selectedPeriod: 'Month',
+            selectedPeriod: 'Year', // Default to year since we have real data for it
             labels: [],
             defaultDatasets: [
                 {
@@ -51,9 +52,19 @@ export default {
     watch: {
         selectedPeriod() {
             this.updateChartData();
+        },
+        stats: {
+            deep: true,
+            handler() {
+                this.updateChartData();
+            }
+        },
+        '$i18n.locale'() {
+            this.updateChartData();
         }
     },
     computed: {
+        ...mapState('dashboard', ['stats']),
         defaultOptions() {
             return {
                 maintainAspectRatio: false,
@@ -116,23 +127,35 @@ export default {
     },
     methods: {
         updateChartData() {
+            // Use real order data from backend if available
+            const analytics = this.stats && this.stats.charts && this.stats.charts.orderAnalytics 
+                ? this.stats.charts.orderAnalytics 
+                : null;
+
+            // Translate dataset label
+            if (this.defaultDatasets && this.defaultDatasets[0]) {
+                this.defaultDatasets[0].label = this.$i18n.locale === 'en' ? 'Orders' : 'คำสั่งซื้อ';
+            }
+
             if (this.selectedPeriod === 'Month') {
-                // Generate labels mimicking the graph: 'Day 1', 'Day 3', ...
-                this.labels = Array.from({ length: 30 }, (_, i) => {
+                // Determine days in current month to format labels correctly (default 31)
+                const now = new Date();
+                const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                const dayLabelText = this.$i18n.locale === 'en' ? 'Day' : 'วันที่';
+                
+                this.labels = Array.from({ length: daysInMonth }, (_, i) => {
                     const day = i + 1;
-                    if ([1, 3, 5, 7, 9, 12, 15, 18, 21, 24, 27, 30].includes(day)) {
-                        return `Day ${day}`;
+                    if (day === 1 || day % 3 === 0 || day === daysInMonth) {
+                        return `${dayLabelText} ${day}`;
                     }
                     return '';
                 });
 
-                // Smooth data curve mimicking the image peaks and valleys
-                const initialData = [
-                    31, 54, 28, 25, 43, 14, 13, 33, 57, 15,
-                    14, 13, 45, 47, 30, 17, 58, 31, 51, 39,
-                    38, 24, 45, 52, 53, 27, 41, 15, 12, 16
-                ];
-                this.defaultDatasets[0].data = initialData;
+                if (analytics && analytics.month) {
+                    this.defaultDatasets[0].data = analytics.month.slice(0, daysInMonth);
+                } else {
+                    this.defaultDatasets[0].data = Array.from({ length: daysInMonth }, () => 0);
+                }
 
             } else if (this.selectedPeriod === 'Day') {
                 // Labels for 24 hours in a day
@@ -141,15 +164,23 @@ export default {
                     return '';
                 });
 
-                // Randomly generated hourly data
-                this.defaultDatasets[0].data = Array.from({ length: 24 }, () => Math.floor(Math.random() * 40) + 10);
+                if (analytics && analytics.day) {
+                    this.defaultDatasets[0].data = analytics.day;
+                } else {
+                    this.defaultDatasets[0].data = Array.from({ length: 24 }, () => 0);
+                }
 
             } else if (this.selectedPeriod === 'Year') {
                 // Labels for 12 months
-                this.labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                this.labels = this.$i18n.locale === 'en'
+                    ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    : ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
-                // Randomly generated monthly data
-                this.defaultDatasets[0].data = Array.from({ length: 12 }, () => Math.floor(Math.random() * 50) + 20);
+                if (analytics && analytics.year) {
+                    this.defaultDatasets[0].data = analytics.year;
+                } else {
+                    this.defaultDatasets[0].data = Array.from({ length: 12 }, () => 0);
+                }
             }
 
             // Force chart update by slightly mutating the dataset reference

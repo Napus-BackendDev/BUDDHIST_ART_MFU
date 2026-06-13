@@ -1,6 +1,6 @@
 <template>
     <CModal 
-        title="Create New Order" 
+        :title="$i18n.locale === 'en' ? 'Create New Order' : 'สร้างคำสั่งซื้อใหม่'" 
         :show="show" 
         @update:show="$emit('update:show', $event)"
         size="lg"
@@ -14,8 +14,8 @@
                         <CIcon name="cil-cart" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Create New Order</h5>
-                        <p class="text-muted small mb-0">Enter the details below to register a new order.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Create New Order' : 'สร้างคำสั่งซื้อใหม่' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Enter the details below to register a new order.' : 'กรอกรายละเอียดด้านล่างเพื่อสร้างคำสั่งซื้อใหม่' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -29,10 +29,10 @@
             <CRow>
                 <CCol>
                     <div class="form-group-custom">
-                        <label class="form-label">Customer Name</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Customer Name' : 'ชื่อลูกค้า' }}</label>
                         <CInput 
                             v-model="form.contact.name" 
-                            placeholder="e.g. Alice Johnson" 
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. Alice Johnson' : 'เช่น สมชาย ดีใจ'" 
                             class="custom-input"
                         />
                     </div>
@@ -41,20 +41,20 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Email Address</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Email Address' : 'ที่อยู่อีเมล' }}</label>
                         <CInput 
                             v-model="form.contact.email" 
-                            placeholder="e.g. alice@example.com" 
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. alice@example.com' : 'เช่น alice@example.com'" 
                             class="custom-input"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Phone Number</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Phone Number' : 'เบอร์โทรศัพท์' }}</label>
                         <CInput 
                             v-model="form.contact.telephone" 
-                            placeholder="e.g. 081-234-5678" 
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. 081-234-5678' : 'เช่น 081-234-5678'" 
                             class="custom-input"
                         />
                     </div>
@@ -65,10 +65,10 @@
             <CRow>
                 <CCol>
                     <div class="form-group-custom">
-                        <label class="form-label">Billing Address</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ใบเสร็จ' }}</label>
                         <CTextarea 
                             v-model="form.address.bill" 
-                            placeholder="Billing address..." 
+                            :placeholder="$i18n.locale === 'en' ? 'Billing address...' : 'ที่อยู่ใบเสร็จ...'" 
                             rows="2"
                             class="custom-textarea"
                         />
@@ -79,14 +79,14 @@
                 <CCol>
                     <div class="form-group-custom">
                         <div class="d-flex justify-content-between align-items-center">
-                            <label class="form-label">Shipping Address</label> 
+                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</label> 
                             <CLink @click="copyBillingToShipping" class="small font-weight-bold text-blue" style="cursor: pointer; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">
-                                Same as billing
+                                {{ $i18n.locale === 'en' ? 'Same as billing' : 'เหมือนที่อยู่ใบเสร็จ' }}
                             </CLink>
                         </div>
                         <CTextarea 
                             v-model="form.address.shipping" 
-                            placeholder="Shipping address..." 
+                            :placeholder="$i18n.locale === 'en' ? 'Shipping address...' : 'ที่อยู่จัดส่ง...'" 
                             rows="2"
                             class="custom-textarea"
                         />
@@ -97,9 +97,9 @@
             <!-- Artwork Selection Section -->
             <div class="artwork-selection-section mt-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label class="form-label mb-0">Search & Add Artworks</label>
+                    <label class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Search & Add Artworks' : 'ค้นหาและเพิ่มผลงานศิลปะ' }}</label>
                     <div class="total-price-indicator" v-if="form.artworks.length > 0">
-                        <span class="text-muted small">Total:</span>
+                        <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Total:' : 'ยอดรวม:' }}</span>
                         <span class="font-weight-bold ml-1">฿ {{ formatPrice(totalAmount) }}</span>
                     </div>
                 </div>
@@ -108,7 +108,7 @@
                     <div class="search-input-wrapper-limited position-relative">
                         <CInput 
                             v-model="artworkSearchQuery" 
-                            placeholder="Search by artwork title or artist..." 
+                            :placeholder="$i18n.locale === 'en' ? 'Search by artwork title or artist...' : 'ค้นหาด้วยชื่อผลงานหรือศิลปิน...'" 
                             class="custom-input-search mb-0"
                         />
                         <button 
@@ -129,10 +129,10 @@
                                 class="search-result-item d-flex align-items-center p-2"
                                 @click="selectArtwork(art)"
                             >
-                                <img :src="art.image || `https://via.placeholder.com/40/eee/888?text=${getName('en', art).charAt(0)}`" class="result-thumb mr-3" />
+                                <img :src="art.image || `https://via.placeholder.com/40/eee/888?text=${getName($i18n.locale, art).charAt(0)}`" class="result-thumb mr-3" />
                                 <div class="flex-grow-1">
-                                    <div class="font-weight-bold text-dark">{{ getName('en', art) }}</div>
-                                    <div class="text-muted small">{{ art.artist ? getName('en', art.artist) : 'N/A' }}</div>
+                                    <div class="font-weight-bold text-dark">{{ getName($i18n.locale, art) }}</div>
+                                    <div class="text-muted small">{{ art.artist ? getName($i18n.locale, art.artist) : 'N/A' }}</div>
                                 </div>
                                 <div class="mr-3 font-weight-bold text-blue">฿ {{ formatPrice(art.price) }}</div>
                                 <CButton color="primary" variant="ghost" size="sm" class="rounded-pill">
@@ -142,7 +142,7 @@
                         </div>
                         <div v-else class="p-4 text-center text-muted">
                             <CIcon name="cil-search" size="xl" class="mb-2 d-block mx-auto opacity-50" />
-                            No artworks found for "{{ artworkSearchQuery }}"
+                            {{ $i18n.locale === 'en' ? 'No artworks found for' : 'ไม่พบผลงานสำหรับ' }} "{{ artworkSearchQuery }}"
                         </div>
                     </div>
                 </div>
@@ -152,8 +152,8 @@
                     <div v-for="(art, index) in form.artworks" :key="art._id" class="selected-art-item d-flex align-items-center mb-2 bg-white p-2 rounded-lg shadow-sm">
                         <img :src="art.image" class="selected-thumb mr-3" />
                         <div class="flex-grow-1">
-                            <div class="font-weight-bold text-dark">{{ getName('en', art) }}</div>
-                            <div class="text-muted small">{{ art.artist ? getName('en', art.artist) : 'N/A' }}</div>
+                            <div class="font-weight-bold text-dark">{{ getName($i18n.locale, art) }}</div>
+                            <div class="text-muted small">{{ art.artist ? getName($i18n.locale, art.artist) : 'N/A' }}</div>
                         </div>
                         <div class="mr-3 font-weight-bold text-blue">฿ {{ formatPrice(art.price) }}</div>
                         <CButton color="danger" variant="ghost" size="sm" @click="removeArtwork(index)" class="btn-remove">
@@ -163,24 +163,24 @@
                 </div>
                 <div v-else class="empty-artworks-placeholder text-center py-4 border rounded-lg border-dashed">
                     <CIcon name="cil-image" size="xl" class="text-muted mb-2 d-block mx-auto" />
-                    <span class="text-muted">No artworks added yet</span>
+                    <span class="text-muted">{{ $i18n.locale === 'en' ? 'No artworks added yet' : 'ยังไม่ได้เพิ่มผลงานศิลปะ' }}</span>
                 </div>
             </div>
 
             <!-- Proof of Payment Row -->
             <div class="form-group-custom mt-4">
-                <label class="form-label">Proof of Payment (Optional)</label>
+                <label class="form-label">{{ $i18n.locale === 'en' ? 'Proof of Payment (Optional)' : 'หลักฐานการชำระเงิน (ไม่บังคับ)' }}</label>
                 <div class="upload-container">
                     <div v-if="!imagePreview" class="upload-area" @click="$refs.fileInput.click()">
                         <CIcon name="cil-cloud-upload" size="xl" class="text-blue mb-2" />
-                        <div class="upload-text">Click or drag receipt here</div>
-                        <div class="upload-hint text-muted small">PNG, JPG, PDF (Max 2MB)</div>
+                        <div class="upload-text">{{ $i18n.locale === 'en' ? 'Click or drag receipt here' : 'คลิกหรือลากหลักฐานการโอนเงินมาที่นี่' }}</div>
+                        <div class="upload-hint text-muted small">{{ $i18n.locale === 'en' ? 'PNG, JPG, PDF (Max 2MB)' : 'PNG, JPG, PDF (สูงสุด 2MB)' }}</div>
                     </div>
                     <div v-else class="preview-area position-relative">
                         <img :src="imagePreview" alt="Payment Proof" class="preview-img img-fluid rounded-lg">
                         <div class="preview-overlay d-flex align-items-center justify-content-center">
-                            <CButton color="light" class="rounded-pill mx-1" @click="$refs.fileInput.click()">Change</CButton>
-                            <CButton color="danger" class="rounded-pill mx-1" @click="removeImage">Remove</CButton>
+                            <CButton color="light" class="rounded-pill mx-1" @click="$refs.fileInput.click()">{{ $i18n.locale === 'en' ? 'Change' : 'เปลี่ยน' }}</CButton>
+                            <CButton color="danger" class="rounded-pill mx-1" @click="removeImage">{{ $i18n.locale === 'en' ? 'Remove' : 'ลบออก' }}</CButton>
                         </div>
                     </div>
                     <input type="file" ref="fileInput" class="d-none" @change="handleImageUpload" accept="image/*">
@@ -195,7 +195,7 @@
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
                 >
-                    Cancel
+                    {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
                 <CButton 
                     color="primary" 
@@ -203,7 +203,7 @@
                     class="btn-create-order"
                     :disabled="form.artworks.length === 0 || !form.contact.name"
                 >
-                    <CIcon name="cil-save" class="mr-2" /> Create Order
+                    <CIcon name="cil-save" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Create Order' : 'สร้างคำสั่งซื้อ' }}
                 </CButton>
             </div>
         </template>
@@ -256,9 +256,11 @@ export default {
             }
             const query = val.toLowerCase();
             this.searchResults = this.allArtworks.filter(art => {
-                const title = this.getName('en', art).toLowerCase();
-                const artist = art.artist ? this.getName('en', art.artist).toLowerCase() : '';
-                return title.includes(query) || artist.includes(query);
+                const titleEn = this.getName('en', art).toLowerCase();
+                const titleTh = this.getName('th', art).toLowerCase();
+                const artistEn = art.artist ? this.getName('en', art.artist).toLowerCase() : '';
+                const artistTh = art.artist ? this.getName('th', art.artist).toLowerCase() : '';
+                return titleEn.includes(query) || titleTh.includes(query) || artistEn.includes(query) || artistTh.includes(query);
             }).slice(0, 5);
         }
     },
@@ -310,7 +312,7 @@ export default {
             const file = event.target.files[0];
             if (file) {
                 if (file.size > 2 * 1024 * 1024) {
-                    alert('Image size exceeds 2MB limit.');
+                    alert(this.$i18n.locale === 'en' ? 'Image size exceeds 2MB limit.' : 'ขนาดรูปภาพต้องไม่เกิน 2MB');
                     return;
                 }
                 this.imageFile = file;

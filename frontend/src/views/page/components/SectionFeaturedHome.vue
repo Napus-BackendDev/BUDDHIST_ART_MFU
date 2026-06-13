@@ -1,6 +1,6 @@
 <template>
     <div class="featured-section py-5 bg-light">
-        <CContainer fluid class="px-md-5">
+        <CContainer>
             <div class="d-flex align-items-center justify-content-between mb-5">
                 <h2 class="font-weight-bold mb-0 section-title-home">{{ $i18n.locale === 'en' ? 'Featured Artworks' : 'ผลงาน' }}</h2>
                 <CButton color="danger" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold" @click="$router.push('/artworks')">
@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import CardArtworks from './card/CardArtworks.vue'
+import CardArtworks from '@/components/CardArtwork.vue'
 
 export default {
     name: 'SectionFeaturedHome',
@@ -57,8 +57,8 @@ export default {
                 return isApproved && isFeatured;
             });
             
-            // Limit to top 8 (2 rows)
-            return result.slice(0, 8);
+            // Limit to top 4 (1 row of 4)
+            return result.slice(0, 4);
         }
     },
     methods: {

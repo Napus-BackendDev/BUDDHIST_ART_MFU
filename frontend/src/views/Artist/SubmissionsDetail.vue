@@ -338,7 +338,7 @@ export default {
         },
         formatDateTime(date) {
             if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY HH:mm')
+            return moment(date).format('DD/MM/YYYY HH:mm')
         },
         getName(lang, item) {
             if (!item) return 'N/A';

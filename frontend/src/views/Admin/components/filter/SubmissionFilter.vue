@@ -26,19 +26,23 @@
                             @click="setQuickRange(range)"
                             :class="['range-btn', { 'active': value.quickRange === range }]"
                         >
-                            {{ range }}
+                            {{ getQuickRangeLabel(range) }}
                         </CButton>
                     </CButtonGroup>
                 </CCol>
 
                 <!-- Time Range -->
-                <CCol lg="3" md="12">
+                <CCol lg="3" md="12" class="mb-3 mb-lg-0">
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
                     <div class="d-flex align-items-center">
                         <div class="date-input-wrapper">
                             <CInput 
-                                type="date" 
+                                :type="formattedStartDate ? 'date' : 'text'"
+                                placeholder="วัน/เดือน/ปี"
+                                lang="en-GB"
                                 :value="formattedStartDate" 
+                                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                                @blur="!$event.target.value && ($event.target.type = 'text')"
                                 @input="onDateInput('startDate', $event)"
                                 class="mb-0 custom-date-field" 
                             />
@@ -47,8 +51,12 @@
                         <span class="mx-2 text-muted">&ndash;</span>
                         <div class="date-input-wrapper">
                             <CInput 
-                                type="date" 
+                                :type="formattedEndDate ? 'date' : 'text'"
+                                placeholder="วัน/เดือน/ปี"
+                                lang="en-GB"
                                 :value="formattedEndDate" 
+                                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                                @blur="!$event.target.value && ($event.target.type = 'text')"
                                 @input="onDateInput('endDate', $event)"
                                 class="mb-0 custom-date-field" 
                             />
@@ -81,6 +89,24 @@ export default {
         }
     },
     methods: {
+        getQuickRangeLabel(range) {
+            if (range === 'All Time') {
+                return this.$i18n.locale === 'en' ? 'All Time' : 'ทั้งหมด';
+            }
+            if (range === 'Today') {
+                return this.$i18n.locale === 'en' ? 'Today' : 'วันนี้';
+            }
+            if (range === 'This Week') {
+                return this.$i18n.locale === 'en' ? 'This Week' : 'สัปดาห์นี้';
+            }
+            if (range === 'This Month') {
+                return this.$i18n.locale === 'en' ? 'This Month' : 'เดือนนี้';
+            }
+            if (range === 'This Year') {
+                return this.$i18n.locale === 'en' ? 'This Year' : 'ปีนี้';
+            }
+            return range;
+        },
         updateFilter(key, val) {
             const newFilters = { ...this.value, [key]: val }
             this.$emit('input', newFilters)
@@ -139,23 +165,24 @@ export default {
     position: relative !important;
     z-index: 5 !important;
     overflow: visible !important;
+    border-radius: 12px;
 }
 
 .filter-label {
-    display: block;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 700;
+    color: #4f5d73;
+    margin-bottom: 8px;
+    display: block;
     text-transform: uppercase;
-    color: #a0aec0;
-    margin-bottom: 6px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.5px;
 }
 
 .search-field-wrapper {
     display: flex;
     align-items: center;
     background: #f8f9fa;
-    border: 1px solid #ebedef;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 0 12px;
     height: 42px;
@@ -169,19 +196,23 @@ export default {
 }
 
 .search-icon-fixed {
-    color: #a0aec0;
+    color: #8c98a9;
     width: 16px;
     margin-right: 10px;
+}
+
+.custom-input-plain ::v-deep .form-group {
+    margin-bottom: 0 !important;
 }
 
 .custom-input-plain ::v-deep .form-control {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0;
+    padding: 0 !important;
     font-size: 0.9rem;
-    height: auto;
-    color: #4f5d73;
+    height: auto !important;
+    color: #2c3e50;
 }
 
 .date-input-wrapper {
@@ -190,7 +221,7 @@ export default {
     display: flex;
     align-items: center;
     background: #f8f9fa;
-    border: 1px solid #ebedef;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     height: 42px;
     transition: all 0.2s ease;
@@ -205,29 +236,30 @@ export default {
 
 .date-icon-right {
     position: absolute;
-    right: 8px;
-    width: 14px;
-    color: #a0aec0;
+    right: 12px;
+    width: 16px;
+    color: #8a93a2;
     pointer-events: none;
     z-index: 2;
 }
 
 .custom-date-field {
     width: 100%;
+    margin-bottom: 0 !important;
 }
 
 .custom-date-field ::v-deep .form-control {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 500;
     color: #3b4d6b;
     height: 42px;
     text-align: center;
     cursor: pointer;
-    padding-left: 4px;
-    padding-right: 20px;
+    padding-left: 36px;
+    padding-right: 36px;
 }
 
 .custom-date-field ::v-deep .form-control::-webkit-calendar-picker-indicator {
@@ -244,7 +276,7 @@ export default {
 
 .quick-range-group {
     background: #f8f9fa;
-    border: 1px solid #ebedef;
+    border: 1px solid #e2e8f0;
     border-radius: 8px !important;
     padding: 3px;
     height: 42px;
@@ -253,14 +285,13 @@ export default {
 .range-btn {
     border: none !important;
     background: transparent !important;
-    font-size: 0.72rem !important;
+    font-size: 0.75rem !important;
     font-weight: 600 !important;
     transition: all 0.2s ease !important;
     flex: 1;
     white-space: nowrap;
     height: 100% !important;
     box-shadow: none !important;
-    padding: 0 4px !important;
 }
 
 .range-btn:hover {

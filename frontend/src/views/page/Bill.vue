@@ -51,7 +51,10 @@
                         <div class="w-100">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <div class="font-weight-bold text-dark small">{{ getName($i18n.locale, item.title) }}</div>
+                                    <div class="font-weight-bold text-dark small">
+                                        {{ getName($i18n.locale, item.title) }}
+                                        <span v-if="isReserved(item)" class="badge badge-warning ml-2">{{ $i18n.locale === 'en' ? 'Reserved' : 'จองแล้ว' }}</span>
+                                    </div>
                                     <div class="text-muted" style="font-size: 0.75rem;" v-if="item.artist">{{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getName($i18n.locale, item.artist) }}</div>
                                 </div>
                                 <div class="font-weight-bold text-danger">฿{{ formatPrice(item.price) }} <span
@@ -97,9 +100,11 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import i18nMixin from '@/mixins/i18nMixin';
 
 export default {
     name: 'Bill',
+    mixins: [i18nMixin],
     computed: {
         ...mapGetters('cart', ['lastOrder']),
         order() {
@@ -107,6 +112,10 @@ export default {
         }
     },
     methods: {
+        isReserved(item) {
+            if (!item || !item.status || !item.status.approval) return false;
+            return this.getName('en', item.status.approval) === 'Reserved';
+        },
         async downloadBilling() {
             try {
                 const response = await this.$store.dispatch('order/getInvoice', this.order._id);

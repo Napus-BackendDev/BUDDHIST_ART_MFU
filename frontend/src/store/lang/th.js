@@ -18,7 +18,8 @@ const en = {
         submissions: "ผลงานที่ส่ง",
         dashboard: "แดชบอร์ด",
         logout: "ออกจากระบบ",
-        cart: "ตะกร้าสินค้า"
+        cart: "ตะกร้าสินค้า",
+        contact: "ติดต่อเรา"
     },
 
     button: {
@@ -26,7 +27,20 @@ const en = {
         create :"สร้าง",
     },
 
-    description : "รายละเอียด"
+    description : "รายละเอียด",
+
+    sidebar: {
+        main: "หน้าหลัก",
+        overview: "ภาพรวม",
+        operations: "การดำเนินการ",
+        orders: "คำสั่งซื้อ",
+        artworks: "ผลงานศิลปะ",
+        news: "ข่าวสาร",
+        submissions: "ผลงานที่ส่ง",
+        dataCenter: "ศูนย์ข้อมูล",
+        users: "จัดการผู้ใช้งาน",
+        signOut: "ออกจากระบบ"
+    }
 }
 export default en
 

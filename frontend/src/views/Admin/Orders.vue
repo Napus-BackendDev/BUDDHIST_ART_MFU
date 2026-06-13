@@ -119,8 +119,8 @@ export default {
 
                 // 3. Success feedback
                 this.$store.commit('dialog/showToast', {
-                    title: 'Success',
-                    message: 'Order created successfully.',
+                    title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                    message: this.$i18n.locale === 'en' ? 'Order created successfully.' : 'สร้างคำสั่งซื้อเรียบร้อยแล้ว',
                     variant: 'success'
                 });
 
@@ -130,8 +130,8 @@ export default {
             } catch (error) {
                 console.error('Error creating order:', error);
                 this.$store.commit('dialog/showToast', {
-                    title: 'Error',
-                    message: error.response?.data?.message || 'Failed to create order.',
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to create order.' : 'ไม่สามารถสร้างคำสั่งซื้อได้'),
                     variant: 'danger'
                 });
             } finally {
@@ -151,8 +151,8 @@ export default {
                 }
 
                 this.$store.commit('dialog/showToast', {
-                    title: 'Success',
-                    message: 'Order updated successfully.',
+                    title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                    message: this.$i18n.locale === 'en' ? 'Order updated successfully.' : 'อัปเดตคำสั่งซื้อเรียบร้อยแล้ว',
                     variant: 'success'
                 });
 
@@ -161,8 +161,8 @@ export default {
             } catch (error) {
                 console.error('Error updating order:', error);
                 this.$store.commit('dialog/showToast', {
-                    title: 'Error',
-                    message: error.response?.data?.message || 'Failed to update order.',
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to update order.' : 'ไม่สามารถอัปเดตคำสั่งซื้อได้'),
                     variant: 'danger'
                 });
             } finally {
@@ -208,16 +208,26 @@ export default {
                 await this.$store.dispatch('order/update', payload);
                 
                 await this.fetchOrders();
+                
+                let translatedStatus = statusName;
+                if (statusName === 'Approved') {
+                    translatedStatus = this.$i18n.locale === 'en' ? 'Approved' : 'อนุมัติแล้ว';
+                } else if (statusName === 'Rejected') {
+                    translatedStatus = this.$i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธแล้ว';
+                }
+
                 this.$store.commit('dialog/showToast', {
-                    title: 'Success',
-                    message: `Order status updated to ${statusName}.`,
+                    title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                    message: this.$i18n.locale === 'en' 
+                        ? `Order status updated to ${statusName}.` 
+                        : `อัปเดตสถานะคำสั่งซื้อเป็น ${translatedStatus} เรียบร้อยแล้ว`,
                     variant: 'success'
                 });
             } catch (error) {
                 console.error('Error updating order status:', error);
                 this.$store.commit('dialog/showToast', {
-                    title: 'Error',
-                    message: error.message || 'Failed to update order status.',
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: error.message || (this.$i18n.locale === 'en' ? 'Failed to update order status.' : 'ไม่สามารถอัปเดตสถานะคำสั่งซื้อได้'),
                     variant: 'danger'
                 });
             } finally {

@@ -1,6 +1,9 @@
 <template>
     <CCard class="order-table-card mb-4">
-        <div>
+        <CCardHeader v-if="title" class="bg-white border-0 pt-4 pb-0">
+            <h5 class="mb-0 font-weight-bold" style="color: #2c3e50;">{{ title }}</h5>
+        </CCardHeader>
+        <div :class="{ 'pt-3': !title }">
             <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
                 :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
@@ -23,18 +26,18 @@
                     <td>
                         <div class="d-flex align-items-center" v-if="item.artwork && item.artwork.length > 0">
                             <div class="thumbnail-wrapper mr-3">
-                                <img :src="item.artwork[0].image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName('en', item.artwork[0]).charAt(0)}`"
-                                    :alt="getName('en', item.artwork[0])" class="thumbnail-img">
+                                <img :src="item.artwork[0].image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName($i18n.locale, item.artwork[0]).charAt(0)}`"
+                                    :alt="getName($i18n.locale, item.artwork[0])" class="thumbnail-img">
                             </div>
-                            <span class="font-weight-bold text-dark">{{ getName('en', item.artwork[0]) }}</span>
+                            <span class="font-weight-bold text-dark">{{ getName($i18n.locale, item.artwork[0]) }}</span>
                         </div>
-                        <div v-else class="text-muted small italic">No Artwork Associated</div>
+                        <div v-else class="text-muted small italic">{{ $i18n.locale === 'en' ? 'No Artwork Associated' : 'ไม่มีผลงานศิลปะที่เชื่อมโยง' }}</div>
                     </td>
                 </template>
 
                 <template #artist="{ item }">
                     <td class="text-muted">
-                        {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName('en', item.artwork[0].artist) : 'N/A' }}
+                        {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName($i18n.locale, item.artwork[0].artist) : 'N/A' }}
                     </td>
                 </template>
 
@@ -48,37 +51,37 @@
                     <td>
                         <div :class="['status-badge', getStatusBadge(item.status ? getName('en', item.status) : 'Pending').class]">
                             <CIcon :name="getStatusBadge(item.status ? getName('en', item.status) : 'Pending').icon" size="sm" class="status-icon" /> 
-                            {{ getStatusBadge(item.status ? getName('en', item.status) : 'Pending').label }}
+                            {{ getTranslatedStatusLabel(item.status) }}
                         </div>
                     </td>
                 </template>
 
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="(item.status ? getName('en', item.status) : 'Pending') === 'Pending'" class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" v-c-tooltip="'View Details'" @click="$emit('view-order', item)" :disabled="loadingItems.includes(item._id)">
+                        <div v-if="(item.status ? getName('en', item.status) : 'Pending').includes('Pending') || (item.status ? getName('en', item.status) : '') === 'Reserved'" class="d-inline-flex align-items-center">
+                            <button class="action-btn icon-view" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit ml-2" v-c-tooltip="'Edit'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
+                            <button class="action-btn icon-edit ml-2" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-success mx-2" v-c-tooltip="'Approve'" @click="$emit('approve', item)" :disabled="loadingItems.includes(item._id)">
+                            <button class="action-btn icon-success mx-2" v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" @click="$emit('approve', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
                                 <CIcon v-else name="cil-check" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger mr-2" v-c-tooltip="'Reject'" @click="$emit('reject', item)" :disabled="loadingItems.includes(item._id)">
+                            <button class="action-btn icon-danger mr-2" v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" @click="$emit('reject', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
                                 <CIcon v-else name="cil-x" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" v-c-tooltip="'Download Invoice'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id)">
+                            <button class="action-btn icon-download" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบกำกับภาษี'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cil-file" size="lg" />
                             </button>
                         </div>
                         <div v-else class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view mr-2" v-c-tooltip="'View Details'" @click="$emit('view-order', item)">
+                            <button class="action-btn icon-view mr-2" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" v-c-tooltip="'Download Invoice'" @click="downloadInvoice(item)">
+                            <button class="action-btn icon-download" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบกำกับภาษี'" @click="downloadInvoice(item)">
                                 <CIcon name="cil-file" size="lg" />
                             </button>
                         </div>
@@ -90,10 +93,10 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} orders
+                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, filteredItems.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredItems.length }} {{ $i18n.locale === 'en' ? 'orders' : 'รายการคำสั่งซื้อ' }}
             </div>
             <div class="text-muted text-sm" v-else>
-                Showing 0 orders
+                {{ $i18n.locale === 'en' ? 'Showing 0 orders' : 'แสดง 0 รายการ' }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
@@ -115,6 +118,10 @@ export default {
     name: 'OrderTable',
     mixins: [statusBadgeMixin],
     props: {
+        title: {
+            type: String,
+            default: ''
+        },
         items: {
             type: Array,
             default: () => []
@@ -135,16 +142,6 @@ export default {
     },
     data() {
         return {
-            fields: [
-                { key: 'id', label: 'ORDER ID', _classes: 'border-top-0 border-bottom' },
-                { key: 'datetime', label: 'DATE & TIME', _classes: 'border-top-0 border-bottom' },
-                { key: 'customer', label: 'CUSTOMER', _classes: 'border-top-0 border-bottom' },
-                { key: 'artwork', label: 'ARTWORK / ITEM', _classes: 'border-top-0 border-bottom' },
-                { key: 'artist', label: 'ARTIST', _classes: 'border-top-0 border-bottom' },
-                { key: 'amount', label: 'AMOUNT', _classes: 'border-top-0 border-bottom' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
             activePage: 1
         }
     },
@@ -157,6 +154,18 @@ export default {
         }
     },
     computed: {
+        fields() {
+            return [
+                { key: 'id', label: this.$i18n.locale === 'en' ? 'ORDER ID' : 'รหัสคำสั่งซื้อ', _classes: 'border-top-0 border-bottom' },
+                { key: 'datetime', label: this.$i18n.locale === 'en' ? 'DATE & TIME' : 'วันที่และเวลา', _classes: 'border-top-0 border-bottom' },
+                { key: 'customer', label: this.$i18n.locale === 'en' ? 'CUSTOMER' : 'ลูกค้า', _classes: 'border-top-0 border-bottom' },
+                { key: 'artwork', label: this.$i18n.locale === 'en' ? 'ARTWORK / ITEM' : 'ผลงานศิลปะ / สินค้า', _classes: 'border-top-0 border-bottom' },
+                { key: 'artist', label: this.$i18n.locale === 'en' ? 'ARTIST' : 'ศิลปิน', _classes: 'border-top-0 border-bottom' },
+                { key: 'amount', label: this.$i18n.locale === 'en' ? 'AMOUNT' : 'ยอดรวม', _classes: 'border-top-0 border-bottom' },
+                { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+            ];
+        },
         filteredItems() {
             return (this.items || []).filter(item => {
                 const customer = (item.contact ? item.contact.name : '').toLowerCase();
@@ -248,6 +257,23 @@ export default {
             }
             return String(text).trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "");
         },
+        getTranslatedStatusLabel(status) {
+            if (!status) return this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ';
+            const statusEn = this.getName('en', status);
+            // Some status items might be simple strings instead of translation objects
+            if (statusEn === 'N/A' && typeof status === 'string') {
+                const map = {
+                    'Pending': this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ',
+                    'Approved': this.$i18n.locale === 'en' ? 'Approved' : 'อนุมัติแล้ว',
+                    'Rejected': this.$i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธแล้ว',
+                    'Reserved': this.$i18n.locale === 'en' ? 'Reserved' : 'จองแล้ว',
+                    'Shipped': this.$i18n.locale === 'en' ? 'Shipped' : 'จัดส่งแล้ว',
+                    'Delivered': this.$i18n.locale === 'en' ? 'Delivered' : 'จัดส่งสำเร็จ'
+                };
+                return map[status] || status;
+            }
+            return this.getName(this.$i18n.locale, status);
+        },
         async downloadInvoice(item) {
             try {
                 const response = await this.$store.dispatch('order/getInvoice', item._id);
@@ -262,8 +288,8 @@ export default {
             } catch (error) {
                 console.error('Download failed:', error);
                 this.$store.commit('dialog/showToast', {
-                    title: 'Error',
-                    message: 'Could not download invoice.',
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: this.$i18n.locale === 'en' ? 'Could not download invoice.' : 'ไม่สามารถดาวน์โหลดใบเสร็จได้',
                     variant: 'danger'
                 });
             }

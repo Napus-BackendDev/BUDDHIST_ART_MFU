@@ -27,10 +27,8 @@
                 </template>
                 <template #title="{ item }">
                     <td>
-                        <div class="font-weight-bold text-dark mb-1">{{ getName($i18n.locale, item) || getName('en', item) }}</div>
-                        <div class="text-muted small description-truncate" v-if="item.description">
-                            {{ getName($i18n.locale, item.description) || getName('en', item.description) }}
-                        </div>
+                        <div class="font-weight-bold text-dark">{{ getName($i18n.locale, item) || getName('en', item) }}</div>
+                        <div class="text-muted small mt-1" v-if="item.artworkCode">{{ item.artworkCode }}</div>
                     </td>
                 </template>
                 <template #artist="{ item }">
@@ -57,10 +55,10 @@
                 </template>
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').label === 'Pending' || getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').label === 'Revised'" class="d-inline-flex align-items-center">
+                        <div v-if="(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending') === 'Pending' || (item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending') === 'Revised'" class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
-                                v-c-tooltip="'ดูรายละเอียด'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 @click="onView(item)"
                                 :disabled="loadingItems.includes(item._id)"
                             >
@@ -68,7 +66,7 @@
                             </button>
                             <button 
                                 class="action-btn icon-edit ml-2" 
-                                v-c-tooltip="'แก้ไข'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 @click="onEdit(item)"
                                 :disabled="loadingItems.includes(item._id)"
                             >
@@ -76,7 +74,7 @@
                             </button>
                             <button 
                                 class="action-btn icon-success mx-2" 
-                                v-c-tooltip="'อนุมัติ'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'"
                                 @click="onApprove(item)"
                                 :disabled="loadingItems.includes(item._id)"
                             >
@@ -85,7 +83,7 @@
                             </button>
                             <button 
                                 class="action-btn icon-danger" 
-                                v-c-tooltip="'ปฏิเสธ'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'"
                                 @click="onReject(item)"
                                 :disabled="loadingItems.includes(item._id)"
                             >
@@ -94,7 +92,7 @@
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
-                                v-c-tooltip="'ลบ'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="onDelete(item)"
                                 :disabled="loadingItems.includes(item._id)"
                             >
@@ -104,14 +102,14 @@
                         <div v-else class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
-                                v-c-tooltip="'ดูรายละเอียด'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 @click="onView(item)"
                             >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
-                                v-c-tooltip="'ลบ'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="onDelete(item)"
                             >
                                 <CIcon name="cil-trash" size="lg" />
@@ -125,10 +123,10 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} artworks
+                {{ $i18n.locale === 'en' ? `Showing ${(activePage - 1) * 10 + 1} to ${Math.min(activePage * 10, filteredItems.length)} of ${filteredItems.length} artworks` : `แสดง ${(activePage - 1) * 10 + 1} ถึง ${Math.min(activePage * 10, filteredItems.length)} จากทั้งหมด ${filteredItems.length} ผลงาน` }}
             </div>
             <div class="text-muted text-sm" v-else>
-                Showing 0 artworks
+                {{ $i18n.locale === 'en' ? 'Showing 0 artworks' : 'แสดง 0 ผลงาน' }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
@@ -220,21 +218,26 @@ export default {
         },
         filteredItems() {
             return this.items.filter(item => {
-                const title = this.getName('en', item).toLowerCase();
-                const artist = (item.artist ? this.getName('en', item.artist) : '').toLowerCase();
+                const titleEn = this.getName('en', item).toLowerCase();
+                const titleTh = this.getName('th', item).toLowerCase();
+                const artistEn = (item.artist ? this.getName('en', item.artist) : '').toLowerCase();
+                const artistTh = (item.artist ? this.getName('th', item.artist) : '').toLowerCase();
                 
                 // Search Filter
+                const search = this.filters.search.toLowerCase();
                 const searchMatch = !this.filters.search || 
-                    title.includes(this.filters.search.toLowerCase()) ||
-                    artist.includes(this.filters.search.toLowerCase());
+                    titleEn.includes(search) ||
+                    titleTh.includes(search) ||
+                    artistEn.includes(search) ||
+                    artistTh.includes(search);
 
                 // Category Filter
                 const categoryName = item.category ? this.getName('en', item.category) : 'N/A';
                 const categoryMatch = this.filters.category === 'All Categories' || categoryName === this.filters.category;
 
                 // Status Filter
-                const statusInfo = this.getStatusBadge(item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending');
-                const statusMatch = this.filters.status === 'All Status' || statusInfo.label === this.filters.status;
+                const rawStatusEn = item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
+                const statusMatch = this.filters.status === 'All Status' || rawStatusEn === this.filters.status;
 
                 // Date Filter
                 let dateMatch = true;
@@ -271,7 +274,11 @@ export default {
             this.$emit('edit', item);
         },
         onDelete(item) {
-            if (confirm(`Are you sure you want to delete "${this.getName('en', item)}"? This action cannot be undone.`)) {
+            const title = this.getName(this.$i18n.locale, item) || this.getName('en', item);
+            const confirmMsg = this.$i18n.locale === 'en' 
+                ? `Are you sure you want to delete "${title}"? This action cannot be undone.`
+                : `คุณแน่ใจหรือไม่ว่าต้องการลบ "${title}"? การดำเนินการนี้ไม่สามารถย้อนกลับได้`;
+            if (confirm(confirmMsg)) {
                 this.$emit('delete', item);
             }
         },
@@ -282,7 +289,7 @@ export default {
             const baseUrl = process.env.VUE_APP_API_URL || window.location.origin;
 
             const headers = [
-                'Artwork Image', 'Title (TH)', 'Title (EN)', 
+                'Artwork Code', 'Artwork Image', 'Title (TH)', 'Title (EN)', 
                 'Artist Name', 'Artist ID', 'Category', 
                 'Technique (TH)', 'Technique (EN)', 
                 'Size (TH)', 'Size (EN)', 'Price', 
@@ -294,9 +301,10 @@ export default {
                 
                 // Status Helpers
                 const approvalStatus = this.getStatusBadge(item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending').label;
-                const saleStatus = item.status && item.status.sale ? this.getName('en', item.status.sale) : 'N/A';
+                const saleStatus = item.status && item.status.sale ? this.getName(this.$i18n.locale, item.status.sale) : (this.$i18n.locale === 'en' ? 'N/A' : 'ไม่มี');
 
                 return [
+                    item.artworkCode || '-',
                     // Link column
                     artworkUrl ? { t: 's', v: 'View Image', l: { Target: artworkUrl } } : 'No Image',
                     this.getName('th', item),

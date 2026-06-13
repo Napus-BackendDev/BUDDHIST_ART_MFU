@@ -32,10 +32,13 @@ const getters = {
 
 const actions = {
     addToCart({ commit, getters }, artwork) {
+        console.log(`[Checkout Flow 2] Store: Received addToCart action for ID: ${artwork._id}`);
         if (getters.isInCart(artwork._id)) {
+            console.log(`[Checkout Flow 2] Store: Item already in cart, updating...`);
             commit('UPDATE_CART_ITEM', artwork);
             return;
         }
+        console.log(`[Checkout Flow 2] Store: Adding new item to cart state.`);
         commit('ADD_TO_CART', artwork);
     },
     updateCartItem({ commit }, artwork) {
@@ -52,6 +55,9 @@ const actions = {
     },
     setShowCart({ commit }, show) {
         commit('SET_SHOW_CART', show);
+    },
+    updateItemStatusLocal({ commit }, payload) {
+        commit('UPDATE_ITEM_STATUS', payload);
     }
 };
 
@@ -73,6 +79,15 @@ const mutations = {
         if (index !== -1) {
             const existingItem = state.items[index];
             state.items.splice(index, 1, { ...artwork, quantity: 1, addedAt: existingItem.addedAt });
+        }
+    },
+    UPDATE_ITEM_STATUS(state, { id, status }) {
+        const strId = String(id);
+        const index = state.items.findIndex(item => String(item._id) === strId);
+        if (index !== -1) {
+            const item = state.items[index];
+            item.status = { ...item.status, ...status };
+            state.items.splice(index, 1, item);
         }
     },
     REMOVE_FROM_CART(state, artworkId) {

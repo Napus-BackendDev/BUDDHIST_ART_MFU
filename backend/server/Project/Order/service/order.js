@@ -33,10 +33,9 @@ exports.onQuerys = async function (request, response) {
 
 exports.onCreate = async function (request, response) {
     const mongoose = require('mongoose');
-    const session = await mongoose.startSession();
-    session.startTransaction();
 
     try {
+        console.log(`[Backend Checkout Flow 5.1] Starting Order Creation Transaction...`);
         // --- 🔢 Generate Custom Order Number (ORD-YYYY-XXXX) ---
         const now = new Date();
         const year = now.getFullYear();
@@ -67,6 +66,7 @@ exports.onCreate = async function (request, response) {
 
         // --- 2. LOCK & RESERVE ARTWORKS IMMEDIATELY ---
         const artworkIds = request.body.artwork || [];
+        console.log(`[Backend Checkout Flow 5.2] Attempting to lock artworks:`, artworkIds);
         for (let id of artworkIds) {
             const artworkId = id._id || id;
             
@@ -79,22 +79,24 @@ exports.onCreate = async function (request, response) {
                 { "status.approval": reservedStatus._id },
                 undefined,
                 '',
-                { session, new: true }
+                { new: true }
             );
 
             if (!updateResult) {
+                console.log(`[Backend Checkout Flow 5.2 - Failed] Artwork ${artworkId} is already reserved! Aborting transaction.`);
                 throw new Error("RESERVED_ALREADY");
             }
+            console.log(`[Backend Checkout Flow 5.2 - Success] Artwork ${artworkId} successfully locked.`);
         }
 
         // --- 3. CREATE ORDER RECORD ---
-        const doc = await Order.onCreate(request.body, undefined, '', { session });
+        console.log(`[Backend Checkout Flow 5.3] Creating order record for order number: ${customOrderNumber}`);
+        const doc = await Order.onCreate(request.body);
+        console.log(`[Backend Checkout Flow 5.3 - Success] Order created with _id: ${doc._id}`);
 
         // --- 4. CONTINUING WITH OTHER PROCESSES (PDF, EMAIL, ETC.) ---
 
-        // --- 🚀 Commit Transaction ---
-        await session.commitTransaction();
-        session.endSession();
+        console.log(`[Backend Checkout Flow 5.4] Processing completed successfully.`);
 
         let invoiceData = {
             orderId: doc.orderNumber || doc._id.toString(),
@@ -179,20 +181,24 @@ exports.onCreate = async function (request, response) {
                 orderDate
             });
 
-            const attachments = [
-                {
+            const attachments = [];
+
+            // --- 🎫 เงื่อนไขการส่ง Invoice และ Slip ---
+            // ส่ง Invoice และ Slip เฉพาะเมื่อมีการอัปโหลดรูป Bil มาแล้วเท่านั้น
+            if (doc.image) {
+                // 1. แนบ Invoice
+                attachments.push({
                     filename: fileName,
                     content: pdfBuffer,
                     contentType: 'application/pdf'
-                }
-            ];
+                });
 
-            // Add Slip/Bil if available during creation
-            if (doc.image) {
+                // 2. แนบ Slip (Bil)
                 const root = path.join(__dirname, '../../../../public');
                 const splitPattern = doc.image.includes('/data/uploads/') ? '/data/uploads/' : '/uploads/';
                 const slipRelPath = doc.image.split(splitPattern)[1];
                 const slipPath = path.join(root, slipRelPath);
+                
                 if (fs.existsSync(slipPath)) {
                     attachments.push({ 
                         filename: `Payment_Slip_${doc.orderNumber || doc._id}${path.extname(slipPath)}`, 
@@ -206,14 +212,6 @@ exports.onCreate = async function (request, response) {
 
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
-        // --- 🛑 Rollback Transaction if Error ---
-        if (typeof session !== 'undefined' && session.inTransaction()) {
-            await session.abortTransaction();
-        }
-        if (typeof session !== 'undefined') {
-            session.endSession();
-        }
-
         console.error(err);
         return ResMessage.sendResponse(response, 0, 40400);
     }
@@ -221,14 +219,71 @@ exports.onCreate = async function (request, response) {
 
 exports.onUpload = async function (request, response) {
     try {
+        console.log(`[Backend Checkout Flow 6.1] Received upload request for payment slip...`);
         let query = {};
         query._id = new mongo.ObjectId(request.body._id);
         const imagePath = Order.getImageUrl(request, request.file.destination, request.file.filename);
 
+        console.log(`[Backend Checkout Flow 6.2] Saving payment slip image path: ${imagePath} for order ID: ${request.body._id}`);
         const doc = await Order.onUpdate(query, { image: imagePath }, [], "image");
+        
+        // --- 📧 ส่งเมลแจ้งเมื่อได้รับสลิป (Bil) ---
+        try {
+            const fullDoc = await Order.onQuery(query); // ดึงข้อมูลแบบเต็มเพื่อส่งเมล
+            if (fullDoc && fullDoc.contact?.email) {
+                const buyerName = fullDoc.contact?.name || "Customer";
+                const orderId = fullDoc.orderNumber || fullDoc._id;
+                const artworkTitle = fullDoc.artwork && fullDoc.artwork[0] 
+                    ? (fullDoc.artwork[0].title.find(t => t.key === 'en')?.value || fullDoc.artwork[0].title[0]?.value || "Artwork")
+                    : "Artwork";
+                const price = fullDoc.artwork ? fullDoc.artwork.reduce((sum, art) => sum + (art.price || 0), 0) : 0;
+                const orderDate = fullDoc.createdAt ? new Date(fullDoc.createdAt).toLocaleString('th-TH') : new Date().toLocaleString('th-TH');
+
+                const html = confirmationOrderMail({
+                    buyerName,
+                    orderId,
+                    artworkTitle,
+                    price,
+                    orderDate
+                });
+
+                const root = path.join(__dirname, '../../../../public');
+                const attachments = [];
+
+                // 1. แนบ Invoice (ถ้ามีไฟล์อยู่แล้วในเครื่อง)
+                if (fullDoc.invoiceFile) {
+                    const buyerFolderName = sanitize(fullDoc.contact?.name || (fullDoc.user && fullDoc.user.name) || "Customer");
+                    const buyerId = fullDoc.user ? (fullDoc.user._id || fullDoc.user) : "Guest";
+                    const invoicePath = path.join(root, `account/User/${buyerId}_${buyerFolderName}/Invoice/${fullDoc.invoiceFile}`);
+                    
+                    if (fs.existsSync(invoicePath)) {
+                        attachments.push({ filename: fullDoc.invoiceFile, path: invoicePath });
+                    }
+                }
+
+                // 2. แนบ Slip (Bil) ที่เพิ่งอัปโหลด
+                const splitPattern = imagePath.includes('/data/uploads/') ? '/data/uploads/' : '/uploads/';
+                const slipRelPath = imagePath.split(splitPattern)[1];
+                const slipPath = path.join(root, slipRelPath);
+                
+                if (fs.existsSync(slipPath)) {
+                    attachments.push({ 
+                        filename: `Payment_Slip_${orderId}${path.extname(slipPath)}`, 
+                        path: slipPath 
+                    });
+                }
+
+                await sendMail(fullDoc.contact.email, 'Payment Received & Invoice - Buddhist Art MFU', '', html, attachments);
+                console.log(`[Backend Checkout Flow 6.4] Confirmation email with invoice sent to ${fullDoc.contact.email}`);
+            }
+        } catch (emailErr) {
+            console.error(`[Backend Checkout Flow 6 - Email Error]`, emailErr);
+        }
+
+        console.log(`[Backend Checkout Flow 6.3 - Success] Payment slip uploaded successfully.`);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
-        console.log(err);
+        console.error(`[Backend Checkout Flow 6 - Error] Error uploading payment slip:`, err);
         return ResMessage.sendResponse(response, 0, 40400);
     }
 };

@@ -174,7 +174,7 @@
 
 <script>
 import ArtistProfileHeader from './components/ArtistProfileHeader.vue'
-import ArtworkCard from './components/card/CardArtworks.vue'
+import ArtworkCard from '@/components/CardArtwork.vue'
 import SubmissionTable from './components/table/SubmissionTable.vue'
 import ArtistSubmissions from './Submissions.vue'
 import ArtistSubmissionsDetail from './SubmissionsDetail.vue'
@@ -230,13 +230,26 @@ export default {
     profileUserId() {
       return this.$route.params.id || this.userId;
     },
+    resolvedArtistId() {
+      return this.user ? this.user._id : this.profileUserId;
+    },
     isPublic() {
-      return this.$route.params.id && this.$route.params.id !== this.userId;
+      return this.$route.params.id && this.resolvedArtistId !== this.userId;
     },
     user() {
-      // Find the user identified by profileUserId from the list
+      // Find the user identified by profileUserId or matching slugified name
       if (!this.users) return null;
-      return this.users.find(u => u._id === this.profileUserId);
+      return this.users.find(u => {
+        if (u._id === this.profileUserId) return true;
+        
+        const nameEn = this.getName('en', u);
+        if (nameEn && nameEn.replace(/\s+/g, '-').toLowerCase() === this.profileUserId.toLowerCase()) return true;
+
+        const nameTh = this.getName('th', u);
+        if (nameTh && nameTh.replace(/\s+/g, '-') === this.profileUserId) return true;
+        
+        return false;
+      });
     },
     artistArtworks() {
       if (!this.allArtworks || !Array.isArray(this.allArtworks)) return [];
@@ -245,7 +258,7 @@ export default {
       let filtered = this.allArtworks.filter(art => {
         if (!art.artist) return false;
         const id = typeof art.artist === 'object' ? art.artist._id : art.artist;
-        return id === this.profileUserId;
+        return id === this.resolvedArtistId;
       });
 
       // 2. If public, filter by Approved status
@@ -302,7 +315,7 @@ export default {
     processedOrders() {
       if (!this.allOrders) return [];
       return this.allOrders
-        .filter(order => order.user === this.profileUserId || (order.user && order.user._id === this.profileUserId))
+        .filter(order => order.user === this.resolvedArtistId || (order.user && order.user._id === this.resolvedArtistId))
         .map(order => ({
           ...order,
           orderIdDisplay: order._id.substring(order._id.length - 8).toUpperCase(),
@@ -333,7 +346,6 @@ export default {
   },
   async created() {
     this.$store.dispatch('artwork/get');
-    this.$store.dispatch('submission/get', { artist: this.profileUserId });
     this.$store.dispatch('order/get', {});
   },
   methods: {
@@ -408,10 +420,23 @@ export default {
       try {
         // Force refresh user list, or fetch specific user
         const users = await this.$store.dispatch('user/get', {});
-        // Find the user directly from the fetched array
-        const currentUser = users ? users.find(u => u._id === this.profileUserId) : null;
+        // Find the user directly from the fetched array by matching ID or name slug
+        const currentUser = users ? users.find(u => {
+          if (u._id === this.profileUserId) return true;
+          
+          const nameEn = this.getName('en', u);
+          if (nameEn && nameEn.replace(/\s+/g, '-').toLowerCase() === this.profileUserId.toLowerCase()) return true;
+
+          const nameTh = this.getName('th', u);
+          if (nameTh && nameTh.replace(/\s+/g, '-') === this.profileUserId) return true;
+          
+          return false;
+        }) : null;
         
         if (currentUser) {
+          // Fetch submissions using the resolved ID
+          this.$store.dispatch('submission/get', { artist: currentUser._id });
+
           const getName = (lang) => {
             if (Array.isArray(currentUser.name)) {
               const obj = currentUser.name.find(n => n.key === lang);
@@ -434,7 +459,7 @@ export default {
             addressShipping: currentUser.address ? currentUser.address.shipping : ''
           };
         } else {
-          console.error("Profile Error: User not found in database matching ID:", this.profileUserId);
+          console.error("Profile Error: User not found in database matching ID/slug:", this.profileUserId);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);

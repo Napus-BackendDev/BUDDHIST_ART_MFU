@@ -7,8 +7,8 @@
                     <h1 class="hero-title text-uppercase mb-2">Artwork <span class="text-highlight">Gallery</span></h1>
                     <div class="title-separator mb-4"></div>
                     <p class="hero-subtitle mb-0">
-                        สำรวจความงดงามและจิตวิญญาณแห่งพุทธศิลป์ <br class="d-none d-md-block">
-                        ผ่านคอลเลกชันที่คัดสรรมาเป็นพิเศษจากมหาวิทยาลัยแม่ฟ้าหลวง
+                        {{ $i18n.locale === 'en' ? 'Explore the beauty and spirit of Buddhist art' : 'สำรวจความงดงามและจิตวิญญาณแห่งพุทธศิลป์' }} <br class="d-none d-md-block">
+                        {{ $i18n.locale === 'en' ? 'through a specially curated collection from Mae Fah Luang University.' : 'ผ่านคอลเลกชันที่คัดสรรมาเป็นพิเศษจากมหาวิทยาลัยแม่ฟ้าหลวง' }}
                     </p>
                 </div>
             </div>

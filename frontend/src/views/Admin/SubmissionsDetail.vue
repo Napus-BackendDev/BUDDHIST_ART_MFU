@@ -24,6 +24,8 @@ import SubmissionDetailFilter from './components/submission_detail/SubmissionDet
 import AssignmentCreateModal from './components/modal/submission/AssignmentCreateModal.vue'
 import AssignmentEditModal from './components/modal/submission/AssignmentEditModal.vue'
 import HeaderHero from './components/HeaderHero.vue'
+import * as XLSX from 'xlsx'
+import moment from 'moment'
 
 export default {
     name: 'SubmissionsDetail',
@@ -102,6 +104,11 @@ export default {
                 .then(() => {
                     this.fetchSubmission();
                     this.showAssignmentModal = false;
+                    alert(this.$i18n.locale === 'en' ? "Assignment created successfully." : "สร้างงานมอบหมายเรียบร้อยแล้ว");
+                })
+                .catch(err => {
+                    console.error('Create assignment error:', err);
+                    alert(this.$i18n.locale === 'en' ? "Failed to create assignment." : "ไม่สามารถสร้างงานมอบหมายได้");
                 });
         },
         handleView(item) {
@@ -133,22 +140,102 @@ export default {
                     .then(() => {
                         this.fetchSubmission();
                         this.showEditAssignmentModal = false;
+                        alert(this.$i18n.locale === 'en' ? "Assignment updated successfully." : "อัปเดตงานมอบหมายเรียบร้อยแล้ว");
+                    })
+                    .catch(err => {
+                        console.error('Update assignment error:', err);
+                        alert(this.$i18n.locale === 'en' ? "Failed to update assignment." : "ไม่สามารถอัปเดตงานมอบหมายได้");
                     });
             }
         },
         handleDelete(item) {
-            if (confirm('Are you sure you want to delete this assignment?')) {
+            const title = this.getName(this.$i18n.locale, item);
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to delete assignment "${title}"?`
+                : `คุณแน่ใจหรือว่าต้องการลบงานมอบหมาย "${title}"?`;
+
+            if (confirm(confirmMsg)) {
                 const updatedSubmission = { ...this.submission };
                 updatedSubmission.assignments = updatedSubmission.assignments.filter(a => a._id !== item._id);
                 
                 this.$store.dispatch('submission/update', updatedSubmission)
                     .then(() => {
                         this.fetchSubmission();
+                        alert(this.$i18n.locale === 'en' ? "Assignment deleted successfully." : "ลบงานมอบหมายเรียบร้อยแล้ว");
+                    })
+                    .catch(err => {
+                        console.error('Delete assignment error:', err);
+                        alert(this.$i18n.locale === 'en' ? "Failed to delete assignment." : "ไม่สามารถลบงานมอบหมายได้");
                     });
             }
         },
         handleExport() {
-            // Logic for export
+            if (!this.submission || !this.submission.assignments || this.submission.assignments.length === 0) {
+                alert(this.$i18n.locale === 'en' ? 'No data available to export.' : 'ไม่มีข้อมูลสำหรับการส่งออก');
+                return;
+            }
+
+            const headers = this.$i18n.locale === 'en' ? [
+                'Assignment Title', 'Start Date & Time', 'Due Date & Time', 
+                'Total Target Students', 'Submitted Students', 'Approved count', 
+                'Pending Review count', 'Rejected count'
+            ] : [
+                'หัวข้อคำสั่งงาน', 'วันเริ่มต้น', 'วันกำหนดส่ง', 
+                'จำนวนนักศึกษาที่มอบหมาย', 'นักศึกษาที่ส่งแล้ว', 'ผ่าน/อนุมัติ (คน)', 
+                'รอตรวจสอบ (คน)', 'ไม่ผ่าน (คน)'
+            ];
+
+            const totalEnrolled = this.submission.artist ? this.submission.artist.length : 0;
+
+            const data = this.submission.assignments.map(item => {
+                const title = this.getName(this.$i18n.locale, item);
+                const start = item.create && item.create.startAt ? moment(item.create.startAt).format('DD/MM/YYYY HH:mm') : 'N/A';
+                const end = item.create && item.create.endAt ? moment(item.create.endAt).format('DD/MM/YYYY HH:mm') : 'N/A';
+                
+                // Get unique submitters count
+                const artworks = item.artworks || [];
+                const submittedOwners = new Set();
+                artworks.forEach(aw => {
+                    const ownerId = (aw.owner?._id || aw.owner)?.toString();
+                    if (ownerId) submittedOwners.add(ownerId);
+                });
+                
+                const submittedCount = submittedOwners.size;
+                const targetCount = item.artist && item.artist.length > 0 ? item.artist.length : totalEnrolled;
+                
+                // Get approval status counts
+                const approvedCount = artworks.filter(a => {
+                    const statusVal = a.status && typeof a.status === 'object' ? this.getName('en', a.status) : a.status;
+                    return statusVal === 'Approved' || statusVal === 'Passed';
+                }).length;
+                
+                const pendingCount = artworks.filter(a => {
+                    const statusVal = a.status && typeof a.status === 'object' ? this.getName('en', a.status) : a.status;
+                    return statusVal === 'Pending';
+                }).length;
+                
+                const rejectedCount = artworks.filter(a => {
+                    const statusVal = a.status && typeof a.status === 'object' ? this.getName('en', a.status) : a.status;
+                    return statusVal === 'Rejected' || statusVal === 'Fail';
+                }).length;
+
+                return [
+                    title,
+                    start,
+                    end,
+                    targetCount,
+                    submittedCount,
+                    approvedCount,
+                    pendingCount,
+                    rejectedCount
+                ];
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Assignments');
+            const portalName = this.getName(this.$i18n.locale, this.submission).replace(/\s+/g, '_');
+            XLSX.writeFile(wb, `Portal_${portalName}_Assignments_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
         }
     }
 }

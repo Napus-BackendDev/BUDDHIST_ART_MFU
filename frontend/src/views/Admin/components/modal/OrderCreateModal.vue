@@ -56,8 +56,12 @@
                         <label class="form-label">Purchase Date</label>
                         <div class="input-group-custom">
                             <CInput 
-                                type="date"
+                                :type="form.date ? 'date' : 'text'"
+                                placeholder="วัน/เดือน/ปี"
+                                lang="en-GB"
                                 v-model="form.date" 
+                                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                                @blur="!$event.target.value && ($event.target.type = 'text')"
                                 class="custom-input w-100" 
                             />
                         </div>

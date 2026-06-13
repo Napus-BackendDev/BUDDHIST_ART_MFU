@@ -26,12 +26,22 @@
         <div class="px-3 py-2">
             <!-- Basic Info Row -->
             <CRow>
-                <CCol md="12">
+                <CCol md="8">
                     <div class="form-group-custom">
                         <label class="form-label">Submission Title</label>
                         <CInput 
                             v-model="form.title" 
                             placeholder="e.g. Midterm Art Project 2024" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+                <CCol md="4">
+                    <div class="form-group-custom">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Course Level' : 'ระดับหลักสูตร' }}</label>
+                        <CInput
+                            v-model="form.courseLevel"
+                            placeholder="01"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -45,7 +55,11 @@
                         <label class="form-label">Start Date</label>
                         <CInput 
                             v-model="form.startDate" 
-                            type="date" 
+                            :type="form.startDate ? 'date' : 'text'"
+                            placeholder="วัน/เดือน/ปี"
+                            lang="en-GB"
+                            @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -55,7 +69,11 @@
                         <label class="form-label">Due Date (Deadline)</label>
                         <CInput 
                             v-model="form.dueDate" 
-                            type="date" 
+                            :type="form.dueDate ? 'date' : 'text'"
+                            placeholder="วัน/เดือน/ปี"
+                            lang="en-GB"
+                            @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -119,8 +137,11 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <label class="form-label mb-0">Enroll Students</label>
                     <div class="d-flex align-items-center">
-                        <div class="select-all-toggle" @click="toggleSelectAll">
-                            <span class="text-purple small font-weight-bold pointer">{{ allSelected ? 'Deselect New' : 'Select All New' }}</span>
+                        <div class="select-all-toggle mr-3" @click="toggleSelectAllNew">
+                            <span class="text-purple small font-weight-bold pointer">{{ allNewSelected ? ($i18n.locale === 'en' ? 'Deselect New' : 'ยกเลิกเลือกนศ.ใหม่') : ($i18n.locale === 'en' ? 'Select All New Students' : 'เลือกนักศึกษาใหม่ทั้งหมด') }}</span>
+                        </div>
+                        <div class="select-all-toggle" @click="toggleSelectAllStudents">
+                            <span class="text-purple small font-weight-bold pointer">{{ allStudentsSelected ? ($i18n.locale === 'en' ? 'Deselect All' : 'ยกเลิกเลือกทั้งหมด') : ($i18n.locale === 'en' ? 'Select all students' : 'เลือกนักศึกษาทั้งหมด') }}</span>
                         </div>
                     </div>
                 </div>
@@ -234,8 +255,12 @@
                                     <div class="date-picker-mini">
                                         <label class="mini-label">Start Date & Time</label>
                                         <input 
-                                            type="datetime-local" 
+                                            :type="assignment.startDateTime ? 'datetime-local' : 'text'" 
+                                            placeholder="วัน/เดือน/ปี --:--"
+                                            lang="en-GB"
                                             v-model="assignment.startDateTime"
+                                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                                            @blur="!$event.target.value && ($event.target.type = 'text')"
                                             class="mini-date-input"
                                         />
                                     </div>
@@ -244,8 +269,12 @@
                                     <div class="date-picker-mini">
                                         <label class="mini-label">End Date & Time</label>
                                         <input 
-                                            type="datetime-local" 
+                                            :type="assignment.endDateTime ? 'datetime-local' : 'text'" 
+                                            placeholder="วัน/เดือน/ปี --:--"
+                                            lang="en-GB"
                                             v-model="assignment.endDateTime"
+                                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                                            @blur="!$event.target.value && ($event.target.type = 'text')"
                                             class="mini-date-input"
                                         />
                                     </div>
@@ -294,6 +323,7 @@ export default {
         return {
             form: {
                 title: '',
+                courseLevel: '',
                 startDate: '',
                 dueDate: '',
                 assignments: [
@@ -337,7 +367,9 @@ export default {
             return this.filteredStudents.filter(s => !this.isNewStudent(s));
         },
         allSelected() {
-            // Updated to check only for New Students as per request
+            return this.allNewSelected;
+        },
+        allNewSelected() {
             if (!this.availableStudents) return false;
             const newArtists = this.availableStudents.filter(s => this.getRoleName(s.role) === 'Artist' && this.isNewStudent(s));
             if (newArtists.length === 0) return false;
@@ -348,6 +380,17 @@ export default {
             });
             return selectedNewIds.length === newArtists.length;
         },
+        allStudentsSelected() {
+            if (!this.availableStudents) return false;
+            const allArtists = this.availableStudents.filter(s => this.getRoleName(s.role) === 'Artist');
+            if (allArtists.length === 0) return false;
+            
+            const selectedArtistIds = this.selectedStudents.filter(id => {
+                const s = this.availableStudents.find(st => st._id === id);
+                return s && this.getRoleName(s.role) === 'Artist';
+            });
+            return selectedArtistIds.length === allArtists.length;
+        },
         selectedStudentDetails() {
             if (!this.availableStudents) return [];
             return this.availableStudents.filter(s => this.selectedStudents.includes(s._id));
@@ -356,8 +399,12 @@ export default {
     methods: {
         getStudentName(student) {
             if (!student || !student.name) return 'N/A';
-            const nameObj = student.name.find(n => n.key === 'en') || student.name[0];
-            return nameObj ? nameObj.value : 'N/A';
+            if (typeof student.name === 'string') return student.name;
+            if (Array.isArray(student.name)) {
+                const nameObj = student.name.find(n => n.key === 'en') || student.name[0];
+                return nameObj ? nameObj.value : 'N/A';
+            }
+            return 'N/A';
         },
         getRoleName(role) {
             if (!role) return 'User';
@@ -397,7 +444,10 @@ export default {
             }
         },
         toggleSelectAll() {
-            if (this.allSelected) {
+            this.toggleSelectAllNew();
+        },
+        toggleSelectAllNew() {
+            if (this.allNewSelected) {
                 // Remove only New Students from selection, keep Old ones
                 this.selectedStudents = this.selectedStudents.filter(id => {
                     const s = this.availableStudents.find(st => st._id === id);
@@ -410,7 +460,21 @@ export default {
                 );
                 const newIds = newArtists.map(s => s._id);
                 this.selectedStudents = [...new Set([...this.selectedStudents, ...newIds])];
-                this.$toast?.success(`Enrolled all ${newIds.length} new students.`);
+                this.$toast?.success(this.$i18n.locale === 'en' ? `Enrolled all ${newIds.length} new students.` : `เลือกนักศึกษาใหม่ทั้งหมด ${newIds.length} คนเรียบร้อยแล้ว`);
+            }
+        },
+        toggleSelectAllStudents() {
+            if (this.allStudentsSelected) {
+                // Deselect all Artists
+                this.selectedStudents = [];
+            } else {
+                // Select all Artists
+                const allArtists = this.availableStudents.filter(s => 
+                    this.getRoleName(s.role) === 'Artist'
+                );
+                const allIds = allArtists.map(s => s._id);
+                this.selectedStudents = allIds;
+                this.$toast?.success(this.$i18n.locale === 'en' ? `Enrolled all ${allIds.length} students.` : `เลือกนักศึกษาทั้งหมด ${allIds.length} คนเรียบร้อยแล้ว`);
             }
         },
         getInitials(name) {
@@ -432,6 +496,7 @@ export default {
                     { key: 'en', value: this.form.title },
                     { key: 'th', value: this.form.title }
                 ],
+                courseLevel: this.form.courseLevel || '1',
                 create: {
                     startAt: this.form.startDate,
                     endAt: this.form.dueDate
@@ -451,6 +516,7 @@ export default {
 
             console.log("--- CREATING NEW SUBMISSION ---");
             console.log("Title:", this.form.title);
+            console.log("Course Level:", this.form.courseLevel);
             console.log("Artists Enrolled (IDs):", this.selectedStudents);
             console.log("Full Payload:", submissionData);
 
@@ -460,6 +526,7 @@ export default {
         resetForm() {
             this.form = {
                 title: '',
+                courseLevel: '',
                 startDate: '',
                 dueDate: '',
                 assignments: [

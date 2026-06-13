@@ -55,8 +55,12 @@
           <div class="d-flex align-items-center">
             <div class="date-input-wrapper">
               <CInput 
-                type="date" 
+                :type="formattedStartDate ? 'date' : 'text'"
+                placeholder="วัน/เดือน/ปี"
+                lang="en-GB"
                 :value="formattedStartDate" 
+                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                @blur="!$event.target.value && ($event.target.type = 'text')"
                 @input="onDateInput('startDate', $event)"
                 class="mb-0 custom-date-field" 
               />
@@ -65,8 +69,12 @@
             <span class="mx-2 text-muted">&ndash;</span>
             <div class="date-input-wrapper">
               <CInput 
-                type="date" 
+                :type="formattedEndDate ? 'date' : 'text'"
+                placeholder="วัน/เดือน/ปี"
+                lang="en-GB"
                 :value="formattedEndDate" 
+                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                @blur="!$event.target.value && ($event.target.type = 'text')"
                 @input="onDateInput('endDate', $event)"
                 class="mb-0 custom-date-field" 
               />

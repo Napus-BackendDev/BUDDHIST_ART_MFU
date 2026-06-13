@@ -1,6 +1,6 @@
 <template>
     <div class="submission-section py-5 bg-white">
-        <CContainer fluid class="px-md-5">
+        <CContainer>
             <div class="d-flex align-items-end justify-content-between mb-5">
                 <div class="text-left">
                     <h2 class="font-weight-bold mb-0 section-title-home">{{ $i18n.locale === 'en' ? 'Opportunities & Activities' : 'โอกาสและกิจกรรม' }}</h2>
@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import CardArtworks from './card/CardArtworks.vue'
+import CardArtworks from '@/components/CardArtwork.vue'
 
 export default {
     name: 'SectionSubmissionHome',
@@ -59,8 +59,8 @@ export default {
                 return isApproved && isActivity;
             });
             
-            // Limit to top 8
-            return result.slice(0, 8);
+            // Limit to top 10 (2 rows of 5)
+            return result.slice(0, 10);
         }
     },
     methods: {

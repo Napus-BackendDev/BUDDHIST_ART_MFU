@@ -1,83 +1,32 @@
 <template>
     <CCard class="pending-card mb-4 mt-2">
         <CCardHeader class="bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
-            <h4 class="card-title mb-0">Pending Approval</h4>
-            <a href="#" class="view-all-link">View All</a>
+            <h4 class="card-title mb-0">{{ $i18n.locale === 'en' ? 'Pending Approval' : 'รอการอนุมัติ' }}</h4>
+            <router-link to="/admin/artworks" class="view-all-link">{{ $i18n.locale === 'en' ? 'View All' : 'ดูทั้งหมด' }}</router-link>
         </CCardHeader>
         <CCardBody>
             <div class="scrollable-list">
-                <!-- List Item 1 -->
-                <div class="pending-item">
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <div class="image-placeholder"></div>
-                        <div class="ml-3">
-                            <div class="item-title">Abstract #44</div>
-                            <div class="item-subtitle">Mike Smith &bull; 5h ago</div>
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <CButton color="transparent" class="btn-icon p-1 text-success">
-                            <CIcon name="cil-check-circle" size="lg" />
-                        </CButton>
-                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2">
-                            <CIcon name="cil-x-circle" size="lg" />
-                        </CButton>
-                    </div>
+                <div v-if="!pendingArtworks || pendingArtworks.length === 0" class="text-center text-muted mt-4">
+                    {{ $i18n.locale === 'en' ? 'No pending artworks.' : 'ไม่มีผลงานที่รออนุมัติ' }}
                 </div>
-
-                <!-- List Item 2 -->
-                <div class="pending-item">
+                <div v-for="item in pendingArtworks" :key="item._id" class="pending-item">
                     <div class="d-flex align-items-center flex-grow-1">
-                        <div class="image-placeholder"></div>
+                        <img v-if="item.image" :src="item.image" class="image-placeholder" style="object-fit: cover;" alt="Artwork" />
+                        <div v-else class="image-placeholder"></div>
                         <div class="ml-3">
-                            <div class="item-title">Urban Chaos</div>
-                            <div class="item-subtitle">Sarah Lee &bull; 1d ago</div>
+                            <div class="item-title">{{ getName($i18n.locale, item.title) || ($i18n.locale === 'en' ? 'Untitled' : 'ไม่มีชื่อ') }}</div>
+                            <div class="item-subtitle">{{ getName($i18n.locale, item.artist) || ($i18n.locale === 'en' ? 'Unknown Artist' : 'ไม่ระบุศิลปิน') }} &bull; {{ formatDate(item.createdAt) }}</div>
                         </div>
                     </div>
-                    <div class="action-buttons">
-                        <CButton color="transparent" class="btn-icon p-1 text-success">
-                            <CIcon name="cil-check-circle" size="lg" />
+                    <div class="action-buttons d-flex align-items-center">
+                        <CButton @click="goToArtwork(item)" color="transparent" class="btn-icon p-1 text-info mr-1" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'">
+                            <CIcon name="cilMagnifyingGlass" size="lg" />
                         </CButton>
-                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2">
-                            <CIcon name="cil-x-circle" size="lg" />
+                        <CButton @click="handleApprove(item)" color="transparent" class="btn-icon p-1 text-success mr-1" v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'">
+                            <CIcon name="cil-check" size="lg" />
                         </CButton>
-                    </div>
-                </div>
-
-                <!-- List Item 3 -->
-                <div class="pending-item">
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <div class="image-placeholder"></div>
-                        <div class="ml-3">
-                            <div class="item-title">Mountain Mist</div>
-                            <div class="item-subtitle">John Art &bull; 1d ago</div>
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <CButton color="transparent" class="btn-icon p-1 text-success">
-                            <CIcon name="cil-check-circle" size="lg" />
-                        </CButton>
-                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2">
-                            <CIcon name="cil-x-circle" size="lg" />
-                        </CButton>
-                    </div>
-                </div>
-
-                <!-- List Item 4 -->
-                <div class="pending-item">
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <div class="image-placeholder"></div>
-                        <div class="ml-3">
-                            <div class="item-title">Golden Hour</div>
-                            <div class="item-subtitle">Emily Rose &bull; 2d ago</div>
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <CButton color="transparent" class="btn-icon p-1 text-success">
-                            <CIcon name="cil-check-circle" size="lg" />
-                        </CButton>
-                        <CButton color="transparent" class="btn-icon p-1 text-danger ml-2">
-                            <CIcon name="cil-x-circle" size="lg" />
+                        <CButton @click="handleReject(item)" color="transparent" class="btn-icon p-1 text-danger" v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'">
+                            <CIcon name="cil-x" size="lg" />
                         </CButton>
                     </div>
                 </div>
@@ -87,8 +36,124 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
+import moment from 'moment';
+
 export default {
-    name: 'PendingApproval'
+    name: 'PendingApproval',
+    computed: {
+        ...mapState('dashboard', ['stats']),
+        pendingArtworks() {
+            return this.stats && this.stats.pendingArtworks ? this.stats.pendingArtworks : [];
+        }
+    },
+    methods: {
+        getName(lang, obj) {
+            if (!obj) return '';
+            const title = obj.title || obj.name || obj;
+            if (Array.isArray(title)) {
+                const found = title.find(t => t.key === lang);
+                return found ? found.value : (title[0] ? title[0].value : '');
+            }
+            return typeof title === 'string' ? title : '';
+        },
+        formatDate(dateStr) {
+            if (!dateStr) return '';
+            return moment(dateStr).fromNow();
+        },
+        goToArtwork(item) {
+            const title = this.getName('en', item.title) || this.getName('th', item.title) || '';
+            this.$router.push({ path: '/admin/artworks', query: { search: title } });
+        },
+        async handleApprove(artwork) {
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to approve "${this.getName('en', artwork.title) || this.getName('th', artwork.title)}"?`
+                : `คุณแน่ใจหรือไม่ว่าต้องการอนุมัติผลงาน "${this.getName('th', artwork.title) || this.getName('en', artwork.title)}"?`;
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                this.$store.commit("dialog/loading", true);
+                let statuses = this.$store.getters['setting/status/item'] || [];
+                if (statuses.length === 0) {
+                    await this.$store.dispatch('setting/status/get');
+                    statuses = this.$store.getters['setting/status/item'] || [];
+                }
+                const approvedStatus = statuses.find(s => {
+                    const enVal = (s.title && s.title.find(t => t.key === 'en')?.value) || '';
+                    return enVal.toLowerCase() === 'approved';
+                });
+                
+                if (!approvedStatus) {
+                    throw new Error("Approved status not found");
+                }
+
+                await this.$store.dispatch('artwork/update', {
+                    _id: artwork._id,
+                    status: {
+                        ...artwork.status,
+                        approval: approvedStatus._id
+                    }
+                });
+
+                // Refresh dashboard stats
+                await this.$store.dispatch('dashboard/getStats');
+                
+                this.$store.commit('dialog/showToast', {
+                    title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                    message: this.$i18n.locale === 'en' ? 'Artwork approved successfully.' : 'อนุมัติผลงานศิลปะเรียบร้อยแล้ว',
+                    variant: 'success'
+                });
+            } catch (err) {
+                console.error("Approve error:", err);
+            } finally {
+                this.$store.commit("dialog/loading", false);
+            }
+        },
+        async handleReject(artwork) {
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to reject "${this.getName('en', artwork.title) || this.getName('th', artwork.title)}"?`
+                : `คุณแน่ใจหรือไม่ว่าต้องการปฏิเสธผลงาน "${this.getName('th', artwork.title) || this.getName('en', artwork.title)}"?`;
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                this.$store.commit("dialog/loading", true);
+                let statuses = this.$store.getters['setting/status/item'] || [];
+                if (statuses.length === 0) {
+                    await this.$store.dispatch('setting/status/get');
+                    statuses = this.$store.getters['setting/status/item'] || [];
+                }
+                const rejectedStatus = statuses.find(s => {
+                    const enVal = (s.title && s.title.find(t => t.key === 'en')?.value) || '';
+                    return enVal.toLowerCase() === 'rejected';
+                });
+                
+                if (!rejectedStatus) {
+                    throw new Error("Rejected status not found");
+                }
+
+                await this.$store.dispatch('artwork/update', {
+                    _id: artwork._id,
+                    status: {
+                        ...artwork.status,
+                        approval: rejectedStatus._id
+                    }
+                });
+
+                // Refresh dashboard stats
+                await this.$store.dispatch('dashboard/getStats');
+
+                this.$store.commit('dialog/showToast', {
+                    title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                    message: this.$i18n.locale === 'en' ? 'Artwork rejected successfully.' : 'ปฏิเสธผลงานศิลปะเรียบร้อยแล้ว',
+                    variant: 'success'
+                });
+            } catch (err) {
+                console.error("Reject error:", err);
+            } finally {
+                this.$store.commit("dialog/loading", false);
+            }
+        }
+    }
 }
 </script>
 

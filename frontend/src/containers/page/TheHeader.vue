@@ -6,7 +6,7 @@
                 <img src="@/assets/icons/logo.png" height="55" class="mr-3 brand-logo-img">
                 <div class="brand-text-wrapper d-flex flex-column justify-content-center">
                     <span class="brand-main-title">Buddhist Art Mea Fah Luang University</span>
-                    <span class="brand-subtitle">หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง</span>
+                    <span class="brand-subtitle">{{ $i18n.locale === 'en' ? 'Short Course Program in Buddhist Art, MFU' : 'หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง' }}</span>
                 </div>
             </CHeaderBrand>
 
@@ -27,7 +27,8 @@
                     <template #toggler>
                         <CHeaderNavLink class="px-0">
                             <div class="user-login-trigger text-dark d-flex align-items-center" style="cursor: pointer;">
-                                <CIcon name="cil-user" size="xl" />
+                                <img v-if="userImage" :src="userImage" class="rounded-circle border" style="width: 35px; height: 35px; object-fit: cover;" />
+                                <CIcon v-else name="cil-user" size="xl" />
                             </div>
                         </CHeaderNavLink>
                     </template>
@@ -35,25 +36,25 @@
                     <!-- User Role Links -->
                     <template v-if="userRole === 'customer' || userRole === 'user'">
                         <CDropdownItem @click="handleNavigateTo('/user/profile')" class="font-weight-bold">
-                            <CIcon name="cil-user" class="mr-3" /> Profile
+                            <CIcon name="cil-user" class="mr-3" /> {{ $i18n.locale === 'en' ? 'Profile' : 'โปรไฟล์' }}
                         </CDropdownItem>
                     </template>
                     <!-- Artist Role Links -->
                     <template v-else-if="userRole === 'artist'">
                         <CDropdownItem @click="handleNavigateTo('/artist/profile')" class="font-weight-bold">
-                            <CIcon name="cil-user" class="mr-3" /> Profile
+                            <CIcon name="cil-user" class="mr-3" /> {{ $i18n.locale === 'en' ? 'Profile' : 'โปรไฟล์' }}
                         </CDropdownItem>
                     </template>
                     <!-- Admin Role Links -->
                     <template v-else-if="userRole === 'admin'">
                         <CDropdownItem @click="handleNavigateTo('/admin')" class="font-weight-bold">
-                            <CIcon name="cil-speedometer" class="mr-3" /> Dashboard
+                            <CIcon name="cil-speedometer" class="mr-3" /> {{ $i18n.locale === 'en' ? 'Dashboard' : 'แดชบอร์ด' }}
                         </CDropdownItem>
                     </template>
 
                     <CDropdownDivider/>
                     <CDropdownItem @click="logout" class="text-danger font-weight-bold">
-                        <CIcon name="cil-lock-locked" class="mr-3" /> Logout
+                        <CIcon name="cil-lock-locked" class="mr-3" /> {{ $i18n.locale === 'en' ? 'Logout' : 'ออกจากระบบ' }}
                     </CDropdownItem>
                 </CDropdown>
 
@@ -97,6 +98,9 @@
                     <CHeaderNavItem class="px-4">
                         <CHeaderNavLink to="/about" class="nav-link-custom">{{ $t('header.about') }}</CHeaderNavLink>
                     </CHeaderNavItem>
+                    <CHeaderNavItem class="px-4">
+                        <CHeaderNavLink to="/contact" class="nav-link-custom">{{ $t('header.contact') }}</CHeaderNavLink>
+                    </CHeaderNavItem>
                 </CHeaderNav>
             </CContainer>
         </div>
@@ -123,6 +127,9 @@
                         </li>
                         <li class="mb-4">
                             <CHeaderNavLink to="/about" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.about') }}</CHeaderNavLink>
+                        </li>
+                        <li class="mb-4">
+                            <CHeaderNavLink to="/contact" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.contact') }}</CHeaderNavLink>
                         </li>
 
                     </ul>
@@ -208,7 +215,7 @@
                             :color="hasReservedItems ? 'secondary' : 'danger'"
                             :disabled="hasReservedItems"
                             :style="hasReservedItems ? 'background-color: #cbd5e0; border: none; cursor: not-allowed;' : 'background-color: #E55B5B; border: none;'"
-                            @click="$router.push('/payment'); setShowCart(false);">
+                            @click="handleCheckout">
                             {{ hasReservedItems 
                                 ? ($i18n.locale === 'en' ? 'Remove Reserved Items' : 'กรุณาลบรายการที่ถูกจองออก') 
                                 : ($i18n.locale === 'en' ? 'Checkout' : 'สั่งซื้อสินค้า') 
@@ -236,6 +243,7 @@ export default {
             mobileMenu: false,
             isLoggedIn: false,
             userRole: '',
+            userImage: '',
             isSyncing: false,
             syncTimer: null
         }
@@ -254,10 +262,16 @@ export default {
                     : (item.price || 0);
                 return total + price;
             }, 0);
+        },
+        userId() {
+            return this.$store.getters['auth/userId'];
         }
     },
     watch: {
         $route() {
+            this.checkLoginStatus();
+        },
+        userId() {
             this.checkLoginStatus();
         },
         isCartOpen: {
@@ -329,19 +343,33 @@ export default {
 
             return false;
         },
-        checkLoginStatus() {
+        async checkLoginStatus() {
             try {
                 const objs = JSON.parse(localStorage.getItem('objs'));
                 if (objs && objs.xAccessToken) {
                     this.isLoggedIn = true;
                     this.userRole = (objs.role || 'customer').toLowerCase();
+                    const userId = objs.accounts;
+                    if (userId) {
+                        const users = await this.$store.dispatch('user/get', {});
+                        const currentUser = users ? users.find(u => u._id === userId) : null;
+                        if (currentUser && currentUser.image) {
+                            this.userImage = currentUser.image;
+                        } else {
+                            this.userImage = '';
+                        }
+                    } else {
+                        this.userImage = '';
+                    }
                 } else {
                     this.isLoggedIn = false;
                     this.userRole = '';
+                    this.userImage = '';
                 }
             } catch (e) {
                 this.isLoggedIn = false;
                 this.userRole = '';
+                this.userImage = '';
             }
         },
         logout() {
@@ -352,6 +380,20 @@ export default {
                 this.$router.push('/');
             }
             window.location.reload(); // Force full reload to reset all states securely
+        },
+        handleCheckout() {
+            if (!this.userId) {
+                this.$store.commit('dialog/showToast', {
+                    title: 'Authentication Required',
+                    message: this.$i18n.locale === 'en' ? 'Please login before checking out' : 'กรุณาเข้าสู่ระบบก่อนสั่งซื้อสินค้า',
+                    variant: 'warning'
+                });
+                this.openLoginModal();
+                this.setShowCart(false);
+                return;
+            }
+            this.$router.push('/payment');
+            this.setShowCart(false);
         },
         startShopping() {
             this.setShowCart(false);

@@ -179,7 +179,15 @@ export default {
       return this.user && this.user.contact ? this.user.contact.telephone : '';
     },
     joinedDate() {
-      return 'January 2024';
+      if (this.user && this.user.createdAt) {
+        const date = new Date(this.user.createdAt);
+        const lang = this.$i18n ? this.$i18n.locale : 'en';
+        return date.toLocaleDateString(lang === 'en' ? 'en-US' : 'th-TH', {
+          year: 'numeric',
+          month: 'long'
+        });
+      }
+      return this.$i18n && this.$i18n.locale === 'th' ? 'มกราคม 2567' : 'January 2024';
     }
   },
   methods: {

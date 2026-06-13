@@ -100,14 +100,14 @@
               <td class="align-middle text-right">
                 <button 
                     class="action-btn icon-view mr-2" 
-                    v-c-tooltip="'View Details'"
+                    v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                     @click="viewDetails(item)"
                 >
                     <CIcon name="cilMagnifyingGlass" size="lg" />
                 </button>
                 <button 
                     class="action-btn icon-download" 
-                    v-c-tooltip="'Download Invoice'"
+                    v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบเสร็จ'"
                     @click="downloadInvoice(item)"
                 >
                     <CIcon name="cil-file" size="lg" />
@@ -197,9 +197,14 @@ export default {
           statusName: (() => {
             const statusLabel = this.getName('en', order.status);
             const s = statusLabel ? statusLabel.toLowerCase() : '';
-            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
-            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
-            return 'Pending';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'เสร็จสิ้น';
+            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return this.$i18n.locale === 'en' ? 'Rejected' : 'ยกเลิก';
+            
+            if (!order.image) {
+                return this.$i18n.locale === 'en' ? 'Pending Payment' : 'รอชำระเงิน';
+            } else {
+                return this.$i18n.locale === 'en' ? 'Pending Verification' : 'รอดำเนินการ';
+            }
           })(),
           timeLeftDisplay: this.calculateTimeLeft(order)
         }));
@@ -263,7 +268,7 @@ export default {
         document.body.removeChild(link);
       } catch (error) {
         console.error('Download failed:', error);
-        alert('Could not download invoice. Please try again.');
+        alert(this.$i18n.locale === 'en' ? 'Could not download invoice. Please try again.' : 'ไม่สามารถดาวน์โหลดใบเสร็จได้ กรุณาลองใหม่อีกครั้ง');
       }
     }
   }
@@ -272,6 +277,12 @@ export default {
 
 <style scoped>
 /* ... existing styles ... */
+.badge-info, .status-badge.badge-info {
+    background-color: rgba(52, 152, 219, 0.1) !important;
+    color: #2980b9 !important;
+    border: 1px solid #2980b9 !important;
+}
+
 .action-btn.icon-download {
     background-color: #f1f5f9;
     color: #475569;

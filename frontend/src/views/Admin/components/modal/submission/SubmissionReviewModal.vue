@@ -13,8 +13,8 @@
                         <CIcon name="cil-magnifying-glass" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Submission Review</h5>
-                        <p class="text-muted small mb-0">Review and provide feedback for this submission.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Submission Review' : 'ตรวจสอบผลงานที่ส่ง' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Review and provide feedback for this submission.' : 'ตรวจสอบและประเมินผลงานการส่งงานนี้' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -40,17 +40,17 @@
                 <div class="view-section mb-4">
                     <div class="d-flex flex-wrap align-items-center justify-content-center gap-4 status-container-stacked">
                         <div class="status-item text-center px-3">
-                            <label class="view-label-center">Submission Status</label>
+                            <label class="view-label-center">{{ $i18n.locale === 'en' ? 'Submission Status' : 'สถานะการส่งงาน' }}</label>
                             <CBadge :class="['status-badge-lg px-4 py-2', getStatusBadge(artwork.status).class]">
                                 <CIcon :name="getStatusBadge(artwork.status).icon" size="sm" class="status-icon-lg" />
-                                {{ artwork.status }}
+                                {{ $i18n.locale === 'en' ? artwork.status : (artwork.status === 'Approved' || artwork.status === 'Passed' ? 'ผ่าน/อนุมัติ' : artwork.status === 'Rejected' || artwork.status === 'Fail' ? 'ไม่ผ่าน' : 'รอการตรวจสอบ') }}
                             </CBadge>
                         </div>
                         <div class="status-item text-center px-3 border-left-light">
-                            <label class="view-label-center">Deadline Progress</label>
+                            <label class="view-label-center">{{ $i18n.locale === 'en' ? 'Deadline Progress' : 'ความตรงต่อเวลา' }}</label>
                             <CBadge :class="['status-badge-lg px-4 py-2', artwork.on_time ? 'status-completed' : 'status-cancelled']">
                                 <CIcon :name="artwork.on_time ? 'cil-check-circle' : 'cil-warning'" size="sm" class="status-icon-lg" />
-                                {{ artwork.on_time ? 'On Time' : 'Late' }}
+                                {{ artwork.on_time ? ($i18n.locale === 'en' ? 'On Time' : 'ตรงเวลา') : ($i18n.locale === 'en' ? 'Late' : 'ส่งช้า') }}
                             </CBadge>
                         </div>
                     </div>
@@ -62,13 +62,13 @@
                 <div class="row mb-4">
                     <div class="col-md-6 mb-3 mb-md-0">
                         <div class="view-section">
-                            <label class="view-label">Artwork Title (Thai)</label>
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artwork Title (Thai)' : 'ชื่อผลงาน (ภาษาไทย)' }}</label>
                             <h2 class="view-value-title font-weight-bold mb-0 text-dark">{{ artwork.title_th || 'N/A' }}</h2>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="view-section">
-                            <label class="view-label">Artwork Title (English)</label>
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artwork Title (English)' : 'ชื่อผลงาน (ภาษาอังกฤษ)' }}</label>
                             <h2 class="view-value-title font-weight-bold mb-0 text-muted">{{ artwork.title_en || 'N/A' }}</h2>
                         </div>
                     </div>
@@ -78,7 +78,7 @@
                     <!-- 4) Artist -->
                     <div class="col-md-6 mb-4">
                         <div class="view-section">
-                            <label class="view-label">Artist</label>
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artist' : 'ศิลปิน' }}</label>
                             <div class="d-flex align-items-center">
                                 <div class="artist-avatar-md mr-3" :style="{ backgroundColor: getAvatarColor(artwork.artist_name) }">
                                     {{ getInitials(artwork.artist_name) }}
@@ -87,7 +87,7 @@
                                     <div class="font-weight-bold text-dark h5 mb-0">
                                         {{ artwork.artist_name }}
                                     </div>
-                                    <div class="small text-muted">ID: {{ artwork.student_id }}</div>
+                                    <div class="small text-muted">{{ $i18n.locale === 'en' ? 'Student ID' : 'รหัสนักศึกษา' }}: {{ artwork.student_id }}</div>
                                 </div>
                             </div>
                         </div>
@@ -96,19 +96,19 @@
                     <!-- 5) Category -->
                     <div class="col-md-6 mb-4">
                         <div class="view-section">
-                            <label class="view-label">Category</label>
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
                             <div class="view-value font-weight-bold text-dark h5">
-                                {{ artwork.category }}
+                                {{ $i18n.locale === 'en' ? artwork.category : (artwork.category === 'Painting' ? 'จิตรกรรม' : artwork.category === 'Sculpture' ? 'ประติมากรรม' : artwork.category === 'Digital Art' ? 'ดิจิทัลอาร์ต' : artwork.category === 'Photography' ? 'ภาพถ่าย' : artwork.category) }}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 6) Technique & Size -->
+                <!-- 6) Technique, Size & Remark -->
                 <div class="row mb-4">
-                    <div class="col-md-6 mb-3 mb-md-0">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm">
-                            <label class="view-label">Technique</label>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Technique' : 'เทคนิค' }}</label>
                             <div class="view-value text-dark mb-2 d-flex align-items-center">
                                 <span class="badge badge-white-outline mr-3">TH</span> 
                                 <span class="font-weight-bold">{{ artwork.technique_th || 'N/A' }}</span>
@@ -119,9 +119,9 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm">
-                            <label class="view-label">Size</label>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Size' : 'ขนาด' }}</label>
                             <div class="view-value text-dark mb-2 d-flex align-items-center">
                                 <span class="badge badge-white-outline mr-3">TH</span> 
                                 <span class="font-weight-bold">{{ artwork.size_th || 'N/A' }}</span>
@@ -132,11 +132,24 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Remark' : 'หมายเหตุ' }}</label>
+                            <div class="view-value text-dark mb-2 d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">TH</span> 
+                                <span class="font-weight-bold">{{ artwork.remark_th || 'N/A' }}</span>
+                            </div>
+                            <div class="view-value text-muted d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">EN</span> 
+                                <span>{{ artwork.remark_en || 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 7) Price / Value -->
                 <div class="view-section mb-4 p-3 border rounded-xl bg-primary-faded">
-                    <label class="view-label mb-1">Price / Value</label>
+                    <label class="view-label mb-1">{{ $i18n.locale === 'en' ? 'Price / Value' : 'ราคา / มูลค่า' }}</label>
                     <div class="view-value-price font-weight-bold h2 mb-0 text-primary">
                         ฿ {{ artwork.price ? artwork.price.toLocaleString() : '0' }}
                     </div>
@@ -144,17 +157,17 @@
 
                 <!-- 8) Description (EN) -->
                 <div class="view-section mb-4">
-                    <label class="view-label">Description (English)</label>
+                    <label class="view-label">{{ $i18n.locale === 'en' ? 'Description (English)' : 'รายละเอียด (ภาษาอังกฤษ)' }}</label>
                     <div class="view-description-box p-3 border rounded-lg bg-white shadow-sm">
-                        {{ artwork.description_en || 'No English description provided.' }}
+                        {{ artwork.description_en || ($i18n.locale === 'en' ? 'No English description provided.' : 'ไม่มีรายละเอียดภาษาอังกฤษ') }}
                     </div>
                 </div>
 
                 <!-- 9) Description (TH) -->
                 <div class="view-section mb-4">
-                    <label class="view-label">Description (Thai)</label>
+                    <label class="view-label">{{ $i18n.locale === 'en' ? 'Description (Thai)' : 'รายละเอียด (ภาษาไทย)' }}</label>
                     <div class="view-description-box p-3 border rounded-lg bg-white shadow-sm">
-                        {{ artwork.description_th || 'ไม่มีคำอธิบายภาษาไทย.' }}
+                        {{ artwork.description_th || ($i18n.locale === 'en' ? 'No Thai description provided.' : 'ไม่มีคำอธิบายภาษาไทย.') }}
                     </div>
                 </div>
             </div>
@@ -168,7 +181,7 @@
                     class="btn-close-view px-4"
                     :disabled="isUpdating"
                 >
-                    Close
+                    {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
                 </CButton>
                 
                 <div class="d-flex" v-if="artwork.status === 'Pending'">
@@ -178,7 +191,7 @@
                         @click="handleAction('Approved')"
                     >
                         <CSpinner v-if="isUpdating === 'Approved'" size="sm" class="mr-2" />
-                        {{ isUpdating === 'Approved' ? 'Sending Email...' : 'Mark Passed' }}
+                        {{ isUpdating === 'Approved' ? ($i18n.locale === 'en' ? 'Sending Email...' : 'กำลังส่งอีเมล...') : ($i18n.locale === 'en' ? 'Mark Passed' : 'อนุมัติผ่าน') }}
                     </CButton>
                     <CButton 
                         class="btn-action-modal btn-failed-modal" 
@@ -186,11 +199,11 @@
                         @click="handleAction('Rejected')"
                     >
                         <CSpinner v-if="isUpdating === 'Rejected'" size="sm" class="mr-2" />
-                        {{ isUpdating === 'Rejected' ? 'Sending Email...' : 'Mark Fail' }}
+                        {{ isUpdating === 'Rejected' ? ($i18n.locale === 'en' ? 'Sending Email...' : 'กำลังส่งอีเมล...') : ($i18n.locale === 'en' ? 'Mark Fail' : 'ปฏิเสธไม่ผ่าน') }}
                     </CButton>
                 </div>
                 <div v-else class="text-muted font-italic small">
-                    Action unavailable: This submission is already {{ artwork.status.toLowerCase() }}
+                    {{ $i18n.locale === 'en' ? `Action unavailable: This submission is already ${artwork.status.toLowerCase()}` : `ไม่สามารถดำเนินการได้: การส่งงานนี้ได้รับการ${artwork.status === 'Approved' || artwork.status === 'Passed' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}` }}
                 </div>
             </div>
         </template>

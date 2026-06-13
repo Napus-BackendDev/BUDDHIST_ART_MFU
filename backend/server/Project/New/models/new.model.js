@@ -13,7 +13,6 @@ var objsSchema = new Schema({
         key            : {type: String, default: null},
         value          : {type: String, default: null},
     }],
-    category        : {type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Category', default: null},
     views           : {type: Number, default: 0},
     create          : {
         datetime        : {type: Date, default: Date.now},

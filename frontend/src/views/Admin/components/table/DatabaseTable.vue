@@ -5,7 +5,7 @@
             <CDataTable :items="currentItems" :fields="currentFields" class="custom-table mb-0" hover :border="false"
                 :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
-                <!-- ---------------------- ORDERS COLUMNS ---------------------- -->
+                <!-- Orders -->
                 <template v-if="currentTab === 'Orders'" #date_time="{ item }">
                     <td class="text-muted">{{ item.date_time }}</td>
                 </template>
@@ -19,7 +19,7 @@
                                 v-if="item.artwork_picture" />
                             <div v-else
                                 class="preview-img-placeholder bg-light text-muted d-flex align-items-center justify-content-center mr-3">
-                                No Image</div>
+                                {{ $i18n.locale === 'en' ? 'No Image' : 'ไม่มีรูปภาพ' }}</div>
                             <div>
                                 <div class="font-weight-bold" style="color: #2c3e50;">{{ item.artwork }}</div>
                                 <div class="small text-muted">{{ item.artist }}</div>
@@ -31,14 +31,14 @@
                     <td class="font-weight-bold">{{ item.amount }}</td>
                 </template>
 
-                <!-- ---------------------- ARTWORKS COLUMNS ---------------------- -->
+                <!-- Artworks -->
                 <template v-if="currentTab === 'Artworks'" #artwork_picture="{ item }">
                     <td class="text-center align-middle">
                         <img :src="item.artwork_picture" alt="Artwork" class="preview-img"
                             v-if="item.artwork_picture" />
                         <div v-else
                             class="preview-img-placeholder bg-light text-muted d-flex align-items-center justify-content-center">
-                            No Image</div>
+                            {{ $i18n.locale === 'en' ? 'No Image' : 'ไม่มีรูปภาพ' }}</div>
                     </td>
                 </template>
                 <template v-if="currentTab === 'Artworks'" #title_artist="{ item }">
@@ -57,13 +57,13 @@
                     <td class="text-muted">{{ item.create_date }}</td>
                 </template>
 
-                <!-- ---------------------- SUBMISSIONS COLUMNS ---------------------- -->
+                <!-- Submissions -->
                 <template v-if="currentTab === 'Submissions'" #art_picture="{ item }">
                     <td class="text-center align-middle">
                         <img :src="item.art_picture" alt="Artwork" class="preview-img" v-if="item.art_picture" />
                         <div v-else
                             class="preview-img-placeholder bg-light text-muted d-flex align-items-center justify-content-center">
-                            No Image</div>
+                            {{ $i18n.locale === 'en' ? 'No Image' : 'ไม่มีรูปภาพ' }}</div>
                     </td>
                 </template>
                 <template v-if="currentTab === 'Submissions'" #student_details="{ item }">
@@ -82,24 +82,24 @@
                     <td class="text-muted">{{ item.submitted }}</td>
                 </template>
 
-                <!-- ---------------------- SHARED COLUMNS ---------------------- -->
+                <!-- Shared -->
                 <template #status="{ item }">
                     <td>
                         <span :class="getStatusBadgeClass(item.status)" class="badge-custom">
-                            {{ item.status }}
+                            {{ getTranslatedStatus(item.status) }}
                         </span>
                     </td>
                 </template>
                 <template #actions="{ item }">
                     <td class="text-right">
                         <div class="d-inline-flex align-items-center action-wrapper">
-                            <button class="action-btn icon-view" title="View" @click="handleView(item)">
+                            <button class="action-btn icon-view" :title="$i18n.locale === 'en' ? 'View' : 'ดู'" @click="handleView(item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit mx-2" title="Edit" @click="handleEdit(item)">
+                            <button class="action-btn icon-edit mx-2" :title="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="handleEdit(item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger" title="Delete" @click="handleDelete(item)">
+                            <button class="action-btn icon-danger" :title="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="handleDelete(item)">
                                 <CIcon name="cil-trash" size="lg" />
                             </button>
                         </div>
@@ -112,10 +112,10 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="currentItems.length > 0">
-                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, currentItems.length) }} of {{ currentItems.length }} {{ currentTab.toLowerCase() }}
+                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, currentItems.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ currentItems.length }} {{ getTranslatedTabName(currentTab) }}
             </div>
             <div class="text-muted text-sm" v-else>
-                Showing 0 {{ currentTab.toLowerCase() }}
+                {{ $i18n.locale === 'en' ? `Showing 0 ${currentTab.toLowerCase()}` : `แสดง 0 ${getTranslatedTabName(currentTab)}` }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
@@ -127,22 +127,22 @@
         </CCardFooter>
 
         <!-- Internal Modals for Actions -->
-        <CModal :show.sync="showViewModal" :title="`View ${currentTab.slice(0, -1)} Detail`" color="info">
+        <CModal :show.sync="showViewModal" :title="this.$i18n.locale === 'en' ? `View ${currentTab.slice(0, -1)} Detail` : `รายละเอียด${getTranslatedTabName(currentTab)}`" color="info">
             <pre v-if="selectedItem" class="bg-light p-3 rounded" style="white-space: pre-wrap;">{{ JSON.stringify(selectedItem,
                 null, 2) }}</pre>
             <template #footer>
-                <CButton color="secondary" @click="showViewModal = false">Close</CButton>
+                <CButton color="secondary" @click="showViewModal = false">{{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}</CButton>
             </template>
         </CModal>
 
-        <CModal :show.sync="showEditModal" :title="`Edit ${currentTab.slice(0, -1)}`" color="primary">
+        <CModal :show.sync="showEditModal" :title="this.$i18n.locale === 'en' ? `Edit ${currentTab.slice(0, -1)}` : `แก้ไข${getTranslatedTabName(currentTab)}`" color="primary">
             <div v-if="selectedItem">
-                <p class="text-muted">Editor form for {{ selectedItem.id }} goes here...</p>
+                <p class="text-muted">{{ $i18n.locale === 'en' ? `Editor form for ${selectedItem.id} goes here...` : `ฟอร์มแก้ไขสำหรับ ${selectedItem.id}...` }}</p>
                 <CInput v-for="(val, key) in selectedItem" :key="key" :label="key" :value="val" />
             </div>
             <template #footer>
-                <CButton color="secondary" @click="showEditModal = false">Cancel</CButton>
-                <CButton color="primary" @click="saveEdit">Save Changes</CButton>
+                <CButton color="secondary" @click="showEditModal = false">{{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}</CButton>
+                <CButton color="primary" @click="saveEdit">{{ $i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการเปลี่ยนแปลง' }}</CButton>
             </template>
         </CModal>
 
@@ -166,35 +166,6 @@ export default {
             showEditModal: false,
             selectedItem: null,
 
-            // Fields Definition
-            orderFields: [
-                { key: 'id', label: 'ORDER ID', _classes: 'border-top-0 border-bottom w-10' },
-                { key: 'date_time', label: 'DATE & TIME', _classes: 'border-top-0 border-bottom' },
-                { key: 'customer', label: 'CUSTOMER', _classes: 'border-top-0 border-bottom' },
-                { key: 'artwork_artist', label: 'ARTWORK / ARTIST', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'amount', label: 'AMOUNT', _classes: 'border-top-0 border-bottom' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
-            artworkFields: [
-                { key: 'id', label: 'ARTWORK ID', _classes: 'border-top-0 border-bottom w-10' },
-                { key: 'artwork_picture', label: 'PICTURE', _classes: 'border-top-0 border-bottom text-center' },
-                { key: 'title_artist', label: 'TITLE / ARTIST', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'category_price', label: 'CATEGORY / PRICE', _classes: 'border-top-0 border-bottom' },
-                { key: 'create_date', label: 'CREATE DATE', _classes: 'border-top-0 border-bottom' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
-            submissionFields: [
-                { key: 'id', label: 'SUBMISSION ID', _classes: 'border-top-0 border-bottom w-10' },
-                { key: 'art_picture', label: 'ART PICTURE', _classes: 'border-top-0 border-bottom text-center' },
-                { key: 'student_details', label: 'STUDENT NAME / EMAIL', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'generation_assignment', label: 'GENERATION / ASSIGNMENT', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'submitted', label: 'SUBMITTED', _classes: 'border-top-0 border-bottom' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
-
             // Mock Data
             orders: [
                 { id: 'ORD-001', date_time: '2023-11-20 14:30', customer: 'John Doe', artwork_picture: '', artwork: 'Mountains at Dusk', artist: 'Jane Smith', amount: '$540.00', status: 'Completed' },
@@ -215,9 +186,37 @@ export default {
     },
     computed: {
         currentFields() {
-            if (this.currentTab === 'Orders') return this.orderFields;
-            if (this.currentTab === 'Artworks') return this.artworkFields;
-            return this.submissionFields;
+            if (this.currentTab === 'Orders') {
+                return [
+                    { key: 'id', label: this.$i18n.locale === 'en' ? 'ORDER ID' : 'รหัสคำสั่งซื้อ', _classes: 'border-top-0 border-bottom w-10' },
+                    { key: 'date_time', label: this.$i18n.locale === 'en' ? 'DATE & TIME' : 'วันและเวลา', _classes: 'border-top-0 border-bottom' },
+                    { key: 'customer', label: this.$i18n.locale === 'en' ? 'CUSTOMER' : 'ลูกค้า', _classes: 'border-top-0 border-bottom' },
+                    { key: 'artwork_artist', label: this.$i18n.locale === 'en' ? 'ARTWORK / ARTIST' : 'ผลงาน / ศิลปิน', _classes: 'border-top-0 border-bottom w-25' },
+                    { key: 'amount', label: this.$i18n.locale === 'en' ? 'AMOUNT' : 'ยอดเงิน', _classes: 'border-top-0 border-bottom' },
+                    { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
+                    { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+                ];
+            }
+            if (this.currentTab === 'Artworks') {
+                return [
+                    { key: 'id', label: this.$i18n.locale === 'en' ? 'ARTWORK ID' : 'รหัสผลงาน', _classes: 'border-top-0 border-bottom w-10' },
+                    { key: 'artwork_picture', label: this.$i18n.locale === 'en' ? 'PICTURE' : 'รูปภาพ', _classes: 'border-top-0 border-bottom text-center' },
+                    { key: 'title_artist', label: this.$i18n.locale === 'en' ? 'TITLE / ARTIST' : 'ชื่อผลงาน / ศิลปิน', _classes: 'border-top-0 border-bottom w-25' },
+                    { key: 'category_price', label: this.$i18n.locale === 'en' ? 'CATEGORY / PRICE' : 'หมวดหมู่ / ราคา', _classes: 'border-top-0 border-bottom' },
+                    { key: 'create_date', label: this.$i18n.locale === 'en' ? 'CREATE DATE' : 'วันที่สร้าง', _classes: 'border-top-0 border-bottom' },
+                    { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
+                    { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+                ];
+            }
+            return [
+                { key: 'id', label: this.$i18n.locale === 'en' ? 'SUBMISSION ID' : 'รหัสการส่งงาน', _classes: 'border-top-0 border-bottom w-10' },
+                { key: 'art_picture', label: this.$i18n.locale === 'en' ? 'ART PICTURE' : 'รูปภาพผลงาน', _classes: 'border-top-0 border-bottom text-center' },
+                { key: 'student_details', label: this.$i18n.locale === 'en' ? 'STUDENT NAME / EMAIL' : 'ชื่อนักเรียน / อีเมล', _classes: 'border-top-0 border-bottom w-25' },
+                { key: 'generation_assignment', label: this.$i18n.locale === 'en' ? 'GENERATION / ASSIGNMENT' : 'รุ่น / ชิ้นงาน', _classes: 'border-top-0 border-bottom w-25' },
+                { key: 'submitted', label: this.$i18n.locale === 'en' ? 'SUBMITTED' : 'วันที่ส่ง', _classes: 'border-top-0 border-bottom' },
+                { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+            ];
         },
         currentItems() {
             if (this.currentTab === 'Orders') return this.orders;
@@ -226,6 +225,27 @@ export default {
         }
     },
     methods: {
+        getTranslatedTabName(tab) {
+            const map = {
+                'orders': this.$i18n.locale === 'en' ? 'orders' : 'คำสั่งซื้อ',
+                'artworks': this.$i18n.locale === 'en' ? 'artworks' : 'ผลงานศิลปะ',
+                'submissions': this.$i18n.locale === 'en' ? 'submissions' : 'รายการส่งงาน'
+            };
+            return map[tab.toLowerCase()] || tab;
+        },
+        getTranslatedStatus(status) {
+            const map = {
+                'Completed': this.$i18n.locale === 'en' ? 'Completed' : 'เสร็จสมบูรณ์',
+                'Pending': this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ',
+                'Cancelled': this.$i18n.locale === 'en' ? 'Cancelled' : 'ยกเลิก',
+                'Available': this.$i18n.locale === 'en' ? 'Available' : 'ว่าง',
+                'Sold': this.$i18n.locale === 'en' ? 'Sold' : 'ขายแล้ว',
+                'Draft': this.$i18n.locale === 'en' ? 'Draft' : 'ฉบับร่าง',
+                'Passed': this.$i18n.locale === 'en' ? 'Passed' : 'ผ่าน',
+                'Fail': this.$i18n.locale === 'en' ? 'Fail' : 'ไม่ผ่าน'
+            };
+            return map[status] || status;
+        },
         getStatusBadgeClass(status) {
             const successStatus = ['Completed', 'Available', 'Passed'];
             const warningStatus = ['Pending', 'Draft'];
@@ -245,12 +265,21 @@ export default {
             this.showEditModal = true;
         },
         handleDelete(item) {
-            if (confirm(`Are you sure you want to delete ${item.id}?`)) {
-                alert(`Deleted ${item.id}`);
+            const confirmMsg = this.$i18n.locale === 'en' 
+                ? `Are you sure you want to delete ${item.id}?` 
+                : `คุณแน่ใจหรือไม่ที่จะลบ ${item.id}?`;
+            const alertMsg = this.$i18n.locale === 'en'
+                ? `Deleted ${item.id}`
+                : `ลบ ${item.id} สำเร็จ`;
+            if (confirm(confirmMsg)) {
+                alert(alertMsg);
             }
         },
         saveEdit() {
-            alert(`Saved changes for ${this.selectedItem.id}`);
+            const alertMsg = this.$i18n.locale === 'en'
+                ? `Saved changes for ${this.selectedItem.id}`
+                : `บันทึกการเปลี่ยนแปลงของ ${this.selectedItem.id} สำเร็จ`;
+            alert(alertMsg);
             this.showEditModal = false;
         },
         pageChange(val) {

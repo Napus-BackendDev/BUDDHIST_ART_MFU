@@ -107,8 +107,10 @@ export default {
                 const lang = this.$i18n.locale || 'en';
                 const titleLang = r.title.find(t => t.key === lang) || r.title.find(t => t.key === 'en');
                 const name = titleLang ? titleLang.value : (r.title[0] ? r.title[0].value : 'Unknown');
-                return { _id: r._id, name };
-            }).filter(role => role && role.name !== 'Unknown' && role.name !== '');
+                const titleEn = r.title.find(t => t.key === 'en');
+                const nameEn = titleEn ? titleEn.value : 'Unknown';
+                return { _id: r._id, name, nameEn };
+            }).filter(role => role && role.nameEn !== 'Unknown' && role.nameEn !== '');
         },
         studentStatuses() {
             if (!this.rawStatuses || !Array.isArray(this.rawStatuses)) return [];
@@ -121,8 +123,10 @@ export default {
                 const lang = this.$i18n.locale || 'en';
                 const titleLang = s.title.find(t => t.key === lang) || s.title.find(t => t.key === 'en');
                 const name = titleLang ? titleLang.value : (s.title[0] ? s.title[0].value : 'Unknown');
-                return { _id: s._id, name };
-            }).filter(s => s && s.name !== 'Unknown');
+                const titleEn = s.title.find(t => t.key === 'en');
+                const nameEn = titleEn ? titleEn.value : 'Unknown';
+                return { _id: s._id, name, nameEn };
+            }).filter(s => s && s.nameEn !== 'Unknown');
         }
     },
     watch: {
@@ -162,12 +166,29 @@ export default {
                 .then(() => {
                     this.fetchUsers();
                     this.showEditModal = false;
+                    alert(this.$i18n.locale === 'en' ? "User updated successfully." : "อัปเดตข้อมูลผู้ใช้งานเรียบร้อยแล้ว");
+                })
+                .catch(err => {
+                    console.error('Update user error:', err);
+                    alert(this.$i18n.locale === 'en' ? "Failed to update user." : "ไม่สามารถอัปเดตข้อมูลผู้ใช้งานได้");
                 });
         },
         handleDeleteUser(user) {
+            const name = this.formatUserName(user, this.$i18n.locale);
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to delete user "${name}"?`
+                : `คุณแน่ใจหรือว่าต้องการลบผู้ใช้งาน "${name}"?`;
+            
+            if (!confirm(confirmMsg)) return;
+
             this.$store.dispatch('user/delete', { _id: user._id })
                 .then(() => {
                     this.fetchUsers();
+                    alert(this.$i18n.locale === 'en' ? "User deleted successfully." : "ลบผู้ใช้งานเรียบร้อยแล้ว");
+                })
+                .catch(err => {
+                    console.error('Delete user error:', err);
+                    alert(this.$i18n.locale === 'en' ? "Failed to delete user." : "ไม่สามารถลบผู้ใช้งานได้");
                 });
         },
         handleManualChoice() {
@@ -187,7 +208,7 @@ export default {
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
                     if (jsonData.length === 0) {
-                        alert("The file is empty or invalid.");
+                        alert(this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง");
                         return;
                     }
 
@@ -228,25 +249,33 @@ export default {
                     }).filter(u => u.studentId && u.contact.studentEmail);
 
                     if (mappedData.length === 0) {
-                        alert("No valid user data found. Please ensure you use the correct column headers:\nStudentID, UsernameThai, UsernameEng, Official Email, Personal Email, Telephone, Temporary Password");
+                        alert(this.$i18n.locale === 'en' 
+                            ? "No valid user data found. Please ensure you use the correct column headers:\nStudentID, UsernameThai, UsernameEng, Official Email, Personal Email, Telephone, Temporary Password"
+                            : "ไม่พบข้อมูลผู้ใช้งานที่ถูกต้อง กรุณาตรวจสอบให้แน่ใจว่าใช้หัวตารางต่อไปนี้:\nStudentID, UsernameThai, UsernameEng, Official Email, Personal Email, Telephone, Temporary Password");
                         return;
                     }
 
-                    if (confirm(`Detected ${mappedData.length} valid users. Proceed with bulk import?`)) {
+                    const confirmMsg = this.$i18n.locale === 'en'
+                        ? `Detected ${mappedData.length} valid users. Proceed with bulk import?`
+                        : `ตรวจพบผู้ใช้งานที่ถูกต้องจำนวน ${mappedData.length} รายการ ต้องการดำเนินการนำเข้าข้อมูลหรือไม่?`;
+
+                    if (confirm(confirmMsg)) {
                         this.$store.dispatch('user/create', mappedData)
                             .then(() => {
-                                alert("Bulk import completed successfully!");
+                                alert(this.$i18n.locale === 'en' ? "Bulk import completed successfully!" : "นำเข้าข้อมูลผู้ใช้งานจำนวนมากเสร็จเรียบร้อยแล้ว!");
                                 this.fetchUsers();
                                 this.showChoiceModal = false;
                             })
                             .catch(err => {
                                 console.error("Import error:", err);
-                                alert("Failed to import users. Check for duplicate Student IDs or Emails.");
+                                alert(this.$i18n.locale === 'en' 
+                                    ? "Failed to import users. Check for duplicate Student IDs or Emails."
+                                    : "ไม่สามารถนำเข้าข้อมูลผู้ใช้งานได้ กรุณาตรวจสอบรหัสนักศึกษาหรืออีเมลที่ซ้ำกัน");
                             });
                     }
                 } catch (error) {
                     console.error("File processing error:", error);
-                    alert("Error reading file. Please use a valid .xlsx or .csv file.");
+                    alert(this.$i18n.locale === 'en' ? "Error reading file. Please use a valid .xlsx or .csv file." : "เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาใช้ไฟล์ .xlsx หรือ .csv ที่ถูกต้อง");
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -273,6 +302,11 @@ export default {
                 .then(() => {
                     this.fetchUsers();
                     this.showManualImportModal = false;
+                    alert(this.$i18n.locale === 'en' ? "User created successfully." : "สร้างผู้ใช้งานเรียบร้อยแล้ว");
+                })
+                .catch(err => {
+                    console.error('Create user error:', err);
+                    alert(this.$i18n.locale === 'en' ? "Failed to create user." : "ไม่สามารถสร้างผู้ใช้งานได้");
                 });
         },
         exportToExcel() {
@@ -283,7 +317,7 @@ export default {
             
             const users = this.$refs.usersTable.filteredUsers;
             if (users.length === 0) {
-                alert("No data available to export.");
+                alert(this.$i18n.locale === 'en' ? "No data available to export." : "ไม่มีข้อมูลสำหรับการส่งออก");
                 return;
             }
 
@@ -301,7 +335,7 @@ export default {
                     'Telephone': (user.contact && user.contact.telephone) || '-',
                     'Role': this.getRoleName(user.role),
                     'Status': this.getStatusName(user.status),
-                    'Profile Image': user.avatar || '-'
+                    'Profile Image': user.image || '-'
                 };
             });
 

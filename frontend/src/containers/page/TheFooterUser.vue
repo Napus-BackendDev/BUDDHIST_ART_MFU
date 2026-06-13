@@ -6,67 +6,78 @@
                     <!-- Column 1: Brand & Identity -->
                     <CCol lg="4" class="mb-4 mb-lg-0 pr-lg-5">
                         <div class="footer-brand mb-4">
-                            <h2 class="brand-title">BUDDHIST <span class="highlight">ART MFU</span></h2>
-                            <div class="brand-sub">{{ $i18n.locale === 'en' ? 'Center for Buddhist Art, Mae Fah Luang University' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }}</div>
+                            <h2 class="brand-title">Buddhist Art <span class="highlight">SPACE</span></h2>
+                            <div class="brand-sub">{{ $i18n.locale === 'en' ? 'Mae Fah Luang University' : 'มหาวิทยาลัยแม่ฟ้าหลวง' }}</div>
                         </div>
-                        <p class="brand-description">
-                            {{ $i18n.locale === 'en' ? 'A center for learning and preserving Lanna and contemporary Buddhist art. Dedicated to the dissemination, inheritance, and creation of Buddhist artworks to sustain the nation\'s invaluable cultural heritage.' : 'แหล่งเรียนรู้และอนุรักษ์พุทธศิลปกรรมล้านนาและร่วมสมัย มุ่งเน้นการเผยแพร่ สืบทอด และสร้างสรรค์ผลงานพุทธศิลป์ เพื่อสืบสานมรดกทางวัฒนธรรมอันล้ำค่าของชาติ' }}
+                        <p class="brand-description mt-4">
+                            {{ $i18n.locale === 'en' ? 'A digital space for learning, archiving, and disseminating contemporary Buddhist artwork to support creativity, knowledge extension, and the cultural creative economy.' : 'พื้นที่ดิจิทัลสำหรับการเรียนรู้ จัดเก็บ และเผยแพร่ผลงานพุทธศิลปกรรมร่วมสมัย เพื่อสนับสนุนการสร้างสรรค์ ต่อยอดองค์ความรู้ และเศรษฐกิจสร้างสรรค์ทางศิลปวัฒนธรรม' }}
                         </p>
-                        <div class="social-links mt-4">
-                            <a href="#" class="social-btn"><CIcon name="cib-facebook" /></a>
-                            <a href="#" class="social-btn"><CIcon name="cib-instagram" /></a>
-                            <a href="#" class="social-btn"><CIcon name="cib-youtube" /></a>
-                            <a href="#" class="social-btn"><CIcon name="cil-envelope-closed" /></a>
-                        </div>
                     </CCol>
 
                     <!-- Column 2: Quick Links -->
                     <CCol md="4" lg="2" class="mb-4 mb-lg-0">
                         <h5 class="footer-heading text-uppercase mb-4">{{ $i18n.locale === 'en' ? 'Quick Links' : 'เมนูแนะนำ' }}</h5>
                         <ul class="footer-nav list-unstyled">
-                            <li><router-link to="/">{{ $i18n.locale === 'en' ? 'Home' : 'หน้าหลัก' }}</router-link></li>
-                            <li><router-link to="/artworks">{{ $i18n.locale === 'en' ? 'Artworks' : 'ผลงานพุทธศิลป์' }}</router-link></li>
-                            <li><router-link to="/news">{{ $i18n.locale === 'en' ? 'News & Events' : 'ข่าวสารและกิจกรรม' }}</router-link></li>
-                            <li><router-link to="/track-order">{{ $i18n.locale === 'en' ? 'Track Order' : 'เช็คสถานะคำสั่งซื้อ' }}</router-link></li>
-                            <li><router-link to="/login">{{ $i18n.locale === 'en' ? 'Login (Artist/Admin)' : 'เข้าสู่ระบบ (ศิลปิน/แอดมิน)' }}</router-link></li>
+                            <li><router-link to="/">{{ $t('header.home') }}</router-link></li>
+                            <li><router-link to="/artworks">{{ $t('header.artworks') }}</router-link></li>
+                            <li><router-link to="/news">{{ $t('header.news') }}</router-link></li>
+                            <li><router-link to="/about">{{ $t('header.about') }}</router-link></li>
+                            <li><router-link to="/contact">{{ $t('header.contact') }}</router-link></li>
                         </ul>
                     </CCol>
 
                     <!-- Column 3: Contact Info -->
-                    <CCol md="8" lg="6" class="mb-4 mb-lg-0 pl-lg-5">
+                    <CCol md="8" lg="5" class="mb-4 mb-lg-0 ml-lg-auto pl-lg-4">
                         <h5 class="footer-heading text-uppercase mb-4">{{ $i18n.locale === 'en' ? 'Contact Us' : 'ติดต่อเรา' }}</h5>
                         <div class="contact-info">
-                            <div class="contact-item d-flex mb-3">
-                                <div class="contact-icon mr-3">
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon mr-3 mt-1">
+                                    <CIcon name="cil-institution" />
+                                </div>
+                                <div class="contact-text" style="line-height: 1.6;">
+                                    <div class="mb-1">{{ $i18n.locale === 'en' ? 'Academic Services Division, Mae Fah Luang University,' : 'ศูนย์บริการวิชาการ (ฝ่ายบริการวิชาการ) มหาวิทยาลัยแม่ฟ้าหลวง' }}</div>
+                                    <div>{{ $i18n.locale === 'en' ? 'Gen. Sampao Choosri Building (E4)' : 'อาคารพลเอกสำเภา ชูศรี (E4)' }}</div>
+                                </div>
+                            </div>
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon mr-3 mt-1">
                                     <CIcon name="cil-location-pin" />
                                 </div>
-                                <div class="contact-text">
-                                    {{ $i18n.locale === 'en' ? 'Mae Fah Luang University 333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'มหาวิทยาลัยแม่ฟ้าหลวง 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
+                                <div class="contact-text" style="line-height: 1.6;">
+                                    {{ $i18n.locale === 'en' ? '333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'ที่อยู่ 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
                                 </div>
                             </div>
-                            <div class="contact-item d-flex mb-3">
-                                <div class="contact-icon mr-3">
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon mr-3 mt-1">
                                     <CIcon name="cil-phone" />
                                 </div>
-                                <div class="contact-text">
-                                    {{ $i18n.locale === 'en' ? 'Tel:' : 'โทรศัพท์:' }} 0-5391-6000, 0-5391-7034
+                                <div class="contact-text" style="line-height: 1.6;">
+                                    {{ $i18n.locale === 'en' ? 'Tel:' : 'โทรศัพท์:' }} 053-917-897 {{ $i18n.locale === 'en' ? 'ext.' : 'ต่อ' }} 8035 {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} 8036
                                 </div>
                             </div>
-                            <div class="contact-item d-flex">
-                                <div class="contact-icon mr-3">
-                                    <CIcon name="cil-clock" />
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon mr-3 mt-1">
+                                    <CIcon name="cil-envelope-closed" />
                                 </div>
-                                <div class="contact-text">
-                                    {{ $i18n.locale === 'en' ? 'Office Hours: Mon - Fri | 08:00 - 16:00' : 'เวลาทำการ: จันทร์ - ศุกร์ | 08:00 - 16:00 น.' }}
+                                <div class="contact-text" style="line-height: 1.6;">
+                                    {{ $i18n.locale === 'en' ? 'Email:' : 'อีเมล:' }} <a href="mailto:buddhistart@mfu.ac.th" class="text-white text-decoration-none">buddhistart@mfu.ac.th</a>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Map Placeholder / Decorative element -->
-                        <div class="footer-map-deco mt-4 rounded-lg overflow-hidden border border-secondary shadow-sm">
-                            <div class="map-overlay d-flex align-items-center justify-content-center">
-                                <CIcon name="cil-map" size="xl" class="mr-2" />
-                                <span>{{ $i18n.locale === 'en' ? 'Mae Fah Luang University Map' : 'แผนที่มหาวิทยาลัยแม่ฟ้าหลวง' }}</span>
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon mr-3 mt-1">
+                                    <CIcon name="cil-globe-alt" />
+                                </div>
+                                <div class="contact-text" style="line-height: 1.6;">
+                                    {{ $i18n.locale === 'en' ? 'Website:' : 'เว็บไซต์:' }} <a href="https://buddhistart.mfu.ac.th" target="_blank" class="text-white text-decoration-none">Buddhistart.mfu.ac.th</a>
+                                </div>
+                            </div>
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon mr-3 mt-1">
+                                    <CIcon name="cib-facebook" />
+                                </div>
+                                <div class="contact-text" style="line-height: 1.6;">
+                                    {{ $i18n.locale === 'en' ? 'Facebook:' : 'เฟสบุ๊ก:' }} <a href="https://facebook.com/BuddhistArtMFU" target="_blank" class="text-white text-decoration-none">Buddhist Art MFU</a>
+                                </div>
                             </div>
                         </div>
                     </CCol>

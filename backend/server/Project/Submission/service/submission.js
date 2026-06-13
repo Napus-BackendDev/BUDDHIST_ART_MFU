@@ -16,11 +16,11 @@ const { approvedSubmissionMail, rejectedSubmissionMail } = require("../../Mail")
 const getArtworksByStatus = (doc, statusId) => {
     if (!doc?.assignments || !statusId) return [];
     const targetId = statusId.toString();
-    
+
     return doc.assignments.flatMap(assignment => {
         // Get assignment title for metadata
         const assignmentTitle = (assignment.title && assignment.title.find(t => t.key === 'th')?.value) || (assignment.title && assignment.title[0]?.value) || "";
-        
+
         return (assignment.artworks || [])
             .filter(artwork => {
                 const currentId = (artwork.status?._id || artwork.status)?.toString();
@@ -52,19 +52,17 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
     });
 
     for (const [ownerId, artworks] of ownerMap) {
-        // Find the artist object from populated list
         const artist = doc.artist.find(a => a._id.toString() === ownerId);
         if (!artist) continue;
 
-        const email = artist.contact?.studentEmail || artist.email;
+        const email = artist.contact?.studentEmail || artist.contact?.personalEmail;
 
-        // Process each approved artwork 1-by-1
+        let currentCount = await Artwork.countDocuments({ artist: ownerId });
+
         for (const artwork of artworks) {
             const artworkId = artwork._id ? artwork._id.toString() : 'unknown';
-            
-            // Dual Check: Prevent duplicates by checking both the internal ID and the image URL
-            // This handles both new records and older records created before the ID system was added
-            const existing = await Artwork.findOne({ 
+
+            const existing = await Artwork.findOne({
                 $or: [
                     { submissionArtworkId: artwork._id },
                     { image: artwork.image }
@@ -82,10 +80,10 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
             if (email) {
                 const artistName = (artist.name && artist.name[0]?.value) || "Artist";
                 const artworkTitle = (artwork.title && artwork.title[0]?.value) || "Your Artwork";
-                const html = approvedSubmissionMail({ 
-                    artistName, 
+                const html = approvedSubmissionMail({
+                    artistName,
                     submissionTitle: artworkTitle,
-                    approvalDate: new Date().toLocaleString() 
+                    approvalDate: new Date().toLocaleString()
                 });
 
                 try {
@@ -101,9 +99,21 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
             const assignTitle = artwork._assignmentTitle || "";
             const combinedPiece = subTitle + (assignTitle ? ` - ${assignTitle}` : "");
 
+            // Generate unique 9-digit Artwork Code
+            const beYear = (new Date().getFullYear() + 543) % 100;
+            const yy = String(beYear).padStart(2, '0');
+            const c = String(doc.courseLevel || "1").charAt(0) || "1";
+            const studentId = artist.studentId || "";
+            const aa = studentId.length >= 2 ? studentId.substring(studentId.length - 2) : "00";
+            
+            currentCount++;
+            const nnn = String(currentCount).padStart(3, '0');
+            const generatedCode = `${yy}8${c}${aa}${nnn}`;
+
             await Artwork.create({
-                submissionArtworkId: artwork._id, // Track provenance
+                submissionArtworkId: artwork._id,
                 artworkPiece: combinedPiece,
+                artworkCode: generatedCode,
                 image: artwork.image,
                 title: artwork.title,
                 description: artwork.description,
@@ -134,24 +144,28 @@ const processRejections = async (doc, rejectedArtworks) => {
         const artist = doc.artist.find(a => a._id.toString() === ownerId);
         if (!artist) continue;
 
-        const email = artist.contact?.studentEmail || artist.email;
+        const email = artist.contact?.studentEmail || artist.contact?.personalEmail;
         if (!email) continue;
 
         const artistName = (artist.name && artist.name[0]?.value) || "Artist";
         const submissionTitle = (doc.title && doc.title[0]?.value) || "Your Artwork";
-        
+
         // ดึงเหตุผลจาก artwork ชิ้นแรกที่ถูก Reject (หรือรวมจากหลายชิ้นก็ได้ แต่เบื้องต้นดึงจากตัวแรกที่มีเหตุผล)
         const specificReason = rejectedArtworks.find(art => art.rejectionReason)?.rejectionReason;
         const finalReason = specificReason || "Does not meet our current collection requirements.";
 
-        const html = rejectedSubmissionMail({ 
-            artistName, 
-            submissionTitle, 
-            reason: finalReason 
+        const html = rejectedSubmissionMail({
+            artistName,
+            submissionTitle,
+            reason: finalReason
         });
 
-        await sendMail(email, 'Update on Your Submission - Buddhist Art MFU', '', html);
-        console.log(`Rejection email sent to ${email}`);
+        try {
+            await sendMail(email, 'Update on Your Submission - Buddhist Art MFU', '', html);
+            console.log(`Rejection email sent to ${email}`);
+        } catch (mailError) {
+            console.error(`[Submission] Failed to send rejection email to ${email}:`, mailError.message);
+        }
     }
 };
 
@@ -166,9 +180,9 @@ const processStudentStatus = async (doc, statuses, roles) => {
 
     for (const artist of doc.artist) {
         const artistId = artist._id || artist;
-        
+
         // Check if artist participated in this submission
-        const hasSubmitted = (doc.assignments || []).some(assign => 
+        const hasSubmitted = (doc.assignments || []).some(assign =>
             (assign.artworks || []).some(aw => {
                 const ownerId = (aw.owner?._id || aw.owner)?.toString();
                 return ownerId === artistId.toString();
@@ -177,10 +191,10 @@ const processStudentStatus = async (doc, statuses, roles) => {
 
         if (hasSubmitted) {
             const updated = await User.findOneAndUpdate(
-                { 
-                    _id: artistId, 
+                {
+                    _id: artistId,
                     status: NewStudent._id,
-                    role: Artist?._id 
+                    role: Artist?._id
                 },
                 { status: OldStudent._id },
                 { new: true }
@@ -231,7 +245,7 @@ exports.onUpdate = async (request, response) => {
         // Fetch all relevant statuses in parallel
         const statusValues = ["Approved", "Rejected", "Available", "NewStudent", "OldStudent"];
         const statusDocs = await Status.find({ "title.value": { $in: statusValues } });
-        
+
         const statuses = statusDocs.reduce((acc, s) => {
             const titleEn = s.title.find(t => t.key === 'en')?.value;
             if (titleEn) acc[titleEn] = s;

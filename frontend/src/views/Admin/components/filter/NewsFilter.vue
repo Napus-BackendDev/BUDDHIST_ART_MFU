@@ -3,7 +3,7 @@
         <CCardBody class="p-4">
             <CRow class="align-items-end">
                 <!-- Search Field -->
-                <CCol lg="3" md="12" class="mb-3 mb-lg-0">
+                <CCol lg="4" md="12" class="mb-3 mb-lg-0">
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search News' : 'ค้นหาข่าวสาร' }}</label>
                     <div class="search-field-wrapper">
                         <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
@@ -16,17 +16,6 @@
                     </div>
                 </CCol>
 
-                <!-- Category Filter -->
-                <CCol lg="2" md="6" class="mb-3 mb-lg-0">
-                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
-                    <CSelect 
-                        :options="categoryOptions" 
-                        :value="value.category"
-                        @update:value="updateFilter('category', $event)"
-                        class="custom-select-field mb-0"
-                    />
-                </CCol>
-
                 <!-- Quick Range -->
                 <CCol lg="4" md="12" class="mb-3 mb-lg-0">
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Quick Range' : 'ช่วงเวลาด่วน' }}</label>
@@ -37,29 +26,37 @@
                             @click="setQuickRange(range)"
                             :class="['range-btn', { 'active': value.quickRange === range }]"
                         >
-                            {{ range }}
+                            {{ getQuickRangeLabel(range) }}
                         </CButton>
                     </CButtonGroup>
                 </CCol>
 
                 <!-- Time Range -->
-                <CCol lg="3" md="12">
+                <CCol lg="4" md="12" class="mb-3 mb-lg-0">
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
                     <div class="d-flex align-items-center">
                         <div class="date-input-wrapper">
                             <CInput 
-                                type="date" 
+                                :type="formattedStartDate ? 'date' : 'text'"
+                                placeholder="วัน/เดือน/ปี"
+                                lang="en-GB"
                                 :value="formattedStartDate" 
+                                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                                @blur="!$event.target.value && ($event.target.type = 'text')"
                                 @input="onDateInput('startDate', $event)"
                                 class="mb-0 custom-date-field" 
                             />
                             <CIcon name="cil-calendar" class="date-icon-right" />
                         </div>
-                        <span class="mx-1 text-muted">&ndash;</span>
+                        <span class="mx-2 text-muted">&ndash;</span>
                         <div class="date-input-wrapper">
                             <CInput 
-                                type="date" 
+                                :type="formattedEndDate ? 'date' : 'text'"
+                                placeholder="วัน/เดือน/ปี"
+                                lang="en-GB"
                                 :value="formattedEndDate" 
+                                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                                @blur="!$event.target.value && ($event.target.type = 'text')"
                                 @input="onDateInput('endDate', $event)"
                                 class="mb-0 custom-date-field" 
                             />
@@ -81,10 +78,6 @@ export default {
         value: {
             type: Object,
             required: true
-        },
-        categories: {
-            type: Array,
-            default: () => []
         }
     },
     computed: {
@@ -93,16 +86,24 @@ export default {
         },
         formattedEndDate() {
             return this.value.endDate ? moment(this.value.endDate).format('YYYY-MM-DD') : ''
-        },
-        categoryOptions() {
-            const options = this.categories.map(cat => ({
-                value: this.getName('en', cat.title),
-                label: this.getName(this.$i18n.locale, cat.title) || this.getName('en', cat.title)
-            }));
-            return [{ value: 'All Categories', label: this.$i18n.locale === 'en' ? 'All Categories' : 'หมวดหมู่ทั้งหมด' }, ...options];
         }
     },
     methods: {
+        getQuickRangeLabel(range) {
+            if (range === 'All Time') {
+                return this.$i18n.locale === 'en' ? 'All Time' : 'ทั้งหมด';
+            }
+            if (range === 'Today') {
+                return this.$i18n.locale === 'en' ? 'Today' : 'วันนี้';
+            }
+            if (range === 'This Month') {
+                return this.$i18n.locale === 'en' ? 'This Month' : 'เดือนนี้';
+            }
+            if (range === 'This Year') {
+                return this.$i18n.locale === 'en' ? 'This Year' : 'ปีนี้';
+            }
+            return range;
+        },
         getName(lang, field) {
             if (!field) return 'N/A';
             if (typeof field === 'string') return field;
@@ -166,27 +167,24 @@ export default {
     position: relative !important;
     z-index: 5 !important;
     overflow: visible !important;
-}
-
-.custom-add-dropdown {
-    position: relative !important;
+    border-radius: 12px;
 }
 
 .filter-label {
-    display: block;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 700;
+    color: #4f5d73;
+    margin-bottom: 8px;
+    display: block;
     text-transform: uppercase;
-    color: #a0aec0;
-    margin-bottom: 6px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.5px;
 }
 
 .search-field-wrapper {
     display: flex;
     align-items: center;
     background: #f8f9fa;
-    border: 1px solid #ebedef;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 0 12px;
     height: 42px;
@@ -195,52 +193,28 @@ export default {
 
 .search-field-wrapper:focus-within {
     background: #ffffff;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #321fdb;
+    box-shadow: 0 0 0 3px rgba(50, 31, 219, 0.1);
 }
 
 .search-icon-fixed {
-    color: #a0aec0;
+    color: #8c98a9;
     width: 16px;
     margin-right: 10px;
+}
+
+.custom-input-plain ::v-deep .form-group {
+    margin-bottom: 0 !important;
 }
 
 .custom-input-plain ::v-deep .form-control {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0;
+    padding: 0 !important;
     font-size: 0.9rem;
-    height: auto;
-    color: #4f5d73;
-}
-
-.filter-select-btn {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #f8f9fa;
-    border: 1px solid #ebedef;
-    border-radius: 8px;
-    padding: 0 16px;
-    height: 42px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #3b4d6b;
-    transition: all 0.2s ease;
-    outline: none;
-}
-
-.filter-select-btn:hover {
-    background: #ffffff;
-    border-color: #d8dbe0;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.filter-icon-small {
-    width: 12px;
-    color: #a0aec0;
+    height: auto !important;
+    color: #2c3e50;
 }
 
 .date-input-wrapper {
@@ -249,7 +223,7 @@ export default {
     display: flex;
     align-items: center;
     background: #f8f9fa;
-    border: 1px solid #ebedef;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     height: 42px;
     transition: all 0.2s ease;
@@ -258,35 +232,36 @@ export default {
 
 .date-input-wrapper:focus-within {
     background: #ffffff;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #321fdb;
+    box-shadow: 0 0 0 3px rgba(50, 31, 219, 0.1);
 }
 
 .date-icon-right {
     position: absolute;
-    right: 8px;
-    width: 14px;
-    color: #a0aec0;
+    right: 12px;
+    width: 16px;
+    color: #8a93a2;
     pointer-events: none;
     z-index: 2;
 }
 
 .custom-date-field {
     width: 100%;
+    margin-bottom: 0 !important;
 }
 
 .custom-date-field ::v-deep .form-control {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 500;
     color: #3b4d6b;
     height: 42px;
     text-align: center;
     cursor: pointer;
-    padding-left: 4px;
-    padding-right: 20px;
+    padding-left: 36px;
+    padding-right: 36px;
 }
 
 .custom-date-field ::v-deep .form-control::-webkit-calendar-picker-indicator {
@@ -303,7 +278,7 @@ export default {
 
 .quick-range-group {
     background: #f8f9fa;
-    border: 1px solid #ebedef;
+    border: 1px solid #e2e8f0;
     border-radius: 8px !important;
     padding: 3px;
     height: 42px;
@@ -312,14 +287,13 @@ export default {
 .range-btn {
     border: none !important;
     background: transparent !important;
-    font-size: 0.72rem !important;
+    font-size: 0.75rem !important;
     font-weight: 600 !important;
     transition: all 0.2s ease !important;
     flex: 1;
     white-space: nowrap;
     height: 100% !important;
     box-shadow: none !important;
-    padding: 0 4px !important;
 }
 
 .range-btn:hover {
@@ -329,19 +303,7 @@ export default {
 
 .range-btn.active {
     background: #ffffff !important;
-    color: #3b82f6 !important;
+    color: #321fdb !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-}
-
-::v-deep .dropdown-menu {
-  border-radius: 10px !important;
-  border: 1px solid #eef0f3 !important;
-  box-shadow: 0 8px 24px rgba(149, 157, 165, 0.2) !important;
-  padding: 8px !important;
-  min-width: 180px !important;
-  z-index: 1000 !important;
-  transform: none !important;
-  top: 100% !important;
-  left: 0 !important;
 }
 </style>

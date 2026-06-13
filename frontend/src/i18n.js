@@ -12,7 +12,7 @@ const messages = {
 }
 
 export default new VueI18n({
-  locale: localStorage.getItem('locale') || 'th',
+  locale: localStorage.getItem('lang') || 'th',
   fallbackLocale: 'th',
   messages,
 })

@@ -36,7 +36,7 @@
                                 <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
                                     <div :class="['status-badge', getStatusBadge(item.status).class]">
                                         <CIcon :name="getStatusBadge(item.status).icon" size="sm" class="status-icon" />
-                                        {{ item.status }}
+                                        {{ getTranslatedStatus(item.status) }}
                                     </div>
                                 </td>
                             </template>
@@ -46,7 +46,7 @@
                                 <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
                                     <div :class="['status-badge', item.on_time ? 'badge-passed' : 'badge-fail']">
                                         <CIcon :name="item.on_time ? 'cil-check' : 'cil-warning'" size="sm" class="status-icon" />
-                                        {{ item.on_time ? 'On Time' : 'Late' }}
+                                        {{ item.on_time ? ($i18n.locale === 'en' ? 'On Time' : 'ตรงเวลา') : ($i18n.locale === 'en' ? 'Late' : 'สาย') }}
                                     </div>
                                 </td>
                             </template>
@@ -56,10 +56,10 @@
                     <CCardFooter
                         class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
                         <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                            Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} submissions
+                            {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, filteredItems.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredItems.length }} {{ $i18n.locale === 'en' ? 'submissions' : 'รายการ' }}
                         </div>
                         <div class="text-muted text-sm" v-else>
-                            Showing 0 submissions
+                            {{ $i18n.locale === 'en' ? 'Showing 0 submissions' : 'แสดง 0 รายการ' }}
                         </div>
                         <CPagination
                             :active-page.sync="activePage"
@@ -113,13 +113,6 @@ export default {
         return {
             selectedItem: null,
             isUpdating: null, // Stores 'Approved' or 'Rejected' during update
-            fields: [
-                { key: 'preview', label: 'Preview', _classes: 'font-weight-bold' },
-                { key: 'student_name', label: 'Student Name', _classes: 'font-weight-bold' },
-                { key: 'submitted_date', label: 'Submitted Date' },
-                { key: 'status', label: 'Status' },
-                { key: 'deadline', label: 'Deadline' }
-            ],
             activePage: 1,
             modalShow: false
         }
@@ -133,6 +126,15 @@ export default {
         }
     },
     computed: {
+        fields() {
+            return [
+                { key: 'preview', label: this.$i18n.locale === 'en' ? 'Preview' : 'รูปตัวอย่าง', _classes: 'font-weight-bold' },
+                { key: 'student_name', label: this.$i18n.locale === 'en' ? 'Student Name' : 'ชื่อนักเรียน', _classes: 'font-weight-bold' },
+                { key: 'submitted_date', label: this.$i18n.locale === 'en' ? 'Submitted Date' : 'วันที่ส่ง' },
+                { key: 'status', label: this.$i18n.locale === 'en' ? 'Status' : 'สถานะ' },
+                { key: 'deadline', label: this.$i18n.locale === 'en' ? 'Deadline' : 'กำหนดส่ง' }
+            ];
+        },
         filteredItems() {
             return this.items.filter(item => {
                 // Search Filter
@@ -193,10 +195,20 @@ export default {
             }
         },
         getStatusBadge(status) {
-            if (status === 'Passed') return { class: 'badge-passed', icon: 'cil-check-circle' };
-            if (status === 'Fail') return { class: 'badge-fail', icon: 'cil-x-circle' };
+            if (status === 'Passed' || status === 'Approved') return { class: 'badge-passed', icon: 'cil-check-circle' };
+            if (status === 'Fail' || status === 'Rejected') return { class: 'badge-fail', icon: 'cil-x-circle' };
             if (status === 'Pending') return { class: 'badge-pending', icon: 'cil-clock' };
             return { class: 'badge-in-progress', icon: 'cil-history' };
+        },
+        getTranslatedStatus(status) {
+            const map = {
+                'Passed': this.$i18n.locale === 'en' ? 'Passed' : 'ผ่าน',
+                'Approved': this.$i18n.locale === 'en' ? 'Passed' : 'ผ่าน',
+                'Fail': this.$i18n.locale === 'en' ? 'Fail' : 'ไม่ผ่าน',
+                'Rejected': this.$i18n.locale === 'en' ? 'Fail' : 'ไม่ผ่าน',
+                'Pending': this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ',
+            };
+            return map[status] || status;
         },
         pageChange(val) {
             this.activePage = val;

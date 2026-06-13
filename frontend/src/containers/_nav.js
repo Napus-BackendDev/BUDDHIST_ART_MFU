@@ -35,12 +35,6 @@ export default [{
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'Donations',
-      to: '/donations',
-      icon: 'cil-heart'
-    },
-    {
-      _name: 'CSidebarNavItem',
       name: 'Submissions',
       to: '/submissions',
       icon: 'cil-cloud-upload'

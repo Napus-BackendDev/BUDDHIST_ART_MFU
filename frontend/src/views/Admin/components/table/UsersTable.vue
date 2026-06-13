@@ -20,13 +20,14 @@
                 <template #name_student_id="{ item }">
                     <td class="py-3">
                         <div class="d-flex align-items-center">
-                            <div class="avatar-circle mr-3"
-                                :style="{ backgroundColor: getAvatarColor(getName('en', item) || getName('th', item)) }">
-                                {{ getInitials(getName('en', item) || getName('th', item)) }}
+                            <div class="avatar-circle mr-3 overflow-hidden d-flex align-items-center justify-content-center"
+                                :style="!item.image ? { backgroundColor: getAvatarColor(getName('en', item) || getName('th', item)) } : {}">
+                                <img v-if="item.image" :src="item.image" style="width: 100%; height: 100%; object-fit: cover;" />
+                                <span v-else>{{ getInitials(getName('en', item) || getName('th', item)) }}</span>
                             </div>
                             <div>
                                 <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ getName($i18n.locale, item) || getName('en', item) || getName('th', item) }}</div>
-                                <div class="small text-muted font-weight-bold">{{ item.studentId ? `ID: ${item.studentId}` : 'No Student ID' }}</div>
+                                <div class="small text-muted font-weight-bold">{{ item.studentId ? `ID: ${item.studentId}` : ($i18n.locale === 'en' ? 'No Student ID' : 'ไม่มีรหัสประจำตัวนักศึกษา') }}</div>
                             </div>
                         </div>
                     </td>
@@ -75,13 +76,13 @@
                 <template #actions="{ item }">
                     <td class="text-right py-3 pr-4">
                         <div class="d-inline-flex align-items-center action-wrapper">
-                            <button class="action-btn icon-view" v-c-tooltip="'View'" @click="handleView(item)">
+                            <button class="action-btn icon-view" v-c-tooltip="$i18n.locale === 'en' ? 'View' : 'ดู'" @click="handleView(item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit mx-2" v-c-tooltip="'Edit'" @click="handleEdit(item)">
+                            <button class="action-btn icon-edit mx-2" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="handleEdit(item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger" v-c-tooltip="'Delete'" @click="handleDelete(item)">
+                            <button class="action-btn icon-danger" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="handleDelete(item)">
                                 <CIcon name="cil-trash" size="lg" />
                             </button>
                         </div>
@@ -93,10 +94,10 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredUsers.length > 0">
-                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredUsers.length) }} of {{ filteredUsers.length }} users
+                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, filteredUsers.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredUsers.length }} {{ $i18n.locale === 'en' ? 'users' : 'ผู้ใช้งาน' }}
             </div>
             <div class="text-muted text-sm" v-else>
-                Showing 0 users
+                {{ $i18n.locale === 'en' ? 'Showing 0 users' : 'แสดง 0 ผู้ใช้งาน' }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
@@ -167,8 +168,19 @@ export default {
                     studentId.includes(search) ||
                     email.includes(search);
                 
-                const roleMatch = this.filters.role === 'All Roles' || this.getRoleName(user.role) === this.filters.role;
-                const statusMatch = this.filters.status === 'All Status' || this.getStatusName(user.status) === this.filters.status;
+                // Get role details for matching
+                const userRoleId = (typeof user.role === 'object' && user.role) ? user.role._id : user.role;
+                const userRoleNameEn = this.getRoleNameEn(user.role);
+                const roleMatch = this.filters.role === 'All Roles' || 
+                    userRoleId === this.filters.role || 
+                    userRoleNameEn === this.filters.role;
+
+                // Get status details for matching
+                const userStatusId = (typeof user.status === 'object' && user.status) ? user.status._id : user.status;
+                const userStatusNameEn = this.getStatusNameEn(user.status);
+                const statusMatch = this.filters.status === 'All Status' || 
+                    userStatusId === this.filters.status || 
+                    userStatusNameEn === this.filters.status;
 
                 return searchMatch && roleMatch && statusMatch;
             });
@@ -195,7 +207,11 @@ export default {
             this.$emit('edit', item);
         },
         handleDelete(item) {
-            if (confirm(`Are you sure you want to delete user ${this.getName('en', item) || this.getName('th', item)}?`)) {
+            const userName = this.getName(this.$i18n.locale, item) || this.getName('en', item) || this.getName('th', item);
+            const confirmMsg = this.$i18n.locale === 'en' 
+                ? `Are you sure you want to delete user ${userName}?` 
+                : `คุณแน่ใจหรือไม่ที่จะลบผู้ใช้งาน ${userName}?`;
+            if (confirm(confirmMsg)) {
                 this.$emit('delete', item);
             }
         },

@@ -270,178 +270,194 @@ class PdfService {
 
             const fontPath = `file://${path.join(__dirname, '../public/assets/fonts/mfu.ttf').replace(/\\/g, '/')}`;
 
+            // Dynamic Font Size Calculation for Technique based on character length
+            const techLength = data.info.technique ? data.info.technique.length : 0;
+            let techFontSize = '20px'; // default
+            if (techLength > 150 && techLength <= 250) techFontSize = '18px';
+            else if (techLength > 250 && techLength <= 350) techFontSize = '16px';
+            else if (techLength > 350) techFontSize = '14px';
+
             const htmlContent = `
             <!DOCTYPE html>
             <html>
             <head>
                 <style>
+                    @page {
+                        size: A4 landscape;
+                        margin: 0;
+                    }
                     @font-face {
                         font-family: 'MFUFont';
                         src: url('${fontPath}');
                     }
-                    body {
+                    html, body {
                         font-family: 'MFUFont', serif;
                         margin: 0;
                         padding: 0;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
+                        width: 297mm;
+                        height: 210mm;
+                        overflow: hidden;
                         background-color: #fff;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    .watermark {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        width: 140mm;
+                        height: 140mm;
+                        background-image: url('${logoBase64}');
+                        background-size: contain;
+                        background-repeat: no-repeat;
+                        background-position: center;
+                        opacity: 0.08; 
+                        z-index: 0;
+                        pointer-events: none;
                     }
                     .certificate-container {
-                        width: 90%;
-                        height: 90%;
-                        border: 15px double #8c1515;
-                        padding: 40px;
+                        width: 297mm;
+                        height: 210mm;
+                        padding: 30px 60px 40px 60px;
                         position: relative;
                         box-sizing: border-box;
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        text-align: center;
-                    }
-                    .gold-inner-border {
-                        position: absolute;
-                        top: 5px; left: 5px; right: 5px; bottom: 5px;
-                        border: 2px solid #d4af37;
-                        pointer-events: none;
+                        justify-content: space-between;
+                        z-index: 1;
+                        overflow: hidden;
                     }
                     .header-logo {
-                        width: 150px;
-                        height: 60px;
+                        width: 85px;
+                        height: 100px;
                         background-image: url('${logoBase64}');
                         background-size: contain;
                         background-repeat: no-repeat;
                         background-position: center;
-                        margin-bottom: 20px;
+                        margin-bottom: 5px;
                     }
                     .cert-title {
-                        font-size: 42px;
-                        color: #8c1515;
-                        margin: 10px 0;
-                        text-transform: uppercase;
-                        letter-spacing: 2px;
-                    }
-                    .cert-subtitle {
-                        font-size: 20px;
-                        color: #444;
-                        margin-bottom: 30px;
-                        font-style: italic;
+                        font-size: 22px;
+                        color: #000;
+                        margin: 5px 0;
+                        text-align: center;
+                        line-height: 1.4;
                     }
                     .content-wrapper {
                         display: flex;
                         width: 100%;
-                        justify-content: space-around;
+                        justify-content: center;
                         align-items: flex-start;
                         margin-top: 20px;
                     }
-                    .artwork-preview-box {
-                        width: 300px;
-                        height: 400px;
-                        border: 1px solid #ddd;
-                        padding: 10px;
-                        background: #fdfdfd;
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                    .artwork-container {
+                        width: 210px;
+                        height: 280px;
+                        border: 4px solid #d4af37;
+                        padding: 5px;
+                        background-color: #fcfcfc;
+                        margin-right: 40px; 
                         display: flex;
-                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                        flex-shrink: 0; 
                     }
                     .artwork-img {
+                        max-width: 100%;
+                        max-height: 100%;
+                        object-fit: scale-down; /* Scales down if too big, but won't scale up if too small */
+                    }
+                    .artwork-placeholder {
                         width: 100%;
-                        height: 250px;
-                        object-fit: contain;
-                        margin-bottom: 15px;
+                        height: 100%;
+                        background-color: #e9ecef;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        color: #888;
+                        font-size: 16px;
+                        text-align: center;
+                        line-height: 1.5;
                     }
-                    .artwork-details-mini {
-                        font-size: 14px;
-                        text-align: left;
+                    .info-block {
+                        font-size: 18px;
                         line-height: 1.6;
-                        color: #555;
-                    }
-                    .info-column {
-                        flex: 1;
-                        padding: 0 40px;
+                        color: #000;
                         text-align: left;
+                        width: 400px; 
                     }
-                    .info-item {
-                        margin-bottom: 15px;
-                        border-bottom: 1px dotted #ccc;
-                        padding-bottom: 5px;
+                    .info-row {
+                        display: flex;
+                        margin-bottom: 6px;
                     }
                     .info-label {
-                        font-weight: bold;
-                        color: #8c1515;
-                        font-size: 14px;
-                        text-transform: uppercase;
+                        width: 100px;
+                        flex-shrink: 0;
                     }
                     .info-value {
-                        font-size: 18px;
-                        color: #222;
-                    }
-                    .description-box {
-                        margin-top: 20px;
-                        font-size: 14px;
-                        font-style: italic;
-                        color: #666;
-                        line-height: 1.4;
+                        flex: 1;
                     }
                     .footer-signatures {
                         width: 100%;
                         display: flex;
                         justify-content: space-between;
                         margin-top: auto;
-                        padding-top: 40px;
+                        padding: 0 40px;
+                        text-align: center;
+                        font-size: 16px;
+                        line-height: 1.5;
                     }
                     .sign-box {
-                        width: 200px;
-                        text-align: center;
+                        width: 300px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
                     }
                     .sign-img {
                         height: 50px;
                         margin-bottom: -10px;
                     }
-                    .sign-line {
-                        border-top: 1px solid #333;
-                        display: block;
-                        margin-top: 10px;
-                        padding-top: 5px;
-                        font-size: 14px;
-                    }
                 </style>
             </head>
             <body>
                 <div class="certificate-container">
-                    <div class="gold-inner-border"></div>
+                    <div class="watermark"></div>
                     
                     <div class="header-logo"></div>
-                    <div class="cert-title">Certificate of Authenticity</div>
-                    <div class="cert-subtitle">ใบรับรองผลงานศิลปะชิ้นเอก</div>
+                    <div class="cert-title">
+                        เอกสารรับรองผลงานสร้างสรรค์ที่เกิดขึ้น หรือ "ทรัพย์สินทางปัญญาที่รับรอง"<br/>
+                        ภายใต้หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง
+                    </div>
 
                     <div class="content-wrapper">
-                        <div class="artwork-preview-box">
-                            <img src="${artworkBase64}" class="artwork-img" />
-                            <div class="artwork-details-mini">
-                                <strong>Title:</strong> ${data.info.artworkNameTH} (${data.info.artworkNameEN})<br/>
-                                <strong>Artist:</strong> ${data.info.artistName}<br/>
-                                <strong>Year:</strong> ${data.info.year}
-                            </div>
+                        <!-- Artwork Image Placeholder -->
+                        <div class="artwork-container">
+                            ${artworkBase64 ? '<img src="' + artworkBase64 + '" class="artwork-img" />' : '<div class="artwork-placeholder">ไม่มีรูปผลงาน<br/>(No Image)</div>'}
                         </div>
 
-                        <div class="info-column">
-                            <div class="info-item">
-                                <div class="info-label">Medium & Technique</div>
-                                <div class="info-value">${data.info.technique}</div>
+                        <!-- Information Block -->
+                        <div class="info-block">
+                            <div class="info-row">
+                                <div class="info-label">ชื่อศิลปิน</div>
+                                <div class="info-value">${data.info.artistName || '-'}</div>
                             </div>
-                            <div class="info-item">
-                                <div class="info-label">Dimensions</div>
-                                <div class="info-value">${data.info.size}</div>
+                            <div class="info-row">
+                                <div class="info-label">ชื่อผลงาน</div>
+                                <div class="info-value">${data.info.artworkNameTH || '-'}</div>
                             </div>
-                            <div class="info-item">
-                                <div class="info-label">Current Value</div>
-                                <div class="info-value">${data.info.price}</div>
+                            <div class="info-row">
+                                <div class="info-label">ขนาด</div>
+                                <div class="info-value">${data.info.size || '-'}</div>
                             </div>
-                            <div class="description-box">
-                                ${data.info.description || 'This is to certify that the mentioned artwork is an authentic work created by the artist.'}
+                            <div class="info-row">
+                                <div class="info-label">เทคนิค</div>
+                                <div class="info-value" style="font-size: ${techFontSize}; line-height: 1.5;">${data.info.technique || '-'}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">ราคา</div>
+                                <div class="info-value">${data.info.price || '-'}</div>
                             </div>
                         </div>
                     </div>
@@ -449,11 +465,15 @@ class PdfService {
                     <div class="footer-signatures">
                         <div class="sign-box">
                             <div style="height: 50px;"></div>
-                            <span class="sign-line">Artist / Representative</span>
+                            <div>(อาจารย์ทรงเดช ทิพย์ทอง)</div>
+                            <div>อาจารย์ประจำหลักสูตร</div>
+                            <div>ผู้รับรองผลงาน</div>
                         </div>
                         <div class="sign-box">
-                            <img src="${signBase64}" class="sign-img" /><br/>
-                            <span class="sign-line">Director of Buddhist Art MFU</span>
+                            ${signBase64 ? '<img src="' + signBase64 + '" class="sign-img" />' : '<div style="height: 50px;"></div>'}
+                            <div>(${data.info.artistName || '...................................'})</div>
+                            <div>ผู้เรียนหลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม</div>
+                            <div>มหาวิทยาลัยแม่ฟ้าหลวง รุ่นที่ 5 พ.ศ. 2568</div>
                         </div>
                     </div>
                 </div>

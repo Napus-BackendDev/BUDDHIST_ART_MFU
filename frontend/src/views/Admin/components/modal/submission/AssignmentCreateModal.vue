@@ -45,7 +45,11 @@
                         <label class="form-label">Start Date & Time</label>
                         <CInput 
                             v-model="form.startDateTime" 
-                            type="datetime-local" 
+                            :type="form.startDateTime ? 'datetime-local' : 'text'"
+                            placeholder="วัน/เดือน/ปี --:--"
+                            lang="en-GB"
+                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -55,7 +59,11 @@
                         <label class="form-label">End Date & Time (Deadline)</label>
                         <CInput 
                             v-model="form.endDateTime" 
-                            type="datetime-local" 
+                            :type="form.endDateTime ? 'datetime-local' : 'text'"
+                            placeholder="วัน/เดือน/ปี --:--"
+                            lang="en-GB"
+                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -241,8 +249,12 @@ export default {
     methods: {
         getStudentName(student) {
             if (!student || !student.name) return 'N/A';
-            const nameObj = student.name.find(n => n.key === 'en') || student.name[0];
-            return nameObj ? nameObj.value : 'N/A';
+            if (typeof student.name === 'string') return student.name;
+            if (Array.isArray(student.name)) {
+                const nameObj = student.name.find(n => n.key === 'en') || student.name[0];
+                return nameObj ? nameObj.value : 'N/A';
+            }
+            return 'N/A';
         },
         isSelected(id) {
             return this.selectedStudents.includes(id);

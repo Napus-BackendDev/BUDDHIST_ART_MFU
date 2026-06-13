@@ -26,12 +26,22 @@
         <div class="px-3 py-2">
             <!-- Basic Info Row -->
             <CRow>
-                <CCol md="12">
+                <CCol md="8">
                     <div class="form-group-custom">
                         <label class="form-label">Submission Title</label>
                         <CInput 
                             v-model="form.title" 
                             placeholder="e.g. Midterm Art Project 2024" 
+                            class="custom-input mb-0"
+                        />
+                    </div>
+                </CCol>
+                <CCol md="4">
+                    <div class="form-group-custom">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Course Level' : 'ระดับหลักสูตร' }}</label>
+                        <CInput
+                            v-model="form.courseLevel"
+                            placeholder="01"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -45,7 +55,11 @@
                         <label class="form-label">Start Date</label>
                         <CInput 
                             v-model="form.startDate" 
-                            type="date" 
+                            :type="form.startDate ? 'date' : 'text'"
+                            placeholder="วัน/เดือน/ปี"
+                            lang="en-GB"
+                            @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -55,7 +69,11 @@
                         <label class="form-label">Due Date (Deadline)</label>
                         <CInput 
                             v-model="form.dueDate" 
-                            type="date" 
+                            :type="form.dueDate ? 'date' : 'text'"
+                            placeholder="วัน/เดือน/ปี"
+                            lang="en-GB"
+                            @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -198,8 +216,12 @@
                                     <div class="date-picker-mini">
                                         <label class="mini-label">Start Date & Time</label>
                                         <input 
-                                            type="datetime-local" 
+                                            :type="assignment.startDateTime ? 'datetime-local' : 'text'" 
+                                            placeholder="วัน/เดือน/ปี --:--"
+                                            lang="en-GB"
                                             v-model="assignment.startDateTime"
+                                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                                            @blur="!$event.target.value && ($event.target.type = 'text')"
                                             class="mini-date-input"
                                         />
                                     </div>
@@ -208,8 +230,12 @@
                                     <div class="date-picker-mini">
                                         <label class="mini-label">End Date & Time</label>
                                         <input 
-                                            type="datetime-local" 
+                                            :type="assignment.endDateTime ? 'datetime-local' : 'text'" 
+                                            placeholder="วัน/เดือน/ปี --:--"
+                                            lang="en-GB"
                                             v-model="assignment.endDateTime"
+                                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                                            @blur="!$event.target.value && ($event.target.type = 'text')"
                                             class="mini-date-input"
                                         />
                                     </div>
@@ -263,6 +289,7 @@ export default {
             form: {
                 id: null,
                 title: '',
+                courseLevel: '',
                 startDate: '',
                 dueDate: '',
                 assignments: []
@@ -322,8 +349,12 @@ export default {
     methods: {
         getStudentName(student) {
             if (!student || !student.name) return 'N/A';
-            const nameObj = student.name.find(n => n.key === 'en') || student.name[0];
-            return nameObj ? nameObj.value : 'N/A';
+            if (typeof student.name === 'string') return student.name;
+            if (Array.isArray(student.name)) {
+                const nameObj = student.name.find(n => n.key === 'en') || student.name[0];
+                return nameObj ? nameObj.value : 'N/A';
+            }
+            return 'N/A';
         },
         getRoleName(role) {
             if (!role) return 'User';
@@ -344,6 +375,7 @@ export default {
             this.form = {
                 _id: data._id,
                 title: this.getName('en', data),
+                courseLevel: data.courseLevel || '1',
                 startDate: (data.create && data.create.startAt) ? this.formatDateForInput(data.create.startAt) : '',
                 dueDate: (data.create && data.create.endAt) ? this.formatDateForInput(data.create.endAt) : '',
                 assignments: data.assignments ? data.assignments.map(a => ({
@@ -416,6 +448,7 @@ export default {
                     { key: 'en', value: this.form.title },
                     { key: 'th', value: this.form.title }
                 ],
+                courseLevel: this.form.courseLevel || '1',
                 create: {
                     startAt: this.form.startDate,
                     endAt: this.form.dueDate

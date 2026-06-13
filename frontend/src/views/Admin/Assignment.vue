@@ -28,6 +28,7 @@ import AssignmentWidget from './components/widget/AssignmentWidget.vue'
 import AssignmentFilter from './components/filter/AssignmentFilter.vue'
 import HeaderHero from './components/HeaderHero.vue'
 import moment from 'moment'
+import * as XLSX from 'xlsx'
 
 export default {
     name: 'Assignment',
@@ -80,7 +81,7 @@ export default {
             return this.submission.assignments.find(a => a._id === this.$route.params.id);
         },
         assignmentTitle() {
-            return this.assignment ? this.getName('en', this.assignment) : 'Assignment Detail';
+            return this.assignment ? this.getName(this.$i18n.locale, this.assignment) : (this.$i18n.locale === 'en' ? 'Assignment Detail' : 'รายละเอียดงาน');
         },
         mappedArtworks() {
             if (!this.assignment || !this.assignment.artworks) return [];
@@ -94,7 +95,7 @@ export default {
                 
                 if (owner) {
                     if (typeof owner === 'object') {
-                        studentName = this.getName('en', owner);
+                        studentName = this.getName(this.$i18n.locale, owner);
                         studentId = owner.studentId || 'N/A';
                     } else {
                         // It's just an ID string (Population didn't happen)
@@ -103,7 +104,7 @@ export default {
                     }
                 }
 
-                // Determine status name safely
+                // Determine status name safely (kept as 'en' to align with table badge CSS maps and keys)
                 let statusName = 'Pending';
                 if (status) {
                     statusName = typeof status === 'object' ? (this.getName('en', status) || 'Pending') : 'Pending';
@@ -114,10 +115,10 @@ export default {
                     preview: aw.image,
                     student_name: studentName,
                     student_id: studentId,
-                    submitted_date: aw.create ? moment(aw.create.at).format('MMM DD, YYYY hh:mm A') : 'N/A',
+                    submitted_date: aw.create ? moment(aw.create.at).format('DD/MM/YYYY HH:mm') : 'N/A',
                     on_time: aw.create && this.assignment.create ? moment(aw.create.at).isBefore(moment(this.assignment.create.endAt)) : true,
                     status: statusName,
-                    deadline: this.assignment.create ? moment(this.assignment.create.endAt).format('MMM DD, YYYY hh:mm A') : 'N/A',
+                    deadline: this.assignment.create ? moment(this.assignment.create.endAt).format('DD/MM/YYYY HH:mm') : 'N/A',
                     
                     // Detailed Fields
                     title_en: this.getName('en', { title: aw.title }),
@@ -129,8 +130,11 @@ export default {
                     size_en: this.getName('en', { title: aw.size }),
                     size_th: this.getName('th', { title: aw.size }),
                     price: aw.price || 0,
-                    category: aw.category ? (this.getName('en', aw.category) || 'General') : 'General',
-                    artist_name: aw.artist ? this.getName('en', aw.artist) : studentName
+                    category: aw.category ? (this.getName(this.$i18n.locale, aw.category) || (this.$i18n.locale === 'en' ? 'General' : 'ทั่วไป')) : (this.$i18n.locale === 'en' ? 'General' : 'ทั่วไป'),
+                    artist_name: aw.artist ? this.getName(this.$i18n.locale, aw.artist) : studentName,
+                    remark_en: this.getName('en', { title: aw.remark }),
+                    remark_th: this.getName('th', { title: aw.remark }),
+                    remark: aw.remark // Keep original for reference if needed
                 };
             });
         }
@@ -152,7 +156,7 @@ export default {
                 });
 
                 if (!targetStatus) {
-                    alert('ไม่พบสถานะที่ต้องการในระบบ');
+                    alert(this.$i18n.locale === 'en' ? 'Requested status not found in the system.' : 'ไม่พบสถานะที่ต้องการในระบบ');
                     return;
                 }
 
@@ -192,15 +196,60 @@ export default {
                 
                 // 5. Refresh data
                 await this.fetchSubmission();
-                alert(`อัปเดตสถานะเป็น ${statusName} เรียบร้อยแล้ว`);
+                alert(this.$i18n.locale === 'en' ? `Status updated to ${statusName} successfully.` : `อัปเดตสถานะเป็น ${statusName} เรียบร้อยแล้ว`);
                 
             } catch (error) {
                 console.error('Error updating status:', error);
-                alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
+                alert(this.$i18n.locale === 'en' ? 'An error occurred while updating the status.' : 'เกิดข้อผิดพลาดในการอัปเดตสถานะ');
             }
         },
         handleExport() {
-            console.log('Exporting data...');
+            if (!this.mappedArtworks || this.mappedArtworks.length === 0) {
+                alert(this.$i18n.locale === 'en' ? 'No data available to export.' : 'ไม่มีข้อมูลสำหรับการส่งออก');
+                return;
+            }
+
+            const headers = this.$i18n.locale === 'en' ? [
+                'Student Name', 'Student ID', 'Submitted Date & Time', 
+                'On Time Status', 'Review Status', 'Artwork Title (TH)', 
+                'Artwork Title (EN)', 'Category', 'Technique (EN)', 
+                'Size (EN)', 'Price (THB)'
+            ] : [
+                'ชื่อนักศึกษา', 'รหัสนักศึกษา', 'วันที่และเวลาที่ส่ง', 
+                'ความตรงต่อเวลา', 'สถานะการตรวจสอบ', 'ชื่อผลงาน (ไทย)', 
+                'ชื่อผลงาน (อังกฤษ)', 'หมวดหมู่', 'เทคนิค (อังกฤษ)', 
+                'ขนาด (อังกฤษ)', 'ราคา (บาท)'
+            ];
+
+            const data = this.mappedArtworks.map(item => {
+                const onTimeText = item.on_time 
+                    ? (this.$i18n.locale === 'en' ? 'On Time' : 'ตรงเวลา')
+                    : (this.$i18n.locale === 'en' ? 'Late' : 'สาย');
+                
+                const statusText = this.$i18n.locale === 'en' 
+                    ? item.status 
+                    : (item.status === 'Approved' || item.status === 'Passed' ? 'ผ่าน/อนุมัติ' : item.status === 'Rejected' || item.status === 'Fail' ? 'ไม่ผ่าน' : 'รอตรวจสอบ');
+
+                return [
+                    item.student_name,
+                    item.student_id,
+                    item.submitted_date,
+                    onTimeText,
+                    statusText,
+                    item.title_th,
+                    item.title_en,
+                    item.category,
+                    item.technique_en,
+                    item.size_en,
+                    item.price
+                ];
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Submissions');
+            const assignmentName = this.assignmentTitle.replace(/\s+/g, '_');
+            XLSX.writeFile(wb, `Assignment_${assignmentName}_Submissions_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
         },
         getName(lang, item) {
             if (!item) return 'N/A';

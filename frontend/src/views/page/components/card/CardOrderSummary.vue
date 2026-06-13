@@ -10,7 +10,10 @@
                         style="width: 80px; height: 80px; object-fit: cover;">
                     <div class="w-100">
                         <div class="d-flex justify-content-between">
-                            <h6 class="mb-0 font-weight-bold">{{ getName($i18n.locale, item.title) }}</h6>
+                            <h6 class="mb-0 font-weight-bold">
+                                {{ getName($i18n.locale, item.title) }}
+                                <span v-if="isReserved(item)" class="badge badge-warning ml-2">{{ $i18n.locale === 'en' ? 'Reserved' : 'จองแล้ว' }}</span>
+                            </h6>
                             <span class="font-weight-bold text-danger">฿{{ formatPrice(item.price) }}</span>
                         </div>
                         <small class="text-muted d-block mb-2" v-if="item.artist">{{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getName($i18n.locale, item.artist) }}</small>
@@ -60,9 +63,11 @@
 <script>
 import { mapGetters } from 'vuex';
 import CartItemTimer from '@/components/CartItemTimer.vue';
+import i18nMixin from '@/mixins/i18nMixin';
 
 export default {
     name: 'CardOrderSummary',
+    mixins: [i18nMixin],
     components: {
         CartItemTimer
     },
@@ -79,6 +84,10 @@ export default {
         }
     },
     methods: {
+        isReserved(item) {
+            if (!item || !item.status || !item.status.approval) return false;
+            return this.getName('en', item.status.approval) === 'Reserved';
+        },
         removeItem(id) {
             this.$store.dispatch('cart/removeFromCart', id);
         },

@@ -13,8 +13,8 @@
                         <CIcon name="cil-plus" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Add New Artwork</h5>
-                        <p class="text-muted small mb-0">Choose how you would like to add artworks to the gallery.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Add New Artwork' : 'เพิ่มผลงานศิลปะใหม่' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Choose how you would like to add artworks to the gallery.' : 'เลือกวิธีการเพิ่มผลงานศิลปะลงในแกลเลอรี' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -31,10 +31,10 @@
                         <div class="choice-icon bg-green-light text-green">
                             <CIcon name="cil-pencil" size="xl" />
                         </div>
-                        <h6 class="choice-label">Manual Entry</h6>
-                        <p class="choice-desc">Fill out a form to add a single artwork with full details and image upload.</p>
+                        <h6 class="choice-label">{{ $i18n.locale === 'en' ? 'Manual Entry' : 'กรอกข้อมูลด้วยตนเอง' }}</h6>
+                        <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Fill out a form to add a single artwork with full details and image upload.' : 'กรอกฟอร์มเพื่อเพิ่มผลงานศิลปะเดี่ยวพร้อมรายละเอียดและการอัปโหลดรูปภาพ' }}</p>
                         <div class="choice-footer">
-                            <span>Get Started</span>
+                            <span>{{ $i18n.locale === 'en' ? 'Get Started' : 'เริ่มต้นใช้งาน' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
                     </div>
@@ -46,10 +46,10 @@
                         <div class="choice-icon bg-blue-light text-blue">
                             <CIcon name="cil-cloud-upload" size="xl" />
                         </div>
-                        <h6 class="choice-label">Import from File</h6>
-                        <p class="choice-desc">Bulk upload multiple artworks at once using an Excel or CSV file template.</p>
+                        <h6 class="choice-label">{{ $i18n.locale === 'en' ? 'Import from File' : 'นำเข้าจากไฟล์' }}</h6>
+                        <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Bulk upload multiple artworks at once using an Excel or CSV file template.' : 'นำเข้าผลงานจำนวนมากพร้อมกันโดยใช้เทมเพลตไฟล์ Excel หรือ CSV' }}</p>
                         <div class="choice-footer text-blue">
-                            <span>Upload File</span>
+                            <span>{{ $i18n.locale === 'en' ? 'Upload File' : 'อัปโหลดไฟล์' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
                         <input 
@@ -66,7 +66,12 @@
 
         <template #footer>
             <div class="w-100 text-center py-2">
-                <span class="text-muted small">Need a template? <a href="javascript:void(0)" class="font-weight-bold text-blue" @click="$emit('download-template')">Download Excel Template</a></span>
+                <span class="text-muted small">
+                    {{ $i18n.locale === 'en' ? 'Need a template?' : 'ต้องการเทมเพลตหรือไม่?' }} 
+                    <a href="javascript:void(0)" class="font-weight-bold text-blue" @click="$emit('download-template')">
+                        {{ $i18n.locale === 'en' ? 'Download Excel Template' : 'ดาวน์โหลดเทมเพลต Excel' }}
+                    </a>
+                </span>
             </div>
         </template>
     </CModal>

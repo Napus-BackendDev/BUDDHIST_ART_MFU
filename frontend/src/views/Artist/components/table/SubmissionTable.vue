@@ -122,7 +122,7 @@ export default {
     methods: {
         formatDate(date) {
             if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY')
+            return moment(date).format('DD/MM/YYYY')
         },
         moment(arg) {
             return moment(arg);

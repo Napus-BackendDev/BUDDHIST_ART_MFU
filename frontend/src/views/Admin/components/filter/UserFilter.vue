@@ -1,6 +1,6 @@
 <template>
-  <CCard class="user-filter-card border-0 shadow-sm mb-4">
-    <CCardBody class="p-3">
+  <CCard class="mb-4 border-0 shadow-sm admin-filter-card">
+    <CCardBody class="p-4">
       <CRow class="align-items-end">
         <!-- Search Field -->
         <CCol lg="6" md="12" class="mb-3 mb-lg-0">
@@ -19,16 +19,16 @@
         <!-- Role Filter -->
         <CCol lg="3" md="6" class="mb-3 mb-lg-0">
           <label class="filter-label">{{ $i18n.locale === 'en' ? 'Role' : 'บทบาท' }}</label>
-          <CDropdown :key="value.role" :caret="false" class="w-100 custom-add-dropdown">
+          <CDropdown :key="value.role + '_' + $i18n.locale" :caret="false" class="w-100 custom-add-dropdown">
             <template #toggler>
               <CButton type="button" class="filter-select-btn shadow-none">
-                <span class="text-truncate mr-2">{{ value.role }}</span>
+                <span class="text-truncate mr-2">{{ getSelectedRoleLabel }}</span>
                 <CIcon name="cil-user" class="filter-icon-small" />
               </CButton>
             </template>
             <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
               <CDropdownItem @click="updateFilter('role', 'All Roles')">{{ $i18n.locale === 'en' ? 'All Roles' : 'บทบาททั้งหมด' }}</CDropdownItem>
-              <CDropdownItem v-for="r in roles" :key="r._id" @click="updateFilter('role', r.name)">
+              <CDropdownItem v-for="r in roles" :key="r._id" @click="updateFilter('role', r._id)">
                 {{ r.name }}
               </CDropdownItem>
               <CDropdownItem v-if="roles.length === 0" disabled class="small text-muted">{{ $i18n.locale === 'en' ? 'No Roles Available' : 'ไม่มีบทบาท' }}</CDropdownItem>
@@ -39,16 +39,16 @@
         <!-- Status Filter -->
         <CCol lg="3" md="6" class="mb-3 mb-lg-0">
           <label class="filter-label">{{ $i18n.locale === 'en' ? 'Status' : 'สถานะ' }}</label>
-          <CDropdown :key="value.status" :caret="false" class="w-100 custom-add-dropdown">
+          <CDropdown :key="value.status + '_' + $i18n.locale" :caret="false" class="w-100 custom-add-dropdown">
             <template #toggler>
               <CButton type="button" class="filter-select-btn shadow-none">
-                <span class="text-truncate mr-2">{{ value.status }}</span>
+                <span class="text-truncate mr-2">{{ getSelectedStatusLabel }}</span>
                 <CIcon name="cil-filter" class="filter-icon-small" />
               </CButton>
             </template>
             <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
               <CDropdownItem @click="updateFilter('status', 'All Status')">{{ $i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด' }}</CDropdownItem>
-              <CDropdownItem v-for="s in statuses" :key="s._id" @click="updateFilter('status', s.name)">
+              <CDropdownItem v-for="s in statuses" :key="s._id" @click="updateFilter('status', s._id)">
                 {{ s.name }}
               </CDropdownItem>
               <CDropdownItem v-if="statuses.length === 0" disabled class="small text-muted">{{ $i18n.locale === 'en' ? 'No Status Available' : 'ไม่มีสถานะ' }}</CDropdownItem>
@@ -77,6 +77,22 @@ export default {
       default: () => []
     }
   },
+  computed: {
+    getSelectedRoleLabel() {
+      if (this.value.role === 'All Roles') {
+        return this.$i18n.locale === 'en' ? 'All Roles' : 'บทบาททั้งหมด';
+      }
+      const role = this.roles.find(r => r._id === this.value.role);
+      return role ? role.name : this.value.role;
+    },
+    getSelectedStatusLabel() {
+      if (this.value.status === 'All Status') {
+        return this.$i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด';
+      }
+      const status = this.statuses.find(s => s._id === this.value.status);
+      return status ? status.name : this.value.status;
+    }
+  },
   methods: {
     updateFilter(key, val) {
       const newFilters = { ...this.value, [key]: val };
@@ -87,12 +103,11 @@ export default {
 </script>
 
 <style scoped>
-.user-filter-card {
-  border-radius: 12px;
-  background-color: #ffffff;
-  overflow: visible !important;
+.admin-filter-card {
   position: relative !important;
   z-index: 5 !important; /* Above table, below modals */
+  overflow: visible !important;
+  border-radius: 12px;
 }
 
 .custom-add-dropdown {

@@ -77,6 +77,15 @@ export default {
         }
     },
 
+    dashboard(method, data, configs) {
+        switch (method) {
+            case 'stats':
+                return instance.get("/api/v1/dashboard/stats");
+            default:
+                break;
+        }
+    },
+
     artwork(method, data, configs) {
         switch (method) {
             case 'exp':
@@ -133,20 +142,6 @@ export default {
         }
     },
 
-    donation(method, data, configs) {
-        switch (method) {
-            case 'get':
-                return instance.get("/api/v1/donation");
-            case 'post':
-                return instance.post("/api/v1/donation", data);
-            case 'put':
-                return instance.put("/api/v1/donation", data);
-            case 'delete':
-                return instance.delete("/api/v1/donation", { data: data });
-            default:
-                break;
-        }
-    },
 
     news(method, data, configs) {
         switch (method) {
@@ -215,14 +210,6 @@ export default {
         return this.settings(method, 'role', data);
     },
 
-    payment(method, data, configs) {
-        switch (method) {
-            case 'explorers-transaction':
-                return instance.post("/api/v1/order/explorers-transaction", data);
-            default:
-                break;
-        }
-    },
 
     members(method, data, configs) {
         switch (method) {

@@ -28,7 +28,7 @@
                 <template #status="{ item }">
                     <td>
                         <span :class="getStatusBadge(item.status)" class="badge-custom">
-                            {{ item.status }}
+                            {{ item.status === 'Active' ? ($i18n.locale === 'en' ? 'Active' : 'ใช้งานอยู่') : ($i18n.locale === 'en' ? 'Inactive' : 'ไม่ได้ใช้งาน') }}
                         </span>
                     </td>
                 </template>
@@ -37,13 +37,13 @@
                 <template #actions="{ item }">
                     <td class="text-right">
                         <div class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" title="View" @click="$emit('view', item)">
+                            <button class="action-btn icon-view" :title="$i18n.locale === 'en' ? 'View' : 'ดู'" @click="$emit('view', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit mx-2" title="Edit" @click="$emit('edit', item)">
+                            <button class="action-btn icon-edit mx-2" :title="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="$emit('edit', item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger" title="Delete" @click="$emit('delete', item)">
+                            <button class="action-btn icon-danger" :title="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="$emit('delete', item)">
                                 <CIcon name="cil-trash" size="lg" />
                             </button>
                         </div>
@@ -55,10 +55,10 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="items.length > 0">
-                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, items.length) }} of {{ items.length }} certificates
+                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, items.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ items.length }} {{ $i18n.locale === 'en' ? 'certificates' : 'ใบรับรอง' }}
             </div>
             <div class="text-muted text-sm" v-else>
-                Showing 0 certificates
+                {{ $i18n.locale === 'en' ? 'Showing 0 certificates' : 'แสดง 0 ใบรับรอง' }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
@@ -76,14 +76,6 @@ export default {
     name: 'CertificationTable',
     data() {
         return {
-            fields: [
-                { key: 'certificate_name', label: 'CERTIFICATE NAME', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'created_date', label: 'CREATED DATE', _classes: 'border-top-0 border-bottom' },
-                { key: 'last_modified', label: 'LAST MODIFIED', _classes: 'border-top-0 border-bottom' },
-                { key: 'times_used', label: 'TIMES USED', _classes: 'border-top-0 border-bottom' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
             items: [
                 {
                     id: 1,
@@ -127,6 +119,18 @@ export default {
                 }
             ],
             activePage: 1
+        }
+    },
+    computed: {
+        fields() {
+            return [
+                { key: 'certificate_name', label: this.$i18n.locale === 'en' ? 'CERTIFICATE NAME' : 'ชื่อใบรับรอง', _classes: 'border-top-0 border-bottom w-25' },
+                { key: 'created_date', label: this.$i18n.locale === 'en' ? 'CREATED DATE' : 'วันที่สร้าง', _classes: 'border-top-0 border-bottom' },
+                { key: 'last_modified', label: this.$i18n.locale === 'en' ? 'LAST MODIFIED' : 'แก้ไขล่าสุด', _classes: 'border-top-0 border-bottom' },
+                { key: 'times_used', label: this.$i18n.locale === 'en' ? 'TIMES USED' : 'จำนวนครั้งที่ใช้', _classes: 'border-top-0 border-bottom' },
+                { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+            ];
         }
     },
     methods: {

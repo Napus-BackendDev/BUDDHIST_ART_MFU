@@ -42,6 +42,28 @@ exports.onUpload = async function (request, response) {
         } else if (request.file) {
             imagePaths = [New.getImageUrl(request, request.file.destination, request.file.filename)];
         }
+
+        const newCoverIndexStr = request.body.newCoverIndex;
+        if (newCoverIndexStr !== undefined && newCoverIndexStr !== null && newCoverIndexStr !== '') {
+            const newCoverIndex = parseInt(newCoverIndexStr, 10);
+            if (newCoverIndex >= 0 && newCoverIndex < imagePaths.length) {
+                // Get existing images first
+                const doc = await New.onQuery(query);
+                const existingImages = doc ? (doc.images || []) : [];
+                
+                // Move the cover image to the front of imagePaths
+                const coverImage = imagePaths[newCoverIndex];
+                imagePaths.splice(newCoverIndex, 1);
+                
+                // Combine them with the cover at the absolute front
+                const finalImages = [coverImage, ...existingImages, ...imagePaths];
+                
+                // Update document with the complete new list
+                const updatedDoc = await New.onUpdate(query, { $set: { images: finalImages } }, [], "images");
+                return ResMessage.sendResponse(response, 0, 20000, updatedDoc);
+            }
+        }
+
         const doc = await New.onUpdate(query, { $push: { images: { $each: imagePaths } } }, [], "images");
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {

@@ -5,18 +5,20 @@
                 :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
                 <template #title="{ item }">
-                    <td class="font-weight-bold text-dark">{{ getName('en', item) }}</td>
+                    <td class="font-weight-bold text-dark">{{ getName($i18n.locale, item) || getName('en', item) }}</td>
                 </template>
 
                 <template #totalStudent="{ item }">
-                    <td class="text-muted">{{ getTotalStudents(item) }} Students</td>
+                    <td class="text-muted">
+                        {{ $i18n.locale === 'en' ? `${getTotalStudents(item)} Students` : `${getTotalStudents(item)} คน` }}
+                    </td>
                 </template>
 
                 <template #subAssignment="{ item }">
                     <td>
                         <div class="status-badge badge-update">
                             <CIcon name="cil-list" size="sm" class="status-icon" /> 
-                            {{ getAssignmentCount(item) }} Tasks
+                            {{ $i18n.locale === 'en' ? `${getAssignmentCount(item)} Tasks` : `${getAssignmentCount(item)} รายการ` }}
                         </div>
                     </td>
                 </template>
@@ -54,21 +56,21 @@
                         <div class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
-                                v-c-tooltip="'ดูรายละเอียด'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 @click="$emit('view', item)"
                             >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-edit ml-2" 
-                                v-c-tooltip="'แก้ไข'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 @click="$emit('edit', item)"
                             >
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
-                                v-c-tooltip="'ลบ'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="$emit('delete', item)"
                             >
                                 <CIcon name="cil-trash" size="lg" />
@@ -82,10 +84,10 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} submissions
+                {{ $i18n.locale === 'en' ? `Showing ${(activePage - 1) * 10 + 1} to ${Math.min(activePage * 10, filteredItems.length)} of ${filteredItems.length} submissions` : `แสดง ${(activePage - 1) * 10 + 1} ถึง ${Math.min(activePage * 10, filteredItems.length)} จากทั้งหมด ${filteredItems.length} รายการส่งงาน` }}
             </div>
             <div class="text-muted text-sm" v-else>
-                Showing 0 submissions
+                {{ $i18n.locale === 'en' ? 'Showing 0 submissions' : 'แสดง 0 รายการส่งงาน' }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
@@ -119,14 +121,6 @@ export default {
     },
     data() {
         return {
-            fields: [
-                { key: 'title', label: 'SUBMISSION TITLE', _classes: 'border-top-0 border-bottom' },
-                { key: 'totalStudent', label: 'TOTAL STUDENT', _classes: 'border-top-0 border-bottom' },
-                { key: 'subAssignment', label: 'SUBASSIGNMENT', _classes: 'border-top-0 border-bottom' },
-                { key: 'progress', label: 'PROGRESS', _classes: 'border-top-0 border-bottom' },
-                { key: 'dueDate', label: 'DATE & TIME', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
             activePage: 1
         }
     },
@@ -171,6 +165,16 @@ export default {
         ...mapGetters({
             submissions: 'submission/submissions'
         }),
+        fields() {
+            return [
+                { key: 'title', label: this.$i18n.locale === 'en' ? 'SUBMISSION TITLE' : 'หัวข้อการส่งงาน', _classes: 'border-top-0 border-bottom' },
+                { key: 'totalStudent', label: this.$i18n.locale === 'en' ? 'TOTAL STUDENT' : 'จำนวนนักศึกษา', _classes: 'border-top-0 border-bottom' },
+                { key: 'subAssignment', label: this.$i18n.locale === 'en' ? 'SUBASSIGNMENT' : 'หัวข้อย่อย', _classes: 'border-top-0 border-bottom' },
+                { key: 'progress', label: this.$i18n.locale === 'en' ? 'PROGRESS' : 'ความคืบหน้า', _classes: 'border-top-0 border-bottom' },
+                { key: 'dueDate', label: this.$i18n.locale === 'en' ? 'DATE & TIME' : 'วันและเวลา', _classes: 'border-top-0 border-bottom' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+            ];
+        },
         filteredItems() {
             if (!this.submissions) return [];
             return this.submissions.filter(item => {

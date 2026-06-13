@@ -35,7 +35,7 @@
                                 @click="$emit('view-work', item)"
                             >
                                 <CIcon name="cil-magnifying-glass" class="mr-2 icon-submit" />
-                                <span>ดูผลงานที่ส่งไป</span>
+                                <span>{{ $i18n.locale === 'en' ? 'View Submitted Artwork' : 'ดูผลงานที่ส่งไป' }}</span>
                             </button>
                             <button 
                                 v-else
@@ -43,7 +43,7 @@
                                 @click="$emit('submit-work', item)"
                             >
                                 <CIcon name="cil-cloud-upload" class="mr-2 icon-submit" />
-                                <span>ส่งงาน</span>
+                                <span>{{ $i18n.locale === 'en' ? 'Submit Artwork' : 'ส่งงาน' }}</span>
                             </button>
                         </div>
                     </td>
@@ -53,13 +53,13 @@
 
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm">Showing {{ items.length }} of {{ items.length }} assignments</div>
+            <div class="text-muted text-sm">{{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ items.length }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ items.length }} {{ $i18n.locale === 'en' ? 'assignments' : 'รายการ' }}</div>
             <div class="pagination-buttons">
                 <CButton class="btn-pill-pagination mr-2" :disabled="true">
-                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> Previous
+                    <CIcon name="cil-chevron-left" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Previous' : 'ก่อนหน้า' }}
                 </CButton>
                 <CButton class="btn-pill-pagination">
-                    Next <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
+                    {{ $i18n.locale === 'en' ? 'Next' : 'ถัดไป' }} <CIcon name="cil-chevron-right" size="sm" class="ml-1" />
                 </CButton>
             </div>
         </CCardFooter>
@@ -91,18 +91,12 @@ export default {
     },
     data() {
         return {
-            fields: [
-                { key: 'assignmentTitle', label: 'ASSIGNMENT TITLE', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
-                { key: 'datetime', label: 'DATE & TIME', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ]
         }
     },
     methods: {
         formatDate(date) {
             if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY')
+            return moment(date).format('DD/MM/YYYY')
         },
         moment(arg) {
             return moment(arg);
@@ -138,6 +132,14 @@ export default {
         ...mapGetters({
             userId: 'auth/userId'
         }),
+        fields() {
+            return [
+                { key: 'assignmentTitle', label: this.$i18n.locale === 'en' ? 'ASSIGNMENT TITLE' : 'หัวข้อภารกิจ', _classes: 'border-top-0 border-bottom w-25' },
+                { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
+                { key: 'datetime', label: this.$i18n.locale === 'en' ? 'DATE & TIME' : 'วันและเวลา', _classes: 'border-top-0 border-bottom' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การดำเนินการ', _classes: 'border-top-0 border-bottom text-right' }
+            ];
+        },
         filteredItems() {
             return (this.items || []).filter(item => {
                 const title = (this.getName('en', item) || this.getName('th', item) || '').toLowerCase();

@@ -26,19 +26,19 @@
         <div class="px-4 py-2" v-if="user">
             <!-- 1) Profile Header Section -->
             <div class="profile-header-vertical text-center mb-5">
-                <div class="avatar-xl mx-auto mb-4 shadow-lg border-white border-4">
-                    <span v-if="!user.avatar">{{ getInitials(getName('en') || getName('th')) }}</span>
-                    <img v-else :src="user.avatar" class="w-100 h-100 object-fit-cover rounded-circle" />
+                <div class="avatar-xl mx-auto mb-4 shadow-lg border-white border-4 overflow-hidden d-flex align-items-center justify-content-center">
+                    <img v-if="user.image" :src="user.image" class="w-100 h-100 object-fit-cover rounded-circle" />
+                    <span v-else>{{ getInitials(getName('en') || getName('th')) }}</span>
                 </div>
                 <h3 class="font-weight-bold text-dark mb-2">{{ getName('en') || getName('th') || 'N/A' }}</h3>
                 <div class="d-flex justify-content-center align-items-center mb-3">
                     <CBadge :class="['status-badge-lg px-4 py-2 mx-1', getStatusClass(getStatusName())]">
                         <CIcon :name="getStatusIcon(getStatusName())" size="sm" class="mr-2" />
-                        {{ getStatusName() }}
+                        {{ getLocalizedStatusName() }}
                     </CBadge>
                     <CBadge color="light" class="status-badge-lg px-4 py-2 mx-1 border text-dark">
                         <CIcon name="cilShieldAlt" size="sm" class="mr-2" />
-                        {{ getRoleName() }}
+                        {{ getLocalizedRoleName() }}
                     </CBadge>
                 </div>
                 <div class="text-muted small">
@@ -217,6 +217,26 @@ export default {
             }
             return 'User';
         },
+        getLocalizedRoleName() {
+            if (!this.user || !this.user.role) return 'User';
+            const role = this.user.role;
+            if (typeof role === 'string') {
+                const map = {
+                    'admin': { en: 'Admin', th: 'ผู้ดูแลระบบ' },
+                    'artist': { en: 'Artist', th: 'ศิลปิน' },
+                    'customer': { en: 'Customer', th: 'ลูกค้า' },
+                    'student': { en: 'Student', th: 'นักศึกษา' }
+                };
+                const key = role.toLowerCase();
+                return map[key] ? map[key][this.$i18n.locale] : role;
+            }
+            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
+                const lang = this.$i18n.locale || 'en';
+                const titleLang = role.title.find(t => t.key === lang) || role.title.find(t => t.key === 'en');
+                return titleLang ? titleLang.value : 'Unknown';
+            }
+            return 'User';
+        },
         getStatusName() {
             if (!this.user || !this.user.status) return 'Active';
             const status = this.user.status;
@@ -224,6 +244,27 @@ export default {
             if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
                 const titleEn = status.title.find(t => t.key === 'en');
                 return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Unknown');
+            }
+            return 'Active';
+        },
+        getLocalizedStatusName() {
+            if (!this.user || !this.user.status) {
+                return this.$i18n.locale === 'en' ? 'Active' : 'ใช้งานอยู่';
+            }
+            const status = this.user.status;
+            if (typeof status === 'string') {
+                const map = {
+                    'active': { en: 'Active', th: 'ใช้งานอยู่' },
+                    'inactive': { en: 'Inactive', th: 'ไม่ได้ใช้งาน' },
+                    'suspended': { en: 'Suspended', th: 'ระงับการใช้งาน' }
+                };
+                const key = status.toLowerCase();
+                return map[key] ? map[key][this.$i18n.locale] : status;
+            }
+            if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
+                const lang = this.$i18n.locale || 'en';
+                const titleLang = status.title.find(t => t.key === lang) || status.title.find(t => t.key === 'en');
+                return titleLang ? titleLang.value : 'Unknown';
             }
             return 'Active';
         }

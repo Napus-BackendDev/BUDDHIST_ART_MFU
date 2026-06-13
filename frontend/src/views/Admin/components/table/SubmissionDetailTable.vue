@@ -5,14 +5,14 @@
                 :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
                 <template #assignmentTitle="{ item }">
-                    <td class="font-weight-bold text-dark">{{ getName('en', item) }}</td>
+                    <td class="font-weight-bold text-dark">{{ getName($i18n.locale, item) }}</td>
                 </template>
 
                 <template #status="{ item }">
                     <td>
                         <div v-if="item.create" :class="['status-badge', moment(item.create.endAt).isBefore(moment()) ? 'badge-closed' : 'badge-in-progress']">
                             <CIcon :name="moment(item.create.endAt).isBefore(moment()) ? 'cil-lock-locked' : 'cil-history'" size="sm" class="status-icon" /> 
-                            {{ moment(item.create.endAt).isBefore(moment()) ? 'Closed' : 'In Progress' }}
+                            {{ moment(item.create.endAt).isBefore(moment()) ? ($i18n.locale === 'en' ? 'Closed' : 'ปิดรับ') : ($i18n.locale === 'en' ? 'In Progress' : 'กำลังดำเนินการ') }}
                         </div>
                     </td>
                 </template>
@@ -55,7 +55,7 @@
                             
                             <!-- Pending -->
                             <div class="status-display-item mr-4">
-                                <div class="status-box bg-warning-premium text-dark-blue">
+                                <div class="status-box bg-warning-premium">
                                     <CIcon name="cil-clock" size="lg" />
                                 </div>
                                 <span class="status-count ml-2">{{ getResponStats(item).pending }}</span>
@@ -77,21 +77,21 @@
                         <div class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
-                                v-c-tooltip="'ดูรายละเอียด'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 @click="$emit('view', item)"
                             >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-edit mx-2" 
-                                v-c-tooltip="'แก้ไข'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 @click="$emit('edit', item)"
                             >
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
-                                v-c-tooltip="'ลบ'"
+                                v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="$emit('delete', item)"
                             >
                                 <CIcon name="cil-trash" size="lg" />
@@ -105,10 +105,10 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                Showing {{ (activePage - 1) * 10 + 1 }} to {{ Math.min(activePage * 10, filteredItems.length) }} of {{ filteredItems.length }} assignments
+                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, filteredItems.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredItems.length }} {{ $i18n.locale === 'en' ? 'assignments' : 'รายการ' }}
             </div>
             <div class="text-muted text-sm" v-else>
-                Showing 0 assignments
+                {{ $i18n.locale === 'en' ? 'Showing 0 assignments' : 'แสดง 0 รายการ' }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
@@ -145,14 +145,6 @@ export default {
     },
     data() {
         return {
-            fields: [
-                { key: 'assignmentTitle', label: 'ASSIGNMENT TITLE', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'status', label: 'STATUS', _classes: 'border-top-0 border-bottom' },
-                { key: 'datetime', label: 'DATE & TIME', _classes: 'border-top-0 border-bottom' },
-                { key: 'studentSubmit', label: 'STUDENT SUBMIT', _classes: 'border-top-0 border-bottom' },
-                { key: 'respon', label: 'RESPOND', _classes: 'border-top-0 border-bottom' },
-                { key: 'actions', label: 'ACTIONS', _classes: 'border-top-0 border-bottom text-right' }
-            ],
             activePage: 1
         }
     },
@@ -167,7 +159,7 @@ export default {
     methods: {
         formatDate(date) {
             if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY')
+            return moment(date).format('DD/MM/YYYY')
         },
         moment(arg) {
             return moment(arg);
@@ -193,11 +185,36 @@ export default {
         },
         getResponStats(item) {
             const artworks = item.artworks || [];
-            return {
-                finish: artworks.filter(a => a.status === 'Approved').length, // Assuming status names
-                pending: artworks.filter(a => a.status === 'Pending').length,
-                error: artworks.filter(a => a.status === 'Rejected').length
-            };
+            let finish = 0;
+            let pending = 0;
+            let error = 0;
+
+            artworks.forEach(a => {
+                if (!a.status) return;
+                
+                let statusVal = '';
+                if (typeof a.status === 'string') {
+                    statusVal = a.status;
+                } else if (typeof a.status === 'object') {
+                    if (a.status.title && Array.isArray(a.status.title)) {
+                        const enStatus = a.status.title.find(t => t.key === 'en');
+                        statusVal = enStatus ? enStatus.value : '';
+                    } else if (a.status.name && Array.isArray(a.status.name)) {
+                        const enStatus = a.status.name.find(t => t.key === 'en');
+                        statusVal = enStatus ? enStatus.value : '';
+                    }
+                }
+
+                if (statusVal === 'Approved' || statusVal === 'Passed') {
+                    finish++;
+                } else if (statusVal === 'Pending') {
+                    pending++;
+                } else if (statusVal === 'Rejected' || statusVal === 'Fail') {
+                    error++;
+                }
+            });
+
+            return { finish, pending, error };
         },
         getUniqueSubmitters(item) {
             if (!item || !item.artworks) return 0;
@@ -213,6 +230,16 @@ export default {
         }
     },
     computed: {
+        fields() {
+            return [
+                { key: 'assignmentTitle', label: this.$i18n.locale === 'en' ? 'ASSIGNMENT TITLE' : 'หัวข้อคำสั่งงาน', _classes: 'border-top-0 border-bottom w-25' },
+                { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
+                { key: 'datetime', label: this.$i18n.locale === 'en' ? 'DATE & TIME' : 'วันและเวลา', _classes: 'border-top-0 border-bottom' },
+                { key: 'studentSubmit', label: this.$i18n.locale === 'en' ? 'STUDENT SUBMIT' : 'นักเรียนที่ส่ง', _classes: 'border-top-0 border-bottom' },
+                { key: 'respon', label: this.$i18n.locale === 'en' ? 'RESPOND' : 'ผลการตรวจสอบ', _classes: 'border-top-0 border-bottom' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
+            ];
+        },
         filteredItems() {
             return (this.items || []).filter(item => {
                 const title = (this.getName('en', item) || this.getName('th', item) || '').toLowerCase();
@@ -314,19 +341,27 @@ export default {
 }
 
 .bg-success-premium {
-    background-color: #2ecc71;
+    background-color: #ebfbee !important;
+    color: #2b8a3e !important;
+    border: 1px solid #d3f9d8;
 }
 
 .bg-warning-premium {
-    background-color: #f1c40f;
+    background-color: #fff9db !important;
+    color: #e67700 !important;
+    border: 1px solid #fff3bf;
 }
 
 .bg-info-premium {
-    background-color: #3498db;
+    background-color: #f0f4ff !important;
+    color: #3f6ad8 !important;
+    border: 1px solid #d0ebff;
 }
 
 .bg-danger-premium {
-    background-color: #e74c3c;
+    background-color: #fff5f5 !important;
+    color: #c92a2a !important;
+    border: 1px solid #ffdeeb;
 }
 
 .text-dark-blue {

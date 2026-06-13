@@ -49,74 +49,75 @@ export default {
     },
     minimize() {
       return this.$store.state.sidebarMinimize
-    }
-  },
-  data: function () {
-    return {
-      navs: [{
+    },
+    navs() {
+      return [{
         _name: 'CSidebarNav',
         _children: [
           {
             _name: 'CSidebarNavTitle',
-            _children: ['Main']
+            _children: [this.$t('sidebar.main')]
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Overview',
+            name: this.$t('sidebar.overview'),
             to: '/admin',
             icon: 'cil-window-restore'
           },
           {
             _name: 'CSidebarNavTitle',
-            _children: ['Operations']
+            _children: [this.$t('sidebar.operations')]
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Orders',
+            name: this.$t('sidebar.orders'),
             to: '/admin/orders',
             icon: 'cil-cart'
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Artworks',
+            name: this.$t('sidebar.artworks'),
             to: '/admin/artworks',
-            icon: 'cil-paint' // Defaulting to generic art-like or use cil-notes if it's missing
+            icon: 'cil-paint'
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'News',
+            name: this.$t('sidebar.news'),
             to: '/admin/news',
             icon: 'cil-newspaper'
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Submissions',
+            name: this.$t('sidebar.submissions'),
             to: '/admin/submissions',
             icon: 'cil-cloud-upload'
           },
           {
             _name: 'CSidebarNavTitle',
-            _children: ['Data Center']
+            _children: [this.$t('sidebar.dataCenter')]
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'User Management',
+            name: this.$t('sidebar.users'),
             to: '/admin/users-management',
             icon: 'cil-people'
           },
           {
             _name: 'CSidebarNavDivider',
-            _classes: 'mt-auto' // This pushes everything below it to the bottom if the flex container allows
+            _classes: 'mt-auto'
           },
           {
             _name: 'CSidebarNavItem',
-            name: 'Sign Out',
-            to: '/', // Assuming /login is the path
+            name: this.$t('sidebar.signOut'),
+            to: '/',
             icon: 'cil-account-logout'
           }
         ]
       }]
     }
+  },
+  data: function () {
+    return {}
   }
 }
 </script>

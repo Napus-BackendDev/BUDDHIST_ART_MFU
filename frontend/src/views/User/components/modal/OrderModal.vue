@@ -1,6 +1,6 @@
 <template>
   <CModal
-    title="Order Details"
+    :title="$i18n.locale === 'en' ? 'Order Details' : 'รายละเอียดการสั่งซื้อ'"
     :show.sync="localShow"
     size="lg"
     :centered="true"
@@ -17,18 +17,18 @@
         </div>
         <div class="d-flex flex-column flex-sm-row justify-content-between mb-5">
           <div class="mb-3 mb-sm-0">
-             <h6 class="text-muted text-uppercase mb-1 font-weight-bold">Order ID</h6>
-             <h5 class="font-weight-bold text-dark mb-0">#{{ order.orderNumber || order.orderId }}</h5>
+             <h6 class="text-muted text-uppercase mb-1 font-weight-bold">{{ $i18n.locale === 'en' ? 'Order ID' : 'รหัสการสั่งซื้อ' }}</h6>
+             <h5 class="font-weight-bold text-dark mb-0">#{{ order.orderNumber || order.orderId || order.orderIdDisplay || (order._id ? order._id.substring(order._id.length - 8).toUpperCase() : '') }}</h5>
           </div>
           <div class="text-sm-right">
-             <h6 class="text-muted text-uppercase mb-1 font-weight-bold">Order Date</h6>
-             <h5 class="font-weight-bold text-dark mb-0">{{ order.date }}</h5>
+             <h6 class="text-muted text-uppercase mb-1 font-weight-bold">{{ $i18n.locale === 'en' ? 'Order Date' : 'วันที่สั่งซื้อ' }}</h6>
+             <h5 class="font-weight-bold text-dark mb-0">{{ order.date || order.dateDisplay || new Date(order.createdAt).toLocaleDateString('en-GB') }}</h5>
           </div>
        </div>
 
        <!-- Document Downloads -->
        <div class="mb-5">
-           <h6 class="text-muted text-uppercase mb-3 font-weight-bold">Documents</h6>
+           <h6 class="text-muted text-uppercase mb-3 font-weight-bold">{{ $i18n.locale === 'en' ? 'Documents' : 'เอกสาร' }}</h6>
             <CRow>
                 <CCol sm="4" class="mb-2">
                     <CButton 
@@ -36,7 +36,7 @@
                         @click="downloadReceipt"
                         v-if="order.image"
                     >
-                        <CIcon name="cil-file" class="mr-2"/> Receipt
+                        <CIcon name="cil-file" class="mr-2"/> {{ $i18n.locale === 'en' ? 'Receipt' : 'ใบเสร็จ' }}
                     </CButton>
                     <div v-else>
                         <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" class="d-none">
@@ -56,16 +56,18 @@
                     <CButton 
                         block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2"
                         @click="downloadCertificate"
+                        :disabled="!isApproved"
                     >
-                        <CIcon name="cil-description" class="mr-2"/> Certificate
+                        <CIcon name="cil-description" class="mr-2"/> {{ $i18n.locale === 'en' ? 'Certificate' : 'ใบรับรองผลงาน' }}
                     </CButton>
                 </CCol>
                 <CCol sm="4" class="mb-2">
                     <CButton 
                         block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2"
                         @click="downloadInvoice"
+                        :disabled="!order.image"
                     >
-                        <CIcon name="cil-cloud-download" class="mr-2"/> Invoice
+                        <CIcon name="cil-cloud-download" class="mr-2"/> {{ $i18n.locale === 'en' ? 'Invoice' : 'ใบแจ้งหนี้' }}
                     </CButton>
                 </CCol>
             </CRow>
@@ -75,11 +77,11 @@
         <div class="mb-5" v-if="order.address">
             <CRow>
                 <CCol sm="6" class="mb-3 mb-sm-0">
-                    <h6 class="text-muted text-uppercase mb-2 font-weight-bold">Billing Address</h6>
+                    <h6 class="text-muted text-uppercase mb-2 font-weight-bold">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ออกใบเสร็จ' }}</h6>
                     <div class="small text-dark mb-0 bg-white p-3 rounded shadow-sm h-100">{{ order.address.bill || '-' }}</div>
                 </CCol>
                 <CCol sm="6">
-                    <h6 class="text-muted text-uppercase mb-2 font-weight-bold">Shipping Address</h6>
+                    <h6 class="text-muted text-uppercase mb-2 font-weight-bold">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</h6>
                     <div class="small text-dark mb-0 bg-white p-3 rounded shadow-sm h-100">{{ order.address.shipping || '-' }}</div>
                 </CCol>
             </CRow>
@@ -87,20 +89,20 @@
 
         <!-- Artwork List -->
         <div class="mb-5">
-           <h6 class="text-muted text-uppercase mb-3 font-weight-bold">Items</h6>
+           <h6 class="text-muted text-uppercase mb-3 font-weight-bold">{{ $i18n.locale === 'en' ? 'Items' : 'รายการสินค้า' }}</h6>
            <div v-for="art in order.artwork" :key="art._id" class="d-flex align-items-center mb-3 bg-white p-3 rounded-lg shadow-sm">
                <div class="art-img-preview mr-3 rounded overflow-hidden" style="width: 60px; height: 60px;">
                    <img :src="art.image" class="w-100 h-100" style="object-fit: cover;" />
                </div>
                <div class="flex-grow-1">
-                   <h6 class="font-weight-bold mb-0 text-dark">{{ getName('en', art) }}</h6>
+                   <h6 class="font-weight-bold mb-0 text-dark">{{ getName($i18n.locale, art) }}</h6>
                    <div class="small text-muted">
-                     {{ art.category ? getName('en', art.category) : '' }}
-                     <span v-if="art.artist">by {{ getName('en', art.artist) }}</span>
+                     {{ art.category ? getName($i18n.locale, art.category) : '' }}
+                     <span v-if="art.artist">{{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getName($i18n.locale, art.artist) }}</span>
                    </div>
                </div>
                <div class="text-right">
-                   <span class="font-weight-bold text-primary">฿{{ art.price.toLocaleString() }}</span>
+                   <span class="font-weight-bold text-primary">฿{{ (art.price || 0).toLocaleString() }}</span>
                </div>
            </div>
         </div>
@@ -108,14 +110,14 @@
         <!-- Total Amount -->
         <div class="bg-white p-3 rounded-lg shadow-sm mb-0">
              <div class="d-flex justify-content-between align-items-center">
-                 <h5 class="font-weight-bold text-dark mb-0">Total Amount</h5>
-                 <h4 class="font-weight-bold text-primary mb-0">฿{{ order.total.toLocaleString() }}</h4>
+                 <h5 class="font-weight-bold text-dark mb-0">{{ $i18n.locale === 'en' ? 'Total Amount' : 'ยอดรวมทั้งสิ้น' }}</h5>
+                 <h4 class="font-weight-bold text-primary mb-0">฿{{ (order.total || order.totalAmount || 0).toLocaleString() }}</h4>
              </div>
         </div>
      </div>
     <template #footer>
       <CButton @click="localShow = false" color="dark" shape="pill" class="px-4 font-weight-bold shadow-sm hover-lift btn-premium w-100">
-        Close
+        {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
       </CButton>
     </template>
   </CModal>
@@ -174,6 +176,12 @@ export default {
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
       return `${hours}h ${minutes}m ${seconds}s`;
+    },
+    isApproved() {
+      if (!this.order) return false;
+      const statusLabel = this.getName('en', this.order.status);
+      const s = statusLabel ? statusLabel.toLowerCase() : '';
+      return s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success');
     }
   },
   watch: {
@@ -248,14 +256,22 @@ export default {
 
             this.$store.commit('dialog/showToast', { title: 'Success', message: 'Payment slip uploaded successfully.', variant: 'success' });
             
+            // Clear the file input
+            if (this.$refs.fileInput) {
+                this.$refs.fileInput.value = '';
+            }
+
             // Refresh order data
             await this.$store.dispatch('order/get', {});
             
-            // Close modal or update local state
+            // Close modal so the UI updates
             this.localShow = false;
         } catch (error) {
             console.error('Upload failed:', error);
-            alert('Upload failed. Please try again.');
+            alert(this.$i18n.locale === 'en' ? 'Upload failed. Please try again.' : 'เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่อีกครั้ง');
+            if (this.$refs.fileInput) {
+                this.$refs.fileInput.value = '';
+            }
         } finally {
             this.isUploading = false;
         }

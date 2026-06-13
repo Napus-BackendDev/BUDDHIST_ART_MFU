@@ -21,13 +21,6 @@ const ServerModule = {
     },
 
     actions: {
-        expTransaction({commit}, data) {
-            Service.payment('explorers-transaction', data, {})
-                .then((response) => {
-                    store.commit("payment/item", response.data.data)
-                }).catch((err) => {
-            });
-        },
     },
 
     getters: {

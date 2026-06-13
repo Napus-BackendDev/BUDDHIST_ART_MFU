@@ -28,10 +28,6 @@
             <!-- Single Image Display -->
             <div class="news-image-container mb-4" v-if="getFirstImage(news)">
                 <img :src="getFirstImage(news)" class="news-main-image" />
-                <div class="category-badge-floating">
-                    <CIcon name="cil-tag" class="mr-1" />
-                    {{ news.category ? getName('en', news.category.title) : ($i18n.locale === 'en' ? 'Uncategorized' : 'ไม่มีหมวดหมู่') }}
-                </div>
             </div>
 
             <h3 class="font-weight-bold mb-2">{{ getName('en', news.title) }}</h3>
@@ -39,8 +35,7 @@
                 <CIcon name="cil-calendar" class="mr-1" /> {{ formatDate(news.create ? news.create.datetime : news.createdAt) }}
             </div>
 
-            <div class="news-content-text">
-                {{ getName('en', news.description || news.content) }}
+            <div class="news-content-text" v-html="getName('en', news.description || news.content)">
             </div>
         </div>
 
@@ -98,7 +93,7 @@ export default {
             return 'https://via.placeholder.com/800x400?text=No+Image';
         },
         formatDate(date) {
-            return moment(date).format('MMMM Do YYYY, h:mm a');
+            return moment(date).format('DD/MM/YYYY HH:mm');
         },
         onPreview() {
             if (!this.news) return;
@@ -107,7 +102,6 @@ export default {
             const previewData = {
                 title: this.news.title,
                 description: this.news.description || this.news.content,
-                category: this.news.category,
                 images: this.news.images || (this.news.image ? [this.news.image] : []),
                 views: this.news.views || 0,
                 create: this.news.create || { datetime: this.news.createdAt || new Date() }
@@ -173,7 +167,6 @@ export default {
     font-size: 1.05rem;
     line-height: 1.6;
     color: #475569;
-    white-space: pre-wrap;
 }
 
 .icon-square { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }

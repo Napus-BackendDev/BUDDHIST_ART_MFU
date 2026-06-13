@@ -43,27 +43,11 @@
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <CTextarea 
-                            :label="$i18n.locale === 'en' ? 'Content' : 'เนื้อหา'" 
-                            :placeholder="$i18n.locale === 'en' ? 'Enter news content...' : 'กรอกเนื้อหาข่าว...'" 
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Content' : 'เนื้อหา' }}</label>
+                        <quill-editor 
                             v-model="form.description" 
-                            rows="5"
-                            class="custom-textarea"
-                        />
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Category Row -->
-            <CRow>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
-                        <CSelect 
-                            :placeholder="$i18n.locale === 'en' ? 'Please select category' : 'โปรดเลือกหมวดหมู่'"
-                            :options="categoryOptions" 
-                            :value.sync="form.category"
-                            class="custom-select-field mb-0"
+                            :options="editorOptions"
+                            class="custom-quill-editor"
                         />
                     </div>
                 </CCol>
@@ -73,7 +57,7 @@
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'News Images (Multiple)' : 'รูปภาพข่าว (หลายรูป)' }}</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'News Images (Multiple) - Click an image to set as cover' : 'รูปภาพข่าว (หลายรูป) - คลิกที่รูปเพื่อตั้งเป็นหน้าปก' }}</label>
                         <div class="multiple-upload-container">
                             <input 
                                 type="file" 
@@ -92,8 +76,20 @@
                             </label>
 
                             <div v-if="imagePreviews.length > 0" class="previews-grid">
-                                <div v-for="(preview, index) in imagePreviews" :key="index" class="preview-item">
+                                <div 
+                                    v-for="(preview, index) in imagePreviews" 
+                                    :key="index" 
+                                    class="preview-item clickable-thumbnail"
+                                    :class="{ 'border-primary-highlight': coverIndex === index }"
+                                    @click="setCoverIndex(index)"
+                                >
                                     <img :src="preview" class="preview-img" />
+                                    <div class="cover-badge" v-if="coverIndex === index">
+                                        {{ $i18n.locale === 'en' ? 'Cover' : 'หน้าปก' }}
+                                    </div>
+                                    <div class="set-cover-overlay" v-else>
+                                        {{ $i18n.locale === 'en' ? 'Set Cover' : 'ตั้งเป็นหน้าปก' }}
+                                    </div>
                                     <button class="remove-img-btn" @click.stop="removeImage(index)">
                                         <CIcon name="cil-x" size="sm" />
                                     </button>
@@ -136,42 +132,47 @@
 </template>
 
 <script>
+import { quillEditor } from 'vue-quill-editor'
+import 'quill/dist/quill.snow.css'
+
 export default {
     name: 'NewsCreateModal',
+    components: {
+        quillEditor
+    },
     props: {
         show: {
             type: Boolean,
             default: false
-        },
-        categories: {
-            type: Array,
-            default: () => []
         }
     },
     data() {
         return {
             previewLoading: false,
             imagePreviews: [],
+            coverIndex: 0,
             form: {
                 title: '',
                 description: '',
-                category: null,
                 images: []
+            },
+            editorOptions: {
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        ['link'],
+                        ['clean']
+                    ]
+                },
+                placeholder: this.$i18n.locale === 'en' ? 'Enter news content...' : 'กรอกเนื้อหาข่าว...',
+                theme: 'snow'
             }
         }
     },
     computed: {
         isFormValid() {
             return this.form.title && this.form.title.trim() !== '' && 
-                   this.form.description && this.form.description.trim() !== '' &&
-                   this.form.category;
-        },
-        categoryOptions() {
-            const options = this.categories.map(cat => ({
-                value: cat._id,
-                label: this.getName('en', cat.title)
-            }));
-            return [{ value: null, label: this.$i18n.locale === 'en' ? 'Select Category' : 'เลือกหมวดหมู่', disabled: true }, ...options];
+                   this.form.description && this.form.description.trim() !== '';
         }
     },
     methods: {
@@ -202,13 +203,28 @@ export default {
         removeImage(index) {
             this.form.images.splice(index, 1);
             this.imagePreviews.splice(index, 1);
+            if (this.coverIndex === index) {
+                this.coverIndex = 0;
+            } else if (this.coverIndex > index) {
+                this.coverIndex--;
+            }
+        },
+        setCoverIndex(index) {
+            this.coverIndex = index;
         },
         onSave() {
+            // Reorder form.images based on coverIndex
+            if (this.coverIndex > 0 && this.coverIndex < this.form.images.length) {
+                const coverImage = this.form.images[this.coverIndex];
+                this.form.images.splice(this.coverIndex, 1);
+                this.form.images.unshift(coverImage);
+            }
+
             const payload = {
                 title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
                 description: [{ key: 'en', value: this.form.description }, { key: 'th', value: this.form.description }],
-                category: this.form.category,
-                _images: this.form.images // Use plural for multiple files
+                _images: this.form.images,
+                newCoverIndex: 0 // Since we reordered form.images, the cover is always index 0 of the uploaded files
             };
 
             this.$emit('save', payload);
@@ -219,19 +235,22 @@ export default {
             this.previewLoading = true;
             
             try {
-                // Find selected category object
-                const categoryObj = this.categories.find(c => c._id === this.form.category);
-                
                 // Resize images for preview to avoid localStorage limits
                 const compressedImages = await Promise.all(
                     this.imagePreviews.map(img => this.resizeImage(img, 800))
                 );
 
+                // Reorder compressed images based on coverIndex
+                if (this.coverIndex > 0 && this.coverIndex < compressedImages.length) {
+                    const coverImg = compressedImages[this.coverIndex];
+                    compressedImages.splice(this.coverIndex, 1);
+                    compressedImages.unshift(coverImg);
+                }
+
                 // Create preview data structure
                 const previewData = {
                     title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
                     description: [{ key: 'en', value: this.form.description }, { key: 'th', value: this.form.description }],
-                    category: categoryObj,
                     images: compressedImages,
                     views: 0,
                     create: { datetime: new Date() }
@@ -293,33 +312,88 @@ export default {
             this.form = {
                 title: '',
                 description: '',
-                category: null,
                 images: []
             };
             this.imagePreviews = [];
+            this.coverIndex = 0;
         }
     }
 }
 </script>
 
 <style scoped>
-/* Reuse styles from Artworks create modal or define here */
 .form-group-custom { margin-bottom: 1.25rem; }
 .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 0.75rem; letter-spacing: 0.05em; }
-.custom-input ::v-deep .form-control, .custom-textarea ::v-deep .form-control { border-radius: 12px; border: 1px solid #f1f5f9; padding: 0.85rem 1.25rem; font-size: 1rem; background-color: #f8fafc; }
-.custom-input ::v-deep .form-control:focus, .custom-textarea ::v-deep .form-control:focus { border-color: #3b82f633; background-color: #ffffff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05); }
-.custom-select-btn { width: 100%; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; padding: 0.85rem 1.25rem; font-size: 1rem; outline: none; cursor: pointer; }
-.dropdown-icon { color: #94a3b8; width: 14px; }
+.custom-input ::v-deep .form-control { border-radius: 12px; border: 1px solid #f1f5f9; padding: 0.85rem 1.25rem; font-size: 1rem; background-color: #f8fafc; }
+.custom-input ::v-deep .form-control:focus { border-color: #3b82f633; background-color: #ffffff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05); }
+
+.custom-quill-editor ::v-deep .ql-toolbar {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-color: #f1f5f9;
+    background-color: #f8fafc;
+}
+.custom-quill-editor ::v-deep .ql-container {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-color: #f1f5f9;
+    min-height: 180px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 1rem;
+    background-color: #ffffff;
+}
 
 .multiple-upload-container { width: 100%; }
 .upload-trigger-card { border: 2px dashed #e2e8f0; border-radius: 16px; background-color: #f8fafc; cursor: pointer; display: block; transition: all 0.2s; }
 .upload-trigger-card:hover { border-color: #3b82f6; background-color: #f1f5f9; }
 .file-input-hidden { display: none; }
 
-.previews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
-.preview-item { position: relative; width: 100%; pt: 100%; height: 100px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+.previews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 14px; }
+.preview-item { position: relative; width: 100%; height: 110px; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; transition: all 0.25s ease; cursor: pointer; }
 .preview-img { width: 100%; height: 100%; object-fit: cover; }
-.remove-img-btn { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.remove-img-btn { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
+
+.preview-item.border-primary-highlight {
+    border-color: #321fdb;
+    box-shadow: 0 0 0 3px rgba(50, 31, 219, 0.25);
+}
+
+.cover-badge {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(50, 31, 219, 0.9);
+    color: white;
+    font-size: 10px;
+    text-align: center;
+    padding: 3px 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 2;
+}
+
+.set-cover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 2;
+}
+.preview-item:hover .set-cover-overlay {
+    opacity: 1;
+}
 
 .icon-square { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
 .bg-blue-light { background-color: #3b82f611; }

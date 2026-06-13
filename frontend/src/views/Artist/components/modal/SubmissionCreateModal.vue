@@ -101,24 +101,87 @@
                 </CCol>
             </CRow>
 
-            <!-- Size Row EN/TH -->
+            <!-- Size Row -->
+            <CRow>
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">Dimensions / ขนาด ({{ is3D ? 'กว้าง x ยาว x สูง' : 'กว้าง x ยาว' }})</label>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <div class="input-group-custom">
+                                    <span class="dimension-prefix">W</span>
+                                    <CInput 
+                                        type="number"
+                                        v-model="form.width" 
+                                        placeholder="Width" 
+                                        class="custom-input-with-prefix mb-0"
+                                    />
+                                </div>
+                            </div>
+                            <div class="mx-2 text-muted font-weight-bold">×</div>
+                            <div class="flex-grow-1">
+                                <div class="input-group-custom">
+                                    <span class="dimension-prefix">L</span>
+                                    <CInput 
+                                        type="number"
+                                        v-model="form.height" 
+                                        placeholder="Length" 
+                                        class="custom-input-with-prefix mb-0"
+                                    />
+                                </div>
+                            </div>
+                            <template v-if="is3D">
+                                <div class="mx-2 text-muted font-weight-bold">×</div>
+                                <div class="flex-grow-1">
+                                    <div class="input-group-custom">
+                                        <span class="dimension-prefix">H</span>
+                                        <CInput 
+                                            type="number"
+                                            v-model="form.depth" 
+                                            placeholder="Height" 
+                                            class="custom-input-with-prefix mb-0"
+                                        />
+                                    </div>
+                                </div>
+                            </template>
+                            <div class="ml-2">
+                                <CDropdown :key="form.unit" :caret="false">
+                                    <template #toggler>
+                                        <CButton class="custom-select-btn" style="min-width: 80px; height: 46px;">
+                                            <span class="text-dark">{{ form.unit || 'Unit' }}</span>
+                                            <CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" />
+                                        </CButton>
+                                    </template>
+                                    <CDropdownMenu class="border-0 shadow-lg mt-2">
+                                        <CDropdownItem v-for="u in unitOptions" :key="u.en" @click="form.unit = u.en">
+                                            {{ u.en }} ({{ u.th }})
+                                        </CDropdownItem>
+                                    </CDropdownMenu>
+                                </CDropdown>
+                            </div>
+                        </div>
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Remark Row -->
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Size (EN)</label>
+                        <label class="form-label">Remark (EN)</label>
                         <CInput 
-                            v-model="form.size.en" 
-                            placeholder="e.g. 100 x 150 cm" 
+                            v-model="form.remark.en" 
+                            placeholder="Additional notes in English..." 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Size (TH)</label>
+                        <label class="form-label">Remark (TH) / หมายเหตุ</label>
                         <CInput 
-                            v-model="form.size.th" 
-                            placeholder="เช่น 100 x 150 ซม." 
+                            v-model="form.remark.th" 
+                            placeholder="หมายเหตุเพิ่มเติม (ภาษาไทย)..." 
                             class="custom-input mb-0"
                         />
                     </div>
@@ -292,14 +355,25 @@ export default {
                 category: '',
                 technique: { en: '', th: '' },
                 size: { en: '', th: '' },
+                width: '',
+                height: '',
+                depth: '',
+                unit: 'cm',
                 price: '',
                 description: { en: '', th: '' },
                 status: {
                     approval: '',
                     sale: ''
                 },
+                remark: { en: '', th: '' },
                 image: null
-            }
+            },
+            unitOptions: [
+                { en: 'cm', th: 'ชม.' },
+                { en: 'm', th: 'ม.' },
+                { en: 'inch', th: 'นิ้ว' },
+                { en: 'mm', th: 'มม.' }
+            ]
         }
     },
     async created() {
@@ -329,6 +403,8 @@ export default {
             const basicValid = this.form.title.en.trim() !== '' && 
                                this.form.title.th.trim() !== '' && 
                                this.form.artist !== '' && 
+                               this.form.width !== '' &&
+                               this.form.height !== '' &&
                                this.form.category !== '' && 
                                this.imagePreview !== null;
             
@@ -363,6 +439,16 @@ export default {
         selectedApprovalStatusName() {
             const status = this.statuses.find(s => s._id === this.form.status.approval);
             return status ? this.getName('en', status) : 'Select Approval Status';
+        },
+        is3D() {
+            const cat = this.categories.find(c => String(c._id) === String(this.form.category));
+            if (!cat) return false;
+            const enName = this.getName('en', cat).toLowerCase();
+            const thName = this.getName('th', cat).toLowerCase();
+            return enName.includes('sculpture') || 
+                   enName.includes('installation') || 
+                   thName.includes('ประติมากรรม') || 
+                   thName.includes('จัดวาง');
         },
         isPriceVisible() {
             if (!this.form.status.sale) return false;
@@ -437,9 +523,39 @@ export default {
                     approval: artwork.status?.approval?._id || '',
                     sale: artwork.status?.sale?._id || ''
                 },
+                remark: {
+                    en: getVal(artwork.remark, 'en'),
+                    th: getVal(artwork.remark, 'th')
+                },
                 image: null
             };
             this.imagePreview = artwork.image || null;
+
+            // Parse size string
+            const sizeEn = getVal(artwork.size, 'en') || '';
+            const sizeParts = sizeEn.split('x').map(p => p.trim());
+            
+            if (sizeParts.length >= 3) {
+                // Handle 3D: W x L x H Unit
+                this.form.width = sizeParts[0].replace(/[^0-9.]/g, '');
+                this.form.height = sizeParts[1].replace(/[^0-9.]/g, '');
+                
+                const heightWithUnit = sizeParts[2].split(' ');
+                this.form.depth = heightWithUnit[0].replace(/[^0-9.]/g, '');
+                this.form.unit = heightWithUnit[1] || 'cm';
+            } else if (sizeParts.length >= 2) {
+                // Handle 2D: W x H Unit
+                this.form.width = sizeParts[0].replace(/[^0-9.]/g, '');
+                const heightWithUnit = sizeParts[1].split(' ');
+                this.form.height = heightWithUnit[0].replace(/[^0-9.]/g, '');
+                this.form.depth = '';
+                this.form.unit = heightWithUnit[1] || 'cm';
+            } else {
+                this.form.width = '';
+                this.form.height = '';
+                this.form.depth = '';
+                this.form.unit = 'cm';
+            }
         },
         cleanPrice(price) {
             if (!price) return '';
@@ -483,6 +599,10 @@ export default {
                 params: { id: 'preview' } 
             });
         },
+        getUnitTH(unitEN) {
+            const unit = this.unitOptions.find(u => u.en === unitEN);
+            return unit ? unit.th : unitEN;
+        },
         handleSave() {
             if (!this.isFormValid) return;
             
@@ -499,9 +619,23 @@ export default {
                 artist: this.form.artist,
                 category: this.form.category,
                 technique: [{ key: 'en', value: this.form.technique.en }, { key: 'th', value: this.form.technique.th }],
-                size: [{ key: 'en', value: this.form.size.en }, { key: 'th', value: this.form.size.th }],
+                size: [
+                    { 
+                        key: 'en', 
+                        value: this.is3D 
+                            ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.form.unit}` 
+                            : `${this.form.width} x ${this.form.height} ${this.form.unit}` 
+                    },
+                    { 
+                        key: 'th', 
+                        value: this.is3D 
+                            ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.getUnitTH(this.form.unit)}` 
+                            : `${this.form.width} x ${this.form.height} ${this.getUnitTH(this.form.unit)}` 
+                    }
+                ],
                 price: this.isPriceVisible ? parseFloat(this.form.price) : 0,
                 status: this.form.status,
+                remark: [{ key: 'en', value: this.form.remark.en }, { key: 'th', value: this.form.remark.th }],
                 _image: this.form.image
             };
 
@@ -576,6 +710,21 @@ export default {
     background-color: #ffffff !important;
     border-color: #8c151533 !important;
     box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05) !important;
+}
+
+.dimension-prefix {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+    color: #94a3b8;
+    font-size: 0.7rem;
+    z-index: 10;
+}
+
+.custom-input-with-prefix ::v-deep .form-control {
+    padding-left: 2.2rem !important;
 }
 
 .custom-select-btn {

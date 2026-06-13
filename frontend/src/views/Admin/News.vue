@@ -2,11 +2,11 @@
     <div class="news-dashboard">
         <HeaderHero :title="$i18n.locale === 'en' ? 'News Management' : 'จัดการข่าวสาร'" :description="$i18n.locale === 'en' ? 'Manage your news articles, announcements, and updates for the community.' : 'จัดการบทความข่าว ประกาศ และอัปเดตสำหรับชุมชน'" icon="cil-newspaper" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create News' : 'สร้างข่าวสาร'" @create="onAddNews" @export="handleExport" />
         <NewsWidget v-model="filters.status" :items="newsItems" />
-        <NewsFilter v-model="filters" :categories="categoriesList" />
+        <NewsFilter v-model="filters" />
         <NewsTable ref="adminTable" :filters="filters" :items="newsItems" @view="handleViewNews" @edit="handleEditNews" @delete="handleDeleteNews" />
-        <NewsCreateModal :show.sync="showCreateModal" :categories="categoriesList" @save="handleSaveNews"/>
+        <NewsCreateModal :show.sync="showCreateModal" @save="handleSaveNews"/>
         <NewsViewModal :show.sync="showViewModal" :news="selectedNews" @edit="handleEditNewsFromView"/>
-        <NewsEditModal :show.sync="showEditModal" :news="selectedNews" :categories="categoriesList" @save="handleUpdateNews"/>
+        <NewsEditModal :show.sync="showEditModal" :news="selectedNews" @save="handleUpdateNews"/>
     </div>
 </template>
 
@@ -38,7 +38,6 @@ export default {
             selectedNews: null,
             filters: {
                 search: '',
-                category: 'All Categories',
                 startDate: null,
                 endDate: null,
                 quickRange: 'All Time'
@@ -51,19 +50,12 @@ export default {
     computed: {
         newsItems() {
             return this.$store.getters['news/news'] || [];
-        },
-        categoriesList() {
-            return this.$store.getters['setting/category/categories'] || [];
         }
     },
     methods: {
         async fetchNews() {
             try {
-                // Fetch categories and news in parallel
-                await Promise.all([
-                    this.$store.dispatch('setting/category/get'),
-                    this.$store.dispatch('news/get')
-                ]);
+                await this.$store.dispatch('news/get');
             } catch (error) {
                 console.error('Error fetching news:', error);
             }
@@ -76,8 +68,7 @@ export default {
                 // 1. Create the news entry
                 const response = await this.$store.dispatch('news/create', {
                     title: newNews.title,
-                    description: newNews.description,
-                    category: newNews.category
+                    description: newNews.description
                 });
                 
                 const createdNews = response.data.data;
@@ -86,6 +77,9 @@ export default {
                 if (newNews._images && newNews._images.length > 0) {
                     const formData = new FormData();
                     formData.append('_id', createdNews._id);
+                    if (newNews.newCoverIndex !== undefined && newNews.newCoverIndex !== null) {
+                        formData.append('newCoverIndex', newNews.newCoverIndex);
+                    }
                     newNews._images.forEach(image => {
                         formData.append('images', image);
                     });
@@ -94,8 +88,8 @@ export default {
                 }
 
                 this.$store.commit('dialog/showToast', {
-                    title: 'Success',
-                    message: 'News article created successfully.',
+                    title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                    message: this.$i18n.locale === 'en' ? 'News article created successfully.' : 'สร้างข่าวสารเรียบร้อยแล้ว',
                     variant: 'success'
                 });
 
@@ -104,8 +98,8 @@ export default {
             } catch (error) {
                 console.error('Error creating news:', error);
                 this.$store.commit('dialog/showToast', {
-                    title: 'Error',
-                    message: error.response?.data?.message || 'Failed to create news.',
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to create news.' : 'ไม่สามารถสร้างข่าวสารได้'),
                     variant: 'danger'
                 });
             }
@@ -129,7 +123,6 @@ export default {
                     _id: updatedNews._id,
                     title: updatedNews.title,
                     description: updatedNews.description,
-                    category: updatedNews.category,
                     images: updatedNews.images
                 });
                 
@@ -137,6 +130,9 @@ export default {
                 if (updatedNews._images && updatedNews._images.length > 0) {
                     const formData = new FormData();
                     formData.append('_id', updatedNews._id);
+                    if (updatedNews.newCoverIndex !== undefined && updatedNews.newCoverIndex !== null) {
+                        formData.append('newCoverIndex', updatedNews.newCoverIndex);
+                    }
                     updatedNews._images.forEach(image => {
                         formData.append('images', image);
                     });
@@ -145,8 +141,8 @@ export default {
                 }
 
                 this.$store.commit('dialog/showToast', {
-                    title: 'Success',
-                    message: 'News article updated successfully.',
+                    title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                    message: this.$i18n.locale === 'en' ? 'News article updated successfully.' : 'อัปเดตข่าวสารเรียบร้อยแล้ว',
                     variant: 'success'
                 });
 
@@ -155,24 +151,47 @@ export default {
             } catch (error) {
                 console.error('Error updating news:', error);
                 this.$store.commit('dialog/showToast', {
-                    title: 'Error',
-                    message: error.response?.data?.message || 'Failed to update news.',
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to update news.' : 'ไม่สามารถอัปเดตข่าวสารได้'),
                     variant: 'danger'
                 });
             }
         },
         async handleDeleteNews(news) {
+            const title = this.getName(this.$i18n.locale, news);
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to delete news article "${title}"?`
+                : `คุณแน่ใจหรือว่าต้องการลบข่าวสาร "${title}"?`;
+            
+            if (!confirm(confirmMsg)) return;
+
             try {
                 await this.$store.dispatch('news/delete', { _id: news._id });
                 this.fetchNews();
                 this.$store.commit('dialog/showToast', {
-                    title: 'Deleted',
-                    message: `News article has been removed.`,
+                    title: this.$i18n.locale === 'en' ? 'Deleted' : 'ลบแล้ว',
+                    message: this.$i18n.locale === 'en' 
+                        ? `News article "${title}" has been removed.`
+                        : `ลบข่าวสาร "${title}" เรียบร้อยแล้ว`,
                     variant: 'info'
                 });
             } catch (error) {
                 console.error('Error deleting news:', error);
             }
+        },
+        getName(lang, item) {
+            if (!item) return 'N/A';
+            if (typeof item === 'string') return item;
+            
+            const titleField = item.title || item.name || '';
+            if (typeof titleField === 'string' && titleField) return titleField;
+            
+            if (Array.isArray(titleField)) {
+                const nameObj = titleField.find(n => n.key === lang);
+                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
+                return nameObj ? nameObj.value : firstVal;
+            }
+            return 'N/A';
         },
         handleExport() {
             if (this.$refs.adminTable) {

@@ -110,7 +110,7 @@ export default {
         },
         formatDate(date) {
             if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY')
+            return moment(date).format('DD/MM/YYYY')
         },
         getProgressColor(progress) {
             if (progress === 100) return 'success'

@@ -6,9 +6,6 @@
                     <CCol lg="10" class="mx-auto">
                         <!-- Header -->
                         <div class="news-header-simple mb-5">
-                            <CBadge v-if="currentNews.category" color="danger" shape="pill" class="px-3 py-2 mb-3">
-                                {{ getName($i18n.locale, currentNews.category.title) }}
-                            </CBadge>
                             <h1 class="font-weight-bold mb-4">{{ getName($i18n.locale, currentNews.title) }}</h1>
                             <hr class="my-4">
                         </div>

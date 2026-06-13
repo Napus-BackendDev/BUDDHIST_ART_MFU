@@ -14,6 +14,7 @@ const Payment = () => import('@/views/page/Payment')
 const Bill = () => import('@/views/page/Bill')
 const Artworks = () => import('@/views/page/Artworks')
 const About = () => import('@/views/page/About')
+const Contact = () => import('@/views/page/Contact')
 const NewsDetail = () => import('@/views/page/NewsDetail')
 
 // View Admin
@@ -23,8 +24,8 @@ const Submissions = () => import('@/views/Admin/Submissions')
 const SubmissionsDetail = () => import('@/views/Admin/SubmissionsDetail')
 const Assignment = () => import('@/views/Admin/Assignment')
 const OrdersAdmin = () => import('@/views/Admin/Orders')
-const Certification = () => import('@/views/Admin/Certification')
-const CreateCertification = () => import('@/views/Admin/CreateCertification')
+// const Certification = () => import('@/views/Admin/Certification')
+// const CreateCertification = () => import('@/views/Admin/CreateCertification')
 const UsersManagement = () => import('@/views/Admin/UsersManagement')
 const NewsAdmin = () => import('@/views/Admin/News')
 
@@ -83,8 +84,7 @@ export default new Router({
                 },
                 {
                     path: 'bill',
-                    name: 'Bill',
-                    component: Bill
+                    redirect: '/payment?step=3'
                 },
                 {
                     path: 'artworks',
@@ -95,6 +95,11 @@ export default new Router({
                     path: 'about',
                     name: 'About',
                     component: About
+                },
+                {
+                    path: 'contact',
+                    name: 'Contact',
+                    component: Contact
                 },
                 {
                     path: 'news/:id',
@@ -142,16 +147,6 @@ export default new Router({
                     path: 'orders',
                     name: 'OrdersAdmin',
                     component: OrdersAdmin
-                },
-                {
-                    path: 'certification',
-                    name: 'Certification',
-                    component: Certification
-                },
-                {
-                    path: 'certifications/create',
-                    name: 'Create Certification',
-                    component: CreateCertification
                 },
                 {
                     path: 'users-management',

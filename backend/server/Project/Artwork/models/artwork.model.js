@@ -28,7 +28,11 @@ const objsSchema = new Schema({
     },
     submissionArtworkId: { type: mongoose.Schema.Types.ObjectId, default: null },
     artworkPiece: { type: String, default: null },
-    remark: { type: String, default: null },
+    artworkCode: { type: String, default: null },
+    remark: [{
+        key: { type: String, default: null },
+        value: { type: String, default: null },
+    }],
     rejectionReason: { type: String, default: null },
 }, { timestamps: true });
 

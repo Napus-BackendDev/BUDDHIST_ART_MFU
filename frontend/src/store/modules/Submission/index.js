@@ -93,6 +93,7 @@ const SubmissionModule = {
                 size: artwork.size,
                 price: artwork.price,
                 status: artwork.status.approval,
+                remark: artwork.remark,
                 image: imageUrl,
                 owner: currentUserId,
                 create: {

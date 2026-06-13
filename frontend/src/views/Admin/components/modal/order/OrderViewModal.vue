@@ -1,6 +1,6 @@
 <template>
     <CModal 
-        title="Order Details" 
+        :title="$i18n.locale === 'en' ? 'Order Details' : 'รายละเอียดคำสั่งซื้อ'" 
         :show="show" 
         @update:show="$emit('update:show', $event)"
         size="lg"
@@ -17,7 +17,7 @@
                         <h5 class="modal-title font-weight-bold" v-if="order && (order.orderNumber || order._id)">
                             {{ order.orderNumber || ('ORD-' + order._id.substring(order._id.length - 8).toUpperCase()) }}
                         </h5>
-                        <h5 class="modal-title font-weight-bold" v-else>Order Details</h5>
+                        <h5 class="modal-title font-weight-bold" v-else>{{ $i18n.locale === 'en' ? 'Order Details' : 'รายละเอียดคำสั่งซื้อ' }}</h5>
                         <div class="d-flex align-items-center mt-1">
                             <div :class="['status-badge-small mr-2', getStatusInfo(order).class]">
                                 {{ getStatusInfo(order).label }}
@@ -35,17 +35,17 @@
         <div class="modal-body-custom px-4 py-3" v-if="order">
             <!-- Customer Information -->
             <div class="info-section mb-4">
-                <h6 class="section-title">Customer Information</h6>
+                <h6 class="section-title">{{ $i18n.locale === 'en' ? 'Customer Information' : 'ข้อมูลลูกค้า' }}</h6>
                 <CRow class="mt-3">
                     <CCol md="6">
                         <div class="info-item">
-                            <span class="info-label">Customer Name</span>
+                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Customer Name' : 'ชื่อลูกค้า' }}</span>
                             <div class="info-value">{{ order.contact ? order.contact.name : 'N/A' }}</div>
                         </div>
                     </CCol>
                     <CCol md="6">
                         <div class="info-item">
-                            <span class="info-label">Phone Number</span>
+                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Phone Number' : 'เบอร์โทรศัพท์' }}</span>
                             <div class="info-value">{{ order.contact ? order.contact.telephone : 'N/A' }}</div>
                         </div>
                     </CCol>
@@ -53,7 +53,7 @@
                 <CRow class="mt-3">
                     <CCol md="12">
                         <div class="info-item">
-                            <span class="info-label">Email Address</span>
+                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Email Address' : 'ที่อยู่อีเมล' }}</span>
                             <div class="info-value">{{ order.contact ? order.contact.email : 'N/A' }}</div>
                         </div>
                     </CCol>
@@ -61,47 +61,44 @@
                 <CRow class="mt-3">
                     <CCol md="6">
                         <div class="info-item">
-                            <span class="info-label">Billing Address</span>
-                            <div class="info-value address-value">{{ order.address && order.address.bill ? order.address.bill : 'Not provided' }}</div>
+                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ใบเสร็จ' }}</span>
+                            <div class="info-value address-value">{{ order.address && order.address.bill ? order.address.bill : ($i18n.locale === 'en' ? 'Not provided' : 'ไม่ได้ระบุ') }}</div>
                         </div>
                     </CCol>
                     <CCol md="6">
                         <div class="info-item">
-                            <span class="info-label">Shipping Address</span>
-                            <div class="info-value address-value">{{ order.address && order.address.shipping ? order.address.shipping : 'Not provided' }}</div>
+                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</span>
+                            <div class="info-value address-value">{{ order.address && order.address.shipping ? order.address.shipping : ($i18n.locale === 'en' ? 'Not provided' : 'ไม่ได้ระบุ') }}</div>
                         </div>
                     </CCol>
                 </CRow>
             </div>
 
             <hr class="section-divider">
-
-            <hr class="section-divider">
             
             <!-- Shipping & Tracking -->
             <div class="shipping-section mt-4">
-                <h6 class="section-title mb-3">Shipping & Tracking</h6>
+                <h6 class="section-title mb-3">{{ $i18n.locale === 'en' ? 'Shipping & Tracking' : 'การจัดส่งและติดตามสถานะ' }}</h6>
                 <CRow>
                     <CCol md="4">
                         <div class="info-item">
-                            <span class="info-label">Carrier</span>
-                            <div class="info-value">{{ order.carrier || 'Thailand Post' }}</div>
+                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Carrier' : 'ผู้จัดส่ง' }}</span>
+                            <div class="info-value">{{ order.carrier || ($i18n.locale === 'en' ? 'Thailand Post' : 'ไปรษณีย์ไทย') }}</div>
                         </div>
                     </CCol>
                     <CCol md="4">
                         <div class="info-item">
-                            <span class="info-label">Tracking ID</span>
-                            <div class="info-value font-family-mono">{{ order.trackingId || 'Not assigned' }}</div>
+                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Tracking ID' : 'รหัสติดตามพัสดุ' }}</span>
+                            <div class="info-value font-family-mono">{{ order.trackingId || ($i18n.locale === 'en' ? 'Not assigned' : 'ยังไม่ได้มอบหมาย') }}</div>
                         </div>
                     </CCol>
                     <CCol md="4">
                         <div class="info-item">
-                            <span class="info-label">Expected Delivery</span>
-                            <div class="info-value">{{ order.deliveryDate ? formatDateShort(order.deliveryDate) : 'To be confirmed' }}</div>
+                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Expected Delivery' : 'วันที่คาดว่าจะจัดส่ง' }}</span>
+                            <div class="info-value">{{ order.deliveryDate ? formatDateShort(order.deliveryDate) : ($i18n.locale === 'en' ? 'To be confirmed' : 'รอการยืนยัน') }}</div>
                         </div>
                     </CCol>
                 </CRow>
-
             </div>
 
             <hr class="section-divider">
@@ -109,9 +106,9 @@
             <!-- Artwork Selection Section -->
             <div class="artwork-section mt-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="section-title mb-0">Purchased Artworks</h6>
+                    <h6 class="section-title mb-0">{{ $i18n.locale === 'en' ? 'Purchased Artworks' : 'ผลงานศิลปะที่ซื้อ' }}</h6>
                     <div class="total-price-display">
-                        <span class="text-muted mr-2">Total Amount:</span>
+                        <span class="text-muted mr-2">{{ $i18n.locale === 'en' ? 'Total Amount:' : 'ยอดรวมทั้งสิ้น:' }}</span>
                         <span class="price-value">฿ {{ totalAmount }}</span>
                     </div>
                 </div>
@@ -123,11 +120,11 @@
                             :key="art._id" 
                             class="selected-art-item d-flex align-items-center p-3 mb-2 rounded-lg bg-light"
                         >
-                            <img :src="art.image || `https://via.placeholder.com/54/eee/888?text=${getName('en', art).charAt(0)}`" :alt="getName('en', art)" class="selected-thumb mr-3">
+                            <img :src="art.image || `https://via.placeholder.com/54/eee/888?text=${getName($i18n.locale, art).charAt(0)}`" :alt="getName($i18n.locale, art)" class="selected-thumb mr-3">
                             <div class="flex-grow-1">
-                                <div class="font-weight-bold text-dark">{{ getName('en', art) }}</div>
+                                <div class="font-weight-bold text-dark">{{ getName($i18n.locale, art) }}</div>
                                 <div class="text-muted small">
-                                    {{ art.artist ? getName('en', art.artist) : 'Unknown Artist' }}
+                                    {{ art.artist ? getName($i18n.locale, art.artist) : ($i18n.locale === 'en' ? 'Unknown Artist' : 'ไม่ระบุศิลปิน') }}
                                 </div>
                             </div>
                             <div class="text-right">
@@ -136,14 +133,14 @@
                         </div>
                     </div>
                     <div v-else class="text-center py-4 text-muted border rounded-lg bg-light italic">
-                        No artworks associated with this order.
+                        {{ $i18n.locale === 'en' ? 'No artworks associated with this order.' : 'ไม่มีผลงานศิลปะในคำสั่งซื้อนี้' }}
                     </div>
                 </div>
             </div>
 
             <!-- Proof of Payment (Image) -->
             <div class="mt-4" v-if="order.image">
-                <h6 class="section-title mb-3">Proof of Payment</h6>
+                <h6 class="section-title mb-3">{{ $i18n.locale === 'en' ? 'Proof of Payment' : 'หลักฐานการชำระเงิน' }}</h6>
                 <div class="payment-proof-container">
                     <img :src="order.image" alt="Payment Proof" class="payment-proof-img img-fluid rounded-lg">
                 </div>
@@ -157,7 +154,7 @@
                     @click="$emit('update:show', false)"
                     class="btn-close-modal"
                 >
-                    Close Details
+                    {{ $i18n.locale === 'en' ? 'Close Details' : 'ปิดหน้ารายละเอียด' }}
                 </CButton>
             </div>
         </template>
@@ -206,11 +203,11 @@ export default {
         },
         formatDate(date) {
             if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY hh:mm A');
+            return moment(date).format('DD/MM/YYYY HH:mm');
         },
         formatDateShort(date) {
             if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY');
+            return moment(date).format('DD/MM/YYYY');
         },
         formatPrice(value) {
             if (value === undefined || value === null) return '0.00';
@@ -221,18 +218,23 @@ export default {
             });
         },
         getStatusInfo() {
-            if (!this.order || !this.order.status) return { label: 'Pending', class: 'badge-pending' };
-            const status = this.getName('en', this.order.status);
-            switch (status) {
+            if (!this.order || !this.order.status) return { label: this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ', class: 'badge-pending' };
+            const statusEn = this.getName('en', this.order.status);
+            const statusDisplay = this.getName(this.$i18n.locale, this.order.status);
+            
+            switch (statusEn) {
                 case 'Completed':
                 case 'Success':
                 case 'Approved':
-                    return { label: 'Completed', class: 'badge-completed' };
+                    return { label: statusDisplay, class: 'badge-completed' };
                 case 'Cancelled':
                 case 'Rejected':
-                    return { label: 'Cancelled', class: 'badge-cancelled' };
+                    return { label: statusDisplay, class: 'badge-cancelled' };
+                case 'Reserved':
+                case 'Pending Payment':
+                    return { label: statusDisplay, class: 'badge-info' };
                 default:
-                    return { label: status || 'Pending', class: 'badge-pending' };
+                    return { label: statusDisplay || (this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ'), class: 'badge-pending' };
             }
         }
     }

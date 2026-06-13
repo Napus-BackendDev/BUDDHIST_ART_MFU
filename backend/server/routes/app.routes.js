@@ -1,5 +1,5 @@
 const settingsRoutes = require("../Project/Settings/settings.routes");
-const artworkRoutes = require("../Project/Artwork/artwort.routes");
+const artworkRoutes = require("../Project/Artwork/artwork.routes");
 const newRoutes = require("../Project/New/new.routes");
 const orderRoutes = require("../Project/Order/order.routes");
 const userRoutes = require("../Project/User/user.routes");
@@ -14,14 +14,15 @@ module.exports = function (app) {
 
   // app.use(path + '/organization', organizationRoutes); // complete
 
+const dashboardRoutes = require("../Project/Dashboard/dashboard.routes");
+
   app.use(path + '/news', newRoutes); // complete
   app.use(path + '/order', orderRoutes); // inprogress
   app.use(path + '/artwork', artworkRoutes); // inprogress
   app.use(path + '/settings', settingsRoutes); // inprogress
   app.use(path + '/user', userRoutes); // inprogress
   app.use(path + '/submission', submissionRoutes); // inprogress
-
-  // app.use(path + '/address', addressRoutes); // complete
+  app.use(path + '/dashboard', dashboardRoutes);
 
   //
   // app.use(path , accountRoutes);

@@ -5,23 +5,67 @@ export const statusBadgeMixin = {
         getStatusBadge(status) {
             if (!status) return { label: 'N/A', class: 'badge-pending', icon: 'cil-clock' };
             
+            const currentLang = this.$i18n ? this.$i18n.locale : 'th';
             const s = typeof status === 'string' ? status.toLowerCase() : '';
             
+            // Map the label to current locale
+            let label = status;
+            const statusMap = {
+                'approved': { en: 'Approved', th: 'อนุมัติแล้ว' },
+                'passed': { en: 'Passed', th: 'ผ่านแล้ว' },
+                'pending': { en: 'Pending', th: 'รอดำเนินการ' },
+                'rejected': { en: 'Rejected', th: 'ปฏิเสธ' },
+                'revised': { en: 'Revised', th: 'ให้ปรับปรุง' },
+                'reserved': { en: 'Reserved', th: 'ถูกจอง' },
+                'available': { en: 'Available', th: 'พร้อมขาย' },
+                'sold out': { en: 'Sold Out', th: 'ขายแล้ว' },
+                'sold': { en: 'Sold', th: 'ขายแล้ว' },
+                'exhibition': { en: 'Exhibition', th: 'จัดแสดง' },
+                'delivered': { en: 'Delivered', th: 'จัดส่งสำเร็จ' },
+                'processing': { en: 'Processing', th: 'กำลังดำเนินการ' },
+                'shipped': { en: 'Shipped', th: 'จัดส่งแล้ว' },
+                'cancelled': { en: 'Cancelled', th: 'ยกเลิก' },
+                'success': { en: 'Success', th: 'สำเร็จ' },
+                'fail': { en: 'Fail', th: 'ล้มเหลว' },
+                'active': { en: 'Active', th: 'ใช้งานอยู่' },
+                'inactive': { en: 'Inactive', th: 'ไม่ได้ใช้งาน' },
+                'suspended': { en: 'Suspended', th: 'ระงับการใช้งาน' },
+                'newstudent': { en: 'New Student', th: 'นักศึกษาใหม่' },
+                'oldstudent': { en: 'Existing Student', th: 'นักศึกษาเก่า' }
+            };
+
+            const matchedKey = Object.keys(statusMap).find(key => s === key || s.includes(key));
+            if (matchedKey) {
+                label = statusMap[matchedKey][currentLang];
+            } else {
+                if (s.includes('รอดำเนินการ')) label = currentLang === 'en' ? 'Pending' : 'รอดำเนินการ';
+                else if (s.includes('เสร็จสิ้น') || s.includes('จัดส่งแล้ว') || s.includes('ส่งแล้ว')) label = currentLang === 'en' ? 'Delivered' : 'จัดส่งแล้ว';
+                else if (s.includes('ยกเลิก')) label = currentLang === 'en' ? 'Cancelled' : 'ยกเลิก';
+                else if (s.includes('รอชำระเงิน') || s.includes('payment')) label = currentLang === 'en' ? 'Pending Payment' : 'รอชำระเงิน';
+            }
+
             // Order & Submission status mapping
+            let badgeClass = 'badge-pending';
+            let icon = 'cil-clock';
+
             if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success') || s.includes('active') || s.includes('passed') || s.includes('newstudent')) {
-                return { label: status, class: 'badge-completed', icon: 'cil-check-circle' };
-            }
-            if (s.includes('processing') || s.includes('รอดำเนินการ') || s.includes('pending') || s.includes('oldstudent')) {
-                return { label: status, class: 'badge-pending', icon: 'cil-clock' };
-            }
-            if (s.includes('shipped') || s.includes('จัดส่งแล้ว') || s.includes('revised') || s.includes('admin') || s.includes('reserved')) {
-                return { label: status, class: 'badge-update', icon: s.includes('admin') ? 'cil-shield-check' : 'cil-sync' };
-            }
-            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('suspended') || s.includes('fail')) {
-                return { label: status, class: 'badge-cancelled', icon: 'cil-x-circle' };
+                badgeClass = 'badge-completed';
+                icon = 'cil-check-circle';
+            } else if (s.includes('processing') || s.includes('รอดำเนินการ') || (s.includes('pending') && !s.includes('payment') && !s.includes('ชำระเงิน')) || s.includes('oldstudent')) {
+                badgeClass = 'badge-pending';
+                icon = 'cil-clock';
+            } else if (s.includes('รอชำระเงิน') || s.includes('payment') || s.includes('reserved')) {
+                badgeClass = 'badge-info';
+                icon = 'cil-credit-card';
+            } else if (s.includes('shipped') || s.includes('จัดส่งแล้ว') || s.includes('revised') || s.includes('admin')) {
+                badgeClass = 'badge-update';
+                icon = s.includes('admin') ? 'cil-shield-check' : 'cil-sync';
+            } else if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('suspended') || s.includes('fail')) {
+                badgeClass = 'badge-cancelled';
+                icon = 'cil-x-circle';
             }
             
-            return { label: status, class: 'badge-pending', icon: 'cil-clock' };
+            return { label, class: badgeClass, icon };
         },
         getName(lang, item) {
             if (!item) return 'N/A';
@@ -44,7 +88,7 @@ export const statusBadgeMixin = {
         },
         formatDate(date) {
             if (!date) return 'N/A';
-            return moment(date).format('MMM DD, YYYY');
+            return moment(date).format('DD/MM/YYYY');
         }
     }
 };

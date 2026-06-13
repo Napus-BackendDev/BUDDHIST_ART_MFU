@@ -42,7 +42,7 @@
                         <CDropdown :key="form.roleId" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ form.roleName || ($i18n.locale === 'en' ? 'Select Role' : 'เลือกบทบาท') }}</span>
+                                    <span class="text-dark">{{ getRoleLabel() || ($i18n.locale === 'en' ? 'Select Role' : 'เลือกบทบาท') }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
@@ -57,13 +57,13 @@
             </CRow>
 
             <CRow>
-                <CCol md="12" v-if="form.roleName === 'Artist'">
+                <CCol md="12" v-if="form.roleNameEn === 'Artist'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Account Status' : 'สถานะบัญชี' }}</label>
                         <CDropdown :key="form.statusId" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ form.statusName || ($i18n.locale === 'en' ? 'Select Status' : 'เลือกสถานะ') }}</span>
+                                    <span class="text-dark">{{ getStatusLabel() || ($i18n.locale === 'en' ? 'Select Status' : 'เลือกสถานะ') }}</span>
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
@@ -79,7 +79,7 @@
 
             <!-- Names Row -->
             <CRow>
-                <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
+                <CCol :md="form.roleNameEn === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
                         <CInput 
@@ -89,7 +89,7 @@
                         />
                     </div>
                 </CCol>
-                <CCol md="6" v-if="form.roleName !== 'Customer'">
+                <CCol md="6" v-if="form.roleNameEn !== 'Customer'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
                         <CInput 
@@ -103,7 +103,7 @@
 
             <!-- Contacts Row 1 -->
             <CRow>
-                <CCol md="6" v-if="form.roleName !== 'Customer'">
+                <CCol md="6" v-if="form.roleNameEn !== 'Customer'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Official Email' : 'อีเมลทางการ' }}</label>
                         <CInput 
@@ -114,7 +114,7 @@
                         />
                     </div>
                 </CCol>
-                <CCol :md="form.roleName === 'Customer' ? '12' : '6'">
+                <CCol :md="form.roleNameEn === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
                         <CInput 
@@ -198,8 +198,10 @@ export default {
                 studentId: '',
                 roleId: '',
                 roleName: '',
+                roleNameEn: '',
                 statusId: '',
                 statusName: '',
+                statusNameEn: '',
                 nameTh: '',
                 nameEn: '',
                 email: '',
@@ -212,20 +214,38 @@ export default {
     computed: {
         isFormValid() {
             const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.form.email && this.form.password;
-            if (this.form.roleName === 'Artist') {
+            if (this.form.roleNameEn === 'Artist') {
                 return baseValid && this.form.statusId;
             }
             return baseValid;
         }
     },
     methods: {
+        getRoleLabel() {
+            if (!this.form.roleId) return '';
+            const found = this.roles.find(r => r._id === this.form.roleId);
+            return found ? found.name : this.form.roleName;
+        },
+        getStatusLabel() {
+            if (!this.form.statusId) return '';
+            const found = this.statuses.find(s => s._id === this.form.statusId);
+            return found ? found.name : this.form.statusName;
+        },
         handleRoleSelect(role) {
             this.$set(this.form, 'roleId', role._id);
             this.$set(this.form, 'roleName', role.name);
+            this.$set(this.form, 'roleNameEn', role.nameEn);
+            // If the role is not Artist, clear the status fields so validation holds
+            if (role.nameEn !== 'Artist') {
+                this.$set(this.form, 'statusId', '');
+                this.$set(this.form, 'statusName', '');
+                this.$set(this.form, 'statusNameEn', '');
+            }
         },
         handleStatusSelect(status) {
             this.$set(this.form, 'statusId', status._id);
             this.$set(this.form, 'statusName', status.name);
+            this.$set(this.form, 'statusNameEn', status.nameEn);
         },
         handleSave() {
             if (!this.isFormValid) return;
@@ -253,8 +273,10 @@ export default {
                 studentId: '',
                 roleId: '',
                 roleName: '',
+                roleNameEn: '',
                 statusId: '',
                 statusName: '',
+                statusNameEn: '',
                 nameTh: '',
                 nameEn: '',
                 email: '',

@@ -1,6 +1,6 @@
 <template>
     <div class="events-section py-5 bg-white">
-        <CContainer fluid class="px-md-5">
+        <CContainer>
             <!-- Left-aligned Header with View All Button -->
             <div class="d-flex align-items-center justify-content-between mb-4">
                 <h2 class="font-weight-bold mb-0 mr-2 section-title-home">{{ $i18n.locale === 'en' ? 'News & PR' : 'ข่าวประชาสัมพันธ์' }}</h2>
@@ -9,90 +9,25 @@
                 </CButton>
             </div>
 
-            <!-- Category Filters (Pills) -->
-            <div class="d-flex mb-5 news-pill-wrapper" style="gap: 12px;">
-                <CButton 
-                    v-for="cat in newsCategories" 
-                    :key="cat"
-                    :class="['news-pill px-4 font-weight-bold shadow-sm', selectedNewsCategory === cat ? 'news-pill-active' : 'news-pill-inactive']"
-                    shape="pill"
-                    @click="selectedNewsCategory = cat"
-                >
-                    {{ cat }}
-                </CButton>
-            </div>
 
-            <CRow class="news-grid-row">
-                <CCol 
-                    v-for="news in filteredNews.slice(0, 8)" 
-                    :key="news._id" 
-                    col="12" 
-                    md="6" 
-                    lg="3" 
-                    class="mb-4"
-                >
-                    <CCard class="news-card border-0 shadow-sm h-100 overflow-hidden" @click="explore(news._id)">
-                        <!-- Image Section -->
-                        <div class="card-img-wrapper position-relative">
-                            <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${getNewsImage(news)})` }"></div>
-                            <div class="card-img-overlay-custom"></div>
-                            <span class="category-badge">{{ getName($i18n.locale, news.category) }}</span>
-                        </div>
 
-                        <!-- Content Section -->
-                        <CCardBody class="p-4 d-flex flex-column bg-white">
-                            <div class="meta-info d-flex align-items-center mb-3">
-                                <span class="meta-item date-text">
-                                    <CIcon name="cil-calendar" size="sm" /> {{ formatDate(news.create ? news.create.datetime : null) }}
-                                </span>
-                                <span class="meta-divider"></span>
-                                <span class="meta-item author-text">
-                                    <CIcon name="cil-user" size="sm" /> PR MFU
-                                </span>
-                            </div>
-
-                            <h5 class="news-title mb-3 cursor-pointer">
-                                {{ getName($i18n.locale, news.title) }}
-                            </h5>
-                            <p class="news-summary text-muted mb-4">{{ getName($i18n.locale, news.description) }}</p>
-
-                            <div class="mt-auto">
-                                <div class="read-more-btn">
-                                    <span>{{ $i18n.locale === 'en' ? 'Read More' : 'อ่านต่อ' }}</span>
-                                    <CIcon name="cil-arrow-right" class="ml-2 arrow-icon" />
-                                </div>
-                            </div>
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-            </CRow>
+            <CardNew :newsList="filteredNews.slice(0, 8)" :isHome="true" class="news-grid-row" />
         </CContainer>
     </div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import moment from 'moment';
+import CardNew from '@/components/CardNew.vue';
 
 export default {
     name: 'SectionNews',
+    components: {
+        CardNew
+    },
     data() {
         return {
-            selectedNewsCategory: 'ล่าสุด', // will adapt via watcher if needed
             loading: false
-        }
-    },
-    watch: {
-        '$i18n.locale': function(newVal) {
-            if (newVal === 'en' && ['ล่าสุด', 'กิจกรรม', 'นิทรรศการ'].includes(this.selectedNewsCategory)) {
-                if (this.selectedNewsCategory === 'ล่าสุด') this.selectedNewsCategory = 'Latest';
-                else if (this.selectedNewsCategory === 'กิจกรรม') this.selectedNewsCategory = 'Activities';
-                else if (this.selectedNewsCategory === 'นิทรรศการ') this.selectedNewsCategory = 'Exhibitions';
-            } else if (newVal === 'th' && ['Latest', 'Activities', 'Exhibitions'].includes(this.selectedNewsCategory)) {
-                if (this.selectedNewsCategory === 'Latest') this.selectedNewsCategory = 'ล่าสุด';
-                else if (this.selectedNewsCategory === 'Activities') this.selectedNewsCategory = 'กิจกรรม';
-                else if (this.selectedNewsCategory === 'Exhibitions') this.selectedNewsCategory = 'นิทรรศการ';
-            }
         }
     },
     async created() {
@@ -109,11 +44,6 @@ export default {
         ...mapGetters({
             newsList: 'news/news'
         }),
-        newsCategories() {
-            return this.$i18n.locale === 'en' 
-                ? ['Latest', 'Activities', 'Exhibitions'] 
-                : ['ล่าสุด', 'กิจกรรม', 'นิทรรศการ'];
-        },
         filteredNews() {
             if (!this.newsList) return [];
             
@@ -126,31 +56,13 @@ export default {
                 return dateB - dateA;
             });
 
-            if (this.selectedNewsCategory === 'ล่าสุด' || this.selectedNewsCategory === 'Latest') return list;
-            
-            return list.filter(item => {
-                const categoryNameTh = this.getName('th', item.category);
-                const categoryNameEn = this.getName('en', item.category);
-                return categoryNameTh === this.selectedNewsCategory || categoryNameEn === this.selectedNewsCategory;
-            });
+            return list;
         }
     },
     methods: {
         ...mapActions('news', {
             fetchNews: 'get'
-        }),
-        explore(id) {
-            this.$router.push({ name: 'NewsDetail', params: { id } });
-        },
-        getNewsImage(news) {
-            if (news.images && news.images.length > 0) return news.images[0];
-            if (news.image) return news.image;
-            return 'https://via.placeholder.com/800x600?text=MFU+News';
-        },
-        formatDate(date) {
-            if (!date) return 'N/A';
-            return moment(date).format('DD/MM/YYYY');
-        }
+        })
     }
 }
 </script>
@@ -206,21 +118,23 @@ export default {
 }
 
 .news-card {
-    border-radius: 24px !important;
+    border-radius: 20px !important;
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    background: #fff;
+    background: #ffffff;
     cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.03) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
 }
 
 .news-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
 }
 
 .card-img-wrapper {
-    height: 200px;
+    height: 220px;
     overflow: hidden;
-    border-radius: 24px 24px 0 0;
+    border-radius: 20px 20px 0 0;
 }
 
 .card-img-bg {
@@ -228,35 +142,43 @@ export default {
     height: 100%;
     background-size: cover;
     background-position: center;
-    transition: transform 0.8s ease;
+    transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .news-card:hover .card-img-bg {
-    transform: scale(1.1);
+    transform: scale(1.08);
 }
 
 .card-img-overlay-custom {
     position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
     width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 60%, rgba(0,0,0,0.4) 100%);
+    height: 50%;
+    background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.news-card:hover .card-img-overlay-custom {
+    opacity: 1;
 }
 
 .category-badge {
     position: absolute;
-    top: 15px;
-    left: 15px;
-    background: rgba(255, 255, 255, 0.95);
-    color: #612721;
-    padding: 4px 12px;
-    border-radius: 50px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    top: 16px;
+    left: 16px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #2d3748;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     z-index: 2;
 }
 

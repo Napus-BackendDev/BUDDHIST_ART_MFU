@@ -58,6 +58,9 @@ export default {
         this.fetchCategories();
         this.$store.dispatch('setting/status/get');
         this.$store.dispatch('user/get', {}); // Fetch users to enable artist lookup during import
+        if (this.$route.query.search) {
+            this.filters.search = this.$route.query.search;
+        }
     },
     computed: {
         artworks() {
@@ -98,7 +101,7 @@ export default {
                     const results = XLSX.utils.sheet_to_json(worksheet);
                     
                     if (results.length === 0) {
-                        alert("The file is empty or invalid.");
+                        alert(this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง");
                         return;
                     }
 
@@ -127,6 +130,8 @@ export default {
                         const priceStr = getValue('Price') || '0';
                         const categoryName = getValue('Category') || getValue('Catogory') || '';
                         const artistStudentId = getValue('ArtistID') || '';
+                        const remarkTh = getValue('RemarkThai') || getValue('RemarkTh') || getValue('หมายเหตุไทย') || getValue('หมายเหตุ') || '';
+                        const remarkEn = getValue('RemarkEng') || getValue('RemarkEn') || getValue('หมายเหตุอังกฤษ') || getValue('Remark') || '';
 
                         // Handle price with commas
                         const rawPrice = String(priceStr).replace(/,/g, '');
@@ -188,38 +193,46 @@ export default {
                             status: {
                                 approval: approvalStatusId,
                                 sale: saleStatusId
-                            }
+                            },
+                            remark: [
+                                { key: 'th', value: remarkTh },
+                                { key: 'en', value: remarkEn }
+                            ]
                         };
                     }).filter(a => a.title[0].value || a.title[1].value);
 
                     if (mappedArtworks.length === 0) {
-                        alert("No valid artwork data found. Please check column headers.");
+                        alert(this.$i18n.locale === 'en' ? "No valid artwork data found. Please check column headers." : "ไม่พบข้อมูลผลงานที่ถูกต้อง กรุณาตรวจสอบหัวตาราง");
                         return;
                     }
 
-                    if (confirm(`Detected ${mappedArtworks.length} artworks. Proceed with bulk import?`)) {
+                    const confirmMsg = this.$i18n.locale === 'en'
+                        ? `Detected ${mappedArtworks.length} artworks. Proceed with bulk import?`
+                        : `ตรวจพบผลงานจำนวน ${mappedArtworks.length} ชิ้น ดำเนินการนำเข้าข้อมูลทั้งหมดหรือไม่?`;
+
+                    if (confirm(confirmMsg)) {
                         this.$store.dispatch('artwork/create', mappedArtworks)
                             .then(() => {
                                 this.fetchArtworks();
-                                alert("Bulk import completed successfully!");
+                                alert(this.$i18n.locale === 'en' ? "Bulk import completed successfully!" : "นำเข้าข้อมูลเรียบร้อยแล้ว!");
                                 this.showChoiceModal = false;
                             })
                             .catch(err => {
                                 console.error("Import error:", err);
-                                alert("Failed to import artworks. Please check data format.");
+                                alert(this.$i18n.locale === 'en' ? "Failed to import artworks. Please check data format." : "ไม่สามารถนำเข้าข้อมูลได้ กรุณาตรวจสอบรูปแบบข้อมูล");
                             });
                     }
                 } catch (error) {
                     console.error("File processing error:", error);
-                    alert("Error reading file.");
+                    alert(this.$i18n.locale === 'en' ? "Error reading file." : "เกิดข้อผิดพลาดในการอ่านไฟล์");
                 }
             };
             reader.readAsArrayBuffer(file);
         },
         downloadTemplate() {
             const data = [
-                ["ArtworkTitleThai", "ArtworkTitleEng", "DescriptionThai", "DescriptionEng", "TechniqueThai", "TechniqueEng", "SizeThai", "SizeEng", "Price", "ArtistID", "Category", "SaleStatus", "ShowStatuses"],
-                ["ภาพวาดพุทธศิลป์ตัวอย่าง", "Sample Buddhist Art", "คำอธิบายผลงานเบื้องต้น...", "Brief artwork description...", "สีน้ำมันบนผ้าใบ", "Oil on Canvas", "60x80 ซม.", "60x80 cm", "5500", "64XXXXXX", "Painting", "Available", "Approved"]
+                ["ArtworkTitleThai", "ArtworkTitleEng", "DescriptionThai", "DescriptionEng", "TechniqueThai", "TechniqueEng", "SizeThai", "SizeEng", "Price", "ArtistID", "Category", "SaleStatus", "ShowStatuses", "RemarkThai", "RemarkEng"],
+                ["ภาพวาดพุทธศิลป์ตัวอย่าง", "Sample Buddhist Art", "คำอธิบายผลงานเบื้องต้น...", "Brief artwork description...", "สีน้ำมันบนผ้าใบ", "Oil on Canvas", "60x80 ชม.", "60x80 cm", "5500", "64XXXXXX", "Painting", "Available", "Approved", "หมายเหตุ...", "Remark..."]
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(data);
             const workbook = XLSX.utils.book_new();
@@ -227,7 +240,7 @@ export default {
             
             // Auto-width columns
             const wscols = [
-                {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 10}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}
+                {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 10}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 20}
             ];
             worksheet['!cols'] = wscols;
 
@@ -239,10 +252,10 @@ export default {
                 console.log('--- Step 1: Creating Artwork Data ---', artworkData);
                 const response = await this.$store.dispatch('artwork/create', artworkData);
                 
-                if (response.data && response.data.data) {
+                if (response && response.data && (response.data.code === 20000 || response.data.status === 20000 || response.status === 200)) {
                     const createdArtwork = response.data.data;
                     console.log('--- Artwork Created Successfully ---', createdArtwork._id);
-
+                    
                     // 2. Upload Image (PUT /api/v1/artwork/upload)
                     if (artworkData._image && createdArtwork._id) {
                         console.log('--- Step 2: Uploading Image for ID ---', createdArtwork._id);
@@ -252,17 +265,24 @@ export default {
                         await this.$store.dispatch('artwork/upload', uploadFormData);
                         console.log('--- Image Uploaded Successfully ---');
                     }
-                }
 
-                await this.fetchArtworks();
-                this.showCreateModal = false;
-                this.$store.commit('dialog/showToast', {
-                    title: 'Success',
-                    message: 'Artwork created successfully.',
-                    variant: 'success'
-                });
+                    await this.fetchArtworks();
+                    this.showCreateModal = false;
+                    this.$store.commit('dialog/showToast', {
+                        title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                        message: this.$i18n.locale === 'en' ? 'Artwork created successfully.' : 'สร้างผลงานศิลปะเรียบร้อยแล้ว',
+                        variant: 'success'
+                    });
+                } else {
+                    throw new Error('Backend returned an error status.');
+                }
             } catch (error) {
                 console.error('Error saving artwork:', error);
+                this.$store.commit('dialog/showToast', {
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: this.$i18n.locale === 'en' ? 'Failed to create artwork. Please try again.' : 'ไม่สามารถสร้างผลงานศิลปะได้ กรุณาลองใหม่อีกครั้ง',
+                    variant: 'danger'
+                });
             }
         },
         handleViewArtwork(artwork) {
@@ -280,33 +300,52 @@ export default {
         async handleUpdateArtwork(artworkData) {
             try {
                 console.log('--- Step 1: Updating Artwork Data ---', artworkData);
-                await this.$store.dispatch('artwork/update', artworkData);
+                const response = await this.$store.dispatch('artwork/update', artworkData);
 
-                if (artworkData._image) {
-                    console.log('--- Step 2: Uploading New Image for ID ---', artworkData._id);
-                    const uploadFormData = new FormData();
-                    uploadFormData.append('_id', artworkData._id);
-                    uploadFormData.append('image', artworkData._image);
-                    await this.$store.dispatch('artwork/upload', uploadFormData);
-                    console.log('--- Image Updated Successfully ---');
+                if (response && response.data && (response.data.code === 20000 || response.data.status === 20000 || response.status === 200)) {
+                    if (artworkData._image) {
+                        console.log('--- Step 2: Uploading New Image for ID ---', artworkData._id);
+                        const uploadFormData = new FormData();
+                        uploadFormData.append('_id', artworkData._id);
+                        uploadFormData.append('image', artworkData._image);
+                        await this.$store.dispatch('artwork/upload', uploadFormData);
+                        console.log('--- Image Updated Successfully ---');
+                    }
+
+                    await this.fetchArtworks();
+                    this.showEditModal = false;
+                    this.$store.commit('dialog/showToast', {
+                        title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                        message: this.$i18n.locale === 'en' ? 'Artwork updated successfully.' : 'อัปเดตผลงานศิลปะเรียบร้อยแล้ว',
+                        variant: 'success'
+                    });
+                } else {
+                    throw new Error('Backend returned an error status.');
                 }
-
-                await this.fetchArtworks();
-                this.showEditModal = false;
-                this.$store.commit('dialog/showToast', {
-                    title: 'Success',
-                    message: 'Artwork updated successfully.',
-                    variant: 'success'
-                });
             } catch (error) {
                 console.error('Error updating artwork:', error);
+                this.$store.commit('dialog/showToast', {
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: this.$i18n.locale === 'en' ? 'Failed to update artwork. Please try again.' : 'ไม่สามารถอัปเดตผลงานศิลปะได้ กรุณาลองใหม่อีกครั้ง',
+                    variant: 'danger'
+                });
             }
         },
         async handleApproveArtwork(artwork) {
-            await this.updateStatus(artwork, 'Approved', 'Success', 'Artwork has been approved.');
+            await this.updateStatus(
+                artwork,
+                'Approved',
+                this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                this.$i18n.locale === 'en' ? 'Artwork has been approved.' : 'อนุมัติผลงานศิลปะเรียบร้อยแล้ว'
+            );
         },
         async handleRejectArtwork(artwork) {
-            await this.updateStatus(artwork, 'Rejected', 'Success', 'Artwork has been rejected.');
+            await this.updateStatus(
+                artwork,
+                'Rejected',
+                this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                this.$i18n.locale === 'en' ? 'Artwork has been rejected.' : 'ปฏิเสธผลงานศิลปะเรียบร้อยแล้ว'
+            );
         },
         async updateStatus(artwork, statusName, toastTitle, toastMsg) {
             try {
@@ -315,7 +354,7 @@ export default {
                 const targetStatus = statuses.find(s => this.getName('en', s) === statusName);
                 
                 if (!targetStatus) {
-                    throw new Error(`Status "${statusName}" not found. Please contact administrator.`);
+                    throw new Error(this.$i18n.locale === 'en' ? `Status "${statusName}" not found. Please contact administrator.` : `ไม่พบสถานะ "${statusName}" กรุณาติดต่อผู้ดูแลระบบ`);
                 }
 
                 const updateData = {
@@ -337,8 +376,8 @@ export default {
             } catch (error) {
                 console.error(`Error updating to ${statusName}:`, error);
                 this.$store.commit('dialog/showToast', {
-                    title: 'Error',
-                    message: error.message || `Failed to update status to ${statusName}.`,
+                    title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
+                    message: error.message || (this.$i18n.locale === 'en' ? `Failed to update status to ${statusName}.` : `ไม่สามารถอัปเดตสถานะเป็น ${statusName} ได้`),
                     variant: 'danger'
                 });
             } finally {
@@ -346,12 +385,22 @@ export default {
             }
         },
         async handleDeleteArtwork(artwork) {
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to delete artwork "${this.getName('en', artwork)}"?`
+                : `คุณแน่ใจหรือว่าต้องการลบผลงาน "${this.getName('th', artwork)}"?`;
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
             try {
                 await this.$store.dispatch('artwork/delete', { _id: artwork._id });
                 this.fetchArtworks();
                 this.$store.commit('dialog/showToast', {
-                    title: 'Deleted',
-                    message: `Artwork "${this.getName('en', artwork)}" has been removed.`,
+                    title: this.$i18n.locale === 'en' ? 'Deleted' : 'ลบแล้ว',
+                    message: this.$i18n.locale === 'en' 
+                        ? `Artwork "${this.getName('en', artwork)}" has been removed.`
+                        : `ผลงาน "${this.getName('th', artwork)}" ถูกลบออกแล้ว`,
                     variant: 'info'
                 });
             } catch (error) {

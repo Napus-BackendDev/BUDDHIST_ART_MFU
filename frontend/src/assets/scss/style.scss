@@ -138,6 +138,12 @@ h1, h2, h3, h4, h5, h6 {
     border: 1px solid rgba(214, 158, 46, 0.4);
 }
 
+.badge-info, .status-badge.badge-info, .status-badge-lg.badge-info, .status-badge-small.badge-info, .status-badge-mini.badge-info {
+    background-color: #E3F2FD !important;
+    color: #1976D2 !important;
+    border: 1px solid #BBDEFB !important;
+}
+
 .badge-cancelled {
     color: #e53e3e;
     background-color: #fff5f5;

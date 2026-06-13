@@ -13,8 +13,8 @@
                         <CIcon name="cil-magnifying-glass" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Artwork Details</h5>
-                        <p class="text-muted small mb-0">Detailed view of the selected artwork.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Artwork Details' : 'รายละเอียดผลงานศิลปะ' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Detailed view of the selected artwork.' : 'แสดงรายละเอียดข้อมูลเพิ่มเติมของผลงานศิลปะชิ้นนี้' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -31,7 +31,7 @@
                         <img 
                             :src="artwork.image || `https://via.placeholder.com/600/e2e8f0/808080?text=${getName('en', artwork).charAt(0)}`" 
                             class="w-100 h-100 object-fit-contain bg-white" 
-                            :alt="getName('en', artwork)"
+                            :alt="getName($i18n.locale, artwork)"
                         />
                     </div>
                 </div>
@@ -40,17 +40,23 @@
                 <div class="view-section mb-4">
                     <div class="d-flex flex-wrap align-items-center justify-content-center gap-4 status-container-stacked">
                         <div class="status-item text-center px-3">
-                            <label class="view-label-center">Approval Status</label>
+                            <label class="view-label-center">{{ $i18n.locale === 'en' ? 'Approval Status' : 'สถานะการอนุมัติ' }}</label>
                             <CBadge :class="['status-badge-lg px-4 py-2', getStatusInfo(artwork).approval.class]">
                                 <CIcon :name="getStatusInfo(artwork).approval.icon" size="sm" class="status-icon-lg" />
                                 {{ getStatusInfo(artwork).approval.label }}
                             </CBadge>
                         </div>
                         <div class="status-item text-center px-3 border-left-light">
-                            <label class="view-label-center">Sale Status</label>
+                            <label class="view-label-center">{{ $i18n.locale === 'en' ? 'Sale Status' : 'สถานะการขาย' }}</label>
                             <CBadge :class="['status-badge-lg px-4 py-2', getStatusInfo(artwork).sale.class]">
                                 <CIcon :name="getStatusInfo(artwork).sale.icon" size="sm" class="status-icon-lg" />
                                 {{ getStatusInfo(artwork).sale.label }}
+                            </CBadge>
+                        </div>
+                        <div class="status-item text-center px-3 border-left-light" v-if="artwork.artworkCode">
+                            <label class="view-label-center">{{ $i18n.locale === 'en' ? 'Artwork Code' : 'รหัสผลงาน' }}</label>
+                            <CBadge color="light" class="status-badge-lg px-4 py-2 border text-dark font-weight-bold">
+                                {{ artwork.artworkCode }}
                             </CBadge>
                         </div>
                     </div>
@@ -62,13 +68,13 @@
                 <div class="row mb-4">
                     <div class="col-md-6 mb-3 mb-md-0">
                         <div class="view-section">
-                            <label class="view-label">Artwork Title (Thai)</label>
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artwork Title (Thai)' : 'ชื่อผลงาน (ภาษาไทย)' }}</label>
                             <h2 class="view-value-title font-weight-bold mb-0 text-dark">{{ getName('th', artwork) }}</h2>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="view-section">
-                            <label class="view-label">Artwork Title (English)</label>
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artwork Title (English)' : 'ชื่อผลงาน (ภาษาอังกฤษ)' }}</label>
                             <h2 class="view-value-title font-weight-bold mb-0 text-muted">{{ getName('en', artwork) }}</h2>
                         </div>
                     </div>
@@ -78,14 +84,14 @@
                     <!-- 4) Artist -->
                     <div class="col-md-6 mb-4">
                         <div class="view-section">
-                            <label class="view-label">Artist</label>
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artist' : 'ศิลปิน' }}</label>
                             <div class="d-flex align-items-center">
                                 <div class="artist-avatar-md mr-3" :style="{ backgroundColor: getAvatarColor(artwork.artist) }">
                                     {{ getInitials(artwork.artist) }}
                                 </div>
                                 <div class="view-value">
                                     <div class="font-weight-bold text-dark h5 mb-0">
-                                        {{ (artwork.artist || artwork.owner) ? getName('en', artwork.artist || artwork.owner) : 'N/A' }}
+                                        {{ (artwork.artist || artwork.owner) ? getName($i18n.locale, artwork.artist || artwork.owner) : 'N/A' }}
                                     </div>
                                     <div v-if="(artwork.artist || artwork.owner) && (artwork.artist || artwork.owner).studentId" class="small text-muted">ID: {{ (artwork.artist || artwork.owner).studentId }}</div>
                                 </div>
@@ -96,19 +102,19 @@
                     <!-- 5) Category -->
                     <div class="col-md-6 mb-4">
                         <div class="view-section">
-                            <label class="view-label">Category</label>
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
                             <div class="view-value font-weight-bold text-dark h5">
-                                {{ artwork.category ? getName('en', artwork.category) : 'N/A' }}
+                                {{ artwork.category ? getName($i18n.locale, artwork.category) : 'N/A' }}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 6) Technique & Size -->
+                <!-- 6) Technique, Size & Remark -->
                 <div class="row mb-4">
-                    <div class="col-md-6 mb-3 mb-md-0">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm">
-                            <label class="view-label">Technique</label>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Technique' : 'เทคนิค' }}</label>
                             <div class="view-value text-dark mb-2 d-flex align-items-center">
                                 <span class="badge badge-white-outline mr-3">TH</span> 
                                 <span class="font-weight-bold">{{ artwork.technique ? getName('th', artwork.technique) : 'N/A' }}</span>
@@ -119,9 +125,9 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm">
-                            <label class="view-label">Size</label>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Size' : 'ขนาด' }}</label>
                             <div class="view-value text-dark mb-2 d-flex align-items-center">
                                 <span class="badge badge-white-outline mr-3">TH</span> 
                                 <span class="font-weight-bold">{{ artwork.size ? getName('th', artwork.size) : 'N/A' }}</span>
@@ -132,11 +138,24 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
+                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Remark' : 'หมายเหตุ' }}</label>
+                            <div class="view-value text-dark mb-2 d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">TH</span> 
+                                <span class="font-weight-bold">{{ artwork.remark ? getName('th', artwork.remark) : 'N/A' }}</span>
+                            </div>
+                            <div class="view-value text-muted d-flex align-items-center">
+                                <span class="badge badge-white-outline mr-3">EN</span> 
+                                <span>{{ artwork.remark ? getName('en', artwork.remark) : 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 7) Price / Value -->
                 <div class="view-section mb-4 p-3 border rounded-xl bg-primary-faded">
-                    <label class="view-label mb-1">Price / Value</label>
+                    <label class="view-label mb-1">{{ $i18n.locale === 'en' ? 'Price / Value' : 'ราคา / มูลค่า' }}</label>
                     <div class="view-value-price font-weight-bold h2 mb-0 text-primary">
                         ฿ {{ formatPrice(artwork.price) }}
                     </div>
@@ -144,17 +163,17 @@
 
                 <!-- 8) Description (EN) -->
                 <div class="view-section mb-4">
-                    <label class="view-label">Description (English)</label>
+                    <label class="view-label">{{ $i18n.locale === 'en' ? 'Description (English)' : 'คำอธิบาย (ภาษาอังกฤษ)' }}</label>
                     <div class="view-description-box p-3 border rounded-lg bg-white shadow-sm">
-                        {{ (artwork.description && artwork.description.length > 0) ? getName('en', artwork.description) : 'No English description provided.' }}
+                        {{ (artwork.description && artwork.description.length > 0) ? getName('en', artwork.description) : ($i18n.locale === 'en' ? 'No English description provided.' : 'ไม่มีคำอธิบายภาษาอังกฤษ') }}
                     </div>
                 </div>
 
                 <!-- 9) Description (TH) -->
                 <div class="view-section mb-4">
-                    <label class="view-label">Description (Thai)</label>
+                    <label class="view-label">{{ $i18n.locale === 'en' ? 'Description (Thai)' : 'คำอธิบาย (ภาษาไทย)' }}</label>
                     <div class="view-description-box p-3 border rounded-lg bg-white shadow-sm">
-                        {{ (artwork.description && artwork.description.length > 0) ? getName('th', artwork.description) : 'ไม่มีคำอธิบายภาษาไทย.' }}
+                        {{ (artwork.description && artwork.description.length > 0) ? getName('th', artwork.description) : ($i18n.locale === 'en' ? 'No Thai description provided.' : 'ไม่มีคำอธิบายภาษาไทย') }}
                     </div>
                 </div>
             </div>
@@ -167,7 +186,7 @@
                     @click="$emit('update:show', false)"
                     class="btn-close-view px-4"
                 >
-                    Close
+                    {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
                 </CButton>
             </div>
         </template>
@@ -260,25 +279,31 @@ export default {
             }
 
             // Approval Badge
-            const appLabel = approvalStatus ? this.getName('en', approvalStatus) : 'Pending';
-            let approval = { ...defaultStatus, label: appLabel };
+            const appLabelEn = approvalStatus ? this.getName('en', approvalStatus) : 'Pending';
+            const appLabelDisplay = approvalStatus ? this.getName(this.$i18n.locale, approvalStatus) : (this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ');
             
-            switch (appLabel) {
-                case 'Approved': approval = { label: 'Approved', class: 'status-completed', icon: 'cil-check-circle' }; break;
-                case 'Rejected': approval = { label: 'Rejected', class: 'status-cancelled', icon: 'cil-ban' }; break;
-                case 'Revised': approval = { label: 'Needs Revision', class: 'status-update', icon: 'cil-reload' }; break;
-                default: approval = { label: appLabel, class: 'status-pending', icon: 'cil-clock' };
+            let approval = { ...defaultStatus, label: appLabelDisplay };
+            
+            switch (appLabelEn) {
+                case 'Approved': approval.class = 'status-completed'; approval.icon = 'cil-check-circle'; break;
+                case 'Rejected': approval.class = 'status-cancelled'; approval.icon = 'cil-ban'; break;
+                case 'Revised': approval.class = 'status-update'; approval.icon = 'cil-reload'; break;
+                case 'Reserved': approval.class = 'badge-info'; approval.icon = 'cil-credit-card'; break;
+                default: approval.class = 'status-pending'; approval.icon = 'cil-clock';
             }
 
             // Sale Badge
-            const saleLabel = saleStatus ? this.getName('en', saleStatus) : 'Not for sale';
-            let sale = { ...defaultStatus, label: saleLabel };
+            const saleLabelEn = saleStatus ? this.getName('en', saleStatus) : 'Not for sale';
+            const saleLabelDisplay = saleStatus ? this.getName(this.$i18n.locale, saleStatus) : (this.$i18n.locale === 'en' ? 'Not for sale' : 'ไม่มีจำหน่าย');
+            
+            let sale = { ...defaultStatus, label: saleLabelDisplay };
 
-            switch (saleLabel) {
-                case 'Available': sale = { label: 'Available', class: 'status-completed', icon: 'cil-cart' }; break;
-                case 'Sold Out': sale = { label: 'Sold Out', class: 'status-cancelled', icon: 'cil-lock-locked' }; break;
-                case 'Exhibition': sale = { label: 'In Exhibition', class: 'status-update', icon: 'cil-tv' }; break;
-                default: sale = { label: saleLabel, class: 'status-pending', icon: 'cil-tag' };
+            switch (saleLabelEn) {
+                case 'Available': sale.class = 'status-completed'; sale.icon = 'cil-cart'; break;
+                case 'Sold Out': sale.class = 'status-cancelled'; sale.icon = 'cil-lock-locked'; break;
+                case 'Exhibition': sale.class = 'status-update'; sale.icon = 'cil-tv'; break;
+                case 'Reserved': sale.class = 'badge-info'; sale.icon = 'cil-credit-card'; break;
+                default: sale.class = 'status-pending'; sale.icon = 'cil-tag';
             }
 
             return { approval, sale };

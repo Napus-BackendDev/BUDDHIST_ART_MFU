@@ -28,14 +28,6 @@ const ArtworkModule = {
         explore({ commit }, data) {
             return Service.artwork('exp', data, {})
                 .then((response) => {
-                    commit("artworks", response.data.data);
-                    return response.data.data;
-                });
-        },
-        getById({ commit }, id) {
-            return Service.artwork('get-by-id', id, {})
-                .then((response) => {
-                    commit("currentArtwork", response.data.data);
                     return response.data.data;
                 });
         },

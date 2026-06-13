@@ -51,15 +51,15 @@
                             <div class="d-flex flex-wrap gap-2">
                                 <CButton color="info" variant="outline" size="sm" class="mb-2 mr-2 custom-pill"
                                     @click="addPlaceholder('{{ Student Name }}')">
-                                    + Student Name
+                                    + {{ $i18n.locale === 'en' ? 'Student Name' : 'ชื่อนักศึกษา' }}
                                 </CButton>
                                 <CButton color="info" variant="outline" size="sm" class="mb-2 mr-2 custom-pill"
                                     @click="addPlaceholder('{{ Course Name }}')">
-                                    + Course Name
+                                    + {{ $i18n.locale === 'en' ? 'Course Name' : 'ชื่อหลักสูตร' }}
                                 </CButton>
                                 <CButton color="info" variant="outline" size="sm" class="mb-2 mr-2 custom-pill"
                                     @click="addPlaceholder('{{ Date }}')">
-                                    + Current Date
+                                    + {{ $i18n.locale === 'en' ? 'Current Date' : 'วันที่ปัจจุบัน' }}
                                 </CButton>
                             </div>
                         </div>
@@ -271,7 +271,7 @@ export default {
                 background: this.bgImage ? 'Image uploaded' : null,
                 elements: this.elements
             })
-            alert("Certificate Template Saved Successfully!");
+            alert(this.$i18n.locale === 'en' ? "Certificate Template Saved Successfully!" : "บันทึกเทมเพลตใบรับรองเรียบร้อยแล้ว!");
         }
     }
 }

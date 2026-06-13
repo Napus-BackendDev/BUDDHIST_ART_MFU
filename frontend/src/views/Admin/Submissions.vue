@@ -72,12 +72,36 @@ export default {
                 });
         },
         handleDelete(item) {
-            if (confirm('Are you sure you want to delete this submission?')) {
+            const title = this.getName(this.$i18n.locale, item);
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to delete submission "${title}"?`
+                : `คุณแน่ใจหรือว่าต้องการลบการส่งงาน "${title}"?`;
+            
+            if (confirm(confirmMsg)) {
                 this.$store.dispatch('submission/delete', { _id: item._id })
                     .then(() => {
                         this.fetchSubmissions();
+                        alert(this.$i18n.locale === 'en' ? "Submission deleted successfully." : "ลบการส่งงานเรียบร้อยแล้ว");
+                    })
+                    .catch(err => {
+                        console.error("Delete submission error:", err);
+                        alert(this.$i18n.locale === 'en' ? "Failed to delete submission." : "ไม่สามารถลบการส่งงานได้");
                     });
             }
+        },
+        getName(lang, item) {
+            if (!item) return 'N/A';
+            if (typeof item === 'string') return item;
+            
+            const titleField = item.title || item.name || '';
+            if (typeof titleField === 'string' && titleField) return titleField;
+            
+            if (Array.isArray(titleField)) {
+                const nameObj = titleField.find(n => n.key === lang);
+                const firstVal = titleField[0] ? titleField[0].value : 'N/A';
+                return nameObj ? nameObj.value : firstVal;
+            }
+            return 'N/A';
         }
     }
 }
