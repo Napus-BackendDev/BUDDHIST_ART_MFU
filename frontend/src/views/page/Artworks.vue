@@ -270,6 +270,10 @@ export default {
                 await this.$store.dispatch('artwork/get');
                 const cats = await this.$store.dispatch('artwork/category', { method: 'get' });
                 this.categories = cats || [];
+                
+                if (this.$route.query.category) {
+                    this.filters.category = this.$route.query.category;
+                }
             } finally {
                 this.loading = false;
             }

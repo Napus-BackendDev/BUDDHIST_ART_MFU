@@ -1,25 +1,31 @@
 <template>
     <div>
         <SectionHeroHome />
+        <SectionSocialProof />
         <SectionFeaturedHome />
-        <SectionSubmissionHome />
+        <SectionCatalog />
         <SectionNews />
+        <SectionAboutHome />
     </div>
 </template>
 
 <script>
 import SectionHeroHome from './components/SectionHeroHome.vue';
-import SectionNews from './components/SectionNews.vue';
+import SectionSocialProof from './components/SectionSocialProof.vue';
 import SectionFeaturedHome from './components/SectionFeaturedHome.vue';
-import SectionSubmissionHome from './components/SectionSubmissionHome.vue';
+import SectionCatalog from './components/SectionCatalog.vue';
+import SectionNews from './components/SectionNews.vue';
+import SectionAboutHome from './components/SectionAboutHome.vue';
 
 export default {
     name: 'UserIndex',
     components: {
         SectionHeroHome,
-        SectionNews,
+        SectionSocialProof,
         SectionFeaturedHome,
-        SectionSubmissionHome
+        SectionCatalog,
+        SectionNews,
+        SectionAboutHome
     },
     data() {
         return {}
@@ -30,7 +36,6 @@ export default {
 </script>
 
 <style scoped>
-
 .home-section {
     padding: 6rem 0;
     background: linear-gradient(to bottom, #FFFFFF 0%, #FFF5F5 100%);

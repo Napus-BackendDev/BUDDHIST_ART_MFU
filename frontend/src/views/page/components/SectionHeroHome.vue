@@ -1,29 +1,43 @@
 <template>
-    <div class="home-hero" :style="{ backgroundImage: `url(${require('@/assets/images/home_hero_gen.png')})` }">
-        <div class="hero-overlay"></div>
-        <CContainer class="hero-content-wrapper">
-            <div class="hero-text-content">
-                <div class="reveal-animation">
-                    <h1 class="hero-title text-uppercase mb-2">Buddhist <span class="text-highlight">Art MFU</span></h1>
-                    <div class="title-separator mb-4"></div>
-                    <p class="hero-subtitle mb-4">
-                        {{ $i18n.locale === 'en' ? 'Buddhist Art Center, Mae Fah Luang University' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }} <br class="d-none d-md-block">
-                        {{ $i18n.locale === 'en' ? 'A center for learning and preserving Lanna and contemporary Buddhist art' : 'ร่วมสมัย เป็น หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง' }}
-                    </p>
-                    <div class="d-flex gap-3">
-                        <CButton color="danger" shape="pill" class="px-5 py-3 font-weight-bold shadow-lg mr-3 btn-main" @click="$router.push('/artworks')">
-                            {{ $i18n.locale === 'en' ? 'View Artworks' : 'ชมผลงานศิลปะ' }}
-                        </CButton>
-                        <CButton color="light" variant="outline" shape="pill" class="px-5 py-3 font-weight-bold slide-btn-outline" @click="$router.push('/news')">
-                            {{ $i18n.locale === 'en' ? 'News & Activities' : 'ข่าวสารและกิจกรรม' }}
-                        </CButton>
+    <div class="home-hero bg-white py-5 d-flex align-items-center">
+        <CContainer class="my-4">
+            <CRow class="align-items-center">
+                <!-- Left: Text Content -->
+                <CCol lg="6" class="hero-text-col mb-5 mb-lg-0">
+                    <div class="reveal-animation">
+                        <span class="badge text-uppercase font-weight-bold px-3 py-2 mb-3 badge-short-course">
+                            {{ $i18n.locale === 'en' ? 'Short Course Program' : 'หลักสูตรระยะสั้นพุทธศิลปกรรม' }}
+                        </span>
+                        <h1 class="hero-title text-uppercase mb-3">
+                            Buddhist <span class="text-highlight">Art MFU</span>
+                        </h1>
+                        <div class="title-separator mb-4"></div>
+                        <p class="hero-subtitle mb-4">
+                            {{ $i18n.locale === 'en' ? 'Buddhist Art Center, Mae Fah Luang University' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }} <br>
+                            <span class="sub-description mt-2 d-block">
+                                {{ $i18n.locale === 'en' ? 'A center for learning and preserving Lanna and Lanna contemporary Buddhist art' : 'หลักสูตรระยะสั้นที่จะเปิดโลกจินตนาการและการสร้างสรรค์ทางพุทธศิลปกรรมร่วมสมัยและล้านนา' }}
+                            </span>
+                        </p>
+                        <div class="d-flex align-items-center btn-group-hero">
+                            <CButton color="danger" class="px-5 py-3 font-weight-bold shadow-lg mr-3 btn-main" @click="$router.push('/artworks')">
+                                {{ $i18n.locale === 'en' ? 'Expo Art' : 'ชมนิทรรศการ Expo Art' }}
+                            </CButton>
+                            <CButton color="dark" variant="outline" class="px-4 py-3 font-weight-bold btn-outline-custom" @click="$router.push('/news')">
+                                {{ $i18n.locale === 'en' ? 'News & Activities' : 'ข่าวสารและกิจกรรม' }}
+                            </CButton>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </CCol>
+                
+                <!-- Right: Image -->
+                <CCol lg="6" class="hero-img-col d-flex justify-content-center">
+                    <div class="hero-img-wrapper position-relative">
+                        <div class="hero-img-bg-deco"></div>
+                        <img :src="require('@/assets/images/art_student_hero.png')" alt="Art Students" class="img-fluid hero-main-img">
+                    </div>
+                </CCol>
+            </CRow>
         </CContainer>
-        
-        <!-- Subtle decorative element -->
-        <div class="decorative-blob"></div>
     </div>
 </template>
 
@@ -36,55 +50,31 @@ export default {
 <style scoped>
 .home-hero {
     position: relative;
-    height: 650px;
-    display: flex;
-    align-items: center;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    margin-top: -80px; 
-    padding-top: 80px;
+    min-height: 580px;
     overflow: hidden;
-    color: white;
+    color: #2c3e50;
+    background-color: #fafafa !important;
 }
 
-.hero-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        rgba(0,0,0,0.85) 0%, 
-        rgba(0,0,0,0.6) 40%, 
-        rgba(0,0,0,0.2) 100%);
-    z-index: 1;
-}
-
-.hero-content-wrapper {
-    position: relative;
-    z-index: 2;
-}
-
-.hero-text-content {
-    max-width: 850px;
+.badge-short-course {
+    color: #612721; 
+    background-color: rgba(97,39,33,0.08); 
+    border-radius: 50px; 
+    font-size: 0.8rem; 
+    letter-spacing: 1px;
 }
 
 .hero-title {
     font-family: 'Cinzel', serif;
-    font-size: 4.5rem;
+    font-size: 3.6rem;
     font-weight: 900;
-    line-height: 1.1;
-    letter-spacing: 2px;
-    text-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    animation: fadeInLeft 1s ease-out 0.2s both;
+    line-height: 1.15;
+    letter-spacing: 1px;
+    animation: fadeInLeft 1s ease-out both;
 }
 
 .text-highlight {
-    color: white;
-    -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.4);
-    font-style: italic;
-    text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    color: #612721;
 }
 
 .title-separator {
@@ -92,47 +82,102 @@ export default {
     height: 5px;
     background: #612721;
     border-radius: 2px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    animation: scaleIn 0.8s ease-out 0.5s both;
+    animation: scaleIn 0.8s ease-out 0.2s both;
 }
 
 .hero-subtitle {
     font-family: 'Sarabun', sans-serif;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #4a5568;
+    line-height: 1.5;
+    animation: fadeInUp 1s ease-out 0.3s both;
+}
+
+.sub-description {
+    font-size: 1.05rem;
     font-weight: 400;
+    color: #718096;
     line-height: 1.6;
-    color: rgba(255, 255, 255, 0.9);
-    letter-spacing: 0.5px;
-    text-shadow: 0 4px 12px rgba(0,0,0,0.6);
-    animation: fadeInUp 1s ease-out 0.6s both;
 }
 
 .btn-main {
     background-color: #612721 !important;
     border-color: #612721 !important;
-    transition: all 0.3s ease;
+    color: white !important;
+    border-radius: 50px;
+    font-size: 1.05rem;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .btn-main:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(97, 39, 33, 0.4) !important;
+    box-shadow: 0 12px 24px rgba(97, 39, 33, 0.35) !important;
 }
 
-.slide-btn-outline {
-    border-color: #fff !important;
-    color: #fff !important;
-    transition: all 0.3s ease;
+.btn-outline-custom {
+    border-radius: 50px;
+    border-color: #718096 !important;
+    color: #4a5568 !important;
+    font-size: 1.05rem;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.slide-btn-outline:hover {
-    background: #fff !important;
-    color: #612721 !important;
+.btn-outline-custom:hover {
+    background-color: #4a5568 !important;
+    color: white !important;
+    border-color: #4a5568 !important;
     transform: translateY(-3px);
+}
+
+/* Image styling with Gallery frame */
+.hero-img-wrapper {
+    max-width: 480px;
+    width: 100%;
+    animation: fadeInRight 1s ease-out 0.2s both;
+}
+
+.hero-main-img {
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    border: 10px solid white;
+    background-color: white;
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.hero-img-wrapper:hover .hero-main-img {
+    transform: scale(1.02) rotate(1deg);
+}
+
+/* Decorative backdrop glow */
+.hero-img-bg-deco {
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    width: 100%;
+    height: 100%;
+    background: #FEC260;
+    border-radius: 24px;
+    opacity: 0.15;
+    z-index: -1;
+    transition: transform 0.5s ease;
+}
+
+.hero-img-wrapper:hover .hero-img-bg-deco {
+    transform: translate(10px, 10px);
 }
 
 /* Animations */
 @keyframes fadeInLeft {
     from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(30px); }
     to { opacity: 1; transform: translateX(0); }
 }
 
@@ -142,40 +187,39 @@ export default {
 }
 
 @keyframes scaleIn {
-    from { opacity: 0; transform: scaleX(0); transform-origin: left; }
-    to { opacity: 1; transform: scaleX(1); transform-origin: left; }
-}
-
-.decorative-blob {
-    position: absolute;
-    bottom: -50px;
-    right: -50px;
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(97, 39, 33, 0.25) 0%, transparent 70%);
-    border-radius: 50%;
-    filter: blur(40px);
-    z-index: 1;
+    from { transform: scaleX(0); transform-origin: left; }
+    to { transform: scaleX(1); transform-origin: left; }
 }
 
 @media (max-width: 991.98px) {
     .home-hero {
-        height: 500px;
+        padding: 4rem 0 !important;
     }
     .hero-title {
-        font-size: 3.5rem;
+        font-size: 2.8rem;
     }
     .hero-subtitle {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
+    }
+    .hero-main-img {
+        height: 320px;
+        margin-top: 2rem;
     }
 }
 
 @media (max-width: 575.98px) {
     .hero-title {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
     }
-    .hero-subtitle {
-        font-size: 1rem;
+    .btn-group-hero {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100%;
+    }
+    .btn-group-hero button, .btn-group-hero a {
+        margin-right: 0 !important;
+        margin-bottom: 1rem;
+        width: 100%;
     }
 }
 </style>
