@@ -31,30 +31,27 @@
                     </div>
                 </div>
 
+                <!-- Web Disconnection Note -->
+                <div class="alert p-3 mt-3 d-flex align-items-start" style="border-radius: 8px; background-color: #fff9f0; border: 1px solid #ffe8cc; color: #d97706;">
+                    <CIcon name="cil-info" class="mr-2 mt-1 flex-shrink-0" style="color: #f59e0b;" size="sm" />
+                    <div class="small" style="line-height: 1.45; font-size: 0.8rem; font-weight: 500;">
+                        {{ $i18n.locale === 'en' 
+                            ? '*Note: If you experience any system disconnection or the page closes unexpectedly, please verify your order status in your Purchase History page.' 
+                            : '*หมายเหตุ: หากหน้าต่างระบบปิดตัวลงหรือขาดการเชื่อมต่อในระหว่างชำระเงิน กรุณาตรวจสอบสถานะการจองได้ที่หน้าประวัติการสั่งซื้อของคุณ' }}
+                    </div>
+                </div>
+
                 <hr class="border-light my-4">
 
                 <div class="d-flex justify-content-between mb-2 text-muted small">
                     <span>{{ $i18n.locale === 'en' ? 'Subtotal' : 'ยอดรวม' }}</span>
                     <span class="font-weight-bold text-dark">฿{{ formatPrice(subtotal) }}</span>
                 </div>
-                <div class="d-flex justify-content-between mb-2 text-muted small">
-                    <span>{{ $i18n.locale === 'en' ? 'Shipping' : 'ค่าจัดส่ง' }}</span>
-                    <span class="font-weight-bold text-dark">฿{{ formatPrice(shippingCost) }}</span>
-                </div>
 
                 <div class="d-flex justify-content-between mt-4 mb-4">
                     <span class="font-weight-bold h5 mb-0">{{ $i18n.locale === 'en' ? 'Total' : 'ยอดสุทธิ' }}</span>
                     <span class="font-weight-bold h4 mb-0 text-danger">฿{{ formatPrice(total) }}</span>
                 </div>
-
-                <div class="bg-light p-3 rounded d-flex align-items-start">
-                    <CIcon name="cil-truck" class="text-muted mr-3 mt-1" />
-                    <div class="ml-3">
-                        <div class="font-weight-bold small text-dark mb-1">{{ $i18n.locale === 'en' ? 'Free Shipping on orders over ฿1,000' : 'จัดส่งฟรีเมื่อสั่งซื้อเกิน 1,000 บาท' }}</div>
-                        <div class="text-muted small" style="font-size: 0.75rem;">{{ $i18n.locale === 'en' ? 'Estimated delivery: 3-5 business days' : 'เวลาจัดส่งโดยประมาณ: 3-5 วันทำการ' }}</div>
-                    </div>
-                </div>
-
             </CCardBody>
         </CCard>
     </CCol>
