@@ -230,8 +230,8 @@ export default {
         },
         progressLineStyle() {
             let widthPercent = '0%';
-            if (this.currentStep === 2) widthPercent = '50%';
-            if (this.currentStep === 3) widthPercent = '100%';
+            if (this.currentStep === 2) widthPercent = '40%';
+            if (this.currentStep === 3) widthPercent = '80%';
             return {
                 width: widthPercent
             };
