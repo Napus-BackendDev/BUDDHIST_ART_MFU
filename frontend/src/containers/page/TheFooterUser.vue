@@ -12,6 +12,18 @@
                         <p class="brand-description mt-4">
                             {{ $i18n.locale === 'en' ? 'A digital space for learning, archiving, and disseminating contemporary Buddhist artwork to support creativity, knowledge extension, and the cultural creative economy.' : 'พื้นที่ดิจิทัลสำหรับการเรียนรู้ จัดเก็บ และเผยแพร่ผลงานพุทธศิลปกรรมร่วมสมัย เพื่อสนับสนุนการสร้างสรรค์ ต่อยอดองค์ความรู้ และเศรษฐกิจสร้างสรรค์ทางศิลปวัฒนธรรม' }}
                         </p>
+                        <!-- Sleek Round Social Media Buttons -->
+                        <div class="social-links mt-4">
+                            <a href="https://facebook.com/BuddhistArtMFU" target="_blank" rel="noopener noreferrer" class="social-btn" title="Facebook">
+                                <CIcon name="cib-facebook" />
+                            </a>
+                            <a href="https://buddhistart.mfu.ac.th" target="_blank" rel="noopener noreferrer" class="social-btn" title="Official Website">
+                                <CIcon name="cil-globe-alt" />
+                            </a>
+                            <a href="mailto:buddhistart@mfu.ac.th" class="social-btn" title="Email Us">
+                                <CIcon name="cil-envelope-closed" />
+                            </a>
+                        </div>
                     </CCol>
 
                     <!-- Column 2: Quick Links -->
@@ -35,53 +47,46 @@
                     <CCol md="8" lg="5" class="mb-4 mb-lg-0 ml-lg-auto pl-lg-4">
                         <h5 class="footer-heading text-uppercase mb-4">{{ $i18n.locale === 'en' ? 'Contact Us' : 'ติดต่อเรา' }}</h5>
                         <div class="contact-info">
-                            <div class="contact-item d-flex mb-4">
-                                <div class="contact-icon mr-3 mt-1">
-                                    <CIcon name="cil-institution" />
-                                </div>
-                                <div class="contact-text" style="line-height: 1.6;">
-                                    <div class="mb-1">{{ $i18n.locale === 'en' ? 'Academic Services Division, Mae Fah Luang University,' : 'ศูนย์บริการวิชาการ (ฝ่ายบริการวิชาการ) มหาวิทยาลัยแม่ฟ้าหลวง' }}</div>
-                                    <div>{{ $i18n.locale === 'en' ? 'Gen. Sampao Choosri Building (E4)' : 'อาคารพลเอกสำเภา ชูศรี (E4)' }}</div>
-                                </div>
-                            </div>
+                            <!-- Combined Address block -->
                             <div class="contact-item d-flex mb-4">
                                 <div class="contact-icon mr-3 mt-1">
                                     <CIcon name="cil-location-pin" />
                                 </div>
                                 <div class="contact-text" style="line-height: 1.6;">
-                                    {{ $i18n.locale === 'en' ? '333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'ที่อยู่ 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
+                                    <div class="font-weight-bold mb-1" style="color: #fff;">
+                                        {{ $i18n.locale === 'en' ? 'Center for Buddhist Art, Mae Fah Luang University' : 'ศูนย์บริการวิชาการ (ฝ่ายบริการวิชาการ) มหาวิทยาลัยแม่ฟ้าหลวง' }}
+                                    </div>
+                                    <div class="small text-white-50">
+                                        {{ $i18n.locale === 'en' ? 'Gen. Sampao Choosri Building (E4), 333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'อาคารพลเอกสำเภา ชูศรี (E4) เลขที่ 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="contact-item d-flex mb-4">
-                                <div class="contact-icon mr-3 mt-1">
-                                    <CIcon name="cil-phone" />
+                            
+                            <!-- 2-Column Grid for Phone & Email -->
+                            <div class="row no-gutters mt-3 pt-3 border-top border-secondary-light">
+                                <!-- Phone -->
+                                <div class="col-md-6 mb-3 pr-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="contact-icon mr-2 text-warning">
+                                            <CIcon name="cil-phone" size="sm" />
+                                        </div>
+                                        <div class="contact-text small">
+                                            <span class="d-block text-white-50 font-weight-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">{{ $i18n.locale === 'en' ? 'Tel' : 'โทรศัพท์' }}</span>
+                                            <a href="tel:053917897" class="text-white text-decoration-none">053-917-897 {{ $i18n.locale === 'en' ? 'ext.' : 'ต่อ' }} 8035-6</a>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="contact-text" style="line-height: 1.6;">
-                                    {{ $i18n.locale === 'en' ? 'Tel:' : 'โทรศัพท์:' }} 053-917-897 {{ $i18n.locale === 'en' ? 'ext.' : 'ต่อ' }} 8035 {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} 8036
-                                </div>
-                            </div>
-                            <div class="contact-item d-flex mb-4">
-                                <div class="contact-icon mr-3 mt-1">
-                                    <CIcon name="cil-envelope-closed" />
-                                </div>
-                                <div class="contact-text" style="line-height: 1.6;">
-                                    {{ $i18n.locale === 'en' ? 'Email:' : 'อีเมล:' }} <a href="mailto:buddhistart@mfu.ac.th" class="text-white text-decoration-none">buddhistart@mfu.ac.th</a>
-                                </div>
-                            </div>
-                            <div class="contact-item d-flex mb-4">
-                                <div class="contact-icon mr-3 mt-1">
-                                    <CIcon name="cil-globe-alt" />
-                                </div>
-                                <div class="contact-text" style="line-height: 1.6;">
-                                    {{ $i18n.locale === 'en' ? 'Website:' : 'เว็บไซต์:' }} <a href="https://buddhistart.mfu.ac.th" target="_blank" class="text-white text-decoration-none">Buddhistart.mfu.ac.th</a>
-                                </div>
-                            </div>
-                            <div class="contact-item d-flex mb-4">
-                                <div class="contact-icon mr-3 mt-1">
-                                    <CIcon name="cib-facebook" />
-                                </div>
-                                <div class="contact-text" style="line-height: 1.6;">
-                                    {{ $i18n.locale === 'en' ? 'Facebook:' : 'เฟสบุ๊ก:' }} <a href="https://facebook.com/BuddhistArtMFU" target="_blank" class="text-white text-decoration-none">Buddhist Art MFU</a>
+                                <!-- Email -->
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="contact-icon mr-2 text-warning">
+                                            <CIcon name="cil-envelope-closed" size="sm" />
+                                        </div>
+                                        <div class="contact-text small">
+                                            <span class="d-block text-white-50 font-weight-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">{{ $i18n.locale === 'en' ? 'Email' : 'อีเมล' }}</span>
+                                            <a href="mailto:buddhistart@mfu.ac.th" class="text-white text-decoration-none">buddhistart@mfu.ac.th</a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -212,7 +217,7 @@ export default {
     width: 40px;
     height: 40px;
     background: rgba(255,255,255,0.1);
-    border-radius: 10px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -251,6 +256,10 @@ export default {
 
 .border-secondary {
     border-color: rgba(255,255,255,0.1) !important;
+}
+
+.border-secondary-light {
+    border-color: rgba(255,255,255,0.08) !important;
 }
 
 @media (max-width: 991.98px) {
