@@ -96,13 +96,13 @@
                         <CHeaderNavLink to="/news" class="nav-link-custom">{{ $t('header.news') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                     <CHeaderNavItem class="px-4">
+                        <CHeaderNavLink to="/contact" class="nav-link-custom">{{ $t('header.contact') }}</CHeaderNavLink>
+                    </CHeaderNavItem>
+                    <CHeaderNavItem class="px-4">
                         <a href="https://buddhistart.mfu.ac.th/" target="_blank" rel="noopener noreferrer" class="c-header-nav-link nav-link-custom">
                             {{ $t('header.about') }}
                             <CIcon name="cil-external-link" size="sm" class="ml-1" style="vertical-align: middle; opacity: 0.8; width: 12px; height: 12px;" />
                         </a>
-                    </CHeaderNavItem>
-                    <CHeaderNavItem class="px-4">
-                        <CHeaderNavLink to="/contact" class="nav-link-custom">{{ $t('header.contact') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                 </CHeaderNav>
             </CContainer>
@@ -129,13 +129,13 @@
                             <CHeaderNavLink to="/news" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.news') }}</CHeaderNavLink>
                         </li>
                         <li class="mb-4">
+                            <CHeaderNavLink to="/contact" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.contact') }}</CHeaderNavLink>
+                        </li>
+                        <li class="mb-4">
                             <a href="https://buddhistart.mfu.ac.th/" target="_blank" rel="noopener noreferrer" class="text-dark h5 p-0 d-block text-decoration-none" @click="mobileMenu = false">
                                 {{ $t('header.about') }}
                                 <CIcon name="cil-external-link" size="sm" class="ml-1" style="vertical-align: middle; opacity: 0.8; width: 14px; height: 14px;" />
                             </a>
-                        </li>
-                        <li class="mb-4">
-                            <CHeaderNavLink to="/contact" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.contact') }}</CHeaderNavLink>
                         </li>
 
                     </ul>
