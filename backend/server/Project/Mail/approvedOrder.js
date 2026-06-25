@@ -15,7 +15,8 @@ module.exports = function approvedOrderMailTemplate({ buyerName, orderId, artwor
                 overflow: hidden;
             }
             .header {
-                background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+                background: linear-gradient(135deg, #8c1515 0%, #d32f2f 100%);
+                border-bottom: 4px solid #FEC260;
                 color: #ffffff;
                 padding: 40px 20px;
                 text-align: center;
@@ -43,50 +44,40 @@ module.exports = function approvedOrderMailTemplate({ buyerName, orderId, artwor
                 font-size: 12px;
                 color: #777777;
             }
-            .certificate-badge {
-                display: inline-block;
-                padding: 10px 20px;
-                background-color: #2c3e50;
-                color: #ffffff;
-                border-radius: 4px;
-                text-decoration: none;
-                font-weight: bold;
-                margin-top: 20px;
-            }
         </style>
     </head>
     <body>
         <div class="email-container">
             <div class="header">
-                <h1>Payment Approved!</h1>
-                <p>Your acquisition is now complete</p>
+                <h1>การชำระเงินได้รับการอนุมัติแล้ว!</h1>
+                <p>การสั่งซื้อผลงานของท่านเสร็จสมบูรณ์</p>
             </div>
             <div class="content">
-                <p>Dear <strong>${buyerName}</strong>,</p>
-                <p>Great news! Your payment for the order <strong>#${orderId}</strong> has been verified and approved.</p>
+                <p>เรียน คุณ <strong>${buyerName}</strong>,</p>
+                <p>เรายินดีที่จะแจ้งให้ทราบว่า หลักฐานการชำระเงินสำหรับใบสั่งซื้อหมายเลข <strong>#${orderId}</strong> ได้รับการตรวจสอบและอนุมัติเรียบร้อยแล้ว</p>
                 
                 <table class="order-details">
                     <tr>
-                        <td><strong>Artwork:</strong></td>
+                        <td><strong>ผลงานพุทธศิลป์:</strong></td>
                         <td style="text-align: right;">${artworkTitle}</td>
                     </tr>
                     <tr>
-                        <td><strong>Total Amount:</strong></td>
+                        <td><strong>ยอดชำระทั้งสิ้น:</strong></td>
                         <td style="text-align: right;">฿${price.toLocaleString()}</td>
                     </tr>
                 </table>
 
-                <p>We have attached the <strong>Certificate of Authenticity</strong> for your new artwork to this email. You can also download it anytime from your order history on our website.</p>
+                <p>เราได้แนบ <strong>ใบรับรองสิทธิ์และผลงานจริง (Certificate of Authenticity)</strong> สำหรับผลงานของท่านมาพร้อมกับอีเมลฉบับนี้ นอกจากนี้ท่านยังสามารถเข้าสู่ระบบเพื่อดาวน์โหลดใบรับรองได้ตลอดเวลาจากเมนูประวัติการสั่งซื้อบนเว็บไซต์</p>
                 
-                <p>Our logistics team will coordinate the delivery and will contact you shortly with the tracking information.</p>
+                <p>ทีมจัดส่งของเราจะดำเนินการประสานงานเพื่อส่งมอบผลงานให้ท่านอย่างปลอดภัย และจะแจ้งหมายเลขติดตามพัสดุ (Tracking number) ให้ทราบโดยเร็วที่สุด</p>
                 
-                <p>Thank you for supporting Buddhist Art MFU.</p>
+                <p>ขอขอบพระคุณเป็นอย่างสูงที่ร่วมสนับสนุนโครงการพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง</p>
                 
-                <p>Best regards,<br/><strong>Buddhist Art MFU Team</strong></p>
+                <p>ขอแสดงความนับถือ<br/><strong>ทีมงานพุทธศิลปกรรม มฟล. (Buddhist Art MFU Team)</strong></p>
             </div>
             <div class="footer">
                 <p>&copy; ${new Date().getFullYear()} Buddhist Art MFU. All rights reserved.</p>
-                <p>Mae Fah Luang University, Chiang Rai, Thailand</p>
+                <p>มหาวิทยาลัยแม่ฟ้าหลวง จังหวัดเชียงราย ประเทศไทย</p>
             </div>
         </div>
     </body>

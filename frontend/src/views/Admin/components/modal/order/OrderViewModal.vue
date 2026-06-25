@@ -74,34 +74,7 @@
                 </CRow>
             </div>
 
-            <hr class="section-divider">
-            
-            <!-- Shipping & Tracking -->
-            <div class="shipping-section mt-4">
-                <h6 class="section-title mb-3">{{ $i18n.locale === 'en' ? 'Shipping & Tracking' : 'การจัดส่งและติดตามสถานะ' }}</h6>
-                <CRow>
-                    <CCol md="4">
-                        <div class="info-item">
-                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Carrier' : 'ผู้จัดส่ง' }}</span>
-                            <div class="info-value">{{ order.carrier || ($i18n.locale === 'en' ? 'Thailand Post' : 'ไปรษณีย์ไทย') }}</div>
-                        </div>
-                    </CCol>
-                    <CCol md="4">
-                        <div class="info-item">
-                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Tracking ID' : 'รหัสติดตามพัสดุ' }}</span>
-                            <div class="info-value font-family-mono">{{ order.trackingId || ($i18n.locale === 'en' ? 'Not assigned' : 'ยังไม่ได้มอบหมาย') }}</div>
-                        </div>
-                    </CCol>
-                    <CCol md="4">
-                        <div class="info-item">
-                            <span class="info-label">{{ $i18n.locale === 'en' ? 'Expected Delivery' : 'วันที่คาดว่าจะจัดส่ง' }}</span>
-                            <div class="info-value">{{ order.deliveryDate ? formatDateShort(order.deliveryDate) : ($i18n.locale === 'en' ? 'To be confirmed' : 'รอการยืนยัน') }}</div>
-                        </div>
-                    </CCol>
-                </CRow>
-            </div>
 
-            <hr class="section-divider">
 
             <!-- Artwork Selection Section -->
             <div class="artwork-section mt-4">

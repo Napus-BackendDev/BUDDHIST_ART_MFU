@@ -34,6 +34,8 @@ const objsSchema = new Schema({
         value: { type: String, default: null },
     }],
     rejectionReason: { type: String, default: null },
+    views: { type: Number, default: 0 },
+    storage: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Storage', default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Artwork', objsSchema, 'Artwork');

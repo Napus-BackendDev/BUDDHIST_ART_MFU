@@ -9,8 +9,22 @@ let transporter = nodemailer.createTransport({
 });
 
 exports.sendMail = async function (to, subject, text, html, attachments = []) {
-    console.log(`[TEST MODE] Mail send request bypassed (to: ${to}, subject: ${subject})`);
-    return { success: true, messageId: "test-bypassed-id" };
+    try {
+        let mailOptions = {
+            from: process.env.SMTP_USER,
+            to: to,
+            subject: subject,
+            text: text,
+            html: html,
+            attachments: attachments
+        };
+        let info = await transporter.sendMail(mailOptions);
+        console.log(`[Email] Mail sent successfully to ${to}. Message ID: ${info.messageId}`);
+        return { success: true, messageId: info.messageId };
+    } catch (error) {
+        console.error(`[Email] Failed to send email to ${to}:`, error);
+        throw error;
+    }
 }
 
 

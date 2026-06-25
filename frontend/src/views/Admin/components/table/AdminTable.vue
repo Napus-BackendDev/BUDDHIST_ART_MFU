@@ -217,7 +217,7 @@ export default {
             ];
         },
         filteredItems() {
-            return this.items.filter(item => {
+            const list = this.items.filter(item => {
                 const titleEn = this.getName('en', item).toLowerCase();
                 const titleTh = this.getName('th', item).toLowerCase();
                 const artistEn = (item.artist ? this.getName('en', item.artist) : '').toLowerCase();
@@ -253,6 +253,7 @@ export default {
 
                 return searchMatch && categoryMatch && statusMatch && dateMatch;
             });
+            return list.sort((a, b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0));
         }
     },
     methods: {
@@ -293,7 +294,7 @@ export default {
                 'Artist Name', 'Artist ID', 'Category', 
                 'Technique (TH)', 'Technique (EN)', 
                 'Size (TH)', 'Size (EN)', 'Price', 
-                'Approval Status', 'Sale Status', 'Created At'
+                'Approval Status', 'Sale Status', 'Storage Location', 'Created At'
             ];
 
             const data = this.filteredItems.map(item => {
@@ -319,6 +320,7 @@ export default {
                     item.price || 0,
                     approvalStatus,
                     saleStatus,
+                    item.storage ? this.getName(this.$i18n.locale, item.storage) : '-',
                     this.formatDate(item.createdAt)
                 ];
             });

@@ -17,9 +17,10 @@ module.exports = function() {
 
             const orderReservedStatus = getStatusId('Reserved') || getStatusId('Pending');
             const orderCancelledStatus = getStatusId('Cancelled') || getStatusId('Rejected');
-            const artworkAvailableStatus = getStatusId('Approved') || getStatusId('Available');
+            const artworkAvailableStatus = getStatusId('Available');
+            const artworkApprovedStatus = getStatusId('Approved');
 
-            if (!orderReservedStatus || !orderCancelledStatus || !artworkAvailableStatus) {
+            if (!orderReservedStatus || !orderCancelledStatus || !artworkAvailableStatus || !artworkApprovedStatus) {
                 return;
             }
 
@@ -27,8 +28,9 @@ module.exports = function() {
             const timeoutThreshold = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
             // 3. Find Orders that have timed out AND have no payment slip
+            // Also include the fallback default status ID "689c04cb255db4e56aea88ef"
             const expiredOrders = await Order.find({
-                status: orderReservedStatus,
+                status: { $in: [orderReservedStatus, mongoose.Types.ObjectId('689c04cb255db4e56aea88ef')] },
                 createdAt: { $lt: timeoutThreshold },
                 $or: [
                     { image: { $exists: false } },
@@ -42,11 +44,16 @@ module.exports = function() {
             console.log(`[Cron] Found ${expiredOrders.length} expired orders. Processing...`);
 
             for (const order of expiredOrders) {
-                // A. Release Artworks in this order
+                // A. Release Artworks in this order: set sale to Available and approval to Approved
                 if (order.artwork && order.artwork.length > 0) {
                     await Artwork.updateMany(
                         { _id: { $in: order.artwork } },
-                        { $set: { 'status.approval': artworkAvailableStatus } }
+                        { 
+                            $set: { 
+                                'status.sale': artworkAvailableStatus,
+                                'status.approval': artworkApprovedStatus
+                            } 
+                        }
                     );
                 }
 

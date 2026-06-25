@@ -1,53 +1,36 @@
 <template>
-    <div class="social-proof-section py-5 bg-white border-bottom">
-        <CContainer>
-            <!-- Stat metrics row -->
-            <CRow class="text-center py-3">
-                <CCol md="4" class="mb-4 mb-md-0 border-right-md">
-                    <div class="stat-card">
-                        <h2 class="stat-number font-weight-bold">150+</h2>
-                        <p class="stat-label text-muted font-weight-bold mb-0">
-                            {{ $i18n.locale === 'en' ? 'Artworks Created' : 'ผลงานสร้างสรรค์ในระบบ' }}
-                        </p>
-                    </div>
-                </CCol>
-                <CCol md="4" class="mb-4 mb-md-0 border-right-md">
-                    <div class="stat-card">
-                        <h2 class="stat-number font-weight-bold">80+</h2>
-                        <p class="stat-label text-muted font-weight-bold mb-0">
-                            {{ $i18n.locale === 'en' ? 'Professional Artists' : 'ศิลปินและนักเรียนสร้างสรรค์' }}
-                        </p>
-                    </div>
-                </CCol>
-                <CCol md="4">
-                    <div class="stat-card">
-                        <h2 class="stat-number font-weight-bold">30+</h2>
-                        <p class="stat-label text-muted font-weight-bold mb-0">
-                            {{ $i18n.locale === 'en' ? 'Specialized Courses' : 'หลักสูตรเฉพาะทางพุทธศิลป์' }}
-                        </p>
-                    </div>
-                </CCol>
-            </CRow>
+    <div class="social-proof-section py-4" style="background-color: #612721; border-bottom: 1px solid rgba(0,0,0,0.1);">
+        <CContainer fluid class="px-0">
 
-            <hr class="my-5 border-light">
-
-            <!-- Partner logos row -->
-            <div class="partners-wrapper text-center">
-                <h6 class="text-uppercase text-muted font-weight-bold mb-4" style="letter-spacing: 2px; font-size: 0.75rem;">
-                    {{ $i18n.locale === 'en' ? 'Supported & Endorsed by' : 'สนับสนุนและดูแลโดยคณะกรรมการร่วม' }}
-                </h6>
-                <div class="d-flex flex-wrap justify-content-center align-items-center gap-5 partner-badges">
-                    <div class="partner-badge px-4 py-2 mx-3 my-2 shadow-sm border rounded">
-                        <span class="font-weight-bold text-dark" style="font-family: 'Cinzel', serif;">MFU</span>
-                        <span class="small text-muted ml-2">{{ $i18n.locale === 'en' ? 'Mae Fah Luang University' : 'มหาวิทยาลัยแม่ฟ้าหลวง' }}</span>
+            <!-- Marquee container wrapper -->
+            <div class="marquee-wrapper">
+                <div class="marquee-track">
+                    <!-- Group 1: Primary set of logos (spans full viewport width) -->
+                    <div class="marquee-group">
+                        <div v-for="(partner, index) in [...partners, ...partners]" :key="'g1-' + index" class="partner-logo-item mx-4">
+                            <div class="partner-logo-img-wrapper">
+                                <img :src="partner.img" :alt="partner.id" class="partner-logo-img" />
+                            </div>
+                            <div class="logo-divider"></div>
+                            <div class="logo-desc d-flex flex-column text-left">
+                                <span class="desc-main">{{ $i18n.locale === 'en' ? partner.nameEn : partner.nameTh }}</span>
+                                <span class="desc-sub">{{ partner.sub }}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="partner-badge px-4 py-2 mx-3 my-2 shadow-sm border rounded">
-                        <span class="font-weight-bold text-danger" style="font-family: 'Cinzel', serif; color: #612721 !important;">ASD</span>
-                        <span class="small text-muted ml-2">{{ $i18n.locale === 'en' ? 'Academic Services Division' : 'ศูนย์บริการวิชาการ' }}</span>
-                    </div>
-                    <div class="partner-badge px-4 py-2 mx-3 my-2 shadow-sm border rounded">
-                        <span class="font-weight-bold text-warning" style="font-family: 'Cinzel', serif; color: #FEC260 !important;">BAC</span>
-                        <span class="small text-muted ml-2">{{ $i18n.locale === 'en' ? 'Buddhist Art Center' : 'โครงการกองทุนอนุรักษ์พุทธศิลป์' }}</span>
+                    
+                    <!-- Group 2: Identical Duplicate set of logos (for seamless loop) -->
+                    <div class="marquee-group">
+                        <div v-for="(partner, index) in [...partners, ...partners]" :key="'g2-' + index" class="partner-logo-item mx-4">
+                            <div class="partner-logo-img-wrapper">
+                                <img :src="partner.img" :alt="partner.id" class="partner-logo-img" />
+                            </div>
+                            <div class="logo-divider"></div>
+                            <div class="logo-desc d-flex flex-column text-left">
+                                <span class="desc-main">{{ $i18n.locale === 'en' ? partner.nameEn : partner.nameTh }}</span>
+                                <span class="desc-sub">{{ partner.sub }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -57,7 +40,41 @@
 
 <script>
 export default {
-    name: 'SectionSocialProof'
+    name: 'SectionSocialProof',
+    data() {
+        return {
+            partners: [
+                {
+                    id: 'LocalMFU',
+                    img: '/img/partner_mfu.png',
+                    nameEn: 'Mae Fah Luang University',
+                    nameTh: 'มหาวิทยาลัยแม่ฟ้าหลวง',
+                    sub: 'MFU'
+                },
+                {
+                    id: 'LocalCAS',
+                    img: '/img/partner_cas.png',
+                    nameEn: 'Academic Services Division',
+                    nameTh: 'ศูนย์บริการวิชาการ มหาวิทยาลัยแม่ฟ้าหลวง',
+                    sub: 'CAS'
+                },
+                {
+                    id: 'LocalEart',
+                    img: '/img/partner_museum.png',
+                    nameEn: 'Buddhist Art Center',
+                    nameTh: 'พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง',
+                    sub: 'Buddhist Art MFU'
+                },
+                {
+                    id: 'Museum',
+                    img: '/img/partner_eart.png',
+                    nameEn: 'Institute for Mekong Basin Civilisation Art and Culture',
+                    nameTh: 'สถาบันศิลปวัฒนธรรมและอารยธรรมลุ่มน้ำโขง',
+                    sub: 'IMAC'
+                }
+            ]
+        }
+    }
 }
 </script>
 
@@ -65,49 +82,94 @@ export default {
 .social-proof-section {
     position: relative;
     z-index: 10;
+    overflow: hidden;
 }
 
-.stat-number {
-    font-family: 'Cinzel', serif;
-    font-size: 3rem;
-    color: #612721;
-    margin-bottom: 5px;
-    background: linear-gradient(135deg, #612721, #FEC260);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+.marquee-wrapper {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    padding: 15px 0;
+    display: flex;
 }
 
-.stat-label {
-    font-family: 'Sarabun', sans-serif;
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+.marquee-track {
+    display: flex;
+    width: max-content;
+    align-items: center;
+    animation: scroll-marquee 30s linear infinite;
 }
 
-.partner-badge {
-    background-color: #fbfbfb;
-    border-color: rgba(0,0,0,0.06) !important;
+@keyframes scroll-marquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.marquee-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    min-width: 100vw;
+    flex-shrink: 0;
+}
+
+.partner-logo-item {
     display: inline-flex;
     align-items: center;
-    border-radius: 8px !important;
-    transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
-.partner-badge:hover {
-    transform: translateY(-2px);
-    border-color: #FEC260 !important;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.06) !important;
+.partner-logo-img-wrapper {
+    width: 50px;
+    height: 50px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    padding: 5px;
+    flex-shrink: 0;
 }
 
-@media (min-width: 768px) {
-    .border-right-md {
-        border-right: 1px solid rgba(0, 0, 0, 0.08);
-    }
+.partner-logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
-@media (max-width: 767.98px) {
-    .stat-card {
-        padding: 1rem 0;
-    }
+.logo-divider {
+    width: 2px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin: 0 18px;
+}
+
+.logo-desc {
+    color: #ffffff;
+    font-family: 'Sarabun', sans-serif;
+}
+
+.desc-main {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.desc-sub {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+}
+
+.font-cinzel {
+    font-family: 'Cinzel', serif;
 }
 </style>

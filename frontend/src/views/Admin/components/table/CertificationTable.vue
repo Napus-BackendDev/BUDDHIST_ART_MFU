@@ -1,7 +1,7 @@
 <template>
     <CCard class="certification-table-card mb-4">
         <div>
-            <CDataTable :items="items" :fields="fields" class="custom-table mb-0" hover :border="false"
+            <CDataTable :items="sortedItems" :fields="fields" class="custom-table mb-0" hover :border="false"
                 :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
 
                 <!-- Certificate Name -->
@@ -131,6 +131,14 @@ export default {
                 { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
             ];
+        },
+        sortedItems() {
+            const moment = require('moment');
+            return [...this.items].sort((a, b) => {
+                const dateA = moment(a.created_date, 'MMM DD, YYYY');
+                const dateB = moment(b.created_date, 'MMM DD, YYYY');
+                return dateB - dateA;
+            });
         }
     },
     methods: {
@@ -229,59 +237,4 @@ export default {
     border-bottom-right-radius: 12px !important;
 }
 
-/* Action Buttons */
-.action-btn {
-    background: transparent;
-    border: none;
-    padding: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
-    outline: none;
-    opacity: 0;
-    /* Hidden by default */
-}
-
-/* Show action buttons when the table row is hovered */
-::v-deep .custom-table tbody tr:hover .action-btn {
-    opacity: 1;
-}
-
-::v-deep tr:hover td {
-    background-color: #f8f9fa;
-}
-
-.action-btn:hover {
-    transform: scale(1.15);
-}
-
-.icon-danger {
-    color: #e53e3e;
-}
-
-.icon-danger:hover {
-    background-color: #ffdddd;
-    /* Light red bg */
-}
-
-.icon-view {
-    color: #a0aec0;
-}
-
-.icon-view:hover {
-    background-color: #f1f9ff;
-    /* Light gray bg */
-}
-
-.icon-edit {
-    color: #4299e1;
-}
-
-.icon-edit:hover {
-    background-color: #ebf8ff;
-    /* Light blue bg */
-}
 </style>

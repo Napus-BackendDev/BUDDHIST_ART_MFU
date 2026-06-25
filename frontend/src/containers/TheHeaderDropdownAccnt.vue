@@ -83,7 +83,7 @@ export default {
     },
     logout() {
       localStorage.removeItem('objs');
-      this.$store.commit('auth/isSignIn', false);
+      this.$store.commit('auth/showSignInModal', false);
       this.$router.push('/');
       window.location.reload();
     }

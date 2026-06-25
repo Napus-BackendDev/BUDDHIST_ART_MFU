@@ -21,13 +21,14 @@ export default {
   },
   computed: {
     remainingTime() {
-      const expiry = this.addedAt + 15 * 60 * 1000;
+      const expiry = this.addedAt + 24 * 60 * 60 * 1000;
       const diff = expiry - this.currentTime;
-      if (diff <= 0) return '00:00';
+      if (diff <= 0) return '00:00:00';
       
-      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
       const seconds = Math.floor((diff % 60000) / 1000);
-      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
   },
   mounted() {
@@ -47,5 +48,6 @@ export default {
 .cart-item-timer {
   font-family: monospace;
   font-size: 1.1em;
+  color: #dc3545;
 }
 </style>

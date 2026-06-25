@@ -56,6 +56,15 @@
                     </div>
                 </div>
 
+                <!-- 2.5) Rejection Reason Section -->
+                <div class="alert alert-danger mb-4 rounded-xl border border-danger-subtle p-3" v-if="getStatusInfo(artwork).approval.label === 'Rejected' && artwork.rejectionReason">
+                    <div class="d-flex align-items-center mb-1">
+                        <CIcon name="cil-warning" class="text-danger mr-2" />
+                        <h6 class="alert-heading font-weight-bold mb-0 text-danger">{{ $i18n.locale === 'en' ? 'Reason for Rejection / Feedback' : 'เหตุผลที่ไม่ผ่านการประเมิน / ข้อเสนอแนะ' }}</h6>
+                    </div>
+                    <p class="mb-0 text-danger font-weight-bold ml-4">{{ artwork.rejectionReason }}</p>
+                </div>
+
                 <hr class="my-4 opacity-5">
 
                 <!-- 3) Artwork Title (TH, EN) -->

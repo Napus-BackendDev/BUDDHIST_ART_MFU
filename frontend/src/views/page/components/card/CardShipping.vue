@@ -50,6 +50,20 @@
                 </h5>
             </CCardHeader>
             <CCardBody class="p-4 pt-3">
+                <!-- Reservation Expiry Notice -->
+                <div class="alert alert-warning mb-4 shadow-sm border-0 d-flex align-items-start" style="border-radius: 12px; background-color: #fffaf0; border: 1px solid #ffe8cc; color: #d97706;">
+                    <CIcon name="cil-clock" class="mr-3 mt-1 flex-shrink-0" size="lg" style="color: #f59e0b;" />
+                    <div class="small">
+                        <span class="font-weight-bold d-block mb-1" style="font-size: 0.95rem;">
+                            {{ $i18n.locale === 'en' ? '24-Hour Payment Limit' : 'กำหนดเวลาชำระเงิน 24 ชั่วโมง' }}
+                        </span>
+                        <span>
+                            {{ $i18n.locale === 'en' 
+                                ? 'Your reserved artwork is held for 24 hours only. Please complete the transfer and upload the slip before the deadline, otherwise your reservation will be auto-cancelled.' 
+                                : 'ผลงานชิ้นนี้จะถูกล็อกจองให้คุณเป็นเวลา 24 ชั่วโมงเท่านั้น กรุณาโอนเงินและส่งหลักฐานก่อนหมดเวลา มิฉะนั้นคำสั่งซื้อจะถูกยกเลิกโดยอัตโนมัติ' }}
+                        </span>
+                    </div>
+                </div>
 
                 <!-- Payment Options -->
                 <div class="payment-options mb-4">
@@ -177,6 +191,10 @@ export default {
         currentStep: {
             type: Number,
             default: 1
+        },
+        createdOrder: {
+            type: Object,
+            default: () => null
         }
     },
     data() {
@@ -212,6 +230,18 @@ export default {
         isLoggedIn(newVal) {
             if (newVal) {
                 this.autofillUserData();
+            }
+        },
+        createdOrder: {
+            immediate: true,
+            handler(newVal) {
+                if (newVal) {
+                    this.form.name = newVal.contact?.name || '';
+                    this.form.email = newVal.contact?.email || '';
+                    this.form.telephone = newVal.contact?.telephone || '';
+                    this.form.bill = newVal.address?.bill || '';
+                    this.form.shipping = newVal.address?.shipping || '';
+                }
             }
         }
     },
@@ -290,7 +320,7 @@ export default {
             const userId = this.$store.getters['auth/userId'];
             if (!userId) {
                 this.$store.commit('dialog/showToast', { title: 'Authentication Required', message: this.$i18n.locale === 'en' ? 'Please login before confirming the order' : 'กรุณาเข้าสู่ระบบก่อนยืนยันคำสั่งซื้อ', variant: 'warning' });
-                this.$store.commit('auth/isSignIn', true);
+                this.$store.commit('auth/showSignInModal', true);
                 return;
             }
 

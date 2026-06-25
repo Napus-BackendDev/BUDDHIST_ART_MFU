@@ -2036,7 +2036,8 @@ export const iconsSet = Object.assign({}, { logo }, {
   cilWrapText,
   cilZoomIn,
   cilZoomOut,
-  cilMagnifyingGlass
+  cilMagnifyingGlass,
+  cilSearch: cilMagnifyingGlass
 }, {
   cifAe,
   cifAg,

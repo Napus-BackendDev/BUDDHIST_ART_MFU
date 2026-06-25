@@ -120,8 +120,9 @@ export default {
                 { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
             ];
         },
+
         filteredItems() {
-            return this.items.filter(item => {
+            const list = this.items.filter(item => {
                 const title = this.getName('en', item).toLowerCase();
                 const content = (item.content || item.description) ? this.getName('en', item.content || item.description).toLowerCase() : '';
                 
@@ -137,6 +138,11 @@ export default {
                 }
 
                 return searchMatch && dateMatch;
+            });
+            return list.sort((a, b) => {
+                const dateA = a.create?.datetime ? new Date(a.create.datetime) : new Date(a.createdAt || 0);
+                const dateB = b.create?.datetime ? new Date(b.create.datetime) : new Date(b.createdAt || 0);
+                return dateB - dateA;
             });
         },
         paginatedItems() {
@@ -186,12 +192,39 @@ export default {
             this.showZoomModal = true;
         },
         exportExcel() {
-            const dataToExport = this.filteredItems.map(item => ({
-                'ID': item._id,
-                'Title': this.getName('en', item.title),
-                'Created At': this.formatDate(item.createdAt)
-            }));
+            const baseUrl = process.env.VUE_APP_API_URL || window.location.origin;
+            const dataToExport = this.filteredItems.map(item => {
+                const img = this.getFirstImage(item);
+                let imgUrl = 'N/A';
+                if (img) {
+                    imgUrl = img.startsWith('http') ? img : `${baseUrl}${img}`;
+                }
+
+                const descTh = item.description || item.content ? this.stripHtml(this.getName('th', item.description || item.content)) : 'N/A';
+
+                return {
+                    'รูปภาพ': imgUrl,
+                    'หัวข้อข่าว': this.getName('th', item.title),
+                    'เนื้อหาข่าว': descTh,
+                    'ยอดผู้เข้าชม': item.views || 0,
+                    'วันที่สร้าง': this.formatDate(item.create ? item.create.datetime : item.createdAt)
+                };
+            });
             const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+            // Post-process to make image cells clickable formulas
+            for (let i = 0; i < dataToExport.length; i++) {
+                const cellRef = `A${i + 2}`;
+                const url = dataToExport[i]['รูปภาพ'];
+                if (url && url !== 'N/A') {
+                    ws[cellRef] = {
+                        t: 's',
+                        v: 'View',
+                        f: `HYPERLINK("${url}", "View")`
+                    };
+                }
+            }
+
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'News');
             XLSX.writeFile(wb, `News_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);

@@ -55,6 +55,10 @@ export default {
     transition: padding-top 0.3s ease;
 }
 
+.c-main {
+    padding-top: 0 !important;
+}
+
 @media (max-width: 991.98px) {
     .c-body {
         padding-top: 75px; /* Only Tier 1 height on mobile */

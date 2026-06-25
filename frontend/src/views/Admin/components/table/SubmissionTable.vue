@@ -153,9 +153,16 @@ export default {
             const totalPossible = item.assignments.length * item.artist.length;
             let totalSubmitted = 0;
             item.assignments.forEach(assign => {
-                totalSubmitted += assign.artworks ? assign.artworks.length : 0;
+                if (assign.artworks) {
+                    const submittedOwners = new Set();
+                    assign.artworks.forEach(aw => {
+                        const ownerId = (aw.owner?._id || aw.owner || aw.artist?._id || aw.artist)?.toString();
+                        if (ownerId) submittedOwners.add(ownerId);
+                    });
+                    totalSubmitted += submittedOwners.size;
+                }
             });
-            return Math.round((totalSubmitted / totalPossible) * 100);
+            return Math.min(100, Math.round((totalSubmitted / totalPossible) * 100));
         },
         pageChange(val) {
             this.activePage = val;
@@ -177,7 +184,7 @@ export default {
         },
         filteredItems() {
             if (!this.submissions) return [];
-            return this.submissions.filter(item => {
+            const list = this.submissions.filter(item => {
                 const title = (this.getName('en', item) || this.getName('th', item) || '').toLowerCase();
                 const matchesSearch = title.includes(this.filters.search.toLowerCase())
                 
@@ -190,7 +197,12 @@ export default {
                 }
                 
                 return matchesSearch && matchesDate
-            })
+            });
+            return list.sort((a, b) => {
+                const dateA = a.create ? new Date(a.create.startAt || a.createdAt || 0) : new Date(a.createdAt || 0);
+                const dateB = b.create ? new Date(b.create.startAt || b.createdAt || 0) : new Date(b.createdAt || 0);
+                return dateB - dateA;
+            });
         }
     }
 }

@@ -136,7 +136,7 @@ export default {
             ];
         },
         filteredItems() {
-            return this.items.filter(item => {
+            const list = this.items.filter(item => {
                 // Search Filter
                 const searchMatch = !this.filters.search || 
                     item.student_name.toLowerCase().includes(this.filters.search.toLowerCase()) ||
@@ -161,6 +161,11 @@ export default {
                 }
 
                 return searchMatch && statusMatch && deadlineMatch && dateMatch;
+            });
+            return list.sort((a, b) => {
+                const dateA = moment(a.submitted_date, 'MMM DD, YYYY hh:mm A');
+                const dateB = moment(b.submitted_date, 'MMM DD, YYYY hh:mm A');
+                return dateB - dateA;
             });
         }
     },

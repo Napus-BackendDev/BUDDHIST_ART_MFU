@@ -20,7 +20,7 @@
             <CCard :class="['widget-card', { 'active-widget': value === 'Completed' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Completed' : 'เสร็จสมบูรณ์' }}</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Approved' : 'อนุมัติ' }}</div>
                         <div class="widget-value text-green">{{ counts.completed }}</div>
                     </div>
                     <div class="icon-wrapper bg-green-light text-green">
@@ -45,16 +45,16 @@
             </CCard>
         </CCol>
 
-        <!-- Cancelled Orders -->
-        <CCol sm="6" lg="3" @click="$emit('input', 'Cancelled')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': value === 'Cancelled' }]">
+        <!-- Artworks Sold -->
+        <CCol sm="6" lg="3" @click="$emit('input', 'Completed')" style="cursor: pointer;">
+            <CCard :class="['widget-card', { 'active-widget': value === 'Completed' }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
-                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Cancelled' : 'ยกเลิก' }}</div>
-                        <div class="widget-value text-red">{{ counts.cancelled }}</div>
+                        <div class="widget-title">{{ $i18n.locale === 'en' ? 'Artworks Sold' : 'งานศิลปะที่ขายออกไปแล้ว' }}</div>
+                        <div class="widget-value text-purple">{{ counts.artworksSold }}</div>
                     </div>
-                    <div class="icon-wrapper bg-red-light text-red">
-                        <CIcon name="cil-x-circle" size="xl" />
+                    <div class="icon-wrapper bg-purple-light text-purple">
+                        <CIcon name="cil-paint" size="xl" />
                     </div>
                 </CCardBody>
             </CCard>
@@ -82,14 +82,16 @@ export default {
                 total: this.orders.length,
                 completed: 0,
                 pending: 0,
-                cancelled: 0
+                artworksSold: 0
             };
 
             this.orders.forEach(order => {
                 const label = this.getStatusLabel(order);
-                if (label === 'Completed') counts.completed++;
+                if (label === 'Completed') {
+                    counts.completed++;
+                    counts.artworksSold += (order.artwork ? order.artwork.length : 0);
+                }
                 else if (label === 'Pending') counts.pending++;
-                else if (label === 'Cancelled') counts.cancelled++;
             });
 
             return counts;
@@ -197,5 +199,12 @@ export default {
 }
 .text-red {
     color: #e53935;
+}
+
+.bg-purple-light {
+    background-color: #f7f0ff;
+}
+.text-purple {
+    color: #805ad5;
 }
 </style>

@@ -20,10 +20,12 @@
                 <template #name_student_id="{ item }">
                     <td class="py-3">
                         <div class="d-flex align-items-center">
-                            <div class="avatar-circle mr-3 overflow-hidden d-flex align-items-center justify-content-center"
-                                :style="!item.image ? { backgroundColor: getAvatarColor(getName('en', item) || getName('th', item)) } : {}">
-                                <img v-if="item.image" :src="item.image" style="width: 100%; height: 100%; object-fit: cover;" />
-                                <span v-else>{{ getInitials(getName('en', item) || getName('th', item)) }}</span>
+                            <a v-if="item.image && !failedImages[item._id]" :href="getImageUrl(item.image)" target="_blank" class="avatar-circle mr-3 overflow-hidden d-flex align-items-center justify-content-center" style="cursor: pointer; text-decoration: none;">
+                                <img :src="getImageUrl(item.image)" style="width: 100%; height: 100%; object-fit: cover;" @error="handleImageError(item._id)" />
+                            </a>
+                            <div v-else class="avatar-circle mr-3 overflow-hidden d-flex align-items-center justify-content-center"
+                                :style="{ backgroundColor: getAvatarColor(getName('en', item) || getName('th', item)) }">
+                                <span>{{ getInitials(getName('en', item) || getName('th', item)) }}</span>
                             </div>
                             <div>
                                 <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ getName($i18n.locale, item) || getName('en', item) || getName('th', item) }}</div>
@@ -131,7 +133,8 @@ export default {
     },
     data() {
         return {
-            activePage: 1
+            activePage: 1,
+            failedImages: {}
         }
     },
     watch: {
@@ -157,7 +160,7 @@ export default {
         }),
         filteredUsers() {
             if (!this.users) return [];
-            return this.users.filter(user => {
+            const list = this.users.filter(user => {
                 const name = (this.getName(this.$i18n.locale, user) || this.getName('en', user) || this.getName('th', user) || '').toLowerCase();
                 const email = ((user.contact && user.contact.studentEmail) || '').toLowerCase();
                 const studentId = (user.studentId || '').toLowerCase();
@@ -184,9 +187,21 @@ export default {
 
                 return searchMatch && roleMatch && statusMatch;
             });
+            return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         }
     },
     methods: {
+        handleImageError(id) {
+            this.$set(this.failedImages, id, true);
+        },
+        getImageUrl(image) {
+            if (!image) return '';
+            if (image.startsWith('http://') || image.startsWith('https://')) {
+                return image;
+            }
+            const baseUrl = process.env.VUE_APP_API_URL || window.location.origin;
+            return `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`;
+        },
         getInitials(name) {
             if (!name) return 'U';
             return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();

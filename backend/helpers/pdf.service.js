@@ -3,16 +3,27 @@ const path = require('path');
 const fs = require('fs');
 
 class PdfService {
+    constructor() {
+        this.browser = null;
+    }
+
+    async getBrowser() {
+        if (!this.browser || !this.browser.connected) {
+            this.browser = await puppeteer.launch({
+                headless: 'new',
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+        }
+        return this.browser;
+    }
+
     /**
      * Generate a PDF invoice using Puppeteer
      * @param {Object} data - Invoice data (order, customer, items)
      * @returns {Promise<Buffer>} - PDF buffer
      */
     async generateInvoice(data) {
-        const browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+        const browser = await this.getBrowser();
 
         try {
             const page = await browser.newPage();
@@ -226,7 +237,9 @@ class PdfService {
 
             return pdfBuffer;
         } finally {
-            await browser.close();
+            if (typeof page !== 'undefined') {
+                await page.close();
+            }
         }
     }
 
@@ -236,10 +249,7 @@ class PdfService {
      * @returns {Promise<Buffer>} - PDF buffer
      */
     async generateCertificate(data) {
-        const browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+        const browser = await this.getBrowser();
 
         try {
             const page = await browser.newPage();
@@ -492,7 +502,9 @@ class PdfService {
 
             return pdfBuffer;
         } finally {
-            await browser.close();
+            if (typeof page !== 'undefined') {
+                await page.close();
+            }
         }
     }
 }

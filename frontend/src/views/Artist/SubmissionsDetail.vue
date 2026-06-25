@@ -33,8 +33,10 @@
               <h6 class="mb-1 font-weight-bold text-dark-premium text-truncate">{{ getName($i18n.locale, assign) }}</h6>
               <div class="d-flex align-items-center flex-wrap">
                 <div class="meta-item-minimal mr-3">
-                  <CIcon name="cil-clock" class="mr-1 opacity-6" size="sm" />
-                  <span>{{ $i18n.locale === 'en' ? 'Deadline' : 'กำหนดส่ง' }}: {{ formatDateTime(assign.create.endAt) }}</span>
+                  <CIcon name="cil-calendar" class="mr-1 opacity-6" size="sm" />
+                  <span>
+                    {{ $i18n.locale === 'en' ? 'Period: ' : 'เริ่มตั้งแต่ ' }}{{ formatDate(assign.create.startAt) }}{{ $i18n.locale === 'en' ? ' to ' : ' สิ้นสุดวันที่ ' }}{{ formatDate(assign.create.endAt) }}
+                  </span>
                 </div>
                 <!-- Inline Submitted Status & Approval -->
                 <div v-if="hasSubmitted(assign)" class="d-flex align-items-center flex-wrap">
@@ -75,9 +77,9 @@
                   </CButton>
                 </template>
 
-                <!-- Submit Button if not closed -->
+                <!-- Submit Button if not closed and is started -->
                 <CButton 
-                  v-if="!isClosed(assign)"
+                  v-if="!isClosed(assign) && !isNotStarted(assign)"
                   color="info" 
                   shape="pill" 
                   variant="outline" 
@@ -87,8 +89,13 @@
                   {{ $i18n.locale === 'en' ? 'Submit' : 'ส่งงาน' }}
                 </CButton>
 
+                <!-- If Not Open Yet: Show nothing or keep layout -->
+                <template v-if="isNotStarted(assign)">
+                  <!-- Button removed / Text removed per user request -->
+                </template>
+
                 <!-- If Closed and not submitted: Show text -->
-                <template v-else-if="!hasSubmitted(assign)">
+                <template v-else-if="isClosed(assign) && !hasSubmitted(assign)">
                   <div class="text-muted small font-weight-bold text-uppercase opacity-6">
                     {{ $i18n.locale === 'en' ? 'Submission Closed' : 'ปิดการส่งงาน' }}
                   </div>
@@ -121,12 +128,15 @@
                           <p class="text-muted-xs mb-0 opacity-7 font-weight-bold text-truncate">
                             {{ artwork.owner ? getArtistName(artwork.owner) : 'N/A' }}
                           </p>
+                          <div v-if="getApprovalStatusClass(artwork) === 'status-closed' && artwork.rejectionReason" class="rejection-reason-box mt-1 text-danger small font-weight-bold">
+                            {{ $i18n.locale === 'en' ? 'Reason for Rejection:' : 'เหตุผลที่ไม่ผ่าน:' }} {{ artwork.rejectionReason }}
+                          </div>
                         </div>
                         
                         <div class="d-flex align-items-center ml-md-3 gap-3" style="gap: 12px;">
                           <!-- Resubmit Button for Rejected -->
                           <CButton 
-                            v-if="getApprovalStatusClass(artwork) === 'status-closed' && !isClosed(assign)"
+                            v-if="getApprovalStatusClass(artwork) === 'status-closed' && !isClosed(assign) && !isNotStarted(assign)"
                             color="info" 
                             size="sm"
                             variant="outline"
@@ -340,6 +350,10 @@ export default {
             if (!date) return 'N/A';
             return moment(date).format('DD/MM/YYYY HH:mm')
         },
+        formatDate(date) {
+            if (!date) return 'N/A';
+            return moment(date).format('DD/MM/YYYY');
+        },
         getName(lang, item) {
             if (!item) return 'N/A';
             
@@ -362,7 +376,16 @@ export default {
             return 'N/A';
         },
         isClosed(item) {
+            if (this.submission && this.submission.create && this.submission.create.endAt) {
+                const parentEnd = moment(this.submission.create.endAt);
+                if (parentEnd.isBefore(moment())) {
+                    return true;
+                }
+            }
             return item.create && item.create.endAt && moment(item.create.endAt).isBefore(moment());
+        },
+        isNotStarted(item) {
+            return item.create && item.create.startAt && moment().isBefore(moment(item.create.startAt));
         },
         hasSubmitted(item) {
             if (!item.artworks || !Array.isArray(item.artworks)) return false;
@@ -375,15 +398,18 @@ export default {
         getAssignmentStatusClass(item) {
             if (this.hasSubmitted(item)) return 'status-open'; // Submitted = Green
             if (this.isClosed(item)) return 'status-closed';  // Not submitted & Closed = Red
+            if (this.isNotStarted(item)) return 'status-closed'; // Not started = Red
             return 'status-upcoming'; // In progress = Yellow
         },
         getAssignmentStatusLabel(item, lang = 'en') {
             if (this.hasSubmitted(item)) return lang === 'en' ? 'Submitted' : 'ส่งแล้ว';
             if (this.isClosed(item)) return lang === 'en' ? 'Closed' : 'ปิดแล้ว';
+            if (this.isNotStarted(item)) return lang === 'en' ? 'Not Open' : 'ระบบยังไม่เปิด';
             return lang === 'en' ? 'In Progress' : 'กำลังดำเนินการ';
         },
         getAssignmentIcon(item) {
             if (this.isClosed(item)) return 'cilLockLocked';
+            if (this.isNotStarted(item)) return 'cilLockLocked';
             if (this.hasSubmitted(item)) return 'cilCheckCircle';
             return 'cilDescription';
         },

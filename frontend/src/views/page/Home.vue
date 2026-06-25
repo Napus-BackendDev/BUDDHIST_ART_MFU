@@ -4,8 +4,12 @@
         <SectionSocialProof />
         <SectionFeaturedHome />
         <SectionCatalog />
-        <SectionNews />
+        <SectionTestimonials />
+        <SectionStudentShowcase />
+        <SectionStudentBatches />
         <SectionAboutHome />
+        <SectionSubmissionReviews />
+        <SectionNews />
     </div>
 </template>
 
@@ -14,6 +18,10 @@ import SectionHeroHome from './components/SectionHeroHome.vue';
 import SectionSocialProof from './components/SectionSocialProof.vue';
 import SectionFeaturedHome from './components/SectionFeaturedHome.vue';
 import SectionCatalog from './components/SectionCatalog.vue';
+import SectionStudentShowcase from './components/SectionStudentShowcase.vue';
+import SectionStudentBatches from './components/SectionStudentBatches.vue';
+import SectionSubmissionReviews from './components/SectionSubmissionReviews.vue';
+import SectionTestimonials from './components/SectionTestimonials.vue';
 import SectionNews from './components/SectionNews.vue';
 import SectionAboutHome from './components/SectionAboutHome.vue';
 
@@ -24,6 +32,10 @@ export default {
         SectionSocialProof,
         SectionFeaturedHome,
         SectionCatalog,
+        SectionStudentShowcase,
+        SectionStudentBatches,
+        SectionSubmissionReviews,
+        SectionTestimonials,
         SectionNews,
         SectionAboutHome
     },

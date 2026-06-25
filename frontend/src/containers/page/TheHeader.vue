@@ -175,7 +175,7 @@
                             style="width: 70px; height: 70px; border-radius: 8px; position: relative; overflow: hidden; border: 1px solid #ddd; background: #f0f0f0;">
                             <div class="cart-item-image" 
                                 :style="{ 
-                                    backgroundImage: `url(${item.image})`, 
+                                    backgroundImage: 'url(' + String.fromCharCode(34) + item.image + String.fromCharCode(34) + ')', 
                                     filter: isItemReserved(item) ? 'grayscale(1) contrast(0.4)' : 'none', 
                                     opacity: isItemReserved(item) ? 0.5 : 1 
                                 }"
@@ -381,7 +381,7 @@ export default {
         logout() {
             localStorage.removeItem('objs');
             this.checkLoginStatus();
-            this.$store.commit('auth/isSignIn', false);
+            this.$store.commit('auth/showSignInModal', false);
             if (this.$route.path !== '/') {
                 this.$router.push('/');
             }
@@ -410,7 +410,7 @@ export default {
             return parseFloat(value).toLocaleString('en-US');
         },
         openLoginModal() {
-            this.$store.commit('auth/isSignIn', true);
+            this.$store.commit('auth/showSignInModal', true);
         },
         toggleLang() {
             const newLang = this.$i18n.locale === 'th' ? 'en' : 'th';

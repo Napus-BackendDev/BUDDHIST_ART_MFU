@@ -66,6 +66,7 @@
 
         <!-- Right Column: Quick Stats & Recent Activity -->
         <CCol lg="8">
+
            <CRow>
                <CCol sm="6" class="mb-4">
                    <CCard class="stat-card border-0 shadow-sm rounded-xl h-100 premium-card-hover">
@@ -215,7 +216,9 @@ export default {
       },
       selectedFile: null,
       showOrderModal: false,
-      selectedOrder: null
+      selectedOrder: null,
+      now: Date.now(),
+      timer: null
     }
   },
   computed: {
@@ -255,6 +258,39 @@ export default {
           })()
         }));
     },
+    pendingPaymentOrders() {
+      return this.orders.filter(order => {
+        const statusLabel = this.getName('en', order.status);
+        const s = statusLabel ? statusLabel.toLowerCase() : '';
+        
+        const isCompletedOrCancelled = s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success') || s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail');
+        const hasSlip = !!order.image;
+        
+        return !isCompletedOrCancelled && !hasSlip;
+      }).map(order => {
+        const createdAt = new Date(order.createdAt).getTime();
+        const deadline = createdAt + (24 * 60 * 60 * 1000);
+        const diff = deadline - this.now;
+        
+        let timeLeftDisplay = '';
+        let isExpired = false;
+        if (diff <= 0) {
+          timeLeftDisplay = this.$i18n.locale === 'en' ? 'Expired' : 'หมดเวลา';
+          isExpired = true;
+        } else {
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          timeLeftDisplay = `${hours}h ${minutes}m ${seconds}s`;
+        }
+        
+        return {
+          ...order,
+          timeLeftDisplay,
+          isExpired
+        };
+      });
+    },
     nameEn() {
       return this.form ? this.form.nameEn : '';
     },
@@ -286,7 +322,13 @@ export default {
   async created() {
     await this.fetchProfile();
     await this.$store.dispatch('order/get', {});
+    this.timer = setInterval(() => {
+      this.now = Date.now();
+    }, 1000);
     console.log('DEBUG: allOrders', this.allOrders);
+  },
+  beforeDestroy() {
+    if (this.timer) clearInterval(this.timer);
   },
   methods: {
     viewOrder(order) {
@@ -405,7 +447,6 @@ export default {
 <style scoped>
 .bg-light-premium {
     background-color: #f8f9fa;
-    margin-top: -2rem !important;
 }
 
 .section-title {
@@ -601,5 +642,39 @@ export default {
     background-color: #ffffff;
     border-color: #d4af37;
     box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.bg-danger-premium {
+    background: linear-gradient(135deg, #612721 0%, #8a3a31 100%);
+    box-shadow: 0 10px 25px rgba(97, 39, 33, 0.2) !important;
+}
+
+.alert-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.animate-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 </style>

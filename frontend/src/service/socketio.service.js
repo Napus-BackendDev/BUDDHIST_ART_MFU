@@ -4,7 +4,9 @@ class SocketioService {
     constructor() {}
 
     setupSocketConnection() {
-        this.socket = io("ws://127.0.0.1:80");
+        // Connect to the same backend the REST API uses (falls back to localhost in dev).
+        const url = process.env.VUE_APP_API_URL || "http://127.0.0.1:8081";
+        this.socket = io(url, { transports: ["websocket", "polling"] });
     }
 
     disconnect() {

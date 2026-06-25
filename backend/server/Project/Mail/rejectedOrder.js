@@ -15,7 +15,8 @@ module.exports = function rejectedOrderMailTemplate({ buyerName, orderId, artwor
                 overflow: hidden;
             }
             .header {
-                background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+                background: linear-gradient(135deg, #8c1515 0%, #d32f2f 100%);
+                border-bottom: 4px solid #FEC260;
                 color: #ffffff;
                 padding: 40px 20px;
                 text-align: center;
@@ -28,7 +29,7 @@ module.exports = function rejectedOrderMailTemplate({ buyerName, orderId, artwor
             .reason-box {
                 padding: 20px;
                 background-color: #fff5f5;
-                border-left: 4px solid #e74c3c;
+                border-left: 4px solid #8c1515;
                 margin: 20px 0;
             }
             .footer {
@@ -38,43 +39,30 @@ module.exports = function rejectedOrderMailTemplate({ buyerName, orderId, artwor
                 font-size: 12px;
                 color: #777777;
             }
-            .action-button {
-                display: inline-block;
-                padding: 10px 20px;
-                background-color: #2c3e50;
-                color: #ffffff;
-                border-radius: 4px;
-                text-decoration: none;
-                font-weight: bold;
-            }
         </style>
     </head>
     <body>
         <div class="email-container">
             <div class="header">
-                <h1>Action Required</h1>
-                <p>Regarding your order #${orderId}</p>
+                <h1>โปรดดำเนินการตรวจสอบ</h1>
+                <p>เกี่ยวกับใบสั่งซื้อหมายเลข #${orderId}</p>
             </div>
             <div class="content">
-                <p>Dear <strong>${buyerName}</strong>,</p>
-                <p>We are writing to inform you that we could not approve your payment verification for the artwork: <strong>${artworkTitle}</strong>.</p>
+                <p>เรียน คุณ <strong>${buyerName}</strong>,</p>
+                <p>เราขอแจ้งให้ทราบว่า หลักฐานการชำระเงินที่ท่านส่งมาสำหรับผลงานพุทธศิลป์ <strong>${artworkTitle}</strong> ไม่ผ่านการอนุมัติเนื่องจากเหตุผลต่อไปนี้:</p>
                 
                 <div class="reason-box">
-                    <strong>Reason for rejection:</strong><br/>
-                    ${reason || 'The provided payment evidence was unclear or could not be verified.'}
+                    <strong>เหตุผลที่ไม่ผ่านการอนุมัติ:</strong><br/>
+                    ${reason || 'หลักฐานการชำระเงินไม่ชัดเจน หรือข้อมูลการโอนเงินไม่ถูกต้อง'}
                 </div>
 
-                <p>Please log in to your account to re-upload the correct payment slip or contact our support team for assistance.</p>
+                <p>กรุณาลงชื่อเข้าใช้งานบัญชีของท่านเพื่อดำเนินการอัปโหลดภาพหลักฐานการโอนเงิน (สลิปโอนเงิน) ที่ถูกต้องใหม่อีกครั้ง หรือติดต่อทีมงานพุทธศิลปกรรมเพื่อขอรับความช่วยเหลือ</p>
                 
-                <div style="text-align: center; margin-top: 30px;">
-                    <a href="#" class="action-button">Review My Order</a>
-                </div>
-                
-                <p>Best regards,<br/><strong>Buddhist Art MFU Team</strong></p>
+                <p>ขอแสดงความนับถือ<br/><strong>ทีมงานพุทธศิลปกรรม มฟล. (Buddhist Art MFU Team)</strong></p>
             </div>
             <div class="footer">
                 <p>&copy; ${new Date().getFullYear()} Buddhist Art MFU. All rights reserved.</p>
-                <p>Mae Fah Luang University, Chiang Rai, Thailand</p>
+                <p>มหาวิทยาลัยแม่ฟ้าหลวง จังหวัดเชียงราย ประเทศไทย</p>
             </div>
         </div>
     </body>

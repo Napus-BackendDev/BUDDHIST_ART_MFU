@@ -17,7 +17,9 @@ const server = http.createServer(app);
 
 const io = require('socket.io')(server, {
     cors: {
-        origin: "https://127.0.0.1",
+        // Reflect the requesting origin (works for localhost + the Vercel frontend).
+        // Required because credentials:true disallows a wildcard "*".
+        origin: true,
         credentials: true
     }
 });

@@ -15,7 +15,7 @@
             >
                 <!-- Image Section -->
                 <div class="card-img-wrapper position-relative">
-                    <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${getNewsImage(news)})` }"></div>
+                    <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + getNewsImage(news) + String.fromCharCode(34) + ')' }"></div>
                     <div class="card-img-overlay-custom"></div>
                 </div>
 

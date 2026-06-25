@@ -87,9 +87,16 @@ export default {
       const totalPossible = this.submission.assignments.length * this.submission.artist.length;
       let totalSubmitted = 0;
       this.submission.assignments.forEach(assign => {
-        totalSubmitted += assign.artworks ? assign.artworks.length : 0;
+        if (assign.artworks) {
+          const submittedOwners = new Set();
+          assign.artworks.forEach(aw => {
+            const ownerId = (aw.owner?._id || aw.owner || aw.artist?._id || aw.artist)?.toString();
+            if (ownerId) submittedOwners.add(ownerId);
+          });
+          totalSubmitted += submittedOwners.size;
+        }
       });
-      return Math.round((totalSubmitted / totalPossible) * 100);
+      return Math.min(100, Math.round((totalSubmitted / totalPossible) * 100));
     },
     pendingReviews() {
         if (!this.submission.assignments) return 0;

@@ -1,11 +1,11 @@
 <template>
     <div class="featured-section py-5 bg-light">
         <CContainer>
-            <div class="d-flex align-items-center justify-content-between mb-5">
-                <h2 class="font-weight-bold mb-0 section-title-home">{{ $i18n.locale === 'en' ? 'Best Sellers' : 'ผลงานยอดนิยมล่าสุด' }}</h2>
-                <CButton color="danger" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold" @click="$router.push('/artworks')">
-                    {{ $i18n.locale === 'en' ? 'View All Artworks' : 'ดูผลงานทั้งหมด' }}
-                </CButton>
+            <div class="text-center mb-5">
+                <h2 class="font-weight-bold mb-3 section-title-home-centered" style="color: #612721; font-family: 'Cinzel', serif; font-size: 2.2rem;">
+                    {{ $i18n.locale === 'en' ? 'Best Sellers' : 'ผลงานยอดนิยมล่าสุด' }}
+                </h2>
+                <div class="mx-auto" style="width: 60px; height: 3px; background-color: #612721; border-radius: 2px;"></div>
             </div>
 
             <div v-if="loading" class="text-center py-5">
@@ -56,10 +56,9 @@ export default {
                 
                 return isApproved && isFeatured;
             });
-            
-            // Sort by latest created to get the newest (Best Sellers/Newest arrivals)
+            // Sort by views count descending to get the most viewed artworks
             let sorted = [...result].sort((a, b) => {
-                return new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0);
+                return (b.views || 0) - (a.views || 0);
             });
             
             // Limit to top 4

@@ -13,8 +13,8 @@
                         <CIcon name="cil-task" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Create New Assignment Task</h5>
-                        <p class="text-muted small mb-0">Add a specific task or milestone to this submission portal.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Create New Assignment Task' : 'สร้างคำสั่งงานย่อยใหม่' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Add a specific task or milestone to this submission portal.' : 'เพิ่มงานหรือกิจกรรมย่อยในช่องทางส่งงานนี้' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -28,10 +28,10 @@
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">Assignment Title</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Assignment Title' : 'หัวข้องาน' }}</label>
                         <CInput 
                             v-model="form.title" 
-                            placeholder="e.g. Sketch 1: Basic Shapes" 
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. Sketch 1: Basic Shapes' : 'เช่น วาดเส้น 1: รูปทรงพื้นฐาน'" 
                             class="custom-input mb-0"
                         />
                     </div>
@@ -42,7 +42,7 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Start Date & Time</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Start Date & Time' : 'วันและเวลาเริ่มต้น' }}</label>
                         <CInput 
                             v-model="form.startDateTime" 
                             :type="form.startDateTime ? 'datetime-local' : 'text'"
@@ -56,7 +56,7 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">End Date & Time (Deadline)</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'End Date & Time (Deadline)' : 'วันและเวลาสิ้นสุด (กำหนดส่ง)' }}</label>
                         <CInput 
                             v-model="form.endDateTime" 
                             :type="form.endDateTime ? 'datetime-local' : 'text'"
@@ -74,11 +74,11 @@
             <CRow class="mb-4">
                 <CCol md="12">
                     <div class="form-group-custom mb-3">
-                        <label class="form-label">Target Students</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Target Students' : 'กลุ่มเป้าหมายนักศึกษา' }}</label>
                         <div class="custom-input-readonly d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center">
                                 <span class="font-weight-bold text-blue h5 mb-0 mr-2">{{ selectedStudents.length }}</span>
-                                <span class="text-muted small uppercase font-weight-bold">Students targeted for this task</span>
+                                <span class="text-muted small uppercase font-weight-bold">{{ $i18n.locale === 'en' ? 'Students targeted for this task' : 'จำนวนนักศึกษาสำหรับส่งงานนี้' }}</span>
                             </div>
                             
                             <!-- Selected Avatars Preview -->
@@ -125,9 +125,9 @@
             <!-- Student Selection Section -->
             <div class="student-selection-wrapper mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <label class="form-label mb-0">Assign to Students</label>
+                    <label class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Assign to Students' : 'มอบหมายให้นักศึกษา' }}</label>
                     <div class="select-all-toggle" @click="toggleSelectAll">
-                        <span class="text-blue small font-weight-bold pointer">{{ allSelected ? 'Deselect All' : 'Select All' }}</span>
+                        <span class="text-blue small font-weight-bold pointer">{{ allSelected ? ($i18n.locale === 'en' ? 'Deselect All' : 'ยกเลิกเลือกทั้งหมด') : ($i18n.locale === 'en' ? 'Select All' : 'เลือกทั้งหมด') }}</span>
                     </div>
                 </div>
                 
@@ -136,7 +136,7 @@
                     <input 
                         type="text" 
                         v-model="studentSearch" 
-                        placeholder="Search students by name or ID..."
+                        :placeholder="$i18n.locale === 'en' ? 'Search students by name or ID...' : 'ค้นหานักศึกษาจากชื่อหรือรหัส...'"
                         class="search-input-blue"
                     />
                 </div>
@@ -173,7 +173,7 @@
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
                 >
-                    Cancel
+                    {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
                 <CButton 
                     color="info" 
@@ -181,7 +181,7 @@
                     class="btn-create-assignment"
                     :disabled="!isFormValid"
                 >
-                    Create Assignment
+                    {{ $i18n.locale === 'en' ? 'Create Assignment' : 'มอบหมายงาน' }}
                 </CButton>
             </div>
         </template>

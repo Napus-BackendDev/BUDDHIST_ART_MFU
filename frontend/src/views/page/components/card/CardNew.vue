@@ -4,7 +4,7 @@
             <CCard class="news-card border-0 shadow-sm h-100 overflow-hidden">
                 <!-- Image Section -->
                 <div class="card-img-wrapper position-relative">
-                    <div class="card-img-bg" :style="{ backgroundImage: `url(${news.image})` }"></div>
+                    <div class="card-img-bg" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + news.image + String.fromCharCode(34) + ')' }"></div>
                     <div class="card-img-overlay-custom"></div>
                     <span class="category-badge">{{ news.category }}</span>
                 </div>

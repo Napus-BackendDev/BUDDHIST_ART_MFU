@@ -1,5 +1,5 @@
 <template>
-  <div class="header-hero mb-4">
+  <div :class="['header-hero mb-4', 'theme-' + themeColor]">
     <div class="hero-content d-flex justify-content-between align-items-center flex-wrap">
       <div class="hero-body d-flex align-items-center flex-wrap">
         <div v-if="icon" class="hero-icon-wrapper mr-3">
@@ -68,6 +68,10 @@ export default {
     showExportButton: {
       type: Boolean,
       default: false
+    },
+    themeColor: {
+      type: String,
+      default: 'blue'
     }
   }
 }
@@ -84,6 +88,33 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: default;
+  overflow: hidden;
+}
+
+.header-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  z-index: 1;
+}
+
+.theme-blue::before {
+  background: linear-gradient(135deg, #20a8d8 50%, transparent 50%);
+}
+.theme-yellow::before {
+  background: linear-gradient(135deg, #f59e0b 50%, transparent 50%);
+}
+.theme-gray::before {
+  background: linear-gradient(135deg, #6c757d 50%, transparent 50%);
+}
+.theme-green::before {
+  background: linear-gradient(135deg, #2eb85c 50%, transparent 50%);
+}
+.theme-red::before {
+  background: linear-gradient(135deg, #e55353 50%, transparent 50%);
 }
 
 .header-hero:hover {

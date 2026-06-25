@@ -152,10 +152,10 @@
                                         </div>
                                     </div>
                                     <div class="spec-card spec-card-full">
-                                        <div class="spec-icon"><CIcon name="cil-history" /></div>
+                                        <div class="spec-icon"><CIcon name="cil-chart-line" /></div>
                                         <div class="spec-info">
-                                            <label>{{ $i18n.locale === 'en' ? 'Cataloged' : 'ลงบันทึกเมื่อ' }}</label>
-                                            <span>{{ formatDate(artwork.createdAt) }}</span>
+                                            <label>{{ $i18n.locale === 'en' ? 'Views' : 'ยอดเข้าชม' }}</label>
+                                            <span>{{ artwork.views || 0 }} {{ $i18n.locale === 'en' ? 'views' : 'ครั้ง' }}</span>
                                         </div>
                                     </div>
                                 </div>

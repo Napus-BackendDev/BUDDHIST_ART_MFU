@@ -1,0 +1,10 @@
+allowBuilds:
+  '@scarf/scarf': set this to true or false
+  aws-sdk: set this to true or false
+  canvas: set this to true or false
+  dtrace-provider: set this to true or false
+  protobufjs: set this to true or false
+  puppeteer: set this to true or false
+  sharp: set this to true or false
+  tesseract.js: set this to true or false
+  weak: set this to true or false

@@ -8,7 +8,7 @@
             </CLink>
         </div>
 
-        <HeaderHero :title="getName($i18n.locale, submission)" :description="($i18n.locale === 'en' ? 'Managing assignments and tracking progress for ' : 'จัดการงานและติดตามความคืบหน้าของนักศึกษาจำนวน ') + (submission.artist ? submission.artist.length : 0) + ($i18n.locale === 'en' ? ' students.' : ' คน')" icon="cil-list" :showCreateButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Assignment' : 'สร้างงานมอบหมาย'" :showExportButton="true" @create="addAssignment" @export="handleExport" />
+        <HeaderHero :title="getName($i18n.locale, submission)" :description="($i18n.locale === 'en' ? 'Managing assignments and tracking progress for ' : 'จัดการงานและติดตามความคืบหน้าของนักศึกษาจำนวน ') + (submission.artist ? submission.artist.length : 0) + ($i18n.locale === 'en' ? ' students.' : ' คน')" icon="cil-list" :showCreateButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Assignment' : 'สร้างงานมอบหมาย'" :showExportButton="true" themeColor="green" @create="addAssignment" @export="handleExport" />
         <SubmissionDetailWidget :submission="submission" v-model="filters.status" />
         <SubmissionDetailFilter v-model="filters" @create="addAssignment" />
         <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />

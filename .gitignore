@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output (Vercel/Render build these themselves)
+frontend/dist/
+backend/dist/
+
+# Environment files (set secrets in Render/Vercel dashboards instead)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+_srv.log
+_srv.err.log
+_fe.log
+npm-debug.log*
+
+# Large local-only artifacts
+Buddhist_Art_MFU_User_Manual.pdf
+backend/mock_certificate*
+backend/generate_mock_cert*
+
+# User-uploaded content (runtime data, not source)
+backend/public/system/
+backend/public/account/
+
+# Editor / OS
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local dev tooling / artifacts (not part of the app)
+.agents/
+screenshots/

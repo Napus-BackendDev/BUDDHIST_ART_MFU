@@ -10,7 +10,7 @@
                             <span class="small font-weight-bold">{{ art.category ? getName($i18n.locale, art.category) : ($i18n.locale === 'en' ? 'Artwork' : 'ผลงาน') }}</span>
                         </div>
                         <!-- Full Cover Image Background -->
-                        <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: `url(${art.image || 'https://via.placeholder.com/800x800?text=No+Image'})` }">
+                        <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + (art.image || 'https://via.placeholder.com/800x800?text=No+Image') + String.fromCharCode(34) + ')' }">
                         </div>
                         <div class="card-img-overlay-soft"></div>
                     </div>

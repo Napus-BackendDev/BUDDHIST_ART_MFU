@@ -6,7 +6,7 @@ const Artwork = require('../../Artwork/controller/artwork');
 const Status = require('../../Settings/controller/status');
 const ResMessage = require("../../Settings/service/message");
 const { sendMail } = require("../../../../helpers/google/Mail");
-const { confirmationOrderMail, approvedOrderMail, rejectedOrderMail } = require("../../Mail");
+const { confirmationOrderMail, approvedOrderMail, rejectedOrderMail, adminNewOrderMail } = require("../../Mail");
 const pdfService = require("../../../../helpers/pdf.service");
 const { generateCertificate } = require("../../../../helpers/document/composite");
 const { PDFDocument } = require('pdf-lib');
@@ -63,6 +63,9 @@ exports.onCreate = async function (request, response) {
             console.error("CRITICAL: Reserved status not found in database settings.");
             throw new Error("System error: Reservation status not configured.");
         }
+
+        // --- Assign database status ID instead of relying on hardcoded schema default ---
+        request.body.status = reservedStatus._id;
 
         // --- 2. LOCK & RESERVE ARTWORKS IMMEDIATELY ---
         const artworkIds = request.body.artwork || [];
@@ -207,7 +210,25 @@ exports.onCreate = async function (request, response) {
                 }
             }
 
-            await sendMail(to, 'Order Confirmation - Buddhist Art MFU', '', html, attachments);
+            await sendMail(to, 'ยืนยันการจองผลงานสร้างสรรค์ - พุทธศิลปกรรม มฟล.', '', html, attachments);
+        }
+
+        // --- 📧 ส่งอีเมลแจ้งเตือนแอดมินเกี่ยวกับการจองใหม่ ---
+        try {
+            const adminEmail = process.env.SMTP_USER;
+            if (adminEmail) {
+                const adminHtml = adminNewOrderMail({
+                    buyerName,
+                    orderId: doc.orderNumber || doc._id,
+                    artworkTitle,
+                    price,
+                    orderDate
+                });
+                await sendMail(adminEmail, `[มีรายการจองใหม่] คำสั่งซื้อหมายเลข ${doc.orderNumber || doc._id} - พุทธศิลปกรรม มฟล.`, '', adminHtml);
+                console.log(`[Admin Notification] New order email sent to admin: ${adminEmail}`);
+            }
+        } catch (adminEmailErr) {
+            console.error("Failed to send new order notification to admin:", adminEmailErr.message);
         }
 
         return ResMessage.sendResponse(response, 0, 20000, doc);
@@ -224,8 +245,24 @@ exports.onUpload = async function (request, response) {
         query._id = new mongo.ObjectId(request.body._id);
         const imagePath = Order.getImageUrl(request, request.file.destination, request.file.filename);
 
+        // Find "Pending" status in settings to update order status
+        const pendingStatus = await Status.onQuery({
+            $or: [
+                { "title.value": { $regex: /^Pending$/i } },
+                { "title.value": { $regex: /^รอตรวจสอบ$/i } }
+            ]
+        });
+
+        const updateData = { image: imagePath };
+        if (pendingStatus) {
+            updateData.status = pendingStatus._id;
+            console.log(`[Backend Checkout Flow 6.2.1] Found Pending status ID: ${pendingStatus._id}, updating order status.`);
+        } else {
+            console.warn(`[Backend Checkout Flow 6.2.2] Warning: Pending status not found in settings.`);
+        }
+
         console.log(`[Backend Checkout Flow 6.2] Saving payment slip image path: ${imagePath} for order ID: ${request.body._id}`);
-        const doc = await Order.onUpdate(query, { image: imagePath }, [], "image");
+        const doc = await Order.onUpdate(query, updateData, [], "image status");
         
         // --- 📧 ส่งเมลแจ้งเมื่อได้รับสลิป (Bil) ---
         try {
@@ -262,18 +299,28 @@ exports.onUpload = async function (request, response) {
                 }
 
                 // 2. แนบ Slip (Bil) ที่เพิ่งอัปโหลด
-                const splitPattern = imagePath.includes('/data/uploads/') ? '/data/uploads/' : '/uploads/';
-                const slipRelPath = imagePath.split(splitPattern)[1];
-                const slipPath = path.join(root, slipRelPath);
+                let slipPath = "";
+                if (imagePath) {
+                    let cleanUrl = decodeURIComponent(imagePath.replace(/^https?:\/\/[^/]+/, ""));
+                    let slipRelPath = "";
+                    if (cleanUrl.includes('/data/uploads/')) {
+                        slipRelPath = path.join('data/uploads', cleanUrl.split('/data/uploads/')[1]);
+                    } else if (cleanUrl.includes('/uploads/')) {
+                        slipRelPath = cleanUrl.split('/uploads/')[1];
+                    } else {
+                        slipRelPath = cleanUrl.replace(/^\//, "");
+                    }
+                    slipPath = path.join(root, slipRelPath);
+                }
                 
-                if (fs.existsSync(slipPath)) {
+                if (slipPath && fs.existsSync(slipPath) && fs.statSync(slipPath).isFile()) {
                     attachments.push({ 
                         filename: `Payment_Slip_${orderId}${path.extname(slipPath)}`, 
                         path: slipPath 
                     });
                 }
 
-                await sendMail(fullDoc.contact.email, 'Payment Received & Invoice - Buddhist Art MFU', '', html, attachments);
+                await sendMail(fullDoc.contact.email, 'ได้รับหลักฐานการชำระเงินและใบแจ้งหนี้ - พุทธศิลปกรรม มฟล.', '', html, attachments);
                 console.log(`[Backend Checkout Flow 6.4] Confirmation email with invoice sent to ${fullDoc.contact.email}`);
             }
         } catch (emailErr) {
@@ -359,19 +406,27 @@ exports.onUpdate = async function (request, response) {
                         }
 
                         // 3. Slip/Bil (from disk)
+                        let slipPath = "";
                         if (fullDoc.image) {
-                            const splitPattern = fullDoc.image.includes('/data/uploads/') ? '/data/uploads/' : '/uploads/';
-                            const slipRelPath = fullDoc.image.split(splitPattern)[1];
-                            const slipPath = path.join(root, slipRelPath);
-                            if (fs.existsSync(slipPath)) {
-                                attachments.push({ 
-                                    filename: `Payment_Slip_${orderIdentifier}${path.extname(slipPath)}`, 
-                                    path: slipPath 
-                                });
+                            let cleanUrl = decodeURIComponent(fullDoc.image.replace(/^https?:\/\/[^/]+/, ""));
+                            let slipRelPath = "";
+                            if (cleanUrl.includes('/data/uploads/')) {
+                                slipRelPath = path.join('data/uploads', cleanUrl.split('/data/uploads/')[1]);
+                            } else if (cleanUrl.includes('/uploads/')) {
+                                slipRelPath = cleanUrl.split('/uploads/')[1];
+                            } else {
+                                slipRelPath = cleanUrl.replace(/^\//, "");
                             }
+                            slipPath = path.join(root, slipRelPath);
+                        }
+                        if (slipPath && fs.existsSync(slipPath) && fs.statSync(slipPath).isFile()) {
+                            attachments.push({ 
+                                filename: `Payment_Slip_${orderIdentifier}${path.extname(slipPath)}`, 
+                                path: slipPath 
+                            });
                         }
 
-                        await sendMail(buyerEmail, 'Payment Approved & Documents - Buddhist Art MFU', '', html, attachments);
+                        await sendMail(buyerEmail, 'การชำระเงินได้รับการอนุมัติและเอกสารผลงาน - พุทธศิลปกรรม มฟล.', '', html, attachments);
                     }
                 } catch (certErr) {
                     console.error("Auto Certificate Generation or Email Failed:", certErr.message);
@@ -393,7 +448,7 @@ exports.onUpdate = async function (request, response) {
                         reason: request.body.remark || "The provided payment evidence could not be verified."
                     });
 
-                    await sendMail(buyerEmail, 'Action Required: Order Update - Buddhist Art MFU', '', html);
+                    await sendMail(buyerEmail, 'ข้อมูลอัปเดตคำสั่งซื้อ: โปรดอัปโหลดหลักฐานการชำระเงินใหม่ - พุทธศิลปกรรม มฟล.', '', html);
                 }
 
                 if (doc.artwork && doc.artwork.length > 0) {

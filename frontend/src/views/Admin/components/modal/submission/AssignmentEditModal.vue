@@ -13,8 +13,8 @@
                         <CIcon name="cil-pencil" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Edit Assignment Task</h5>
-                        <p class="text-muted small mb-0">Update the title and deadline for this specific task.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Edit Assignment Task' : 'แก้ไขคำสั่งงานย่อย' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Update the title and deadline for this specific task.' : 'อัปเดตหัวข้องานและกำหนดส่งสำหรับงานย่อยนี้' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -28,10 +28,10 @@
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">Assignment Title</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Assignment Title' : 'หัวข้องาน' }}</label>
                         <CInput 
                             v-model="form.title" 
-                            placeholder="e.g. Sketch 1: Basic Shapes" 
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. Sketch 1: Basic Shapes' : 'เช่น วาดเส้น 1: รูปทรงพื้นฐาน'" 
                             class="custom-input mb-0"
                         />
                     </div>
@@ -42,7 +42,7 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">Start Date & Time</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Start Date & Time' : 'วันและเวลาเริ่มต้น' }}</label>
                         <CInput 
                             v-model="form.startDateTime" 
                             :type="form.startDateTime ? 'datetime-local' : 'text'"
@@ -56,7 +56,7 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">End Date & Time (Deadline)</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'End Date & Time (Deadline)' : 'วันและเวลาสิ้นสุด (กำหนดส่ง)' }}</label>
                         <CInput 
                             v-model="form.endDateTime" 
                             :type="form.endDateTime ? 'datetime-local' : 'text'"
@@ -78,7 +78,7 @@
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
                 >
-                    Cancel
+                    {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
                 <CButton 
                     color="warning" 
@@ -86,7 +86,7 @@
                     class="btn-update-assignment"
                     :disabled="!isFormValid"
                 >
-                    Update Assignment
+                    {{ $i18n.locale === 'en' ? 'Update Assignment' : 'อัปเดตงาน' }}
                 </CButton>
             </div>
         </template>

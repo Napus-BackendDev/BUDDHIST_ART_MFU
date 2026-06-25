@@ -76,10 +76,10 @@
         computed: {
             isAuthe: {
               get() {
-                return this.$store.getters['auth/isSignIn'];
+                return this.$store.getters['auth/showSignInModal'];
               },
               set(val) {
-                this.$store.commit('auth/isSignIn', val);
+                this.$store.commit('auth/showSignInModal', val);
               }
             }
         }

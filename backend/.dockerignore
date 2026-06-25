@@ -1,6 +1,14 @@
 node_modules
 npm-debug.log
 Dockerfile
+Dockerfile.mac
+Dockerfile.prod
 docker-compose.yml
 .git
 .gitignore
+.env
+.env.*
+*.log
+_srv.log
+_srv.err.log
+.idea

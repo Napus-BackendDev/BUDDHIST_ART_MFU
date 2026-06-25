@@ -46,6 +46,7 @@ const objsSchema = new Schema({
                 value: { type: String, default: null },
             }],
             rejectionReason: { type: String, default: null },
+            storage: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Storage', default: null },
             create: {
                 at: { type: Date, default: Date.now },
             },

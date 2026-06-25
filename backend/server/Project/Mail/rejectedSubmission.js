@@ -15,7 +15,8 @@ module.exports = function rejectedSubmissionMailTemplate({ artistName, submissio
                 overflow: hidden;
             }
             .header {
-                background: linear-gradient(135deg, #607d8b 0%, #455a64 100%);
+                background: linear-gradient(135deg, #8c1515 0%, #d32f2f 100%);
+                border-bottom: 4px solid #FEC260;
                 color: #ffffff;
                 padding: 40px 20px;
                 text-align: center;
@@ -27,7 +28,7 @@ module.exports = function rejectedSubmissionMailTemplate({ artistName, submissio
             }
             .info-box {
                 background-color: #f5f5f5;
-                border-left: 4px solid #607d8b;
+                border-left: 4px solid #8c1515;
                 padding: 20px;
                 margin: 20px 0;
             }
@@ -43,29 +44,29 @@ module.exports = function rejectedSubmissionMailTemplate({ artistName, submissio
     <body>
         <div class="email-container">
             <div class="header">
-                <h1>Update on Your Submission</h1>
-                <p>Status: Not Approved</p>
+                <h1>อัปเดตสถานะการส่งผลงาน</h1>
+                <p>สถานะ: ไม่ผ่านการอนุมัติ</p>
             </div>
             <div class="content">
-                <p>Dear <strong>${artistName}</strong>,</p>
-                <p>Thank you for giving us the opportunity to review your artwork, <strong>"${submissionTitle}"</strong>.</p>
+                <p>เรียน คุณ <strong>${artistName}</strong>,</p>
+                <p>ขอขอบพระคุณที่ให้ความสนใจส่งผลงานสร้างสรรค์ <strong>"${submissionTitle}"</strong> เข้าร่วมประเมินในระบบพุทธศิลป์ของเรา</p>
                 
-                <p>After careful consideration by our curatorial team, we regret to inform you that we are unable to accept your submission at this time.</p>
+                <p>หลังจากคณะกรรมการภัณฑารักษ์ได้ทำการพิจารณาอย่างละเอียดแล้ว เรามีความเสียดายที่จะแจ้งให้ทราบว่าผลงานของท่านยังไม่ผ่านเกณฑ์การประเมินเพื่อลงขายในระบบในขณะนี้</p>
                 
                 ${reason ? `
                 <div class="info-box">
-                    <p style="margin: 0;"><strong>Feedback from Curators:</strong></p>
+                    <p style="margin: 0;"><strong>ข้อคิดเห็น/คำแนะนำจากผู้ทรงคุณวุฒิ:</strong></p>
                     <p style="margin: 5px 0 0 0;">${reason}</p>
                 </div>
                 ` : ''}
 
-                <p>This decision does not reflect on the quality of your talent, but rather on our current collection focus and gallery requirements. We encourage you to continue creating and consider submitting other works in the future.</p>
+                <p>ผลการประเมินนี้ไม่ได้ระบุถึงระดับคุณภาพฝีมือหรือศักยภาพของท่าน แต่เป็นความสอดคล้องตามเกณฑ์คอลเลกชันและแนวทางจัดแสดงของระบบในปัจจุบันเท่านั้น เราขอเป็นกำลังใจให้ท่านมุ่งมั่นสร้างสรรค์ผลงานต่อไป และยินดีต้อนรับการส่งผลงานชิ้นถัดไปของท่านในอนาคต</p>
                 
-                <p>We appreciate your interest in Buddhist Art MFU.</p>
+                <p>ขอแสดงความนับถืออย่างสูง,<br/><strong>ทีมงานพุทธศิลปกรรม มฟล. (Buddhist Art MFU Team)</strong></p>
             </div>
             <div class="footer">
                 <p>&copy; ${new Date().getFullYear()} Buddhist Art MFU. All rights reserved.</p>
-                <p>Mae Fah Luang University, Chiang Rai, Thailand</p>
+                <p>มหาวิทยาลัยแม่ฟ้าหลวง จังหวัดเชียงราย ประเทศไทย</p>
             </div>
         </div>
     </body>

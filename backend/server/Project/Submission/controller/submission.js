@@ -11,7 +11,8 @@ const defaultPopulate = [
             populate: [
                 { path: 'owner' },
                 { path: 'status' },
-                { path: 'category' }
+                { path: 'category' },
+                { path: 'storage' }
             ]
         }
     }

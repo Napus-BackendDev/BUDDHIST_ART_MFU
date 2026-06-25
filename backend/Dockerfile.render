@@ -1,0 +1,34 @@
+# Production image for Render.
+# Debian-based Node so Puppeteer can use the OS-provided Chromium instead of
+# downloading its own copy (smaller image, avoids missing-shared-lib errors).
+FROM node:20-slim
+
+# Chromium + the fonts/libraries Puppeteer needs to render PDFs (incl. Thai/CJK)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    fonts-liberation \
+    fonts-noto-cjk \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Use the system Chromium and skip Puppeteer's own download
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    NODE_ENV=production
+
+WORKDIR /app
+
+# Install deps first for layer caching.
+# NOTE: this project keeps several runtime packages (express, mongoose, multer…)
+# under devDependencies, so install the FULL set — do not use --omit=dev.
+COPY package.json package-lock.json* ./
+RUN npm install
+
+COPY . .
+
+# Render injects PORT at runtime; the app reads process.env.PORT.
+EXPOSE 10000
+
+# Plain start (no `-r dotenv/config`): config.js already calls dotenv.config(),
+# and on Render all env vars come from the dashboard, not a .env file.
+CMD ["node", "server.js"]

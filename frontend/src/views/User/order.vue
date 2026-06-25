@@ -33,6 +33,7 @@
 
         <CCardBody class="p-0">
           <CDataTable
+            :key="tableKey"
             :items="filteredOrders"
             :fields="fields"
             :items-per-page="5"
@@ -97,20 +98,57 @@
             </template>
 
             <template #action="{item}">
-              <td class="align-middle text-right">
+              <td class="align-middle text-right px-4" style="white-space: nowrap;">
+                <!-- If not paid (no slip image) -->
                 <button 
-                    class="action-btn icon-view mr-2" 
+                  v-if="!item.image && (item.statusName === 'Pending Payment' || item.statusName === 'รอชำระเงิน')"
+                  class="btn-quick-pay mr-2" 
+                  v-c-tooltip="$i18n.locale === 'en' ? 'Upload Slip to Pay' : 'ชำระเงิน / ส่งสลิป'"
+                  @click="triggerOrderSlipUpload(item)"
+                >
+                  <CIcon name="cil-cloud-upload" class="mr-1" />
+                  {{ $i18n.locale === 'en' ? 'Pay' : 'ชำระเงิน' }}
+                </button>
+
+                <!-- Paid documents -->
+                <template v-else-if="item.statusName !== 'Rejected' && item.statusName !== 'ยกเลิก'">
+                  <!-- Receipt (Slip) -->
+                  <button 
+                    class="action-btn-doc icon-receipt mr-1" 
+                    v-c-tooltip="$i18n.locale === 'en' ? 'Receipt (Slip)' : 'ใบเสร็จ (สลิป)'"
+                    @click="downloadReceipt(item)"
+                  >
+                    <CIcon name="cil-file" size="sm" />
+                  </button>
+
+                  <!-- Invoice -->
+                  <button 
+                    class="action-btn-doc icon-invoice mr-1" 
+                    v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
+                    @click="downloadInvoice(item)"
+                  >
+                    <CIcon name="cil-cloud-download" size="sm" />
+                  </button>
+
+                  <!-- Certificate (Only if Approved) -->
+                  <button 
+                    class="action-btn-doc icon-cert mr-1" 
+                    v-c-tooltip="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดเกียรติบัตร')"
+                    @click="downloadCertificate(item)"
+                    :disabled="!isApprovedOrder(item)"
+                    :class="{ 'disabled-btn': !isApprovedOrder(item) }"
+                  >
+                    <CIcon name="cil-description" size="sm" />
+                  </button>
+                </template>
+
+                <!-- View Details -->
+                <button 
+                    class="action-btn icon-view" 
                     v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                     @click="viewDetails(item)"
                 >
                     <CIcon name="cilMagnifyingGlass" size="lg" />
-                </button>
-                <button 
-                    class="action-btn icon-download" 
-                    v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบเสร็จ'"
-                    @click="downloadInvoice(item)"
-                >
-                    <CIcon name="cil-file" size="lg" />
                 </button>
               </td>
             </template>
@@ -136,11 +174,12 @@
       </CCard>
     </CContainer>
 
-    <!-- Order Details Modal -->
     <OrderModal 
       :show.sync="showModal" 
       :order="selectedOrder" 
     />
+    
+    <input type="file" ref="orderSlipInput" class="d-none" @change="handleOrderSlipUpload" accept="image/*" />
   </div>
 </template>
 
@@ -148,6 +187,7 @@
 import { mapGetters } from 'vuex';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import OrderModal from './components/modal/OrderModal.vue';
+import Service from '@/service/api';
 
 export default {
   name: 'UserOrders',
@@ -162,7 +202,8 @@ export default {
       search: '',
       activePage: 1,
       now: Date.now(),
-      timer: null
+      timer: null,
+      tableKey: 0
     }
   },
   computed: {
@@ -210,13 +251,16 @@ export default {
         }));
     },
     filteredOrders() {
-      if (!this.search) return this.processedOrders;
-      const q = this.search.toLowerCase();
-      return this.processedOrders.filter(o => 
-        o.orderId.toLowerCase().includes(q) ||
-        o.statusName.toLowerCase().includes(q) ||
-        o.date.toLowerCase().includes(q)
-      );
+      let orders = this.processedOrders;
+      if (this.search) {
+        const q = this.search.toLowerCase();
+        orders = this.processedOrders.filter(o => 
+          o.orderId.toLowerCase().includes(q) ||
+          o.statusName.toLowerCase().includes(q) ||
+          o.date.toLowerCase().includes(q)
+        );
+      }
+      return [...orders].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
   },
   async created() {
@@ -230,12 +274,14 @@ export default {
   },
   methods: {
     calculateTimeLeft(order) {
-      // Only show countdown for Pending/Reserved items without a slip
+      // Only show countdown for items without a slip that are not completed/cancelled
       const statusLabel = this.getName('en', order.status);
-      const isPending = statusLabel && (statusLabel.toLowerCase().includes('pending') || statusLabel.toLowerCase().includes('reserved'));
-      const hasNoSlip = !order.image;
+      const s = statusLabel ? statusLabel.toLowerCase() : '';
+      
+      const isCompletedOrCancelled = s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success') || s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail');
+      const hasSlip = !!order.image;
 
-      if (!isPending || !hasNoSlip) return '-';
+      if (isCompletedOrCancelled || hasSlip) return '-';
 
       const createdAt = new Date(order.createdAt).getTime();
       const deadline = createdAt + (24 * 60 * 60 * 1000);
@@ -253,6 +299,54 @@ export default {
       this.selectedOrder = item;
       this.showModal = true;
     },
+    triggerOrderSlipUpload(item) {
+      this.selectedOrder = item;
+      this.$nextTick(() => {
+        if (this.$refs.orderSlipInput) {
+          this.$refs.orderSlipInput.click();
+        }
+      });
+    },
+    async handleOrderSlipUpload(event) {
+      const file = event.target.files[0];
+      if (!file || !this.selectedOrder) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size exceeds 10MB limit.');
+        return;
+      }
+
+      try {
+        this.$store.commit('dialog/showToast', { 
+          title: this.$i18n.locale === 'en' ? 'Uploading...' : 'กำลังอัปโหลด...', 
+          message: this.$i18n.locale === 'en' ? 'Please wait while we upload your slip.' : 'โปรดรอสักครู่ขณะระบบกำลังอัปโหลดสลิปของคุณ', 
+          variant: 'info' 
+        });
+        
+        await this.$store.dispatch('order/upload', {
+          _id: this.selectedOrder._id,
+          image: file
+        });
+
+        this.$store.commit('dialog/showToast', { 
+          title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ', 
+          message: this.$i18n.locale === 'en' ? 'Payment slip uploaded successfully.' : 'อัปโหลดสลิปชำระเงินเรียบร้อยแล้ว', 
+          variant: 'success' 
+        });
+
+        // Refresh orders data
+        await this.$store.dispatch('order/get', {});
+        this.tableKey += 1;
+      } catch (error) {
+        console.error('Upload failed:', error);
+        alert(this.$i18n.locale === 'en' ? 'Upload failed. Please try again.' : 'เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่อีกครั้ง');
+      } finally {
+        if (this.$refs.orderSlipInput) {
+          this.$refs.orderSlipInput.value = '';
+        }
+        this.selectedOrder = null;
+      }
+    },
     async downloadInvoice(item) {
       try {
         const orderId = item._id;
@@ -262,7 +356,7 @@ export default {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `Invoice_${item.orderId}.pdf`);
+        link.setAttribute('download', `Invoice_${item.orderId || item._id}.pdf`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -270,6 +364,32 @@ export default {
         console.error('Download failed:', error);
         alert(this.$i18n.locale === 'en' ? 'Could not download invoice. Please try again.' : 'ไม่สามารถดาวน์โหลดใบเสร็จได้ กรุณาลองใหม่อีกครั้ง');
       }
+    },
+    downloadReceipt(item) {
+      if (item.image) {
+        window.open(item.image, '_blank');
+      }
+    },
+    async downloadCertificate(item) {
+      try {
+        const res = await Service.order('certificate', item._id);
+        
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Certificate_${item.orderId || item._id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('Download Certificate Error:', error);
+        alert(this.$i18n.locale === 'en' ? 'Failed to download certificate.' : 'ดาวน์โหลดใบรับรองไม่สำเร็จ');
+      }
+    },
+    isApprovedOrder(item) {
+      const statusLabel = this.getName('en', item.status);
+      const s = statusLabel ? statusLabel.toLowerCase() : '';
+      return s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success');
     }
   }
 }
@@ -281,6 +401,54 @@ export default {
     background-color: rgba(52, 152, 219, 0.1) !important;
     color: #2980b9 !important;
     border: 1px solid #2980b9 !important;
+}
+
+.btn-quick-pay {
+    background-color: #e55b5b;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(229, 91, 91, 0.2);
+    display: inline-flex;
+    align-items: center;
+}
+.btn-quick-pay:hover {
+    background-color: #d32f2f;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(229, 91, 91, 0.3);
+}
+
+.action-btn-doc {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.action-btn-doc:hover {
+    background-color: #8c1515;
+    color: white;
+    border-color: #8c1515;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(140, 21, 21, 0.15);
+}
+.action-btn-doc.disabled-btn {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .action-btn.icon-download {
@@ -297,7 +465,6 @@ export default {
 
 .bg-light-premium {
     background-color: #f8f9fa;
-    margin-top: -2rem !important;
 }
 
 .section-title {

@@ -14,11 +14,34 @@
             icon="cil-task" 
             :showCreateButton="false" 
             :showExportButton="true" 
+            themeColor="green"
             @export="handleExport"
         />
         <AssignmentWidget v-model="filters.status" :stats="stats" />
         <AssignmentFilter v-model="filters" />
         <AssignmentTable :filters="filters" :items="mappedArtworks" @update-status="handleStatusUpdate" />
+
+        <!-- Rejection Reason Modal -->
+        <CModal :title="$i18n.locale === 'en' ? 'Reject Submission' : 'ปฏิเสธงานส่งของนักศึกษา'" :show.sync="showRejectModal" color="danger" size="lg">
+            <div class="p-3">
+                <p class="text-muted mb-3">
+                    {{ $i18n.locale === 'en' ? 'Please provide a reason for rejecting this submission. This message will be sent to the student via email.' : 'กรุณาระบุเหตุผลในการปฏิเสธงานส่งนี้ ข้อความนี้จะถูกส่งไปยังอีเมลของนักศึกษาเพื่อแจ้งเตือน' }}
+                </p>
+                <CTextarea 
+                    v-model="rejectRemark" 
+                    :placeholder="$i18n.locale === 'en' ? 'Enter reason for rejection...' : 'ระบุเหตุผล...'" 
+                    rows="5"
+                    class="reject-textarea"
+                />
+            </div>
+            <template #footer>
+                <CButton color="secondary" @click="showRejectModal = false" :disabled="loading">{{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}</CButton>
+                <CButton color="danger" @click="confirmRejectAssignment" :disabled="!rejectRemark || loading">
+                    <CIcon v-if="loading" name="cil-reload" class="mr-2 spinner-animation" />
+                    {{ loading ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังดำเนินการ...') : ($i18n.locale === 'en' ? 'Confirm Reject' : 'ยืนยันการปฏิเสธ') }}
+                </CButton>
+            </template>
+        </CModal>
     </div>
 </template>
 
@@ -47,7 +70,12 @@ export default {
                 quickRange: 'All Time',
                 startDate: null,
                 endDate: null
-            }
+            },
+            showRejectModal: false,
+            rejectRemark: '',
+            pendingRejectArtworkId: null,
+            pendingRejectStatusName: '',
+            loading: false
         }
     },
     created() {
@@ -144,6 +172,14 @@ export default {
             this.$store.dispatch('submission/get', { _id: this.$route.params.submissionId });
         },
         async handleStatusUpdate({ artworkId, statusName }) {
+            if (statusName === 'Rejected') {
+                this.pendingRejectArtworkId = artworkId;
+                this.pendingRejectStatusName = statusName;
+                this.rejectRemark = '';
+                this.showRejectModal = true;
+                return;
+            }
+
             try {
                 if (!this.submission || !this.assignment) return;
 
@@ -151,8 +187,7 @@ export default {
                 const targetStatus = this.allStatuses.find(s => {
                     const title = this.getName('en', s);
                     return title.toLowerCase() === statusName.toLowerCase() || 
-                           (statusName === 'Approved' && title.toLowerCase() === 'approved') ||
-                           (statusName === 'Rejected' && title.toLowerCase() === 'rejected');
+                           (statusName === 'Approved' && title.toLowerCase() === 'approved');
                 });
 
                 if (!targetStatus) {
@@ -201,6 +236,82 @@ export default {
             } catch (error) {
                 console.error('Error updating status:', error);
                 alert(this.$i18n.locale === 'en' ? 'An error occurred while updating the status.' : 'เกิดข้อผิดพลาดในการอัปเดตสถานะ');
+            }
+        },
+        async confirmRejectAssignment() {
+            try {
+                if (!this.submission || !this.assignment || !this.pendingRejectArtworkId) return;
+
+                this.loading = true;
+
+                // 1. Find the target status ID
+                const targetStatus = this.allStatuses.find(s => {
+                    const title = this.getName('en', s);
+                    return title.toLowerCase() === 'rejected';
+                });
+
+                if (!targetStatus) {
+                    alert(this.$i18n.locale === 'en' ? 'Requested status not found in the system.' : 'ไม่พบสถานะที่ต้องการในระบบ');
+                    this.showRejectModal = false;
+                    return;
+                }
+
+                // 2. Clone and update the submission object
+                const updatedSubmission = JSON.parse(JSON.stringify(this.submission));
+                
+                // Find the assignment and the artwork
+                const assignmentIndex = updatedSubmission.assignments.findIndex(a => a._id === this.assignment._id);
+                if (assignmentIndex === -1) {
+                    this.showRejectModal = false;
+                    return;
+                }
+
+                const artworkIndex = updatedSubmission.assignments[assignmentIndex].artworks.findIndex(aw => aw._id === this.pendingRejectArtworkId);
+                if (artworkIndex === -1) {
+                    this.showRejectModal = false;
+                    return;
+                }
+
+                // Update the status ID and rejectionReason
+                updatedSubmission.assignments[assignmentIndex].artworks[artworkIndex].status = targetStatus._id;
+                updatedSubmission.assignments[assignmentIndex].artworks[artworkIndex].rejectionReason = this.rejectRemark;
+
+                // 3. Unpopulate fields to prevent Mongoose cast errors
+                if (updatedSubmission.artist && updatedSubmission.artist.length > 0 && typeof updatedSubmission.artist[0] === 'object') {
+                    updatedSubmission.artist = updatedSubmission.artist.map(a => a._id);
+                }
+                
+                updatedSubmission.assignments.forEach(assignment => {
+                    if (assignment.artist && assignment.artist.length > 0 && typeof assignment.artist[0] === 'object') {
+                        assignment.artist = assignment.artist.map(a => a._id);
+                    }
+                    if (assignment.artworks) {
+                        assignment.artworks.forEach(aw => {
+                            if (aw.owner && typeof aw.owner === 'object') aw.owner = aw.owner._id;
+                            if (aw.status && typeof aw.status === 'object') aw.status = aw.status._id;
+                            if (aw.category && typeof aw.category === 'object') aw.category = aw.category._id;
+                        });
+                    }
+                });
+
+                // 4. Save to backend
+                await this.$store.dispatch('submission/update', updatedSubmission);
+                
+                // 5. Refresh data
+                await this.fetchSubmission();
+                
+                this.showRejectModal = false;
+                this.rejectRemark = '';
+                this.pendingRejectArtworkId = null;
+                this.pendingRejectStatusName = '';
+                
+                alert(this.$i18n.locale === 'en' ? 'Submission rejected and notification sent.' : 'ปฏิเสธชิ้นงานส่งของนักศึกษาและส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว');
+                
+            } catch (error) {
+                console.error('Error rejecting submission:', error);
+                alert(this.$i18n.locale === 'en' ? 'An error occurred while rejecting the submission.' : 'เกิดข้อผิดพลาดในการปฏิเสธการส่งงาน');
+            } finally {
+                this.loading = false;
             }
         },
         handleExport() {

@@ -28,6 +28,9 @@ exports.onQuery = async function (request, response) {
     let query = {};
     query._id = new mongo.ObjectId(request.body._id);
 
+    // Increment view count
+    await ArtworkModel.findByIdAndUpdate(query._id, { $inc: { views: 1 } });
+
     const doc = await Artwork.onQuery(query);
     return ResMessage.sendResponse(response, 0, 20000, doc);
   } catch (err) {
@@ -162,6 +165,39 @@ exports.onUpdate = async function (request, response) {
 
     if (!doc && request.body.previousApprovalId) {
       return ResMessage.sendResponse(response, 0, 40000, null); // Bad Request (Already taken)
+    }
+
+    // --- 📧 ส่งอีเมลแจ้งเตือนศิลปินเมื่อผลงานไม่ได้รับการอนุมัติ (Rejected) ---
+    if (doc && doc.status && doc.status.approval) {
+      try {
+        const populatedArtwork = await ArtworkModel.findById(doc._id)
+          .populate('status.approval')
+          .populate('artist')
+          .lean();
+
+        const isRejected = populatedArtwork.status?.approval?.title?.some(t => t.value === 'Rejected' || t.value === 'ไม่นุมัติ');
+        if (isRejected) {
+          const email = populatedArtwork.artist?.contact?.studentEmail || populatedArtwork.artist?.contact?.personalEmail;
+          if (email) {
+            const { sendMail } = require("../../../../helpers/google/Mail");
+            const { rejectedSubmissionMail } = require("../../Mail");
+            
+            const artistName = (populatedArtwork.artist?.name && populatedArtwork.artist.name[0]?.value) || "Artist";
+            const artworkTitle = (populatedArtwork.title && populatedArtwork.title[0]?.value) || "Your Artwork";
+            
+            const html = rejectedSubmissionMail({
+              artistName,
+              submissionTitle: artworkTitle,
+              reason: doc.rejectionReason || "Does not meet our current collection requirements."
+            });
+
+            await sendMail(email, 'แจ้งสถานะการประเมินผลงานสร้างสรรค์ - พุทธศิลปกรรม มฟล.', '', html);
+            console.log(`[Artwork] Rejection email sent successfully to artist: ${email}`);
+          }
+        }
+      } catch (emailErr) {
+        console.error("[Artwork Rejection Email Error]:", emailErr.message);
+      }
     }
 
     return ResMessage.sendResponse(response, 0, 20000, doc);

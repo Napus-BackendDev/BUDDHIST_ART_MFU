@@ -167,48 +167,7 @@
                 </div>
             </div>
 
-            <!-- Shipping & Tracking Row -->
-            <div class="mt-4 pt-4 border-top">
-                <h6 class="font-weight-bold text-dark mb-3">{{ $i18n.locale === 'en' ? 'Shipping & Tracking' : 'การจัดส่งและติดตามสถานะ' }}</h6>
-                <CRow>
-                    <CCol md="6">
-                        <div class="form-group-custom">
-                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Carrier' : 'ผู้จัดส่ง' }}</label>
-                            <CInput 
-                                v-model="form.carrier" 
-                                :placeholder="$i18n.locale === 'en' ? 'e.g. Thailand Post' : 'เช่น ไปรษณีย์ไทย'" 
-                                class="custom-input"
-                            />
-                        </div>
-                    </CCol>
-                    <CCol md="6">
-                        <div class="form-group-custom">
-                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Tracking ID' : 'รหัสติดตามพัสดุ' }}</label>
-                            <CInput 
-                                v-model="form.trackingId" 
-                                :placeholder="$i18n.locale === 'en' ? 'e.g. TH123456789' : 'เช่น TH123456789'" 
-                                class="custom-input"
-                            />
-                        </div>
-                    </CCol>
-                </CRow>
-                <CRow>
-                    <CCol md="6">
-                        <div class="form-group-custom">
-                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Expected Delivery' : 'วันที่คาดว่าจะจัดส่ง' }}</label>
-                            <CInput 
-                                :type="form.deliveryDate ? 'date' : 'text'"
-                                placeholder="วัน/เดือน/ปี"
-                                lang="en-GB"
-                                v-model="form.deliveryDate" 
-                                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
-                                @blur="!$event.target.value && ($event.target.type = 'text')"
-                                class="custom-input"
-                            />
-                        </div>
-                    </CCol>
-                </CRow>
-            </div>
+
 
             <!-- Proof of Payment Row -->
             <div class="form-group-custom mt-4 pt-4 border-top">

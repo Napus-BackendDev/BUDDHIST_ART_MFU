@@ -7,6 +7,7 @@
             icon="cil-people"
             :showCreateButton="true"
             :showExportButton="true"
+            themeColor="red"
             @create="showChoiceModal = true"
             @export="exportToExcel"
         />
@@ -212,22 +213,36 @@ export default {
                         return;
                     }
 
-                    // Find Default Role (Student) and Status
-                    const studentRole = this.roles.find(r => r.name.toLowerCase().includes('student')) || this.roles[0];
-                    const activeStatus = this.studentStatuses.find(s => s.name.toLowerCase().includes('active') || s.name.toLowerCase().includes('normal')) || this.studentStatuses[0];
+                    // Find Default Role (Artist) and Status
+                    const studentRole = this.roles.find(r => 
+                        r.nameEn.toLowerCase() === 'artist' || 
+                        r.nameEn.toLowerCase().includes('student')
+                    ) || this.roles.find(r => r.nameEn.toLowerCase() !== 'admin') || this.roles[0];
+                    
+                    const activeStatus = this.studentStatuses.find(s => 
+                        s.nameEn.toLowerCase().includes('new') ||
+                        s.nameEn.toLowerCase().includes('active') || 
+                        s.nameEn.toLowerCase().includes('normal')
+                    ) || this.studentStatuses[0];
 
                     const mappedData = jsonData.map(row => {
                         // Resolve Role from file if provided, else use default student role
                         let roleId = studentRole ? studentRole._id : null;
                         if (row['Role']) {
-                            const foundRole = this.roles.find(r => r.name.toLowerCase() === String(row['Role']).toLowerCase());
+                            const foundRole = this.roles.find(r => 
+                                r.nameEn.toLowerCase() === String(row['Role']).toLowerCase() ||
+                                r.name.toLowerCase() === String(row['Role']).toLowerCase()
+                            );
                             if (foundRole) roleId = foundRole._id;
                         }
 
                         // Resolve Status from file if provided, else use default active status
                         let statusId = activeStatus ? activeStatus._id : null;
                         if (row['Status']) {
-                            const foundStatus = this.studentStatuses.find(s => s.name.toLowerCase() === String(row['Status']).toLowerCase());
+                            const foundStatus = this.studentStatuses.find(s => 
+                                s.nameEn.toLowerCase() === String(row['Status']).toLowerCase() ||
+                                s.name.toLowerCase() === String(row['Status']).toLowerCase()
+                            );
                             if (foundStatus) statusId = foundStatus._id;
                         }
 

@@ -1,6 +1,6 @@
 <template>
     <div class="orders-page">
-        <HeaderHero :title="$i18n.locale === 'en' ? 'Order Management' : 'จัดการคำสั่งซื้อ'" :description="$i18n.locale === 'en' ? 'Overview and track all customer orders, payments and fulfillment statuses in real-time.' : 'ภาพรวมและติดตามคำสั่งซื้อของลูกค้า การชำระเงิน และสถานะการจัดส่งแบบเรียลไทม์'" icon="cil-cart" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Order' : 'สร้างคำสั่งซื้อ'" @create="onCreateOrder" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'Order Management' : 'จัดการคำสั่งซื้อ'" :description="$i18n.locale === 'en' ? 'Overview and track all customer orders, payments and fulfillment statuses in real-time.' : 'ภาพรวมและติดตามคำสั่งซื้อของลูกค้า การชำระเงิน และสถานะการจัดส่งแบบเรียลไทม์'" icon="cil-cart" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Order' : 'สร้างคำสั่งซื้อ'" themeColor="blue" @create="onCreateOrder" @export="handleExport" />
         <OrderWidget v-model="filters.status" :orders="orders" />
         <OrderFilter v-model="filters" />
         <OrderTable ref="orderTable" :filters="filters" :items="orders" :loadingItems="loadingItems" @view-order="onViewOrder" @edit-order="onEditOrder" @approve="handleApproveOrder" @reject="handleRejectOrder"/>
@@ -72,7 +72,26 @@ export default {
     },
     computed: {
         orders() {
-            return this.$store.getters['order/orders'] || [];
+            const allOrders = this.$store.getters['order/orders'] || [];
+            return allOrders.filter(item => {
+                if (!item.status) return false;
+                let statusStr = '';
+                if (typeof item.status === 'string') {
+                    statusStr = item.status.toLowerCase();
+                } else if (item.status && Array.isArray(item.status.title)) {
+                    const enVal = item.status.title.find(t => t.key === 'en')?.value || '';
+                    const thVal = item.status.title.find(t => t.key === 'th')?.value || '';
+                    statusStr = (enVal + ' ' + thVal).toLowerCase();
+                } else if (item.status && item.status.title) {
+                    statusStr = String(item.status.title).toLowerCase();
+                }
+                
+                // Exclude Pending Payment (รอชำระเงิน) / Reserved / payment
+                const isPendingPayment = statusStr.includes('รอชำระเงิน') || 
+                                         statusStr.includes('payment') || 
+                                         statusStr.includes('reserved');
+                return !isPendingPayment;
+            });
         }
     },
     created() {

@@ -15,7 +15,8 @@ module.exports = function confirmationOrderMailTemplate({ buyerName, orderId, ar
                 overflow: hidden;
             }
             .header {
-                background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+                background: linear-gradient(135deg, #8c1515 0%, #d32f2f 100%);
+                border-bottom: 4px solid #FEC260;
                 color: #ffffff;
                 padding: 40px 20px;
                 text-align: center;
@@ -69,46 +70,46 @@ module.exports = function confirmationOrderMailTemplate({ buyerName, orderId, ar
     <body>
         <div class="email-container">
             <div class="header">
-                <h1>Thank You!</h1>
-                <p>We've Received Your Order</p>
+                <h1>ขอขอบพระคุณเป็นอย่างยิ่ง!</h1>
+                <p>เราได้รับคำสั่งซื้อ/จองผลงานของท่านเรียบร้อยแล้ว</p>
             </div>
             <div class="content">
-                <p>Dear <strong>${buyerName}</strong>,</p>
-                <p>Your order has been successfully placed. We are currently processing your acquisition of the following artwork.</p>
+                <p>เรียน คุณ <strong>${buyerName}</strong>,</p>
+                <p>การจองผลงานสร้างสรรค์ของท่านเสร็จสมบูรณ์แล้ว ขณะนี้ระบบกำลังบันทึกรายการสำหรับผลงานดังต่อไปนี้:</p>
                 
                 <table class="order-details">
                     <thead>
                         <tr>
-                            <th>Description</th>
-                            <th style="text-align: right;">Amount</th>
+                            <th>รายการรายละเอียด</th>
+                            <th style="text-align: right;">จำนวนเงิน</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td>
                                 <strong>${artworkTitle}</strong><br>
-                                <span style="font-size: 12px; color: #777777;">Order ID: ${orderId}</span>
+                                <span style="font-size: 12px; color: #777777;">รหัสใบสั่งซื้อ: ${orderId}</span>
                             </td>
                             <td style="text-align: right;">฿${price.toLocaleString()}</td>
                         </tr>
                         <tr class="total-row">
-                            <td style="text-align: right;">Total:</td>
+                            <td style="text-align: right;">ยอดรวมทั้งสิ้น:</td>
                             <td style="text-align: right; color: #2c3e50;">฿${price.toLocaleString()}</td>
                         </tr>
                     </tbody>
                 </table>
 
                 <div style="text-align: center; margin: 30px 0;">
-                    <span class="status-badge">Order Confirmed - ${orderDate}</span>
+                    <span class="status-badge">ยืนยันคำสั่งซื้อจองสำเร็จ - ${orderDate}</span>
                 </div>
 
-                <p>Our team will contact you shortly regarding the shipping arrangements and authentication certificate. If you have any questions, please reply to this email.</p>
+                <p>กรุณาดำเนินการชำระเงินและอัปโหลดสลิปหลักฐานการโอนเงินภายใน 24 ชั่วโมง เพื่อป้องกันรายการจองหมดอายุ หากท่านมีข้อสงสัยหรือต้องการความช่วยเหลือเพิ่มเติม สามารถติดต่อทีมงานได้โดยตรงด้วยการตอบกลับอีเมลฉบับนี้</p>
                 
-                <p>Best regards,<br/><strong>Buddhist Art MFU</strong></p>
+                <p>ขอแสดงความนับถือ,<br/><strong>โครงการพุทธศิลปกรรม มฟล.</strong></p>
             </div>
             <div class="footer">
                 <p>&copy; ${new Date().getFullYear()} Buddhist Art MFU. All rights reserved.</p>
-                <p>Mae Fah Luang University, Chiang Rai, Thailand</p>
+                <p>มหาวิทยาลัยแม่ฟ้าหลวง จังหวัดเชียงราย ประเทศไทย</p>
             </div>
         </div>
     </body>

@@ -3,7 +3,7 @@
         <CContainer>
             <!-- Left-aligned Header with View All Button -->
             <div class="d-flex align-items-center justify-content-between mb-4">
-                <h2 class="font-weight-bold mb-0 mr-2 section-title-home">{{ $i18n.locale === 'en' ? 'News & PR' : 'ข่าวประชาสัมพันธ์' }}</h2>
+                <h2 class="font-weight-bold mb-0 mr-2 section-title-home">{{ $i18n.locale === 'en' ? 'News & Updates' : 'ข่าวประชาสัมพันธ์' }}</h2>
                 <CButton color="danger" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold" @click="$router.push('/news')">
                     {{ $i18n.locale === 'en' ? 'View All News' : 'ดูข่าวทั้งหมด' }}
                 </CButton>

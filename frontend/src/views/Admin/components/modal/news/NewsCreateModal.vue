@@ -159,6 +159,7 @@ export default {
             editorOptions: {
                 modules: {
                     toolbar: [
+                        [{ 'size': ['small', false, 'large', 'huge'] }],
                         ['bold', 'italic', 'underline'],
                         ['link'],
                         ['clean']

@@ -29,7 +29,8 @@
                         <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
                         <CDropdownItem @click="updateFilter('status', 'All Status')">{{ $i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด' }}</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Pending')">{{ $i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ' }}</CDropdownItem>
-                        <CDropdownItem @click="updateFilter('status', 'Completed')">{{ $i18n.locale === 'en' ? 'Completed' : 'เสร็จสมบูรณ์' }}</CDropdownItem>
+                        <CDropdownItem @click="updateFilter('status', 'Completed')">{{ $i18n.locale === 'en' ? 'Approved' : 'อนุมัติ' }}</CDropdownItem>
+                        <CDropdownItem @click="updateFilter('status', 'Cancelled')">{{ $i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธ' }}</CDropdownItem>
                         </CDropdownMenu>
                     </CDropdown>
                 </CCol>
@@ -115,7 +116,10 @@ export default {
                 return this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ';
             }
             if (status === 'Completed') {
-                return this.$i18n.locale === 'en' ? 'Completed' : 'เสร็จสมบูรณ์';
+                return this.$i18n.locale === 'en' ? 'Approved' : 'อนุมัติ';
+            }
+            if (status === 'Cancelled') {
+                return this.$i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธ';
             }
             return status;
         },

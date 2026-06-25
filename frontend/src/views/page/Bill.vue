@@ -11,9 +11,19 @@
             </div>
 
             <h2 class="font-weight-bold mb-3" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Order Confirmed!' : 'ยืนยันคำสั่งซื้อสำเร็จ!' }}</h2>
-            <p class="text-muted mb-5">
+            <p class="text-muted mb-4">
                 {{ $i18n.locale === 'en' ? 'Thank you for your purchase. Your order' : 'ขอบคุณสำหรับการสั่งซื้อ หมายเลขคำสั่งซื้อของคุณ' }} {{ order.orderNumber || order._id }} {{ $i18n.locale === 'en' ? 'has been received and is being processed.' : 'ได้รับการยืนยันและกำลังดำเนินการ' }}
             </p>
+
+            <!-- Expiry limit warning block -->
+            <div class="p-3 mb-5 mx-auto text-center font-weight-bold rounded-lg border-0 shadow-sm d-inline-flex align-items-center justify-content-center" style="max-width: 500px; background-color: #fff5f5; color: #e55b5b; font-size: 0.95rem; border-radius: 12px; gap: 8px;">
+                <CIcon name="cil-warning" size="sm" />
+                <span>
+                    {{ $i18n.locale === 'en' 
+                        ? 'Please upload the payment slip within 24 hours to secure your artwork reservation.' 
+                        : 'กรุณาอัปโหลดหลักฐานการชำระเงินภายใน 24 ชั่วโมง เพื่อรักษาสิทธิ์การจองผลงานศิลปะของคุณ' }}
+                </span>
+            </div>
 
             <!-- Order Details Card -->
             <CCard class="border-0 shadow-sm mx-auto mb-5 text-left" style="max-width: 500px; border-radius: 12px;">

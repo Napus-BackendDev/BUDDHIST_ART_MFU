@@ -5,6 +5,7 @@ import store from "@/store/store";
 const LoginModule = {
     namespaced: true,
     state: {
+        showSignInModal: false,
         isSignIn: false,
         is2FA: false,
         userId: null
@@ -12,7 +13,13 @@ const LoginModule = {
     },
 
     mutations: {
+        showSignInModal(state, obj) {
+            state.showSignInModal = obj
+            state.isSignIn = obj
+        },
+
         isSignIn(state, obj) {
+            state.showSignInModal = obj
             state.isSignIn = obj
         },
 
@@ -66,7 +73,7 @@ const LoginModule = {
                     }));
 
                     store.commit('xAccessToken', token); // Update root store immediately
-                    store.commit("auth/isSignIn", false);
+                    store.commit("auth/showSignInModal", false);
                     store.commit("auth/userId", user._id);
 
                     // Redirection Logic (Avoid NavigationDuplicated)
@@ -118,7 +125,7 @@ const LoginModule = {
                     }));
 
                     store.commit('xAccessToken', token); // Update root store immediately
-                    store.commit("auth/isSignIn", false);
+                    store.commit("auth/showSignInModal", false);
                     store.commit("auth/userId", user._id);
 
                     // Redirection Logic (Avoid NavigationDuplicated)
@@ -197,8 +204,12 @@ const LoginModule = {
     },
 
     getters: {
+        showSignInModal(state) {
+            return state.showSignInModal;
+        },
+
         isSignIn(state) {
-            return state.isSignIn;
+            return state.showSignInModal;
         },
 
         is2FA(state) {

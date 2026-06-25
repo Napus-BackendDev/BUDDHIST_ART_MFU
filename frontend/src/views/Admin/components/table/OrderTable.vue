@@ -29,21 +29,26 @@
                                 <img :src="item.artwork[0].image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName($i18n.locale, item.artwork[0]).charAt(0)}`"
                                     :alt="getName($i18n.locale, item.artwork[0])" class="thumbnail-img">
                             </div>
-                            <span class="font-weight-bold text-dark">{{ getName($i18n.locale, item.artwork[0]) }}</span>
+                            <div>
+                                <div class="font-weight-bold text-dark">{{ getName($i18n.locale, item.artwork[0]) }}</div>
+                                <div v-if="item.artwork.length > 1" class="small text-info font-weight-bold">
+                                    +{{ item.artwork.length - 1 }} {{ $i18n.locale === 'en' ? 'more item(s)' : 'รายการเพิ่มเติม' }}
+                                </div>
+                            </div>
                         </div>
                         <div v-else class="text-muted small italic">{{ $i18n.locale === 'en' ? 'No Artwork Associated' : 'ไม่มีผลงานศิลปะที่เชื่อมโยง' }}</div>
                     </td>
                 </template>
 
                 <template #artist="{ item }">
-                    <td class="text-muted">
-                        {{ item.artwork && item.artwork[0] && item.artwork[0].artist ? getName($i18n.locale, item.artwork[0].artist) : 'N/A' }}
+                    <td class="text-muted font-weight-bold">
+                        {{ getOrderArtists(item) }}
                     </td>
                 </template>
 
                 <template #amount="{ item }">
                     <td class="font-weight-bold text-dark">
-                        ฿ {{ item.artwork && item.artwork[0] ? formatPrice(item.artwork[0].price) : '0.00' }}
+                        ฿ {{ formatPrice(getOrderTotal(item)) }}
                     </td>
                 </template>
 
@@ -58,7 +63,7 @@
 
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="(item.status ? getName('en', item.status) : 'Pending').includes('Pending') || (item.status ? getName('en', item.status) : '') === 'Reserved'" class="d-inline-flex align-items-center">
+                        <div v-if="(item.status ? getName('en', item.status) : 'Pending').includes('Pending')" class="d-inline-flex align-items-center">
                             <button class="action-btn icon-view" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
@@ -167,20 +172,29 @@ export default {
             ];
         },
         filteredItems() {
-            return (this.items || []).filter(item => {
+            const list = (this.items || []).filter(item => {
                 const customer = (item.contact ? item.contact.name : '').toLowerCase();
-                const artwork = (item.artwork && item.artwork[0] ? this.getName('en', item.artwork[0]) : '').toLowerCase();
                 const orderId = (item._id || '').toLowerCase();
+                const searchKeyword = this.filters.search.toLowerCase();
 
-                // Search Filter
+                // Search Filter: check order ID, customer name, and any associated artwork or artist name
+                const artworkNamesMatch = item.artwork ? item.artwork.some(art => 
+                    this.getName('en', art).toLowerCase().includes(searchKeyword) || 
+                    this.getName('th', art).toLowerCase().includes(searchKeyword) ||
+                    (art.artist && (
+                        this.getName('en', art.artist).toLowerCase().includes(searchKeyword) ||
+                        this.getName('th', art.artist).toLowerCase().includes(searchKeyword)
+                    ))
+                ) : false;
+
                 const searchMatch = !this.filters.search || 
-                    orderId.includes(this.filters.search.toLowerCase()) ||
-                    customer.includes(this.filters.search.toLowerCase()) ||
-                    artwork.includes(this.filters.search.toLowerCase());
+                    orderId.includes(searchKeyword) ||
+                    customer.includes(searchKeyword) ||
+                    artworkNamesMatch;
 
                 // Status Filter
-                const statusInfo = this.getStatusBadge(item.status ? this.getName('en', item.status) : 'Pending');
-                const statusMatch = this.filters.status === 'All Status' || statusInfo.label === this.filters.status;
+                const statusGroup = this.getStatusGroup(item);
+                const statusMatch = this.filters.status === 'All Status' || statusGroup === this.filters.status;
 
                 // Date Filter
                 let dateMatch = true;
@@ -193,9 +207,31 @@ export default {
 
                 return searchMatch && statusMatch && dateMatch;
             });
+            return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         }
     },
     methods: {
+        getStatusGroup(item) {
+            if (!item || !item.status) return 'Pending';
+            let status = '';
+            if (typeof item.status === 'string') {
+                status = item.status;
+            } else if (item.status.title) {
+                const enStatus = item.status.title.find(t => t.key === 'en');
+                status = enStatus ? enStatus.value : '';
+            }
+            switch (status) {
+                case 'Completed':
+                case 'Success':
+                case 'Approved':
+                    return 'Completed';
+                case 'Cancelled':
+                case 'Rejected':
+                    return 'Cancelled';
+                default:
+                    return 'Pending';
+            }
+        },
         formatPrice(value) {
             if (value === undefined || value === null) return '0.00';
             const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
@@ -203,6 +239,18 @@ export default {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
+        },
+        getOrderTotal(item) {
+            if (!item.artwork || !Array.isArray(item.artwork)) return 0;
+            return item.artwork.reduce((sum, art) => sum + (art.price || 0), 0);
+        },
+        getOrderArtists(item) {
+            if (!item.artwork || !Array.isArray(item.artwork)) return 'N/A';
+            const names = item.artwork
+                .map(art => art.artist ? this.getName(this.$i18n.locale, art.artist) : '')
+                .filter(Boolean);
+            const uniqueNames = [...new Set(names)];
+            return uniqueNames.length > 0 ? uniqueNames.join(', ') : 'N/A';
         },
         exportExcel() {
             const baseUrl = process.env.VUE_APP_API_URL || window.location.origin;
@@ -213,7 +261,9 @@ export default {
                 'Invoice File', 'Certificate File'
             ];
 
-            const data = this.filteredItems.map(item => {
+            const data = [];
+
+            this.filteredItems.forEach(item => {
                 const buyerName = this.sanitizeForPath(item.contact?.name || (item.user && item.user.name) || "Customer");
                 const buyerId = item.user?._id || item.user || "Guest";
                 const orderIdentifier = item.orderNumber ? item.orderNumber.replace(/-/g, '_') : item._id;
@@ -223,24 +273,31 @@ export default {
                     : null;
                 const certificateUrl = `${baseUrl}/account/User/${buyerId}_${buyerName}/Certificate/Certificate_${orderIdentifier}.pdf`;
                 const slipUrl = item.image ? (item.image.startsWith('http') ? item.image : `${baseUrl}${item.image}`) : null;
-                const artworkUrl = item.artwork && item.artwork[0] ? (item.artwork[0].image.startsWith('http') ? item.artwork[0].image : `${baseUrl}${item.artwork[0].image}`) : null;
-
                 const statusInfo = this.getStatusBadge(item.status ? this.getName('en', item.status) : 'Pending');
 
-                return [
-                    item.orderNumber || item._id,
-                    this.formatDate(item.createdAt),
-                    item.contact ? item.contact.name : 'N/A',
-                    item.artwork && item.artwork[0] ? this.getName('en', item.artwork[0]) : 'N/A',
-                    item.artwork && item.artwork[0] && item.artwork[0].artist ? this.getName('en', item.artwork[0].artist) : 'N/A',
-                    item.artwork && item.artwork[0] ? item.artwork[0].price : 0,
-                    statusInfo.label,
-                    // Link columns using SheetJS cell objects
-                    artworkUrl ? { t: 's', v: 'View Artwork', l: { Target: artworkUrl } } : 'N/A',
-                    slipUrl ? { t: 's', v: 'View Slip', l: { Target: slipUrl } } : 'No slip',
-                    invoiceUrl ? { t: 's', v: 'Download Invoice', l: { Target: invoiceUrl } } : 'Not Generated',
-                    statusInfo.label === 'Approved' ? { t: 's', v: 'Download Certificate', l: { Target: certificateUrl } } : 'N/A'
-                ];
+                const artworks = item.artwork && item.artwork.length > 0 ? item.artwork : [null];
+
+                artworks.forEach(art => {
+                    const artworkTitle = art ? this.getName(this.$i18n.locale, art) : 'N/A';
+                    const artistName = art && art.artist ? this.getName(this.$i18n.locale, art.artist) : 'N/A';
+                    const artworkUrl = art && art.image ? (art.image.startsWith('http') ? art.image : `${baseUrl}${art.image}`) : null;
+                    const artworkAmount = art ? (art.price || 0) : 0;
+
+                    data.push([
+                        item.orderNumber || item._id,
+                        this.formatDate(item.createdAt),
+                        item.contact ? item.contact.name : 'N/A',
+                        artworkTitle,
+                        artistName,
+                        artworkAmount,
+                        statusInfo.label,
+                        // Link columns using SheetJS cell objects
+                        artworkUrl ? { t: 's', v: 'View Artwork', l: { Target: artworkUrl } } : 'N/A',
+                        slipUrl ? { t: 's', v: 'View Slip', l: { Target: slipUrl } } : 'No slip',
+                        invoiceUrl ? { t: 's', v: 'Download Invoice', l: { Target: invoiceUrl } } : 'Not Generated',
+                        (statusInfo.label === 'Approved' || statusInfo.label === 'อนุมัติแล้ว' || statusInfo.label === 'อนุมัติ' || (item.status && this.getName('en', item.status).toLowerCase().includes('approved'))) ? { t: 's', v: 'Download Certificate', l: { Target: certificateUrl } } : 'N/A'
+                    ]);
+                });
             });
 
             const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);

@@ -29,20 +29,20 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Title (EN)' : 'ชื่อภาษาอังกฤษ (EN)' }}</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Title (TH)' : 'ชื่อภาษาไทย (TH)' }}</label>
                         <CInput 
-                            v-model="form.title.en" 
-                            :placeholder="$i18n.locale === 'en' ? 'English Title' : 'ชื่อภาษาอังกฤษ'" 
+                            v-model="form.title.th" 
+                            :placeholder="$i18n.locale === 'en' ? 'Thai Title' : 'ชื่อภาษาไทย'" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Title (TH)' : 'ชื่อภาษาไทย (TH)' }}</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Title (EN)' : 'ชื่อภาษาอังกฤษ (EN)' }}</label>
                         <CInput 
-                            v-model="form.title.th" 
-                            :placeholder="$i18n.locale === 'en' ? 'Thai Title' : 'ชื่อภาษาไทย'" 
+                            v-model="form.title.en" 
+                            :placeholder="$i18n.locale === 'en' ? 'English Title' : 'ชื่อภาษาอังกฤษ'" 
                             class="custom-input mb-0"
                         />
                     </div>
@@ -127,20 +127,20 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Technique (EN)' : 'เทคนิคภาษาอังกฤษ (EN)' }}</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Technique (TH)' : 'เทคนิคภาษาไทย (TH)' }}</label>
                         <CInput 
-                            v-model="form.technique.en" 
-                            :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น Oil on Canvas'" 
+                            v-model="form.technique.th" 
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น สีน้ำมันบนผ้าใบ'" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Technique (TH)' : 'เทคนิคภาษาไทย (TH)' }}</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Technique (EN)' : 'เทคนิคภาษาอังกฤษ (EN)' }}</label>
                         <CInput 
-                            v-model="form.technique.th" 
-                            :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น สีน้ำมันบนผ้าใบ'" 
+                            v-model="form.technique.en" 
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น Oil on Canvas'" 
                             class="custom-input mb-0"
                         />
                     </div>
@@ -214,20 +214,20 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Remark (EN)' : 'หมายเหตุภาษาอังกฤษ (EN)' }}</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Remark (TH)' : 'หมายเหตุภาษาไทย (TH)' }}</label>
                         <CInput 
-                            v-model="form.remark.en" 
-                            :placeholder="$i18n.locale === 'en' ? 'Additional notes in English...' : 'หมายเหตุเพิ่มเติมภาษาอังกฤษ...'" 
+                            v-model="form.remark.th" 
+                            :placeholder="$i18n.locale === 'en' ? 'Additional notes in Thai...' : 'หมายเหตุเพิ่มเติม (ภาษาไทย)...'" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Remark (TH)' : 'หมายเหตุภาษาไทย (TH)' }}</label>
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Remark (EN)' : 'หมายเหตุภาษาอังกฤษ (EN)' }}</label>
                         <CInput 
-                            v-model="form.remark.th" 
-                            :placeholder="$i18n.locale === 'en' ? 'Additional notes in Thai...' : 'หมายเหตุเพิ่มเติม (ภาษาไทย)...'" 
+                            v-model="form.remark.en" 
+                            :placeholder="$i18n.locale === 'en' ? 'Additional notes in English...' : 'หมายเหตุเพิ่มเติมภาษาอังกฤษ...'" 
                             class="custom-input mb-0"
                         />
                     </div>
@@ -320,22 +320,7 @@
                 </CCol>
             </CRow>
 
-            <!-- Row 8: Description (EN) -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Description (EN)' : 'คำอธิบายภาษาอังกฤษ (EN)' }}</label>
-                        <CTextarea 
-                            v-model="form.description.en" 
-                            :placeholder="$i18n.locale === 'en' ? 'English description...' : 'คำอธิบายภาษาอังกฤษ...'" 
-                            rows="4"
-                            class="custom-textarea"
-                        />
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Row 9: Description (TH) -->
+            <!-- Row 8: Description (TH) -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
@@ -343,6 +328,21 @@
                         <CTextarea 
                             v-model="form.description.th" 
                             :placeholder="$i18n.locale === 'en' ? 'Thai description...' : 'รายละเอียดภาษาไทย...'" 
+                            rows="4"
+                            class="custom-textarea"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Row 9: Description (EN) -->
+            <CRow>
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Description (EN)' : 'คำอธิบายภาษาอังกฤษ (EN)' }}</label>
+                        <CTextarea 
+                            v-model="form.description.en" 
+                            :placeholder="$i18n.locale === 'en' ? 'English description...' : 'คำอธิบายภาษาอังกฤษ...'" 
                             rows="4"
                             class="custom-textarea"
                         />
@@ -638,15 +638,15 @@ export default {
                 return;
             }
 
+            // Create temporary object URL for instant preview to user
+            if (this.imagePreview && this.imagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(this.imagePreview);
+            }
+            this.imagePreview = URL.createObjectURL(file);
+
             try {
                 const compressedFile = await this.compressImage(file);
                 this.form.image = compressedFile;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.imagePreview = e.target.result;
-                };
-                reader.readAsDataURL(compressedFile);
             } catch (error) {
                 console.error('Compression error:', error);
                 alert(this.$i18n.locale === 'en' ? 'Failed to process image. Please try another file.' : 'ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใช้ไฟล์อื่น');
@@ -802,6 +802,9 @@ export default {
             this.$emit('update:show', false);
         },
         removeImage() {
+            if (this.imagePreview && this.imagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(this.imagePreview);
+            }
             this.form.image = null;
             this.imagePreview = null;
             // Clear the file input so the same file can be selected again

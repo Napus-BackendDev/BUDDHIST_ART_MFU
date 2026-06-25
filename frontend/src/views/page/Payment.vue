@@ -71,6 +71,7 @@
                     :loading="loading" 
                     :hasReservedItems="hasReservedItems" 
                     :current-step.sync="currentStep" 
+                    :created-order="createdOrder"
                     @create-order="handleCreateOrder" 
                     @submit-payment="handleSubmitPayment" 
                 />
@@ -91,7 +92,7 @@
                     </div>
 
                     <h2 class="font-weight-bold mb-3 text-dark">{{ $i18n.locale === 'en' ? 'Order Confirmed!' : 'ยืนยันคำสั่งซื้อสำเร็จ!' }}</h2>
-                    <p class="text-muted mb-5 max-w-md mx-auto">
+                    <p class="text-muted mb-4 max-w-md mx-auto">
                         {{ $i18n.locale === 'en' ? 'Thank you for your purchase. Your order' : 'ขอบคุณสำหรับการสั่งซื้อ หมายเลขคำสั่งซื้อของคุณ' }} <span class="font-weight-bold text-dark">{{ order.orderNumber || order._id }}</span> {{ $i18n.locale === 'en' ? 'has been received and is being processed.' : 'ได้รับการยืนยันและกำลังดำเนินการ' }}
                     </p>
 
@@ -200,7 +201,7 @@ export default {
                 message: this.$i18n.locale === 'en' ? 'Please login before checking out' : 'กรุณาเข้าสู่ระบบก่อนสั่งซื้อสินค้า',
                 variant: 'warning'
             });
-            this.$store.commit('auth/isSignIn', true);
+            this.$store.commit('auth/showSignInModal', true);
             this.$router.push('/');
             return;
         }
@@ -253,7 +254,41 @@ export default {
     },
     methods: {
         async fetchInitialData() {
-            this.refreshStatuses();
+            await this.refreshStatuses();
+            await this.checkExistingPendingOrder();
+        },
+        async checkExistingPendingOrder() {
+            if (this.cartItems.length === 0) return;
+            try {
+                const userId = this.$store.getters['auth/userId'];
+                const orders = await this.$store.dispatch('order/get', {});
+                if (!orders || orders.length === 0) return;
+
+                const pendingOrder = orders.find(order => {
+                    const orderUser = order.user?._id || order.user;
+                    if (orderUser !== userId) return false;
+
+                    if (order.image) return false;
+
+                    const statusLabel = this.getName('en', order.status);
+                    const s = statusLabel ? statusLabel.toLowerCase() : '';
+                    const isCancelledOrApproved = s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success') || s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail');
+                    if (isCancelledOrApproved) return false;
+
+                    const cartArtIds = this.cartItems.map(item => item._id);
+                    const orderArtIds = order.artwork ? order.artwork.map(art => art._id || art) : [];
+                    
+                    return cartArtIds.some(id => orderArtIds.includes(id));
+                });
+
+                if (pendingOrder) {
+                    console.log("[Checkout Flow] Found matching pending order:", pendingOrder);
+                    this.createdOrder = pendingOrder;
+                    this.currentStep = 2;
+                }
+            } catch (error) {
+                console.error("Error checking existing pending orders:", error);
+            }
         },
         async handleCreateOrder(shippingForm) {
             console.log(`[Checkout Flow] Creating Order...`, shippingForm);

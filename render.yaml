@@ -1,0 +1,48 @@
+# Render Blueprint for the Buddhist Art MFU backend (Express + Socket.io + Puppeteer).
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Secrets (MONGODB, JWT_SECRET, SMTP_*, GOOGLE_*, CLIENT_URL) are marked
+# `sync: false` so they are NOT stored in git — you set them in the Render
+# dashboard after the service is created.
+services:
+  - type: web
+    name: buddhist-art-api
+    runtime: docker
+    repo: https://github.com/Napus-BackendDev/BUDDHIST_ART_MFU
+    branch: main
+    rootDir: backend
+    dockerfilePath: ./Dockerfile.render
+    region: singapore
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TIMEOUT
+        value: "500000"
+      - key: TOKENLENGTH
+        value: "32"
+      - key: TOKENEXPIRED
+        value: "30"
+      - key: TRANSACTIONEXPIRED
+        value: "10"
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "465"
+      # ---- secrets: set these in the Render dashboard (Environment tab) ----
+      - key: MONGODB          # Atlas connection string: mongodb+srv://...
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_SECRET
+        sync: false
+      - key: CLIENT_URL       # your Vercel URL, e.g. https://buddhist-art-mfu.vercel.app
+        sync: false

@@ -1,21 +1,21 @@
 <template>
     <CModal 
-        title="Edit Artwork" 
+        :title="$i18n.locale === 'en' ? 'Submit Artwork' : 'ส่งผลงานสร้างสรรค์'" 
         :show="show" 
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="edit-artwork-modal"
+        class="submit-artwork-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="icon-square bg-red-light text-red mr-3">
-                        <CIcon name="cil-pencil" size="lg" />
+                        <CIcon name="cil-cloud-upload" size="lg" />
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold">Edit Artwork</h5>
-                        <p class="text-muted small mb-0">Modify the details of this artwork.</p>
+                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Submit Artwork' : 'ส่งผลงานสร้างสรรค์' }}</h5>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Enter the details of your artwork for this assignment.' : 'กรอกรายละเอียดผลงานของคุณสำหรับงานที่ได้รับมอบหมายนี้' }}</p>
                     </div>
                 </div>
                 <button class="close-btn" @click="$emit('update:show', false)">
@@ -69,6 +69,32 @@
                                     @click="handleCategorySelect(cat._id)"
                                 >
                                     {{ getName('en', cat) }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
+                        </CDropdown>
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Storage Row -->
+            <CRow>
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Storage Location' : 'สถานที่จัดเก็บ' }}</label>
+                        <CDropdown :key="form.storage" :caret="false" class="w-100">
+                            <template #toggler>
+                                <CButton class="custom-select-btn">
+                                    <span class="text-dark">{{ selectedStorageName }}</span>
+                                    <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
+                                </CButton>
+                            </template>
+                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                                <CDropdownItem 
+                                    v-for="store in storages" 
+                                    :key="store._id" 
+                                    @click="handleStorageSelect(store._id)"
+                                >
+                                    {{ getName($i18n.locale, store) }}
                                 </CDropdownItem>
                             </CDropdownMenu>
                         </CDropdown>
@@ -319,7 +345,7 @@
                     class="btn-save-artwork"
                     :disabled="!isFormValid"
                 >
-                    Save Changes
+                    {{ $i18n.locale === 'en' ? 'Submit Artwork' : 'ส่งผลงาน' }}
                 </CButton>
             </div>
         </template>
@@ -347,12 +373,14 @@ export default {
         return {
             categories: [],
             statuses: [],
+            storages: [],
             imagePreview: null,
             form: {
                 id: null,
                 title: { en: '', th: '' },
                 artist: '',
                 category: '',
+                storage: '',
                 technique: { en: '', th: '' },
                 size: { en: '', th: '' },
                 width: '',
@@ -389,8 +417,12 @@ export default {
             }
         },
         show(newVal) {
-            if (newVal && this.artwork) {
-                this.populateForm(this.artwork);
+            if (newVal) {
+                if (this.artwork) {
+                    this.populateForm(this.artwork);
+                } else {
+                    this.resetForm();
+                }
             }
         }
     },
@@ -432,6 +464,10 @@ export default {
             const cat = this.categories.find(c => String(c._id) === String(this.form.category));
             return cat ? this.getName('en', cat) : 'Select Category';
         },
+        selectedStorageName() {
+            const store = this.storages.find(s => String(s._id) === String(this.form.storage));
+            return store ? this.getName(this.$i18n.locale, store) : (this.$i18n.locale === 'en' ? 'Select Storage Location' : 'เลือกสถานที่จัดเก็บ');
+        },
         selectedSaleStatusName() {
             const status = this.saleStatuses.find(s => String(s._id) === String(this.form.status.sale));
             return status ? this.getName('en', status) : 'Select Status';
@@ -460,6 +496,10 @@ export default {
             console.log('Category selected:', id);
             this.$set(this.form, 'category', id);
         },
+        handleStorageSelect(id) {
+            console.log('Storage selected:', id);
+            this.$set(this.form, 'storage', id);
+        },
         handleSaleStatusSelect(id) {
             console.log('Sale Status selected:', id);
             this.$set(this.form.status, 'sale', id);
@@ -475,6 +515,11 @@ export default {
                 await this.$store.dispatch('setting/status/get');
                 this.statuses = this.$store.getters['setting/status/item'] || [];
                 console.log('--- Edit Artwork Statuses ---', this.statuses);
+
+                // Fetch storage options
+                await this.$store.dispatch('setting/storage/get');
+                this.storages = this.$store.getters['setting/storage/item'] || [];
+                console.log('--- Edit Artwork Storages ---', this.storages);
                 
                 if (this.artwork) {
                     console.log('--- Populating Form with Artwork ---', this.artwork);
@@ -504,8 +549,9 @@ export default {
                     en: getVal(artwork.title, 'en'),
                     th: getVal(artwork.title, 'th')
                 },
-                artist: artwork.artist ? artwork.artist._id : '',
+                artist: artwork.artist ? (artwork.artist._id || artwork.artist) : (artwork.owner ? (artwork.owner._id || artwork.owner) : ''),
                 category: artwork.category ? artwork.category._id : '',
+                storage: artwork.storage ? (artwork.storage._id || artwork.storage) : '',
                 technique: {
                     en: getVal(artwork.technique, 'en'),
                     th: getVal(artwork.technique, 'th')
@@ -618,6 +664,7 @@ export default {
                 description: [{ key: 'en', value: this.form.description.en }, { key: 'th', value: this.form.description.th }],
                 artist: this.form.artist,
                 category: this.form.category,
+                storage: this.form.storage || null,
                 technique: [{ key: 'en', value: this.form.technique.en }, { key: 'th', value: this.form.technique.th }],
                 size: [
                     { 
@@ -641,6 +688,47 @@ export default {
 
             this.$emit('submit', payload);
             this.$emit('update:show', false);
+        },
+        resetForm() {
+            this.form = {
+                id: null,
+                title: { en: '', th: '' },
+                artist: this.userId,
+                category: '',
+                storage: '',
+                technique: { en: '', th: '' },
+                size: { en: '', th: '' },
+                width: '',
+                height: '',
+                depth: '',
+                unit: 'cm',
+                price: '',
+                description: { en: '', th: '' },
+                status: {
+                    approval: '',
+                    sale: ''
+                },
+                remark: { en: '', th: '' },
+                image: null
+            };
+            this.imagePreview = null;
+            
+            // Set default category if available
+            if (this.categories && this.categories.length > 0) {
+                this.form.category = this.categories[0]._id;
+            }
+            
+            // Set default sale status to Available
+            if (this.saleStatuses && this.saleStatuses.length > 0) {
+                const defaultSale = this.saleStatuses.find(s => this.getName('en', s) === 'Available');
+                this.form.status.sale = defaultSale ? defaultSale._id : this.saleStatuses[0]._id;
+            }
+
+            // Set default approval status to Pending
+            if (this.approvalStatuses && this.approvalStatuses.length > 0) {
+                const defaultApproval = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
+                this.form.status.approval = defaultApproval ? defaultApproval._id : this.approvalStatuses[0]._id;
+            }
         }
     }
 }

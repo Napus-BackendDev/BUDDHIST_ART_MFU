@@ -1,63 +1,47 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../../../middleware/authMiddleware');
 
 const message = require("./service/message");
 const group = require("./service/group");
 const status = require("./service/status");
 const verification = require("./service/verification");
 const role = require("./service/role");
-// const auth_message = require("./service/auth_message");
-// const Role = require("../Accounts/service/role");
-// const Authen_Type = require("../Accounts/service/authen_type");
+const storage = require("./service/storage");
 
 
 router.get("/message", message.onQuerys);
-router.post("/message", message.onCreate);
-router.put("/message", message.onUpdate);
-router.delete("/message", message.onDelete);
+router.post("/message", auth, message.onCreate);
+router.put("/message", auth, message.onUpdate);
+router.delete("/message", auth, message.onDelete);
 
 router.get("/group", group.onQuerys);
-router.post("/group", group.onCreate);
-router.put("/group", group.onUpdate);
-router.delete("/group", group.onDelete);
+router.post("/group", auth, group.onCreate);
+router.put("/group", auth, group.onUpdate);
+router.delete("/group", auth, group.onDelete);
 
 router.get("/status", status.onQuerys);
-router.post("/status", status.onCreate);
-router.put("/status", status.onUpdate);
-router.delete("/status", status.onDelete);
-
-// router.get("/levels", level.onQuerys);
-// router.post("/levels/explorers", level.onCreate);
-// router.post("/levels", level.onCreate);
-// router.put("/levels", level.onUpdate);
-// router.delete("/levels", level.onDelete);
+router.post("/status", auth, status.onCreate);
+router.put("/status", auth, status.onUpdate);
+router.delete("/status", auth, status.onDelete);
 
 router.get("/verification", verification.onQuerys);
-router.post("/verification/explorers", verification.onCreate);
-router.post("/verification", verification.onCreate);
-router.put("/verification", verification.onUpdate);
-router.delete("/verification", verification.onDelete);
-
-
-// authen service
-
-// router.get("/auth/message", auth_message.onQuerys);
-// router.post("/auth/message/explorers", auth_message.onCreate);
-// router.post("/auth/message", auth_message.onCreate);
-// router.put("/auth/message", auth_message.onUpdate);
-// router.delete("/auth/message", auth_message.onDelete);
+router.post("/verification/explorers", auth, verification.onCreate);
+router.post("/verification", auth, verification.onCreate);
+router.put("/verification", auth, verification.onUpdate);
+router.delete("/verification", auth, verification.onDelete);
 
 
 router.get("/role", role.onQuerys);
 router.post("/role/explore", role.onQuerys);
-router.post("/role", role.onCreate);
-router.put("/role", role.onUpdate);
-router.delete("/role", role.onDelete);
+router.post("/role", auth, role.onCreate);
+router.put("/role", auth, role.onUpdate);
+router.delete("/role", auth, role.onDelete);
 
-// router.get("/authen/type", Authen_Type.onQuerys);
-// router.post("/authen/type", Authen_Type.onCreate);
-// router.put("/authen/type", Authen_Type.onUpdate);
-// router.delete("/authen/type", Authen_Type.onDelete);
+router.get("/storage", storage.onQuerys);
+router.post("/storage", auth, storage.onCreate);
+router.put("/storage", auth, storage.onUpdate);
+router.delete("/storage", auth, storage.onDelete);
 
 
 module.exports = router;

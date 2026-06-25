@@ -87,7 +87,7 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
                 });
 
                 try {
-                    await sendMail(email, `Artwork Approved: ${artworkTitle} - Buddhist Art MFU`, '', html);
+                    await sendMail(email, `ผลงานได้รับการอนุมัติ: ${artworkTitle} - พุทธศิลปกรรม มฟล.`, '', html);
                     console.log(`[Submission] Approval email sent to ${email} for: ${artworkTitle}`);
                 } catch (mailError) {
                     console.error(`[Submission] Failed to send email to ${email}:`, mailError.message);
@@ -123,6 +123,7 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
                 size: artwork.size,
                 price: artwork.price || 0,
                 category: artwork.category,
+                storage: artwork.storage || null,
                 status: {
                     approval: Approved._id,
                     sale: Available?._id || null
@@ -161,7 +162,7 @@ const processRejections = async (doc, rejectedArtworks) => {
         });
 
         try {
-            await sendMail(email, 'Update on Your Submission - Buddhist Art MFU', '', html);
+            await sendMail(email, 'แจ้งสถานะการประเมินผลงานสร้างสรรค์ - พุทธศิลปกรรม มฟล.', '', html);
             console.log(`Rejection email sent to ${email}`);
         } catch (mailError) {
             console.error(`[Submission] Failed to send rejection email to ${email}:`, mailError.message);

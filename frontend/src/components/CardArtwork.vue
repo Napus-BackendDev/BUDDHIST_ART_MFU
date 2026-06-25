@@ -22,7 +22,7 @@
                             </div>
                         </div>
                         
-                        <div class="card-img-bg" :style="{ backgroundImage: `url(${art.image || 'https://via.placeholder.com/800x800?text=No+Image'})` }"></div>
+                        <div class="card-img-bg" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + (art.image || 'https://via.placeholder.com/800x800?text=No+Image') + String.fromCharCode(34) + ')' }"></div>
                         <div class="card-img-overlay-gradient"></div>
 
                         <!-- Status Overlays (Private Only) -->

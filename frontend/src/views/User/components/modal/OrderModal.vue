@@ -26,52 +26,6 @@
           </div>
        </div>
 
-       <!-- Document Downloads -->
-       <div class="mb-5">
-           <h6 class="text-muted text-uppercase mb-3 font-weight-bold">{{ $i18n.locale === 'en' ? 'Documents' : 'เอกสาร' }}</h6>
-            <CRow>
-                <CCol sm="4" class="mb-2">
-                    <CButton 
-                        block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2"
-                        @click="downloadReceipt"
-                        v-if="order.image"
-                    >
-                        <CIcon name="cil-file" class="mr-2"/> {{ $i18n.locale === 'en' ? 'Receipt' : 'ใบเสร็จ' }}
-                    </CButton>
-                    <div v-else>
-                        <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" class="d-none">
-                        <CButton 
-                            block color="danger" shape="pill" class="font-weight-bold shadow-sm py-2"
-                            style="background-color: #E55B5B; border: none;"
-                            @click="triggerUpload"
-                            :disabled="isUploading"
-                        >
-                            <CIcon v-if="isUploading" name="cil-reload" class="mr-2 spinner-animation"/>
-                            <CIcon v-else name="cil-cloud-upload" class="mr-2"/> 
-                            {{ isUploading ? ($i18n.locale === 'en' ? 'Uploading...' : 'กำลังอัปโหลด...') : ($i18n.locale === 'en' ? 'Upload Slip' : 'อัปโหลดสลิป') }}
-                        </CButton>
-                    </div>
-                </CCol>
-                <CCol sm="4" class="mb-2">
-                    <CButton 
-                        block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2"
-                        @click="downloadCertificate"
-                        :disabled="!isApproved"
-                    >
-                        <CIcon name="cil-description" class="mr-2"/> {{ $i18n.locale === 'en' ? 'Certificate' : 'ใบรับรองผลงาน' }}
-                    </CButton>
-                </CCol>
-                <CCol sm="4" class="mb-2">
-                    <CButton 
-                        block variant="outline" color="dark" shape="pill" class="font-weight-bold shadow-sm py-2"
-                        @click="downloadInvoice"
-                        :disabled="!order.image"
-                    >
-                        <CIcon name="cil-cloud-download" class="mr-2"/> {{ $i18n.locale === 'en' ? 'Invoice' : 'ใบแจ้งหนี้' }}
-                    </CButton>
-                </CCol>
-            </CRow>
-        </div>
 
         <!-- Addresses -->
         <div class="mb-5" v-if="order.address">

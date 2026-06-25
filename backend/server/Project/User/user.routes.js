@@ -2,14 +2,16 @@ const express = require('express');
 const router = express.Router();
 
 const uploadImage = require('../../../middleware/uploadMiddleware');
+const auth = require('../../../middleware/authMiddleware');
 const userService = require("./service/user");
 
-router.get("", userService.onQuerys);
+router.get("", auth, userService.onQuerys);
 router.post("/explore", userService.onQuery);
+router.post("/explorers", userService.onQuery);
 router.post("/auth/sign-in", userService.onSignIn);
-router.post("", userService.onCreate);
-router.put("/upload", uploadImage("profile", "image"), userService.onUpload);
-router.put("", userService.onUpdate);
-router.delete("", userService.onDelete);
+router.post("", auth, userService.onCreate);
+router.put("/upload", auth, uploadImage("profile", "image"), userService.onUpload);
+router.put("", auth, userService.onUpdate);
+router.delete("", auth, userService.onDelete);
 
 module.exports = router;

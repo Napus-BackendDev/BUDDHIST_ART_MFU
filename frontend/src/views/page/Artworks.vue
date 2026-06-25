@@ -209,6 +209,22 @@ export default {
                 }
             },
             immediate: true
+        },
+        '$route.query': {
+            handler(query) {
+                if (query.search !== undefined) {
+                    this.filters.searchQuery = query.search || '';
+                } else {
+                    this.filters.searchQuery = '';
+                }
+                if (query.category !== undefined) {
+                    this.filters.category = query.category || 'All Categories';
+                } else {
+                    this.filters.category = 'All Categories';
+                }
+            },
+            deep: true,
+            immediate: true
         }
     },
     computed: {
@@ -238,7 +254,9 @@ export default {
                 result = result.filter(art => {
                     const title = this.getName(this.$i18n.locale, art).toLowerCase();
                     const artist = art.artist ? this.getName(this.$i18n.locale, art.artist).toLowerCase() : '';
-                    return title.includes(query) || artist.includes(query);
+                    const piece = art.artworkPiece ? art.artworkPiece.toLowerCase() : '';
+                    const code = art.artworkCode ? art.artworkCode.toLowerCase() : '';
+                    return title.includes(query) || artist.includes(query) || piece.includes(query) || code.includes(query);
                 });
             }
 
@@ -257,8 +275,8 @@ export default {
                 return price >= this.filters.minPrice && price <= this.filters.maxPrice;
             });
 
-            // Sort
-            result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            // Sort by views count descending (most viewed first)
+            result.sort((a, b) => (b.views || 0) - (a.views || 0));
 
             return result;
         }
@@ -273,6 +291,9 @@ export default {
                 
                 if (this.$route.query.category) {
                     this.filters.category = this.$route.query.category;
+                }
+                if (this.$route.query.search) {
+                    this.filters.searchQuery = this.$route.query.search;
                 }
             } finally {
                 this.loading = false;

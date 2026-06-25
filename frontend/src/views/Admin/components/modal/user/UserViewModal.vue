@@ -32,12 +32,12 @@
                 </div>
                 <h3 class="font-weight-bold text-dark mb-2">{{ getName('en') || getName('th') || 'N/A' }}</h3>
                 <div class="d-flex justify-content-center align-items-center mb-3">
-                    <CBadge :class="['status-badge-lg px-4 py-2 mx-1', getStatusClass(getStatusName())]">
+                    <CBadge v-if="isArtist" :class="['status-badge-lg px-4 py-2 mx-1', getStatusClass(getStatusName())]">
                         <CIcon :name="getStatusIcon(getStatusName())" size="sm" class="mr-2" />
                         {{ getLocalizedStatusName() }}
                     </CBadge>
-                    <CBadge color="light" class="status-badge-lg px-4 py-2 mx-1 border text-dark">
-                        <CIcon name="cilShieldAlt" size="sm" class="mr-2" />
+                    <CBadge :class="['status-badge-lg px-4 py-2 mx-1', getRoleClass(getRoleName())]">
+                        <CIcon :name="getRoleIcon(getRoleName())" size="sm" class="mr-2" />
                         {{ getLocalizedRoleName() }}
                     </CBadge>
                 </div>
@@ -108,24 +108,7 @@
                 </div>
             </div>
 
-            <!-- 5) Artworks Stat -->
-            <div class="profile-section mb-4">
-                <h6 class="section-title-modern mb-4">
-                    <CIcon name="cil-image" class="mr-2" />
-                    {{ $i18n.locale === 'en' ? 'Artist Status' : 'สถานะศิลปิน' }}
-                </h6>
-                <div class="stats-banner-modern p-4 rounded-xl d-flex align-items-center justify-content-between text-white shadow-sm">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon-circle mr-4">
-                            <CIcon name="cil-brush" size="xl" />
-                        </div>
-                        <div>
-                            <div class="stat-label-white">{{ $i18n.locale === 'en' ? 'TOTAL ARTWORKS' : 'ผลงานทั้งหมด' }}</div>
-                            <div class="stat-value-large">{{ (user.artworks && user.artworks.length) || 0 }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
         </div>
 
         <template #footer>
@@ -175,6 +158,19 @@ export default {
             // Check if role is a string
             const roleName = String(this.user.role).toLowerCase();
             return roleName === 'customer';
+        },
+        isArtist() {
+            if (!this.user || !this.user.role) return false;
+            
+            // Check if role is an object (populated)
+            if (typeof this.user.role === 'object' && this.user.role.title) {
+                const titleEn = this.user.role.title.find(t => t.key === 'en');
+                return titleEn && titleEn.value === 'Artist';
+            }
+            
+            // Check if role is a string
+            const roleName = String(this.user.role).toLowerCase();
+            return roleName === 'artist';
         }
     },
     methods: {
@@ -267,6 +263,26 @@ export default {
                 return titleLang ? titleLang.value : 'Unknown';
             }
             return 'Active';
+        },
+        getRoleClass(role) {
+            if (!role) return 'role-default';
+            const r = role.toLowerCase();
+            switch(r) {
+                case 'admin': return 'role-admin';
+                case 'artist': return 'role-artist';
+                case 'customer': return 'role-customer';
+                default: return 'role-default';
+            }
+        },
+        getRoleIcon(role) {
+            if (!role) return 'cil-user';
+            const r = role.toLowerCase();
+            switch(r) {
+                case 'admin': return 'cilShieldAlt';
+                case 'artist': return 'cil-brush';
+                case 'customer': return 'cil-user';
+                default: return 'cil-user';
+            }
         }
     }
 }
@@ -413,5 +429,29 @@ export default {
     padding: 0.8rem 2.5rem !important;
     font-weight: 600 !important;
     box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
+}
+
+.role-admin {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+    border: 1px solid #bae6fd !important;
+}
+
+.role-artist {
+    background-color: #f3e8ff !important;
+    color: #6b21a8 !important;
+    border: 1px solid #d8b4fe !important;
+}
+
+.role-customer {
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.role-default {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
 }
 </style>

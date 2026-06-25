@@ -7,7 +7,7 @@ const submissionService = require("./service/submission");
 
 router.post("/upload", auth, uploadImage("submission", "image", false, 1), submissionService.onUpload);
 router.get("", submissionService.onQuerys);
-router.post("/explore", submissionService.onQuery);
+router.post("/explore", auth, submissionService.onQuery);
 router.post("", auth, submissionService.onCreate);
 router.put("", auth, submissionService.onUpdate);
 router.delete("", auth, submissionService.onDelete);

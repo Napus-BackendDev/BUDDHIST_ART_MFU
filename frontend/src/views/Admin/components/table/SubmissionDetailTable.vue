@@ -10,9 +10,9 @@
 
                 <template #status="{ item }">
                     <td>
-                        <div v-if="item.create" :class="['status-badge', moment(item.create.endAt).isBefore(moment()) ? 'badge-closed' : 'badge-in-progress']">
-                            <CIcon :name="moment(item.create.endAt).isBefore(moment()) ? 'cil-lock-locked' : 'cil-history'" size="sm" class="status-icon" /> 
-                            {{ moment(item.create.endAt).isBefore(moment()) ? ($i18n.locale === 'en' ? 'Closed' : 'ปิดรับ') : ($i18n.locale === 'en' ? 'In Progress' : 'กำลังดำเนินการ') }}
+                        <div v-if="item.create" :class="['status-badge', getAssignmentBadgeClass(item)]">
+                            <CIcon :name="getAssignmentIcon(item)" size="sm" class="status-icon" /> 
+                            {{ getAssignmentLabel(item, $i18n.locale) }}
                         </div>
                     </td>
                 </template>
@@ -157,6 +157,39 @@ export default {
         }
     },
     methods: {
+        getAssignmentBadgeClass(item) {
+            if (!item.create) return '';
+            const now = moment();
+            if (item.create.startAt && now.isBefore(moment(item.create.startAt))) {
+                return 'badge-closed';
+            }
+            if (item.create.endAt && moment(item.create.endAt).isBefore(now)) {
+                return 'badge-closed';
+            }
+            return 'badge-in-progress';
+        },
+        getAssignmentIcon(item) {
+            if (!item.create) return '';
+            const now = moment();
+            if (item.create.startAt && now.isBefore(moment(item.create.startAt))) {
+                return 'cil-lock-locked';
+            }
+            if (item.create.endAt && moment(item.create.endAt).isBefore(now)) {
+                return 'cil-lock-locked';
+            }
+            return 'cil-history';
+        },
+        getAssignmentLabel(item, lang = 'en') {
+            if (!item.create) return '';
+            const now = moment();
+            if (item.create.startAt && now.isBefore(moment(item.create.startAt))) {
+                return lang === 'en' ? 'Not Open Yet' : 'ระบบยังไม่เปิด';
+            }
+            if (item.create.endAt && moment(item.create.endAt).isBefore(now)) {
+                return lang === 'en' ? 'Closed' : 'ระบบปิดแล้ว';
+            }
+            return lang === 'en' ? 'In Progress' : 'กำลังดำเนินการ';
+        },
         formatDate(date) {
             if (!date) return 'N/A';
             return moment(date).format('DD/MM/YYYY')
@@ -241,7 +274,7 @@ export default {
             ];
         },
         filteredItems() {
-            return (this.items || []).filter(item => {
+            const list = (this.items || []).filter(item => {
                 const title = (this.getName('en', item) || this.getName('th', item) || '').toLowerCase();
                 const searchMatch = !this.filters.search || 
                     title.includes(this.filters.search.toLowerCase());
@@ -267,6 +300,11 @@ export default {
                 }
 
                 return searchMatch && statusMatch && dateMatch;
+            });
+            return list.sort((a, b) => {
+                const dateA = a.create ? new Date(a.create.startAt || a.createdAt || 0) : new Date(a.createdAt || 0);
+                const dateB = b.create ? new Date(b.create.startAt || b.createdAt || 0) : new Date(b.createdAt || 0);
+                return dateB - dateA;
             });
         }
     }
@@ -474,54 +512,4 @@ export default {
     border-bottom-right-radius: 12px !important;
 }
 
-/* Action Buttons */
-.action-btn {
-    background: transparent;
-    border: none;
-    padding: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
-    outline: none;
-    opacity: 1;
-    /* Always visible */
-}
-
-/* Show action buttons when the table row is hovered */
-::v-deep .custom-table tbody tr:hover .action-btn {
-    opacity: 1;
-}
-
-.action-btn:hover {
-    transform: scale(1.15);
-}
-
-.icon-trash {
-    color: #ed8936;
-}
-
-.icon-trash:hover {
-    background-color: #fffaf0;
-}
-
-.icon-view {
-    color: #a0aec0;
-}
-
-.icon-view:hover {
-    background-color: #f1f9ff;
-    /* Light gray bg */
-}
-
-.icon-edit {
-    color: #4299e1;
-}
-
-.icon-edit:hover {
-    background-color: #ebf8ff;
-    /* Light blue bg */
-}
 </style>

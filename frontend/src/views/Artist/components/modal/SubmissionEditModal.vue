@@ -25,6 +25,15 @@
         </template>
 
         <div class="px-3 py-2">
+            <!-- Rejection Reason Alert -->
+            <div class="alert alert-danger d-flex align-items-center mb-4 rounded-xl border border-danger-subtle bg-danger-faded p-3" v-if="artwork && artwork.rejectionReason">
+                <CIcon name="cil-warning" class="text-danger mr-3" size="lg" />
+                <div>
+                    <h6 class="alert-heading font-weight-bold mb-1 text-danger">{{ $i18n.locale === 'en' ? 'Reason for Rejection / Feedback' : 'เหตุผลที่ไม่ผ่านการประเมิน / ข้อเสนอแนะ' }}</h6>
+                    <p class="mb-0 text-danger font-weight-bold">{{ artwork.rejectionReason }}</p>
+                </div>
+            </div>
+
             <!-- Basic Info Row -->
             <!-- Titles EN/TH -->
             <CRow>
@@ -69,6 +78,32 @@
                                     @click="handleCategorySelect(cat._id)"
                                 >
                                     {{ getName('en', cat) }}
+                                </CDropdownItem>
+                            </CDropdownMenu>
+                        </CDropdown>
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Storage Row -->
+            <CRow>
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Storage Location' : 'สถานที่จัดเก็บ' }}</label>
+                        <CDropdown :key="form.storage" :caret="false" class="w-100">
+                            <template #toggler>
+                                <CButton class="custom-select-btn">
+                                    <span class="text-dark">{{ selectedStorageName }}</span>
+                                    <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
+                                </CButton>
+                            </template>
+                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                                <CDropdownItem 
+                                    v-for="store in storages" 
+                                    :key="store._id" 
+                                    @click="handleStorageSelect(store._id)"
+                                >
+                                    {{ getName($i18n.locale, store) }}
                                 </CDropdownItem>
                             </CDropdownMenu>
                         </CDropdown>
@@ -347,12 +382,14 @@ export default {
         return {
             categories: [],
             statuses: [],
+            storages: [],
             imagePreview: null,
             form: {
                 id: null,
                 title: { en: '', th: '' },
                 artist: '',
                 category: '',
+                storage: '',
                 technique: { en: '', th: '' },
                 size: { en: '', th: '' },
                 width: '',
@@ -432,6 +469,10 @@ export default {
             const cat = this.categories.find(c => String(c._id) === String(this.form.category));
             return cat ? this.getName('en', cat) : 'Select Category';
         },
+        selectedStorageName() {
+            const store = this.storages.find(s => String(s._id) === String(this.form.storage));
+            return store ? this.getName(this.$i18n.locale, store) : (this.$i18n.locale === 'en' ? 'Select Storage Location' : 'เลือกสถานที่จัดเก็บ');
+        },
         selectedSaleStatusName() {
             const status = this.saleStatuses.find(s => String(s._id) === String(this.form.status.sale));
             return status ? this.getName('en', status) : 'Select Status';
@@ -460,6 +501,10 @@ export default {
             console.log('Category selected:', id);
             this.$set(this.form, 'category', id);
         },
+        handleStorageSelect(id) {
+            console.log('Storage selected:', id);
+            this.$set(this.form, 'storage', id);
+        },
         handleSaleStatusSelect(id) {
             console.log('Sale Status selected:', id);
             this.$set(this.form.status, 'sale', id);
@@ -475,6 +520,11 @@ export default {
                 await this.$store.dispatch('setting/status/get');
                 this.statuses = this.$store.getters['setting/status/item'] || [];
                 console.log('--- Edit Artwork Statuses ---', this.statuses);
+
+                // Fetch storage options
+                await this.$store.dispatch('setting/storage/get');
+                this.storages = this.$store.getters['setting/storage/item'] || [];
+                console.log('--- Edit Artwork Storages ---', this.storages);
                 
                 if (this.artwork) {
                     console.log('--- Populating Form with Artwork ---', this.artwork);
@@ -503,8 +553,9 @@ export default {
                     en: getVal(artwork.title, 'en'),
                     th: getVal(artwork.title, 'th')
                 },
-                artist: artwork.artist ? artwork.artist._id : '',
+                artist: artwork.artist ? (artwork.artist._id || artwork.artist) : (artwork.owner ? (artwork.owner._id || artwork.owner) : ''),
                 category: artwork.category ? artwork.category._id : '',
+                storage: artwork.storage ? (artwork.storage._id || artwork.storage) : '',
                 technique: {
                     en: getVal(artwork.technique, 'en'),
                     th: getVal(artwork.technique, 'th')
@@ -617,6 +668,7 @@ export default {
                 description: [{ key: 'en', value: this.form.description.en }, { key: 'th', value: this.form.description.th }],
                 artist: this.form.artist,
                 category: this.form.category,
+                storage: this.form.storage || null,
                 technique: [{ key: 'en', value: this.form.technique.en }, { key: 'th', value: this.form.technique.th }],
                 size: [
                     { 

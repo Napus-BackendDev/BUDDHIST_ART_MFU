@@ -1,5 +1,5 @@
 <template>
-  <div v-if="form" class="profile-view-bg min-vh-100 py-4">
+  <div v-if="form" class="profile-view-bg min-vh-100 pt-5 pb-4">
     <CContainer class="profile-container-wide">
     <ArtistProfileHeader 
       :user="user" 
@@ -86,6 +86,7 @@
                   { key: 'dateDisplay', label: $i18n.locale === 'en' ? 'Date' : 'วันที่' },
                   { key: 'totalAmount', label: $i18n.locale === 'en' ? 'Total' : 'ยอดรวม' },
                   { key: 'statusName', label: $i18n.locale === 'en' ? 'Status' : 'สถานะ' },
+                  { key: 'timeLeft', label: $i18n.locale === 'en' ? 'Time Left' : 'เวลาที่เหลือ' },
                   { key: 'action', label: '', _style: 'width:1%', sorter: false, filter: false }
                 ]"
                 :items-per-page="10"
@@ -105,9 +106,12 @@
                           {{ item.artwork && item.artwork[0] ? getName($i18n.locale, item.artwork[0]) : '#' + item.orderIdDisplay }}
                         </div>
                         <div class="small text-muted d-flex align-items-center">
-                          <span v-if="item.artwork && item.artwork[0] && item.artwork[0].artist">
-                            {{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getName($i18n.locale, item.artwork[0].artist) }}
+                          <span v-if="item.artwork && item.artwork.length > 0">
+                            {{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getOrderArtists(item) }}
                           </span>
+                        </div>
+                        <div v-if="item.artwork && item.artwork.length > 1" class="small text-info font-weight-bold mt-1">
+                          +{{ item.artwork.length - 1 }} {{ $i18n.locale === 'en' ? 'more item(s)' : 'รายการเพิ่มเติม' }}
                         </div>
                       </div>
                     </div>
@@ -127,10 +131,65 @@
                     </div>
                   </td>
                 </template>
+                <template #timeLeft="{item}">
+                  <td class="align-middle px-4">
+                    <span :class="item.timeLeftDisplay === 'Expired' || item.timeLeftDisplay === 'หมดเวลา' ? 'text-danger font-weight-bold' : 'text-primary font-family-mono'">
+                      {{ item.timeLeftDisplay }}
+                    </span>
+                  </td>
+                </template>
                 <template #action="{item}">
-                  <td class="align-middle text-right px-4">
-                    <button class="action-btn icon-view" @click="viewOrderDetails(item)">
-                      <CIcon name="cilMagnifyingGlass" size="lg" />
+                  <td class="align-middle text-right px-4" style="white-space: nowrap;">
+                    <!-- If not paid (no slip image) -->
+                    <button 
+                      v-if="!item.image && (item.statusName === 'Pending Payment' || item.statusName === 'รอชำระเงิน')"
+                      class="btn-quick-pay mr-2" 
+                      v-c-tooltip="$i18n.locale === 'en' ? 'Upload Slip to Pay' : 'ชำระเงิน / ส่งสลิป'"
+                      @click="triggerOrderSlipUpload(item)"
+                    >
+                      <CIcon name="cil-cloud-upload" class="mr-1" />
+                      {{ $i18n.locale === 'en' ? 'Pay' : 'ชำระเงิน' }}
+                    </button>
+
+                    <!-- Paid documents -->
+                    <template v-else-if="item.statusName !== 'Rejected' && item.statusName !== 'ยกเลิก'">
+                      <!-- Receipt (Slip) -->
+                      <button 
+                        class="action-btn-doc icon-receipt mr-1" 
+                        v-c-tooltip="$i18n.locale === 'en' ? 'Receipt (Slip)' : 'ใบเสร็จ (สลิป)'"
+                        @click="downloadReceipt(item)"
+                      >
+                        <CIcon name="cil-file" size="sm" />
+                      </button>
+
+                      <!-- Invoice -->
+                      <button 
+                        class="action-btn-doc icon-invoice mr-1" 
+                        v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
+                        @click="downloadInvoice(item)"
+                      >
+                        <CIcon name="cil-cloud-download" size="sm" />
+                      </button>
+
+                      <!-- Certificate (Only if Approved) -->
+                      <button 
+                        class="action-btn-doc icon-cert mr-1" 
+                        v-c-tooltip="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดเกียรติบัตร')"
+                        @click="downloadCertificate(item)"
+                        :disabled="!isApprovedOrder(item)"
+                        :class="{ 'disabled-btn': !isApprovedOrder(item) }"
+                      >
+                        <CIcon name="cil-description" size="sm" />
+                      </button>
+                    </template>
+
+                    <!-- View Details -->
+                    <button 
+                        class="action-btn icon-view" 
+                        v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
+                        @click="viewOrderDetails(item)"
+                    >
+                        <CIcon name="cilMagnifyingGlass" size="lg" />
                     </button>
                   </td>
                 </template>
@@ -156,6 +215,7 @@
     />
     
     <ArtworkCreateModal 
+      v-if="!isPublic"
       :show="showArtworkModal" 
       :initialArtistId="userId"
       :loading="loading"
@@ -164,11 +224,14 @@
     />
 
     <ArtworkEditModal
+      v-if="!isPublic"
       :show="showEditModal"
       :artwork="selectedArtwork"
       @update:show="showEditModal = $event"
       @save="handleArtworkUpdate"
     />
+    
+    <input type="file" ref="orderSlipInput" class="d-none" @change="handleOrderSlipUpload" accept="image/*" />
   </div>
 </template>
 
@@ -184,6 +247,7 @@ import ArtworkEditModal from './components/modal/ArtworkEditModal.vue'
 import EditProfileModal from './components/modal/EditProfileModal.vue'
 import { mapGetters } from 'vuex';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import Service from '@/service/api';
 
 export default {
   name: 'ArtistProfile',
@@ -216,7 +280,9 @@ export default {
       selectedFile: null,
       artworkToDelete: null,
       activePage: 1,
-      itemsPerPage: 8
+      itemsPerPage: 8,
+      now: Date.now(),
+      timer: null
     }
   },
   computed: {
@@ -234,11 +300,16 @@ export default {
       return this.user ? this.user._id : this.profileUserId;
     },
     isPublic() {
-      return this.$route.params.id && this.resolvedArtistId !== this.userId;
+      if (!this.userId) return true;
+      if (!this.$route.params.id) return false;
+      return String(this.resolvedArtistId || '').toLowerCase() !== String(this.userId || '').toLowerCase();
     },
     user() {
       // Find the user identified by profileUserId or matching slugified name
       if (!this.users) return null;
+      if (!Array.isArray(this.users)) {
+        return this.users;
+      }
       return this.users.find(u => {
         if (u._id === this.profileUserId) return true;
         
@@ -257,8 +328,8 @@ export default {
       // 1. Filter by artist ID
       let filtered = this.allArtworks.filter(art => {
         if (!art.artist) return false;
-        const id = typeof art.artist === 'object' ? art.artist._id : art.artist;
-        return id === this.resolvedArtistId;
+        const id = typeof art.artist === 'object' ? (art.artist._id || art.artist) : art.artist;
+        return String(id) === String(this.resolvedArtistId);
       });
 
       // 2. If public, filter by Approved status
@@ -266,31 +337,12 @@ export default {
         filtered = filtered.filter(art => {
           if (!art.status || !art.status.approval) return false;
           const status = this.getName('en', art.status.approval);
-          return ['Approved', 'Success', 'Reserved'].includes(status);
+          return status === 'Approved';
         });
       }
 
-      // 3. Sort by Priority and Date
-      return filtered.sort((a, b) => {
-        // Priority Score: Approved = 1, Others = 2, Pending = 3
-        const getPriority = (art) => {
-          const statusEn = art.status && art.status.approval 
-              ? this.getName('en', art.status.approval).toLowerCase() 
-              : (typeof art.status === 'string' ? art.status.toLowerCase() : '');
-          
-          if (statusEn.includes('approve') || statusEn.includes('accept')) return 1;
-          if (statusEn.includes('pending')) return 3;
-          return 2;
-        };
-
-        const priorityA = getPriority(a);
-        const priorityB = getPriority(b);
-
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-
-        // Within same priority group, sort by updatedAt desc (newest first)
+      // Sort by latest updated
+      return [...filtered].sort((a, b) => {
         const dateA = new Date(a.updatedAt || a.createdAt || 0);
         const dateB = new Date(b.updatedAt || b.createdAt || 0);
         return dateB - dateA;
@@ -305,12 +357,6 @@ export default {
     totalArtworksPages() {
       if (!this.artistArtworks) return 0;
       return Math.ceil(this.artistArtworks.length / this.itemsPerPage);
-    },
-    paginatedArtworks() {
-      if (!this.artistArtworks) return [];
-      const start = (this.activePage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.artistArtworks.slice(start, end);
     },
     processedOrders() {
       if (!this.allOrders) return [];
@@ -328,27 +374,115 @@ export default {
           statusName: (() => {
             const statusLabel = this.getName('en', order.status);
             const s = statusLabel ? statusLabel.toLowerCase() : '';
-            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return 'Approved';
-            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return 'Rejected';
-            return 'Pending';
-          })()
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) {
+              return this.$i18n.locale === 'en' ? 'Approved' : 'เสร็จสิ้น';
+            }
+            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) {
+              return this.$i18n.locale === 'en' ? 'Rejected' : 'ยกเลิก';
+            }
+            
+            if (!order.image) {
+              return this.$i18n.locale === 'en' ? 'Pending Payment' : 'รอชำระเงิน';
+            } else {
+              return this.$i18n.locale === 'en' ? 'Pending Verification' : 'รอตรวจสอบ';
+            }
+          })(),
+          timeLeftDisplay: this.calculateTimeLeft(order)
         }));
     },
     filteredOrders() {
-      if (!this.orderSearch) return this.processedOrders;
-      const q = this.orderSearch.toLowerCase();
-      return this.processedOrders.filter(o => 
-        o.orderIdDisplay.toLowerCase().includes(q) ||
-        o.statusName.toLowerCase().includes(q) ||
-        o.dateDisplay.toLowerCase().includes(q)
-      );
+      let orders = this.processedOrders;
+      if (this.orderSearch) {
+        const q = this.orderSearch.toLowerCase();
+        orders = this.processedOrders.filter(o => 
+          o.orderIdDisplay.toLowerCase().includes(q) ||
+          o.statusName.toLowerCase().includes(q) ||
+          o.dateDisplay.toLowerCase().includes(q)
+        );
+      }
+      return [...orders].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
   },
   async created() {
     this.$store.dispatch('artwork/get');
-    this.$store.dispatch('order/get', {});
+    if (!this.$route.params.id) {
+      this.$store.dispatch('order/get', {});
+    }
+    this.timer = setInterval(() => {
+      this.now = Date.now();
+    }, 1000);
+  },
+  beforeDestroy() {
+    if (this.timer) clearInterval(this.timer);
   },
   methods: {
+    getOrderArtists(item) {
+      if (!item.artwork || !Array.isArray(item.artwork)) return 'N/A';
+      const names = item.artwork
+        .map(art => art.artist ? this.getName(this.$i18n.locale, art.artist) : '')
+        .filter(Boolean);
+      const uniqueNames = [...new Set(names)];
+      return uniqueNames.length > 0 ? uniqueNames.join(', ') : 'N/A';
+    },
+    calculateTimeLeft(order) {
+      // Only show countdown for items without a slip that are not completed/cancelled
+      const statusLabel = this.getName('en', order.status);
+      const s = statusLabel ? statusLabel.toLowerCase() : '';
+      
+      const isCompletedOrCancelled = s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success') || s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail');
+      const hasSlip = !!order.image;
+
+      if (isCompletedOrCancelled || hasSlip) return '-';
+
+      const createdAt = new Date(order.createdAt).getTime();
+      const deadline = createdAt + (24 * 60 * 60 * 1000);
+      const diff = deadline - this.now;
+
+      if (diff <= 0) return this.$i18n.locale === 'en' ? 'Expired' : 'หมดเวลา';
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      return `${hours}h ${minutes}m ${seconds}s`;
+    },
+    downloadReceipt(item) {
+      if (item.image) {
+        window.open(item.image, '_blank');
+      }
+    },
+    async downloadInvoice(item) {
+      try {
+        const response = await this.$store.dispatch('order/getInvoice', item._id);
+        this.downloadFile(response.data, `Invoice_${item.orderIdDisplay || item._id}.pdf`);
+      } catch (error) {
+        console.error('Download Invoice Error:', error);
+        alert(this.$i18n.locale === 'en' ? 'Failed to download invoice.' : 'ดาวน์โหลดใบแจ้งหนี้ไม่สำเร็จ');
+      }
+    },
+    async downloadCertificate(item) {
+      try {
+        const res = await Service.order('certificate', item._id);
+        this.downloadFile(res.data, `Certificate_${item.orderIdDisplay || item._id}.pdf`);
+      } catch (error) {
+        console.error('Download Certificate Error:', error);
+        alert(this.$i18n.locale === 'en' ? 'Failed to download certificate.' : 'ดาวน์โหลดเกียรติบัตรไม่สำเร็จ');
+      }
+    },
+    downloadFile(data, fileName) {
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
+    isApprovedOrder(item) {
+      const statusLabel = this.getName('en', item.status);
+      const s = statusLabel ? statusLabel.toLowerCase() : '';
+      return s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success');
+    },
     handleViewSubmission(item) {
       if(item && item._id) {
         this.selectedSubmissionId = item._id;
@@ -365,6 +499,55 @@ export default {
     viewOrderDetails(item) {
       this.selectedOrder = item;
       this.showOrderModal = true;
+    },
+    triggerOrderSlipUpload(item) {
+      this.selectedOrder = item;
+      this.$nextTick(() => {
+        if (this.$refs.orderSlipInput) {
+          this.$refs.orderSlipInput.click();
+        }
+      });
+    },
+    async handleOrderSlipUpload(event) {
+      const file = event.target.files[0];
+      if (!file || !this.selectedOrder) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size exceeds 10MB limit.');
+        return;
+      }
+
+      try {
+        this.loading = true;
+        this.$store.commit('dialog/showToast', { 
+          title: this.$i18n.locale === 'en' ? 'Uploading...' : 'กำลังอัปโหลด...', 
+          message: this.$i18n.locale === 'en' ? 'Please wait while we upload your slip.' : 'โปรดรอสักครู่ขณะระบบกำลังอัปโหลดสลิปของคุณ', 
+          variant: 'info' 
+        });
+        
+        await this.$store.dispatch('order/upload', {
+          _id: this.selectedOrder._id,
+          image: file
+        });
+
+        this.$store.commit('dialog/showToast', { 
+          title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ', 
+          message: this.$i18n.locale === 'en' ? 'Payment slip uploaded successfully.' : 'อัปโหลดสลิปชำระเงินเรียบร้อยแล้ว', 
+          variant: 'success' 
+        });
+
+        // Refresh orders data
+        await this.$store.dispatch('order/get', {});
+      } catch (error) {
+        console.error('Upload failed:', error);
+        alert(this.$i18n.locale === 'en' ? 'Upload failed. Please try again.' : 'เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่อีกครั้ง');
+      } finally {
+        if (this.$refs.orderSlipInput) {
+          this.$refs.orderSlipInput.value = '';
+        }
+        this.loading = false;
+        this.selectedOrder = null;
+      }
     },
     handleEditSubmission(item) {
       this.$store.commit('dialog/showToast', { title: 'Info', message: 'Edit submission in Dashboard', variant: 'info' });
@@ -418,24 +601,15 @@ export default {
       if (!this.profileUserId) return;
       
       try {
-        // Force refresh user list, or fetch specific user
-        const users = await this.$store.dispatch('user/get', {});
-        // Find the user directly from the fetched array by matching ID or name slug
-        const currentUser = users ? users.find(u => {
-          if (u._id === this.profileUserId) return true;
-          
-          const nameEn = this.getName('en', u);
-          if (nameEn && nameEn.replace(/\s+/g, '-').toLowerCase() === this.profileUserId.toLowerCase()) return true;
-
-          const nameTh = this.getName('th', u);
-          if (nameTh && nameTh.replace(/\s+/g, '-') === this.profileUserId) return true;
-          
-          return false;
-        }) : null;
+        this.loading = true;
+        // Fetch specific user profile using explore action (public endpoint)
+        const currentUser = await this.$store.dispatch('user/explore', { _id: this.profileUserId });
         
         if (currentUser) {
-          // Fetch submissions using the resolved ID
-          this.$store.dispatch('submission/get', { artist: currentUser._id });
+          // Fetch submissions using the resolved ID (only if not public guest view)
+          if (!this.$route.params.id) {
+            this.$store.dispatch('submission/get', { artist: currentUser._id });
+          }
 
           const getName = (lang) => {
             if (Array.isArray(currentUser.name)) {
@@ -463,6 +637,8 @@ export default {
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
+      } finally {
+        this.loading = false;
       }
     },
     async onProfileSave({ form, file }) {
@@ -668,8 +844,55 @@ export default {
 </script>
 
 <style scoped>
+.btn-quick-pay {
+    background-color: #e55b5b;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(229, 91, 91, 0.2);
+    display: inline-flex;
+    align-items: center;
+}
+.btn-quick-pay:hover {
+    background-color: #d32f2f;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(229, 91, 91, 0.3);
+}
+
+.action-btn-doc {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.action-btn-doc:hover {
+    background-color: #8c1515;
+    color: white;
+    border-color: #8c1515;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(140, 21, 21, 0.15);
+}
+.action-btn-doc.disabled-btn {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .profile-view-bg {
-  margin-top: -2rem !important;
   background-color: #f8fafc;
 }
 .profile-container-wide {

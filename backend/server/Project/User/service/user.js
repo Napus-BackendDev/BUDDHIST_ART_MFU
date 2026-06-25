@@ -5,9 +5,30 @@ const ResMessage = require("../../Settings/service/message");
 exports.onQuery = async function (request, response) {
     try {
         let query = {};
-        query._id = new mongo.ObjectId(request.body._id);
-        const doc = await User.onQuery(query);
-        return ResMessage.sendResponse(response, 0, 20000, doc);
+        const idOrSlug = request.body._id || request.body.id || request.query.id;
+        
+        if (mongo.ObjectId.isValid(idOrSlug)) {
+            query._id = new mongo.ObjectId(idOrSlug);
+            const doc = await User.onQuery(query);
+            return ResMessage.sendResponse(response, 0, 20000, doc);
+        } else {
+            // It's a slug, let's find all users and find the matching one (slugified)
+            const allUsers = await User.onQuerys({});
+            const matchedUser = allUsers.find(u => {
+                if (u.name && Array.isArray(u.name)) {
+                    const nameEn = u.name.find(n => n.key === 'en')?.value || '';
+                    if (nameEn && nameEn.replace(/\s+/g, '-').toLowerCase() === idOrSlug.toLowerCase()) return true;
+                    
+                    const nameTh = u.name.find(n => n.key === 'th')?.value || '';
+                    if (nameTh && nameTh.replace(/\s+/g, '-') === idOrSlug) return true;
+                }
+                return false;
+            });
+            if (matchedUser) {
+                return ResMessage.sendResponse(response, 0, 20000, matchedUser);
+            }
+            return ResMessage.sendResponse(response, 0, 40400);
+        }
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
     }

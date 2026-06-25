@@ -6,6 +6,7 @@ const defaultPopulate = [
     { path: 'artist' },
     { path: 'status.approval' },
     { path: 'status.sale' },
-    { path: 'category' }
+    { path: 'category' },
+    { path: 'storage' }
 ];
 module.exports = createBaseService(objSchema, defaultPopulate);

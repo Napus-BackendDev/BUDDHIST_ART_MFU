@@ -1,6 +1,6 @@
 <template>
     <div class="artworks-dashboard">
-        <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานของคุณ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" @create="onAddArtwork" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานของคุณ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" themeColor="yellow" @create="onAddArtwork" @export="handleExport" />
         <ArtworkWidget v-model="filters.status" :items="artworks" />
         <ArtworkFilter v-model="filters" />
         <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
@@ -8,6 +8,28 @@
         <ArtworkCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @download-template="downloadTemplate"/>
         <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView"/>
         <ArtworkEditModal :show.sync="showEditModal" :artwork="selectedArtwork" @save="handleUpdateArtwork"/>
+
+        <!-- Rejection Reason Modal -->
+        <CModal :title="$i18n.locale === 'en' ? 'Reject Artwork' : 'ปฏิเสธผลงานศิลปะ'" :show.sync="showRejectModal" color="danger" size="lg">
+            <div class="p-3">
+                <p class="text-muted mb-3">
+                    {{ $i18n.locale === 'en' ? 'Please provide a reason for rejecting this artwork. This message will be sent to the artist via email.' : 'กรุณาระบุเหตุผลในการปฏิเสธผลงานนี้ ข้อความนี้จะถูกส่งไปยังอีเมลของศิลปินเพื่อแจ้งเตือน' }}
+                </p>
+                <CTextarea 
+                    v-model="rejectRemark" 
+                    :placeholder="$i18n.locale === 'en' ? 'Enter reason for rejection...' : 'ระบุเหตุผล...'" 
+                    rows="5"
+                    class="reject-textarea"
+                />
+            </div>
+            <template #footer>
+                <CButton color="secondary" @click="showRejectModal = false" :disabled="loading">{{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}</CButton>
+                <CButton color="danger" @click="confirmRejectArtwork" :disabled="!rejectRemark || loading">
+                    <CIcon v-if="loading" name="cil-reload" class="mr-2 spinner-animation" />
+                    {{ loading ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังดำเนินการ...') : ($i18n.locale === 'en' ? 'Confirm Reject' : 'ยืนยันการปฏิเสธ') }}
+                </CButton>
+            </template>
+        </CModal>
     </div>
 </template>
 
@@ -50,7 +72,10 @@ export default {
                 quickRange: 'All Time'
             },
             categories: [],
-            loadingItems: []
+            loadingItems: [],
+            showRejectModal: false,
+            rejectRemark: '',
+            loading: false
         }
     },
     created() {
@@ -340,14 +365,29 @@ export default {
             );
         },
         async handleRejectArtwork(artwork) {
-            await this.updateStatus(
-                artwork,
-                'Rejected',
-                this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
-                this.$i18n.locale === 'en' ? 'Artwork has been rejected.' : 'ปฏิเสธผลงานศิลปะเรียบร้อยแล้ว'
-            );
+            this.selectedArtwork = artwork;
+            this.rejectRemark = '';
+            this.showRejectModal = true;
         },
-        async updateStatus(artwork, statusName, toastTitle, toastMsg) {
+        async confirmRejectArtwork() {
+            if (!this.rejectRemark) return;
+            this.loading = true;
+            try {
+                await this.updateStatus(
+                    this.selectedArtwork,
+                    'Rejected',
+                    this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+                    this.$i18n.locale === 'en' ? 'Artwork has been rejected.' : 'ปฏิเสธผลงานศิลปะเรียบร้อยแล้ว',
+                    this.rejectRemark
+                );
+                this.showRejectModal = false;
+            } catch (err) {
+                console.error("Failed to reject artwork:", err);
+            } finally {
+                this.loading = false;
+            }
+        },
+        async updateStatus(artwork, statusName, toastTitle, toastMsg, rejectionReason = null) {
             try {
                 this.loadingItems.push(artwork._id);
                 const statuses = this.$store.getters['setting/status/item'] || [];
@@ -364,6 +404,10 @@ export default {
                         approval: targetStatus._id
                     }
                 };
+
+                if (rejectionReason) {
+                    updateData.rejectionReason = rejectionReason;
+                }
 
                 await this.$store.dispatch('artwork/update', updateData);
                 await this.fetchArtworks();

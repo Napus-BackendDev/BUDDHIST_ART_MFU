@@ -219,9 +219,13 @@ export default {
             ];
         },
         currentItems() {
-            if (this.currentTab === 'Orders') return this.orders;
-            if (this.currentTab === 'Artworks') return this.artworks;
-            return this.submissions;
+            if (this.currentTab === 'Orders') {
+                return [...this.orders].sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
+            }
+            if (this.currentTab === 'Artworks') {
+                return [...this.artworks].sort((a, b) => new Date(b.create_date) - new Date(a.create_date));
+            }
+            return [...this.submissions].sort((a, b) => new Date(b.submitted) - new Date(a.submitted));
         }
     },
     methods: {
@@ -381,58 +385,6 @@ export default {
 .rounded-bottom {
     border-bottom-left-radius: 12px !important;
     border-bottom-right-radius: 12px !important;
-}
-
-/* Action Buttons */
-
-.action-btn {
-    background: transparent;
-    border: none;
-    padding: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
-    outline: none;
-    opacity: 0;
-}
-
-::v-deep .custom-table tbody tr:hover .action-btn {
-    opacity: 1;
-}
-
-::v-deep tr:hover td {
-    background-color: #f8f9fa;
-}
-
-.action-btn:hover {
-    transform: scale(1.15);
-}
-
-.icon-danger {
-    color: #e53e3e;
-}
-
-.icon-danger:hover {
-    background-color: #ffdddd;
-}
-
-.icon-view {
-    color: #a0aec0;
-}
-
-.icon-view:hover {
-    background-color: #f1f9ff;
-}
-
-.icon-edit {
-    color: #4299e1;
-}
-
-.icon-edit:hover {
-    background-color: #ebf8ff;
 }
 
 .preview-img {
