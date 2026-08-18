@@ -9,7 +9,7 @@ lang: th
 ## ระบบบริหารจัดการและจัดแสดงผลงานพุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง
 ### ฉบับระบบปัจจุบันและฟีเจอร์การขายหลังครบ 1 ปี
 
-![หน้าแรกของระบบ Buddhist Art MFU](../../screenshots/manual/pub_01_home_a.png)
+![หน้าแรกของระบบ Buddhist Art MFU](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/pub_01_home_a.jpg)
 
 > จัดทำจากการตรวจ source code, API, database model, workflow, test suite และหน้าจอจริง
 > วันที่จัดทำ: 18 สิงหาคม 2569
@@ -208,92 +208,92 @@ UI ต้องใช้งานได้ทั้ง desktop/mobile มี foc
 
 ภาพต่อไปนี้เป็นหลักฐานหน้าจอจริงจาก local application และชุด capture เดิมใน repository; ภาพหน้าจอใช้เพื่ออธิบายองค์ประกอบ/flow ไม่ได้แทน acceptance test ของข้อมูลจริง
 
-![ภาพที่ 1 Admin — รายการ Submission และการค้นหา/กรองงาน](../../screenshots/08_admin_submissions.png)
+![ภาพที่ 1 Admin — รายการ Submission และการค้นหา/กรองงาน](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/08_admin_submissions.jpg)
 
 *ภาพที่ 1  Admin — รายการ Submission และการค้นหา/กรองงาน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 2 Admin — รายการจัดการผลงานศิลปะ](../../screenshots/manual/admin_02_artworks.png)
+![ภาพที่ 2 Admin — รายการจัดการผลงานศิลปะ](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_02_artworks.jpg)
 
 *ภาพที่ 2  Admin — รายการจัดการผลงานศิลปะ
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 3 Admin — Dashboard ภาพรวม](../../screenshots/manual/admin_01_overview_a.png)
+![ภาพที่ 3 Admin — Dashboard ภาพรวม](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_01_overview_a.jpg)
 
 *ภาพที่ 3  Admin — Dashboard ภาพรวม
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 4 Admin — รายละเอียด Submission/การมอบหมายงาน](../../screenshots/manual/admin_04_submission_detail.png)
+![ภาพที่ 4 Admin — รายละเอียด Submission/การมอบหมายงาน](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_04_submission_detail.jpg)
 
 *ภาพที่ 4  Admin — รายละเอียด Submission/การมอบหมายงาน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 5 Admin — รายการคำสั่งซื้อ](../../screenshots/manual/admin_05_orders.png)
+![ภาพที่ 5 Admin — รายการคำสั่งซื้อ](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_05_orders.jpg)
 
 *ภาพที่ 5  Admin — รายการคำสั่งซื้อ
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 6 Admin — จัดการผู้ใช้งาน](../../screenshots/manual/admin_06_users.png)
+![ภาพที่ 6 Admin — จัดการผู้ใช้งาน](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_06_users.jpg)
 
 *ภาพที่ 6  Admin — จัดการผู้ใช้งาน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 7 Admin — จัดการข่าวสาร](../../screenshots/manual/admin_07_news.png)
+![ภาพที่ 7 Admin — จัดการข่าวสาร](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_07_news.jpg)
 
 *ภาพที่ 7  Admin — จัดการข่าวสาร
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 8 Admin — Modal สร้าง/นำเข้าผลงาน](../../screenshots/manual/admin_08_artwork_create_modal.png)
+![ภาพที่ 8 Admin — Modal สร้าง/นำเข้าผลงาน](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_08_artwork_create_modal.jpg)
 
 *ภาพที่ 8  Admin — Modal สร้าง/นำเข้าผลงาน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 9 Artist — โปรไฟล์และผลงานของศิลปิน](../../screenshots/manual/artist_01_profile_a.png)
+![ภาพที่ 9 Artist — โปรไฟล์และผลงานของศิลปิน](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/artist_01_profile_a.jpg)
 
 *ภาพที่ 9  Artist — โปรไฟล์และผลงานของศิลปิน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 10 Artist — รายการ Submission](../../screenshots/manual/artist_02_submissions.png)
+![ภาพที่ 10 Artist — รายการ Submission](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/artist_02_submissions.jpg)
 
 *ภาพที่ 10  Artist — รายการ Submission
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 11 Artist — รายละเอียด Submission](../../screenshots/manual/artist_03_submission_detail.png)
+![ภาพที่ 11 Artist — รายละเอียด Submission](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/artist_03_submission_detail.jpg)
 
 *ภาพที่ 11  Artist — รายละเอียด Submission
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 12 Customer — ประวัติคำสั่งซื้อ](../../screenshots/manual/cust_02_orders.png)
+![ภาพที่ 12 Customer — ประวัติคำสั่งซื้อ](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/cust_02_orders.jpg)
 
 *ภาพที่ 12  Customer — ประวัติคำสั่งซื้อ
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 13 Public — หน้าแรกและผลงานเด่น](../../screenshots/manual/pub_01_home_a.png)
+![ภาพที่ 13 Public — หน้าแรกและผลงานเด่น](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/pub_01_home_a.jpg)
 
 *ภาพที่ 13  Public — หน้าแรกและผลงานเด่น
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 14 Public — แคตตาล็อก/ตัวกรองผลงาน](../../screenshots/manual/pub_02_artworks_a.png)
+![ภาพที่ 14 Public — แคตตาล็อก/ตัวกรองผลงาน](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/pub_02_artworks_a.jpg)
 
 *ภาพที่ 14  Public — แคตตาล็อก/ตัวกรองผลงาน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 15 Public — รายละเอียดผลงาน](../../screenshots/manual/pub_03_artwork_detail_a.png)
+![ภาพที่ 15 Public — รายละเอียดผลงาน](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/pub_03_artwork_detail_a.jpg)
 
 *ภาพที่ 15  Public — รายละเอียดผลงาน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 16 Public — ข่าวสาร](../../screenshots/manual/pub_04_news.png)
+![ภาพที่ 16 Public — ข่าวสาร](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/pub_04_news.jpg)
 
 *ภาพที่ 16  Public — ข่าวสาร
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 17 Public/Customer — ขั้นตอนชำระเงิน](../../screenshots/manual/pub_08_payment.png)
+![ภาพที่ 17 Public/Customer — ขั้นตอนชำระเงิน](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/pub_08_payment.jpg)
 
 *ภาพที่ 17  Public/Customer — ขั้นตอนชำระเงิน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
-![ภาพที่ 18 Public — Dialog เข้าสู่ระบบ](../../screenshots/manual/pub_09_login_dialog.png)
+![ภาพที่ 18 Public — Dialog เข้าสู่ระบบ](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/pub_09_login_dialog.jpg)
 
 *ภาพที่ 18  Public — Dialog เข้าสู่ระบบ
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
