@@ -35,3 +35,8 @@ Thumbs.db
 # Local dev tooling / artifacts (not part of the app)
 .agents/
 screenshots/
+backend/tmp/
+backend/coverage/
+frontend/coverage/
+.claude/
+.codex/

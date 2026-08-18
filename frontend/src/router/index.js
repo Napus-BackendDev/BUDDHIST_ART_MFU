@@ -15,9 +15,13 @@ const Bill = () => import('@/views/page/Bill')
 const Artworks = () => import('@/views/page/Artworks')
 const Contact = () => import('@/views/page/Contact')
 const NewsDetail = () => import('@/views/page/NewsDetail')
+const Login = () => import('@/projects/views/Login')
+const SystemMessage = () => import('@/views/page/SystemMessage')
+const LegalNotice = () => import('@/views/page/LegalNotice')
 
 // View Admin
 const Overview = () => import('@/views/Admin/Overview')
+const Analytics = () => import('@/views/Admin/Analytics')
 const ArtworksAdmin = () => import('@/views/Admin/Artworks')
 const Submissions = () => import('@/views/Admin/Submissions')
 const SubmissionsDetail = () => import('@/views/Admin/SubmissionsDetail')
@@ -50,7 +54,7 @@ const UserOrder = () => import('@/views/User/order.vue')
 
 Vue.use(Router)
 
-export default new Router({
+const router = new Router({
     mode: 'history', // https://router.vuejs.org/api/#mode
     linkActiveClass: 'open active',
     scrollBehavior: () => ({ y: 0 }),
@@ -108,6 +112,29 @@ export default new Router({
                     path: 'artist-profile/:id',
                     name: 'ArtistPublicProfile',
                     component: ArtistProfile
+                },
+                {
+                    path: 'login',
+                    name: 'Login',
+                    component: Login
+                },
+                {
+                    path: 'privacy',
+                    name: 'Privacy',
+                    component: LegalNotice,
+                    meta: { legal: 'privacy' }
+                },
+                {
+                    path: 'terms',
+                    name: 'Terms',
+                    component: LegalNotice,
+                    meta: { legal: 'terms' }
+                },
+                {
+                    path: 'forbidden',
+                    name: 'Forbidden',
+                    component: SystemMessage,
+                    meta: { state: 'forbidden' }
                 }
             ]
         },
@@ -115,11 +142,17 @@ export default new Router({
             path: '/admin',
             name: 'Admin',
             component: TheContainerAdmin,
+            meta: { requiresAuth: true, roles: ['admin'] },
             children: [
                 {
                     path: '',
                     name: 'Overview',
                     component: Overview
+                },
+                {
+                    path: 'analytics',
+                    name: 'Analytics',
+                    component: Analytics
                 },
                 {
                     path: 'artworks',
@@ -162,6 +195,7 @@ export default new Router({
             path: '/artist',
             name: 'Artist',
             component: TheContainerUser,
+            meta: { requiresAuth: true, roles: ['artist', 'evaluator', 'admin'] },
             redirect: '/artist/submissions',
             children: [
                 {
@@ -185,6 +219,7 @@ export default new Router({
             path: '/user',
             name: 'UserDashboard',
             component: TheContainerUser,
+            meta: { requiresAuth: true },
             redirect: '/user/profile',
             children: [
                 {
@@ -199,6 +234,41 @@ export default new Router({
                 }
             ]
         },
+        {
+            path: '*',
+            name: 'NotFound',
+            component: TheContainerUser,
+            children: [{ path: '', component: SystemMessage }]
+        }
 
     ]
 })
+
+const readSession = () => {
+    try {
+        return JSON.parse(localStorage.getItem('objs')) || {};
+    } catch (error) {
+        localStorage.removeItem('objs');
+        return {};
+    }
+};
+
+router.beforeEach((to, from, next) => {
+    const protectedRoute = to.matched.find(record => record.meta && record.meta.requiresAuth);
+    if (!protectedRoute) return next();
+
+    const session = readSession();
+    if (!session.xAccessToken) {
+        return next({ name: 'Login', query: { redirect: to.fullPath } });
+    }
+
+    const allowedRoles = protectedRoute.meta.roles;
+    const currentRole = String(session.role || '').toLowerCase();
+    if (allowedRoles && !allowedRoles.includes(currentRole)) {
+        return next({ name: 'Forbidden' });
+    }
+
+    return next();
+});
+
+export default router

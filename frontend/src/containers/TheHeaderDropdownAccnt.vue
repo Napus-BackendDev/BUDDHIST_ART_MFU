@@ -9,8 +9,8 @@
       <CHeaderNavLink class="px-0">
         <div class="user-avatar-trigger d-flex align-items-center" style="cursor: pointer;">
           <img v-if="userImage" :src="userImage" class="rounded-circle border" style="width: 35px; height: 35px; object-fit: cover;" />
-          <div v-else class="avatar-fallback rounded-circle bg-danger text-white d-flex align-items-center justify-content-center font-weight-bold" style="width: 35px; height: 35px;">
-            {{ userInitial }}
+          <div v-else class="avatar-fallback rounded-circle bg-light text-dark d-flex align-items-center justify-content-center border" style="width: 35px; height: 35px;">
+            <CIcon name="cil-user" />
           </div>
         </div>
       </CHeaderNavLink>
@@ -84,8 +84,7 @@ export default {
     logout() {
       localStorage.removeItem('objs');
       this.$store.commit('auth/showSignInModal', false);
-      this.$router.push('/');
-      window.location.reload();
+      window.location.href = '/';
     }
   }
 }

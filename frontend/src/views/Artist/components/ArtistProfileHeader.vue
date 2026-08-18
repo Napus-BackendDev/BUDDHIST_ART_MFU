@@ -19,10 +19,10 @@
             <div class="avatar-ring">
               <div 
                 class="avatar-main shadow-sm"
-                :style="{ backgroundColor: getAvatarColor(user ? (typeof user.name === 'string' ? user.name : (Array.isArray(user.name) ? (user.name.find(n => n.key === 'en') || {}).value : '')) : '') }"
+                :style="{ backgroundColor: user && user.image ? 'transparent' : '#8c1515' }"
               >
                 <img v-if="user && user.image" :src="user.image" class="avatar-image" />
-                <span v-else class="avatar-initials text-white">{{ initials }}</span>
+                <CIcon v-else name="cil-user" size="2xl" class="text-white" />
               </div>
             </div>
           </div>
@@ -67,7 +67,8 @@
                 <span class="pill-text">{{ email || ($i18n.locale === 'en' ? 'No email provided' : 'ไม่มีข้อมูลอีเมล') }}</span>
               </div>
               
-              <div class="meta-pill mr-md-4 mb-2">
+              <!-- phone hidden on public/read-only view per client 2026-07; shown only to owner/back-office -->
+              <div v-if="!isPublic" class="meta-pill mr-md-4 mb-2">
                 <div class="pill-icon-box">
                   <CIcon name="cil-phone" />
                 </div>
@@ -139,12 +140,8 @@ export default {
       if (!this.displayName || this.displayName === 'Loading...') return 'artist';
       return this.displayName.toLowerCase().replace(/\s+/g, '').substring(0, 15);
     },
-    initials() {
-      if (!this.displayName || this.displayName === 'Loading...') return 'A';
-      return this.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    },
     statusName() {
-      if (!this.user || !this.user.status) return this.$i18n.locale === 'en' ? 'New Student' : 'นักศึกษาใหม่';
+      if (!this.user || !this.user.status) return this.$i18n.locale === 'en' ? 'New Learner' : 'ผู้เรียนใหม่';
       const status = this.user.status;
       if (typeof status === 'string') return status;
       if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
@@ -153,7 +150,7 @@ export default {
         const titleEn = status.title.find(t => t.key === 'en');
         return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Status');
       }
-      return this.$i18n.locale === 'en' ? 'Student' : 'นักศึกษา';
+      return this.$i18n.locale === 'en' ? 'Learner' : 'ผู้เรียน';
     },
     statusClass() {
       let statusStr = 'new student';
@@ -296,12 +293,6 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.avatar-initials {
-  font-size: 3.5rem;
-  font-weight: 800;
-  letter-spacing: -2px;
 }
 
 .verified-icon-floating {

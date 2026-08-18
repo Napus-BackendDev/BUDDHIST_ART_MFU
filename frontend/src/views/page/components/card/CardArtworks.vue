@@ -32,7 +32,7 @@
 
                         <!-- Price and Action -->
                         <div class="d-flex justify-content-between align-items-center">
-                            <div class="price-box">
+                            <div v-if="!isDisplayOnly(art)" class="price-box">
                                 <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">{{ $i18n.locale === 'en' ? 'Current Price' : 'ราคาปัจจุบัน' }}</small>
                                 <span class="price-value font-weight-bold text-danger">{{ formatPrice(art.price) }}</span>
                                 <small class="price-unit ml-1 font-weight-bold">{{ $i18n.locale === 'en' ? 'THB' : 'บาท' }}</small>
@@ -52,6 +52,7 @@
                                     <CIcon name="cil-cart" />
                                 </div>
                             </div>
+                            <span v-else-if="isDisplayOnly(art)" class="display-only-badge">{{ $i18n.locale === 'en' ? 'Display only' : 'แสดงเฉย ๆ' }}</span>
                         </div>
                     </CCardBody>
                 </CCard>
@@ -109,9 +110,17 @@ export default {
         },
         isPurchasable(art) {
             if (!art || !art.status || !art.status.sale) return false;
+            if (this.isDisplayOnly(art)) return false;
             const status = this.getName('en', art.status.sale);
             // ONLY 'Available' status is purchasable.
             return status === 'Available';
+        },
+        isDisplayOnly(art) {
+            const lifecycle = art && art.postTermSale;
+            if (!lifecycle || !lifecycle.applicable) return false;
+            if (lifecycle.needsReview || !lifecycle.initialSaleEndsAt) return true;
+            if (lifecycle.mode === 'standard_sale') return false;
+            return new Date(lifecycle.initialSaleEndsAt).getTime() <= Date.now();
         }
     }
 }
@@ -248,5 +257,16 @@ export default {
 .no-results-box {
     border: 2px dashed #e2e8f0;
     border-radius: 24px;
+}
+
+.display-only-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #475569;
+    background: #e2e8f0;
+    font-size: .75rem;
+    font-weight: 700;
 }
 </style>

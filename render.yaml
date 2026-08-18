@@ -28,9 +28,11 @@ services:
       - key: TRANSACTIONEXPIRED
         value: "10"
       - key: SMTP_HOST
-        value: smtp.gmail.com
+        value: enoti.mfu.ac.th
       - key: SMTP_PORT
-        value: "465"
+        value: "25"
+      - key: SMTP_SECURE
+        value: "false"
       # ---- secrets: set these in the Render dashboard (Environment tab) ----
       - key: MONGODB          # Atlas connection string: mongodb+srv://...
         sync: false

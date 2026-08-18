@@ -1,7 +1,24 @@
 import Service from "@/service/api";
 
+const readPersistedItems = () => {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+        const value = JSON.parse(localStorage.getItem('cartItems') || '[]');
+        return Array.isArray(value) ? value : [];
+    } catch (error) {
+        localStorage.removeItem('cartItems');
+        return [];
+    }
+};
+
+const persistItems = (items) => {
+    if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('cartItems', JSON.stringify(items));
+    }
+};
+
 const state = {
-    items: [],
+    items: readPersistedItems(),
     lastOrder: null,
     showCart: false // Global state for cart visibility
 };
@@ -72,6 +89,7 @@ const mutations = {
             const existingItem = state.items[index];
             state.items.splice(index, 1, { ...artwork, quantity: 1, addedAt: existingItem.addedAt });
         }
+        persistItems(state.items);
     },
     UPDATE_CART_ITEM(state, artwork) {
         const id = String(artwork._id);
@@ -79,6 +97,7 @@ const mutations = {
         if (index !== -1) {
             const existingItem = state.items[index];
             state.items.splice(index, 1, { ...artwork, quantity: 1, addedAt: existingItem.addedAt });
+            persistItems(state.items);
         }
     },
     UPDATE_ITEM_STATUS(state, { id, status }) {
@@ -88,14 +107,17 @@ const mutations = {
             const item = state.items[index];
             item.status = { ...item.status, ...status };
             state.items.splice(index, 1, item);
+            persistItems(state.items);
         }
     },
     REMOVE_FROM_CART(state, artworkId) {
         const id = String(artworkId);
         state.items = state.items.filter(item => String(item._id) !== id);
+        persistItems(state.items);
     },
     CLEAR_CART(state) {
         state.items = [];
+        persistItems(state.items);
     },
     SET_LAST_ORDER(state, order) {
         state.lastOrder = order;

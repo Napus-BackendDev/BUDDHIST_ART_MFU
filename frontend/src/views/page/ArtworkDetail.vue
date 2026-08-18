@@ -30,21 +30,47 @@
                 </div>
 
                 <CRow class="artwork-detail-grid">
-                    <!-- Left Column: Premium Gallery Visual Frame -->
+                    <!-- Left Column: Premium Gallery Visual Frame & Specifications -->
                     <CCol lg="6" class="mb-4 mb-lg-0 visual-column">
-                        <div class="gallery-frame-container shadow-premium position-relative">
-                            <!-- Outer museum mount/matting style -->
-                            <div class="gallery-matting">
-                                <div class="artwork-image-wrapper position-relative">
-                                    <img :src="artwork.image" :alt="getName($i18n.locale, artwork)" class="img-fluid main-artwork-img">
-                                    
-                                    <!-- Dynamic Light Overlay Effect on hover -->
-                                    <div class="reflection-overlay"></div>
-                                    
-                                    <!-- Zoom Button with premium styling -->
-                                    <button v-if="!showZoomModal" class="btn-zoom-float shadow-lg" @click="zoomImg" title="Zoom Image">
-                                        <CIcon name="cilMagnifyingGlass" />
-                                    </button>
+                        <div class="gallery-frame-container shadow-premium position-relative mb-4">
+                            <div class="artwork-canvas-stage position-relative">
+                                <img :src="artwork.image" :alt="getName($i18n.locale, artwork)" class="main-artwork-img">
+                                
+                                <!-- Zoom Button with premium styling -->
+                                <button v-if="!showZoomModal" class="btn-zoom-float shadow-lg" @click="zoomImg" title="Zoom Image">
+                                    <CIcon name="cilMagnifyingGlass" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Artist Profile Widget (Desktop Only: under Image) -->
+                        <div class="d-none d-lg-block">
+                            <div class="artist-profile-widget p-4 w-100 shadow-sm"
+                                 :class="{ 'clickable-profile': artwork.artist }"
+                                 @click="artwork.artist ? goToArtistProfile() : null">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="artist-avatar-wrapper mr-3">
+                                        <img v-if="artwork.artist && artwork.artist.image" 
+                                             :src="artwork.artist.image" 
+                                             class="artist-avatar-image" 
+                                             :alt="artwork.artist ? getName($i18n.locale, artwork.artist) : ''" />
+                                        <div v-else class="artist-avatar-placeholder">
+                                            <CIcon name="cil-user" />
+                                        </div>
+                                    </div>
+                                    <div class="artist-info-meta">
+                                        <span class="label">{{ $i18n.locale === 'en' ? 'Master Creator' : 'ศิลปินผู้สร้างสรรค์' }}</span>
+                                        <h4 class="artist-name mb-0">
+                                            {{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Unknown Artist' : 'ศิลปินนิรนาม') }}
+                                        </h4>
+                                    </div>
+                                </div>
+
+                                <!-- Artist Bio Description -->
+                                <div class="artist-bio-wrapper pt-3">
+                                    <p class="artist-bio-text mb-0">
+                                        {{ artistBio }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -54,52 +80,88 @@
                     <CCol lg="6" class="info-column">
                         <div class="artwork-info-card shadow-premium">
                             <div class="artwork-info-content p-4 p-md-5">
-                                <!-- Category & Status Tag Row -->
-                                <div class="d-flex align-items-center mb-3 flex-wrap gap-2">
-                                    <span class="info-pill category-pill">
-                                        <CIcon name="cil-tag" class="mr-1" size="sm" />
-                                        {{ artwork.category ? getName($i18n.locale, artwork.category) : ($i18n.locale === 'en' ? 'Artwork' : 'ผลงานศิลปะ') }}
-                                    </span>
-                                    <span v-if="artwork.status && artwork.status.approval && getName('en', artwork.status.approval) !== 'Approved'" class="info-pill status-pill ml-2" :style="getStatusBadgeStyle()">
-                                        <CIcon name="cil-info" class="mr-1" size="sm" />
-                                        {{ getName($i18n.locale, artwork.status.approval) }}
-                                    </span>
-                                </div>
-
                                 <!-- Title & Fine Art Label -->
                                 <div class="title-header-block mb-3">
                                     <h1 class="artwork-master-title mb-2 text-dark">{{ getName($i18n.locale, artwork) }}</h1>
                                     <div class="title-divider"></div>
                                 </div>
 
-                                <!-- Artist Profile Widget -->
-                                <div class="artist-profile-widget p-3 mb-4 d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="artist-avatar-wrapper mr-3">
-                                            <img v-if="artwork.artist && artwork.artist.image" 
-                                                 :src="artwork.artist.image" 
-                                                 class="artist-avatar-image" 
-                                                 :alt="artwork.artist ? getName($i18n.locale, artwork.artist) : ''" />
-                                            <div v-else class="artist-avatar-placeholder">
-                                                <span>{{ artwork.artist ? (getName($i18n.locale, artwork.artist) ? getName($i18n.locale, artwork.artist).charAt(0).toUpperCase() : 'A') : 'A' }}</span>
+                                <!-- Curated Concept & Narrative Section -->
+                                <div class="curator-description mb-4">
+                                    <div class="description-header d-flex align-items-center mb-2">
+                                        <div class="header-accent-mark"></div>
+                                        <h6 class="mb-0 text-uppercase font-weight-bold tracking-wider">{{ $i18n.locale === 'en' ? 'Concept & Narrative' : 'แนวคิดและแรงบันดาลใจในการสร้างสรรค์' }}</h6>
+                                    </div>
+                                    <p class="description-body">
+                                        {{ getName($i18n.locale, artwork, 'description') || ($i18n.locale === 'en' ? 'No description provided for this artwork.' : 'ไม่มีรายละเอียดสำหรับผลงานชิ้นนี้') }}
+                                    </p>
+                                </div>
+
+                                <!-- Remark / หมายเหตุ Section -->
+                                <div v-if="getName($i18n.locale, artwork, 'remark')" class="curator-remark mb-4">
+                                    <div class="remark-header d-flex align-items-center mb-2">
+                                        <div class="header-remark-mark"></div>
+                                        <h6 class="mb-0 text-uppercase font-weight-bold tracking-wider">
+                                            {{ $i18n.locale === 'en' ? 'Remark / Note' : 'หมายเหตุ' }}
+                                        </h6>
+                                    </div>
+                                    <div class="remark-body-box p-3 rounded-xl">
+                                        <p class="remark-text mb-0">
+                                            <CIcon name="cil-info" class="mr-2 text-warning" size="sm" />
+                                            {{ getName($i18n.locale, artwork, 'remark') }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Status Tag if not approved -->
+                                <div v-if="artwork.status && artwork.status.approval && getName('en', artwork.status.approval) !== 'Approved'" class="d-flex align-items-center mb-3">
+                                    <span class="info-pill status-pill" :style="getStatusBadgeStyle()">
+                                        <CIcon name="cil-info" class="mr-1" size="sm" />
+                                        {{ getName($i18n.locale, artwork.status.approval) }}
+                                    </span>
+                                </div>
+
+                                <!-- Specs Grid (Category, Views, Technique, Dimension) -->
+                                <div class="artwork-specs-wrapper w-100 mb-4">
+                                    <div class="specs-grid-premium">
+                                        <!-- Row 1: Category & Views -->
+                                        <div class="spec-card">
+                                            <div class="spec-icon"><CIcon name="cil-tag" /></div>
+                                            <div class="spec-info">
+                                                <label>{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
+                                                <span :title="artwork.category ? getName($i18n.locale, artwork.category) : ''">
+                                                    {{ artwork.category ? getName($i18n.locale, artwork.category) : ($i18n.locale === 'en' ? 'Artwork' : 'ผลงานศิลปะ') }}
+                                                </span>
                                             </div>
                                         </div>
-                                        <div class="artist-info-meta">
-                                            <span class="label">{{ $i18n.locale === 'en' ? 'Master Creator' : 'ศิลปินผู้สร้างสรรค์' }}</span>
-                                            <h4 class="artist-name mb-0">
-                                                {{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Unknown Artist' : 'ศิลปินนิรนาม') }}
-                                            </h4>
+                                        <div class="spec-card">
+                                            <div class="spec-icon"><CIcon name="cil-chart-line" /></div>
+                                            <div class="spec-info">
+                                                <label>{{ $i18n.locale === 'en' ? 'Views' : 'ยอดเข้าชม' }}</label>
+                                                <span>{{ artwork.views || 0 }} {{ $i18n.locale === 'en' ? 'views' : 'ครั้ง' }}</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Row 2: Technique & Dimension -->
+                                        <div class="spec-card">
+                                            <div class="spec-icon"><CIcon name="cil-brush" /></div>
+                                            <div class="spec-info">
+                                                <label>{{ $i18n.locale === 'en' ? 'Technique' : 'เทคนิค' }}</label>
+                                                <span :title="getName($i18n.locale, artwork, 'technique')">
+                                                    {{ getName($i18n.locale, artwork, 'technique') || ($i18n.locale === 'en' ? 'Mixed Media' : 'สื่อผสม') }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="spec-card">
+                                            <div class="spec-icon"><CIcon name="cil-resize-both" /></div>
+                                            <div class="spec-info">
+                                                <label>{{ $i18n.locale === 'en' ? 'Dimension' : 'ขนาดผลงาน' }}</label>
+                                                <span :title="getName($i18n.locale, artwork, 'size')">
+                                                    {{ getName($i18n.locale, artwork, 'size') || 'N/A' }}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <CButton v-if="artwork.artist" 
-                                             color="outline-danger" 
-                                             shape="pill" 
-                                             size="sm" 
-                                             class="btn-view-profile-premium px-3 d-flex align-items-center" 
-                                             @click="goToArtistProfile">
-                                        <span class="mr-1">{{ $i18n.locale === 'en' ? 'View Profile' : 'ดูโปรไฟล์' }}</span>
-                                        <CIcon name="cil-user" size="sm" />
-                                    </CButton>
                                 </div>
 
                                 <!-- Exhibition Only / Display Only Block -->
@@ -108,17 +170,20 @@
                                         <div class="exhibition-dot mr-2" :style="{ backgroundColor: isSoldOut ? '#ef4444' : '#8c3b32' }"></div>
                                         <span class="label">
                                             <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? "Artwork Status" : 'สถานะผลงาน' }}</span>
+                                            <span v-else-if="isPostTermDisplayOnly">{{ $i18n.locale === 'en' ? "Display only" : 'แสดงเฉย ๆ' }}</span>
                                             <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? "Gallery Exhibition" : 'ผลงานเพื่อการจัดแสดง' }}</span>
                                             <span v-else>{{ $i18n.locale === 'en' ? "Artwork Status" : 'สถานะผลงาน' }}</span>
                                         </span>
                                     </div>
                                     <div class="exhibition-text">
-                                        <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? 'Sold Out' : 'ขายแล้ว' }}</span>
+                                        <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? 'Sold Out' : 'จำหน่ายแล้ว' }}</span>
+                                        <span v-else-if="isPostTermDisplayOnly">{{ $i18n.locale === 'en' ? 'Display only' : 'แสดงเฉย ๆ' }}</span>
                                         <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? 'Exhibition Only' : 'โชว์เท่านั้น' }}</span>
                                         <span v-else>{{ $i18n.locale === 'en' ? 'Not for Sale' : 'ไม่ขาย' }}</span>
                                     </div>
                                     <p class="exhibition-desc mb-0">
                                         <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? 'This artwork has been sold and is no longer available.' : 'ผลงานชิ้นนี้ขายไปแล้วและไม่มีจำหน่ายในขณะนี้' }}</span>
+                                        <span v-else-if="isPostTermDisplayOnly">{{ $i18n.locale === 'en' ? 'This artwork remains in the public portfolio but is not available for purchase.' : 'ผลงานชิ้นนี้ยังแสดงในพอร์ต แต่ไม่เปิดให้ซื้อ' }}</span>
                                         <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? 'This artwork is curated for exhibition and is currently not available for purchase.' : 'ผลงานศิลปะชิ้นนี้ได้รับการจัดสรรเพื่อร่วมแสดงนิทรรศการและไม่ได้เปิดให้สั่งซื้อในขณะนี้' }}</span>
                                         <span v-else>{{ $i18n.locale === 'en' ? 'This artwork is currently not available for purchase.' : 'ผลงานชิ้นนี้ไม่มีจำหน่ายหรือเพื่อการสะสมในขณะนี้' }}</span>
                                     </p>
@@ -126,50 +191,11 @@
                                 <div v-else class="valuation-block mb-4">
                                     <div class="valuation-label-row d-flex justify-content-between align-items-center mb-2">
                                         <span class="label">{{ $i18n.locale === 'en' ? "Collector's Value" : 'มูลค่าการสะสมผลงาน' }}</span>
-                                        <span class="verified-label-badge"><CIcon name="cil-check-circle" class="mr-1" size="sm"/>{{ $i18n.locale === 'en' ? 'Verified Value' : 'ประเมินแล้ว' }}</span>
                                     </div>
                                     <div class="valuation-price">
                                         <span class="currency">฿</span>
                                         <span class="amount">{{ formatPrice(artwork.price) }}</span>
                                         <span class="currency-code">THB</span>
-                                    </div>
-                                </div>
-
-                                <!-- Specs Grid (Curated details layout) -->
-                                <div class="specs-grid-premium mb-4">
-                                    <div class="spec-card">
-                                        <div class="spec-icon"><CIcon name="cil-brush" /></div>
-                                        <div class="spec-info">
-                                            <label>{{ $i18n.locale === 'en' ? 'Technique' : 'เทคนิค' }}</label>
-                                            <span :title="getName($i18n.locale, artwork, 'technique')">{{ getName($i18n.locale, artwork, 'technique') || ($i18n.locale === 'en' ? 'Mixed Media' : 'สื่อผสม') }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="spec-card">
-                                        <div class="spec-icon"><CIcon name="cil-resize-both" /></div>
-                                        <div class="spec-info">
-                                            <label>{{ $i18n.locale === 'en' ? 'Dimension' : 'ขนาดผลงาน' }}</label>
-                                            <span :title="getName($i18n.locale, artwork, 'size')">{{ getName($i18n.locale, artwork, 'size') || 'N/A' }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="spec-card spec-card-full">
-                                        <div class="spec-icon"><CIcon name="cil-chart-line" /></div>
-                                        <div class="spec-info">
-                                            <label>{{ $i18n.locale === 'en' ? 'Views' : 'ยอดเข้าชม' }}</label>
-                                            <span>{{ artwork.views || 0 }} {{ $i18n.locale === 'en' ? 'views' : 'ครั้ง' }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Curated Concept & Narrative Section -->
-                                <div class="curator-description mb-4">
-                                    <div class="description-header d-flex align-items-center mb-3">
-                                        <div class="header-accent-mark"></div>
-                                        <h6 class="mb-0 text-uppercase font-weight-bold tracking-wider">{{ $i18n.locale === 'en' ? 'Concept & Narrative' : 'แนวคิดและแรงบันดาลใจในการสร้างสรรค์' }}</h6>
-                                    </div>
-                                    <div class="description-body-container">
-                                        <p class="description-body">
-                                            {{ getName($i18n.locale, artwork, 'description') || ($i18n.locale === 'en' ? 'No description provided for this artwork.' : 'ไม่มีรายละเอียดสำหรับผลงานชิ้นนี้') }}
-                                        </p>
                                     </div>
                                 </div>
 
@@ -196,6 +222,38 @@
                                             <CIcon name="cilShare" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Share Artwork' : 'แชร์ผลงานนี้' }}
                                         </CButton>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Artist Profile Widget (Mobile Only: under Info Card) -->
+                        <div class="d-block d-lg-none mt-4">
+                            <div class="artist-profile-widget p-4 w-100 shadow-sm"
+                                 :class="{ 'clickable-profile': artwork.artist }"
+                                 @click="artwork.artist ? goToArtistProfile() : null">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="artist-avatar-wrapper mr-3">
+                                        <img v-if="artwork.artist && artwork.artist.image" 
+                                             :src="artwork.artist.image" 
+                                             class="artist-avatar-image" 
+                                             :alt="artwork.artist ? getName($i18n.locale, artwork.artist) : ''" />
+                                        <div v-else class="artist-avatar-placeholder">
+                                            <CIcon name="cil-user" />
+                                        </div>
+                                    </div>
+                                    <div class="artist-info-meta">
+                                        <span class="label">{{ $i18n.locale === 'en' ? 'Master Creator' : 'ศิลปินผู้สร้างสรรค์' }}</span>
+                                        <h4 class="artist-name mb-0">
+                                            {{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Unknown Artist' : 'ศิลปินนิรนาม') }}
+                                        </h4>
+                                    </div>
+                                </div>
+
+                                <!-- Artist Bio Description -->
+                                <div class="artist-bio-wrapper pt-3">
+                                    <p class="artist-bio-text mb-0">
+                                        {{ artistBio }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -237,6 +295,43 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Clean & Prominent Added to Cart Success Modal -->
+            <CModal
+                :show.sync="showAddedModal"
+                centered
+                size="md"
+                class="cart-alert-modal"
+                :closeOnBackdrop="true"
+            >
+                <div class="cart-alert-card p-4 p-md-5 text-center position-relative">
+                    <!-- Top Right Close Button -->
+                    <button type="button" class="alert-close-btn position-absolute" @click="showAddedModal = false" title="ปิด">
+                        <CIcon name="cil-x" size="lg" />
+                    </button>
+
+                    <!-- Big Success Icon -->
+                    <div class="alert-icon-wrapper mx-auto mb-4">
+                        <div class="alert-icon-pulse"></div>
+                        <div class="alert-icon-circle">
+                            <CIcon name="cil-check" size="2xl" class="text-white" />
+                        </div>
+                    </div>
+
+                    <!-- Title & Message -->
+                    <h3 class="alert-modal-title font-weight-bold mb-2">
+                        {{ $i18n.locale === 'en' ? 'Added to Cart Successfully!' : 'เพิ่มลงในตะกร้าเรียบร้อยแล้ว' }}
+                    </h3>
+                    <p class="alert-modal-subtitle text-muted mb-4">
+                        {{ $i18n.locale === 'en' ? 'Artwork has been added to your shopping cart.' : 'ผลงานศิลปะชิ้นนี้ได้ถูกเพิ่มลงในตะกร้าของคุณเรียบร้อยแล้ว' }}
+                    </p>
+
+                    <!-- Bottom Dismiss Button -->
+                    <button type="button" class="btn-alert-dismiss px-5 py-2" @click="showAddedModal = false">
+                        {{ $i18n.locale === 'en' ? 'Close' : 'ตกลง' }}
+                    </button>
+                </div>
+            </CModal>
         </CContainer>
     </div>
 </template>
@@ -255,6 +350,7 @@ export default {
             loading: true,
             isPreview: false,
             showZoomModal: false,
+            showAddedModal: false,
             artwork: {},
             polling: null,
             isAddingToCart: false
@@ -272,9 +368,16 @@ export default {
         isPurchasable() {
             if (this.isPreview) return false;
             if (!this.artwork || !this.artwork.status || !this.artwork.status.sale) return false;
+            if (this.isPostTermDisplayOnly) return false;
             const status = this.getName('en', this.artwork.status.sale);
-            // ONLY 'Available' status is purchasable.
             return status === 'Available';
+        },
+        isPostTermDisplayOnly() {
+            const lifecycle = this.artwork && this.artwork.postTermSale;
+            if (!lifecycle || !lifecycle.applicable) return false;
+            if (lifecycle.needsReview || !lifecycle.initialSaleEndsAt) return true;
+            if (lifecycle.mode === 'standard_sale') return false;
+            return new Date(lifecycle.initialSaleEndsAt).getTime() <= Date.now();
         },
         isApprovalReserved() {
             if (!this.artwork || !this.artwork.status || !this.artwork.status.approval) return false;
@@ -291,9 +394,8 @@ export default {
         },
         getButtonText() {
             if (this.isPreview) return this.$i18n.locale === 'en' ? 'Preview Mode' : 'โหมดดูตัวอย่าง';
-            if (this.isSoldOut) return this.$i18n.locale === 'en' ? 'Already Sold Out' : 'ขายแล้ว';
+            if (this.isSoldOut) return this.$i18n.locale === 'en' ? 'Already Sold Out' : 'จำหน่ายแล้ว';
             
-            // If it's in SOMEONE ELSE'S cart (Reserved)
             if (this.isApprovalReserved && !this.isInCart) return this.$i18n.locale === 'en' ? 'Being Ordered' : 'จองแล้ว';
 
             if (!this.isPurchasable) return this.$i18n.locale === 'en' ? 'Not for Sale' : 'ไม่ได้มีไว้เพื่อขาย';
@@ -310,19 +412,37 @@ export default {
             });
         },
         relatedArtworks() {
-            if (!this.artwork || !this.artwork._id || !this.artwork.category) return [];
-            const currentCategoryId = typeof this.artwork.category === 'object' 
-                ? this.artwork.category._id 
-                : this.artwork.category;
+            if (!this.artwork || !this.artwork._id || !this.artwork.artist) return [];
+            const currentArtistId = typeof this.artwork.artist === 'object'
+                ? this.artwork.artist._id
+                : this.artwork.artist;
             const currentArtworkId = this.artwork._id;
 
             return this.approvedArtworks.filter(art => {
-                if (art._id === currentArtworkId) return false;
-                const artCategoryId = art.category 
-                    ? (typeof art.category === 'object' ? art.category._id : art.category) 
-                    : null;
-                return artCategoryId === currentCategoryId;
+                if (String(art._id) === String(currentArtworkId) || !art.artist) return false;
+                const artistId = typeof art.artist === 'object' ? art.artist._id : art.artist;
+                return String(artistId) === String(currentArtistId);
             }).slice(0, 4);
+        },
+        artistBio() {
+            if (this.artwork && this.artwork.artist) {
+                const artist = this.artwork.artist;
+                if (typeof artist === 'object') {
+                    if (artist.bio && this.getName(this.$i18n.locale, artist, 'bio')) {
+                        return this.getName(this.$i18n.locale, artist, 'bio');
+                    }
+                    if (artist.about && this.getName(this.$i18n.locale, artist, 'about')) {
+                        return this.getName(this.$i18n.locale, artist, 'about');
+                    }
+                }
+            }
+            // Mockup authentic Buddhist Art creator bio
+            const artistName = this.artwork && this.artwork.artist ? this.getName(this.$i18n.locale, this.artwork.artist) : '';
+            if (this.$i18n.locale === 'en') {
+                return `${artistName ? artistName + ' is a c' : 'C'}ontemporary Buddhist artist and creative alumnus of the Short Course Program in Buddhist Art, Mae Fah Luang University. Dedicated to conveying cultural spirituality through harmonious blend of traditional Lanna craftsmanship and contemporary art perspectives.`;
+            } else {
+                return `${artistName ? artistName + ' ' : ''}ศิลปินผู้สร้างสรรค์ผลงานพุทธศิลปกรรมร่วมสมัย ศิษย์เก่าหลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง ผู้มีความมุ่งมั่นในการถ่ายทอดคุณค่าทางจิตวิญญาณและภูมิปัญญาล้านนา ผ่านการผสมผสานเทคนิคศิลปะร่วมสมัยอย่างประณีต`;
+            }
         }
     },
     watch: {
@@ -355,7 +475,6 @@ export default {
                 const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
                 
                 if (!isObjectId) {
-                    // Slug match: check loaded store list first
                     let list = this.allArtworks;
                     if (!list || list.length === 0) {
                         const response = await this.$store.dispatch('artwork/get');
@@ -372,6 +491,14 @@ export default {
                     
                     if (match) {
                         resolvedId = match._id;
+                    }
+                }
+
+                if (!silent) {
+                    try {
+                        await this.$store.dispatch('artwork/updateView', resolvedId);
+                    } catch (viewError) {
+                        console.error('Error updating artwork view:', viewError);
                     }
                 }
 
@@ -410,14 +537,13 @@ export default {
                 this.isAddingToCart = true;
                 
                 if (!this.isInCart) {
-                    // Check latest status before adding
                     const result = await this.$store.dispatch('artwork/explore', { _id: this.artwork._id });
                     if (result && this.getName('en', result.status.approval) === 'Reserved') {
                         alert(this.$i18n.locale === 'en' ? 'Sorry, this artwork was just reserved.' : 'ขออภัย ผลงานนี้เพิ่งถูกจองไป');
                         return;
                     }
                     this.$store.dispatch('cart/addToCart', result || this.artwork);
-                    this.$store.dispatch('cart/setShowCart', true);
+                    this.showAddedModal = true;
                 } else {
                     this.$store.dispatch('cart/removeFromCart', this.artwork._id);
                 }
@@ -462,7 +588,6 @@ export default {
                 const artistId = typeof artist === 'object' ? artist._id : artist;
                 
                 if (typeof artist === 'object') {
-                    // Try to get English name for routing slug
                     const nameEn = this.getName('en', artist);
                     if (nameEn) {
                         const slug = nameEn.replace(/\s+/g, '-').toLowerCase();
@@ -475,6 +600,25 @@ export default {
                     this.$router.push({ name: 'ArtistPublicProfile', params: { id: artistId } });
                 }
             }
+        },
+        getName(lang, obj, key) {
+            if (!obj) return '';
+            if (key) {
+                if (Array.isArray(obj[key])) {
+                    const found = obj[key].find(item => item.key === lang);
+                    return found ? found.value : (obj[key][0] ? obj[key][0].value : '');
+                }
+                return obj[key] || '';
+            }
+            if (Array.isArray(obj.title)) {
+                const found = obj.title.find(item => item.key === lang);
+                return found ? found.value : (obj.title[0] ? obj.title[0].value : '');
+            }
+            if (Array.isArray(obj.name)) {
+                const found = obj.name.find(item => item.key === lang);
+                return found ? found.value : (obj.name[0] ? obj.name[0].value : '');
+            }
+            return obj.title || obj.name || '';
         }
     },
     mounted() {
@@ -498,7 +642,7 @@ export default {
 /* Premium Buddhist Art Detail Styles */
 
 .artwork-detail-page {
-    background-color: #FAF9F6; /* Classic warm gallery background */
+    background-color: #FAF9F6;
     padding-top: 0 !important;
     margin-top: -2rem !important;
     font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -571,66 +715,65 @@ export default {
     pointer-events: none;
 }
 
-/* Visual Frame - Museum Matting & Framing */
+/* Visual Frame - Clean Showcase Canvas */
 .visual-column {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    width: 100%;
 }
 
 .gallery-frame-container {
     background: #ffffff;
     border-radius: 24px;
-    padding: 24px;
-    border: 1px solid rgba(74, 29, 24, 0.06);
+    padding: 16px;
+    border: 1px solid rgba(74, 29, 24, 0.08);
     width: 100%;
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
 }
 
 .gallery-frame-container:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 30px 60px rgba(74, 29, 24, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(74, 29, 24, 0.07);
 }
 
-.gallery-matting {
-    border: 1px solid #eae6df;
-    padding: 20px;
-    background: #fbfbfa;
+.artwork-canvas-stage {
+    width: 100%;
+    height: 540px;
+    background: #faf8f5;
     border-radius: 16px;
+    border: 1px solid #eae6df;
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative;
-    box-shadow: inset 0 0 30px rgba(74, 29, 24, 0.02);
-}
-
-.artwork-image-wrapper {
-    width: 100%;
-    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-    border: 2px solid #eae6df; /* Mat board inner line */
     position: relative;
+    padding: 16px;
 }
 
-.artwork-image-wrapper::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    right: 2px;
-    bottom: 2px;
-    border: 1px solid #C5A880; /* Elegant gold accent line */
-    pointer-events: none;
-    opacity: 0.8;
+@media (max-width: 992px) {
+    .artwork-canvas-stage {
+        height: 440px;
+    }
+}
+
+@media (max-width: 576px) {
+    .artwork-canvas-stage {
+        height: 340px;
+        padding: 10px;
+    }
 }
 
 .main-artwork-img {
-    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
     height: auto;
     object-fit: contain;
-    max-height: 70vh;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     display: block;
-    transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .gallery-frame-container:hover .main-artwork-img {
@@ -666,12 +809,17 @@ export default {
 /* Info Column card */
 .artwork-info-card {
     background: #ffffff;
-    border-radius: 32px;
-    border: 1px solid rgba(0, 0, 0, 0.03);
+    border-radius: 24px;
+    border: 1px solid rgba(74, 29, 24, 0.08);
+    overflow: hidden;
+}
+
+.artwork-info-content {
+    border-radius: 24px;
 }
 
 .shadow-premium {
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
 }
 
 /* Category & Status Pills */
@@ -694,7 +842,7 @@ export default {
 
 /* Title header */
 .artwork-master-title {
-    font-family: 'Cinzel', serif; /* MFU Brand Serif font */
+    font-family: 'Cinzel', serif;
     font-size: 2.5rem;
     font-weight: 700;
     line-height: 1.25;
@@ -711,9 +859,20 @@ export default {
 
 /* Artist Widget */
 .artist-profile-widget {
-    background: #FAF9F6;
+    background: #ffffff;
     border-radius: 20px;
-    border: 1px solid rgba(74, 29, 24, 0.04);
+    border: 1px solid #f1f0ec;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.artist-profile-widget.clickable-profile {
+    cursor: pointer;
+}
+
+.artist-profile-widget.clickable-profile:hover {
+    border-color: #C5A880;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
 }
 
 .artist-avatar-wrapper {
@@ -724,14 +883,14 @@ export default {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: #4a1d18;
-    color: #ffffff;
+    background: #FAF7F2;
+    color: #4a1d18;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 1.1rem;
-    box-shadow: 0 4px 10px rgba(74, 29, 24, 0.2);
+    font-size: 1.25rem;
+    box-shadow: 0 4px 10px rgba(74, 29, 24, 0.08);
+    border: 1.5px solid #C5A880;
 }
 
 .artist-avatar-image {
@@ -783,6 +942,18 @@ export default {
     transform: translateY(-1px);
 }
 
+.artist-bio-wrapper {
+    border-top: 1px solid rgba(74, 29, 24, 0.08) !important;
+}
+
+.artist-bio-text {
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: #57534e;
+    font-weight: 400;
+    word-break: keep-all;
+}
+
 /* Exhibition/Display Only Block */
 .exhibition-display-block {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -825,7 +996,7 @@ export default {
 /* Valuation Block */
 .valuation-block {
     background: linear-gradient(135deg, #FAF7F2 0%, #F5EFE6 100%);
-    border: 1px solid rgba(197, 168, 128, 0.25); /* Thin gold border */
+    border: 1px solid rgba(197, 168, 128, 0.25);
     padding: 24px;
     border-radius: 24px;
 }
@@ -863,7 +1034,7 @@ export default {
 }
 
 .valuation-price .amount {
-    font-family: 'Cinzel', serif; /* Gold serif amount */
+    font-family: 'Cinzel', serif;
     font-size: 2.6rem;
     font-weight: 700;
     line-height: 1;
@@ -899,7 +1070,7 @@ export default {
 }
 
 .spec-card:hover {
-    border-color: #C5A880; /* Gold highlight border */
+    border-color: #C5A880;
     background: #fafaf9;
 }
 
@@ -918,7 +1089,7 @@ export default {
 }
 
 .spec-info {
-    min-width: 0; /* Prevents text overflow */
+    min-width: 0;
 }
 
 .spec-info label {
@@ -943,30 +1114,22 @@ export default {
 
 /* Concept Section */
 .curator-description {
-    background: #ffffff;
-    border-radius: 20px;
+    background: transparent;
 }
 
 .header-accent-mark {
-    width: 6px;
+    width: 4px;
     height: 18px;
     background: #4a1d18;
-    border-radius: 3px;
+    border-radius: 2px;
     margin-right: 10px;
 }
 
 .curator-description h6 {
-    font-family: 'Cinzel', serif; /* MFU Brand Serif font for headings */
+    font-family: 'Cinzel', serif;
     font-size: 0.88rem;
     color: #4a1d18;
     letter-spacing: 1px;
-}
-
-.description-body-container {
-    background: #FAF9F6;
-    padding: 20px;
-    border-radius: 16px;
-    border-left: 3px solid #4a1d18; /* MFU Crimson accent line */
 }
 
 .description-body {
@@ -974,6 +1137,42 @@ export default {
     color: #44403c;
     font-size: 0.95rem;
     margin-bottom: 0;
+    padding-left: 14px;
+}
+
+/* Remark Section */
+.curator-remark {
+    background: transparent;
+}
+
+.header-remark-mark {
+    width: 4px;
+    height: 18px;
+    background: #d97706;
+    border-radius: 2px;
+    margin-right: 10px;
+}
+
+.curator-remark h6 {
+    font-family: 'Cinzel', serif;
+    font-size: 0.88rem;
+    color: #92400e;
+    letter-spacing: 1px;
+}
+
+.remark-body-box {
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    border-left: 3px solid #f59e0b;
+    border-radius: 14px;
+}
+
+.remark-text {
+    font-size: 0.9rem;
+    color: #92400e;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
 }
 
 /* Buttons Stack */
@@ -1007,25 +1206,6 @@ export default {
 }
 
 .btn-action-secondary:hover {
-    background: #FAF9F6;
-    border-color: #4a1d18;
-    color: #4a1d18;
-}
-
-.btn-action-icon {
-    width: 46px;
-    height: 46px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-width: 1.5px;
-    border-color: #d6d3d1;
-    color: #44403c;
-    background: white;
-    transition: all 0.3s ease;
-}
-
-.btn-action-icon:hover {
     background: #FAF9F6;
     border-color: #4a1d18;
     color: #4a1d18;
@@ -1106,44 +1286,127 @@ export default {
     padding: 40px !important;
 }
 
-.text-muted-soft {
-    color: #d6d3d1;
+/* Clean & Prominent Cart Alert Modal */
+.cart-alert-modal ::v-deep .modal-dialog {
+    max-width: 460px;
+    margin: 1.75rem auto;
 }
 
-/* Responsiveness */
-@media (max-width: 991.98px) {
-    .artwork-master-title {
-        font-size: 2rem;
-    }
-    .specs-grid-premium {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .valuation-price .amount {
-        font-size: 2.2rem;
-    }
+.cart-alert-modal ::v-deep .modal-content {
+    border-radius: 28px;
+    border: none;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
+    background: #ffffff;
+    overflow: hidden;
 }
 
-@media (max-width: 575.98px) {
-    .specs-grid-premium {
-        grid-template-columns: 1fr;
-    }
-    .spec-card-full {
-        grid-column: span 1;
-    }
-    .action-buttons-row {
-        flex-direction: column;
-        gap: 10px;
-    }
-    .btn-action-icon {
-        width: 100%;
-        border-radius: 50px;
-    }
-    .gallery-frame-container {
-        padding: 12px;
-    }
-    .gallery-matting {
-        padding: 8px;
-    }
+.cart-alert-modal ::v-deep .modal-header,
+.cart-alert-modal ::v-deep .modal-footer {
+    display: none !important;
+}
+
+.cart-alert-card {
+    background: #ffffff;
+}
+
+.alert-close-btn {
+    top: 18px;
+    right: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.alert-close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    transform: scale(1.05);
+}
+
+.alert-icon-wrapper {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alert-icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 24px rgba(16, 185, 129, 0.35);
+    z-index: 2;
+    animation: alertPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.alert-icon-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.2);
+    animation: alertPulse 1.8s infinite;
+    z-index: 1;
+}
+
+@keyframes alertPop {
+    0% { transform: scale(0.3); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes alertPulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 0; }
+    100% { transform: scale(0.95); opacity: 0; }
+}
+
+.alert-modal-title {
+    font-size: 1.45rem;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.alert-modal-subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.btn-alert-dismiss {
+    background: linear-gradient(135deg, #4a1d18, #612721);
+    color: #ffffff;
+    border: none;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(74, 29, 24, 0.25);
+    transition: all 0.2s ease;
+    min-width: 130px;
+}
+
+.btn-alert-dismiss:hover {
+    background: linear-gradient(135deg, #612721, #7a312a);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(74, 29, 24, 0.35);
 }
 
 @keyframes spin {

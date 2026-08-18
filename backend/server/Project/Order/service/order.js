@@ -4,12 +4,83 @@ const mongo = require('mongodb');
 const Order = require('../controller/order');
 const Artwork = require('../../Artwork/controller/artwork');
 const Status = require('../../Settings/controller/status');
+const StatusModel = require('../../Settings/models/status.model');
 const ResMessage = require("../../Settings/service/message");
 const { sendMail } = require("../../../../helpers/google/Mail");
 const { confirmationOrderMail, approvedOrderMail, rejectedOrderMail, adminNewOrderMail } = require("../../Mail");
 const pdfService = require("../../../../helpers/pdf.service");
-const { generateCertificate } = require("../../../../helpers/document/composite");
 const { PDFDocument } = require('pdf-lib');
+const ArtworkModel = require('../../Artwork/models/artwork.model');
+const UserModel = require('../../User/models/user.model');
+const { generateOrderCode } = require('../../Artwork/service/artworkCode');
+const { isPostTermPurchasable, getEffectiveMode, constants } = require('../../Artwork/service/postTermSale');
+
+// Keep fire-and-forget invoice/mail work observable so shutdown and tests can
+// drain it before closing MongoDB. The customer response remains non-blocking.
+const postCreateTasks = new Set();
+const schedulePostCreate = (task) => {
+    let resolveTask;
+    const taskPromise = new Promise(resolve => { resolveTask = resolve; });
+    postCreateTasks.add(taskPromise);
+    setImmediate(async () => {
+        try {
+            await task();
+        } finally {
+            postCreateTasks.delete(taskPromise);
+            resolveTask();
+        }
+    });
+    return taskPromise;
+};
+
+exports.waitForPostCreateTasks = async function () {
+    await Promise.all(Array.from(postCreateTasks));
+};
+
+const STATUS_NAMES = ['Reserved', 'Pending', 'Approved', 'Rejected', 'Cancelled', 'Available', 'Exhibition', 'Sold Out'];
+
+const titleValue = (value) => {
+    if (!value) return '';
+    if (Array.isArray(value)) {
+        return value.find(item => item && item.key === 'en')?.value
+            || value.find(item => item && item.value)?.value
+            || '';
+    }
+    return value.title ? titleValue(value.title) : String(value);
+};
+
+const idString = (value) => value && (value._id || value).toString();
+
+const isValidObjectId = (value) => mongo.ObjectId.isValid(value);
+
+const loadStatuses = async () => {
+    const docs = await StatusModel.find({ 'title.value': { $in: STATUS_NAMES } }).lean();
+    return docs.reduce((result, doc) => {
+        const name = titleValue(doc.title);
+        if (name) result[name] = doc;
+        return result;
+    }, {});
+};
+
+const sendBusinessError = (response, code, error) =>
+    ResMessage.sendResponse(response, 0, code, { error });
+
+const normalizeArtworkIds = (artwork) => {
+    if (!Array.isArray(artwork)) return null;
+    const ids = artwork.map(item => idString(item)).filter(Boolean);
+    if (ids.length === 0 || ids.length !== artwork.length) return null;
+    if (ids.some(id => !isValidObjectId(id))) return null;
+    const unique = new Set(ids);
+    return unique.size === ids.length ? ids : null;
+};
+
+const allowedTransitions = {
+    Reserved: new Set(['Reserved', 'Pending', 'Approved', 'Rejected', 'Cancelled']),
+    Pending: new Set(['Pending', 'Approved', 'Rejected', 'Cancelled']),
+    Approved: new Set(['Approved']),
+    Rejected: new Set(['Rejected']),
+    Cancelled: new Set(['Cancelled'])
+};
 
 exports.onQuery = async function (request, response) {
     try {
@@ -33,26 +104,20 @@ exports.onQuerys = async function (request, response) {
 
 exports.onCreate = async function (request, response) {
     const mongoose = require('mongoose');
+    const lockedArtworks = [];
+    let createdOrder = null;
+    let reservedStatusId = null;
 
     try {
         console.log(`[Backend Checkout Flow 5.1] Starting Order Creation Transaction...`);
-        // --- 🔢 Generate Custom Order Number (ORD-YYYY-XXXX) ---
-        const now = new Date();
-        const year = now.getFullYear();
-        const yearStart = new Date(year, 0, 1);
-        const yearEnd = new Date(year, 11, 31, 23, 59, 59);
-
-        // Count orders created this year (within transaction)
-        const orderCount = await Order.onQuerys({
-            createdAt: { $gte: yearStart, $lte: yearEnd }
-        });
-        
-        const sequence = (orderCount.length + 1).toString().padStart(4, '0');
-        const customOrderNumber = `ORD-${year}-${sequence}`;
-        request.body.orderNumber = customOrderNumber;
-
         // --- 1. Find "Reserved" Status ID first (Very Robust Search) ---
-        const reservedStatus = await Status.onQuery({
+        const statuses = await loadStatuses();
+        const reservedStatus = statuses.Reserved;
+        const availableStatus = statuses.Available;
+        const approvedStatus = statuses.Approved;
+        const soldOutStatus = statuses['Sold Out'];
+        const rejectedStatus = statuses.Rejected;
+        /* const reservedStatus = await Status.onQuery({
             $or: [
                 { "title.value": { $regex: /Reserved/i } },
                 { "title.value": { $regex: /รอชำระเงิน/i } }
@@ -63,22 +128,103 @@ exports.onCreate = async function (request, response) {
             console.error("CRITICAL: Reserved status not found in database settings.");
             throw new Error("System error: Reservation status not configured.");
         }
+        reservedStatusId = reservedStatus._id;
+        const normalizedArtworkIds = normalizeArtworkIds(request.body.artwork);
+        if (!normalizedArtworkIds) {
+            return sendBusinessError(response, 40000, 'ORDER_ARTWORKS_REQUIRED_AND_UNIQUE');
+        }
 
         // --- Assign database status ID instead of relying on hardcoded schema default ---
         request.body.status = reservedStatus._id;
 
         // --- 2. LOCK & RESERVE ARTWORKS IMMEDIATELY ---
-        const artworkIds = request.body.artwork || [];
+        const artworkIds = normalizedArtworkIds;
+        const orderArtworks = await ArtworkModel.find({ _id: { $in: normalizedArtworkIds } })
+            .select('_id artworkCode artist courseLevel status.approval status.sale postTermSale').lean();
+        if (orderArtworks.length !== normalizedArtworkIds.length || orderArtworks.some(art => !art.artworkCode)) {
+            return sendBusinessError(response, 40000, 'ORDER_ARTWORK_NOT_FOUND_OR_UNCODED');
+        }
+        request.body.artworkReferences = orderArtworks.map(art => ({
+            artwork: art._id,
+            artworkCode: art.artworkCode
+        }));
+
+        // Order code follows first artwork's student and submission cohort.
+        // Multi-artwork orders use first artwork as the stable order identity.
+        const firstArtwork = orderArtworks[0];
+        const orderArtistId = firstArtwork?.artist || request.body.user;
+        const orderArtist = orderArtistId
+            ? await UserModel.findById(orderArtistId).lean()
+            : null;
+        let customOrderNumber = await generateOrderCode({
+            artist: orderArtist,
+            courseLevel: firstArtwork?.courseLevel || '00'
+        }); */
+
+        if (!reservedStatus) {
+            console.error("CRITICAL: Reserved status not found in database settings.");
+            throw new Error("System error: Reservation status not configured.");
+        }
+        reservedStatusId = reservedStatus._id;
+        const normalizedArtworkIds = normalizeArtworkIds(request.body.artwork);
+        if (!normalizedArtworkIds) {
+            return sendBusinessError(response, 40000, 'ORDER_ARTWORKS_REQUIRED_AND_UNIQUE');
+        }
+        request.body.status = reservedStatus._id;
+        const artworkIds = normalizedArtworkIds;
+        const orderArtworks = await ArtworkModel.find({ _id: { $in: normalizedArtworkIds } })
+            .select('_id artworkCode artist courseLevel status.approval status.sale').lean();
+        if (orderArtworks.length !== normalizedArtworkIds.length || orderArtworks.some(art => !art.artworkCode)) {
+            return sendBusinessError(response, 40000, 'ORDER_ARTWORK_NOT_FOUND_OR_UNCODED');
+        }
+        request.body.artworkReferences = orderArtworks.map(art => ({
+            artwork: art._id,
+            artworkCode: art.artworkCode
+        }));
+        const firstArtwork = orderArtworks[0];
+        const orderArtistId = firstArtwork?.artist || request.body.user;
+        const orderArtist = orderArtistId
+            ? await UserModel.findById(orderArtistId).lean()
+            : null;
+        let customOrderNumber = await generateOrderCode({
+            artist: orderArtist,
+            courseLevel: firstArtwork?.courseLevel || '00'
+        });
+        request.body.orderNumber = customOrderNumber;
         console.log(`[Backend Checkout Flow 5.2] Attempting to lock artworks:`, artworkIds);
-        for (let id of artworkIds) {
-            const artworkId = id._id || id;
+        for (let artworkId of artworkIds) {
+            const currentArtwork = orderArtworks.find(art => String(art._id) === String(artworkId));
+            const approvalId = idString(currentArtwork?.status?.approval);
+            const saleId = idString(currentArtwork?.status?.sale);
+            if (approvalId === idString(reservedStatus)
+                || approvalId === idString(soldOutStatus)
+                || approvalId === idString(rejectedStatus)
+                || saleId === idString(soldOutStatus)) {
+                throw new Error('ARTWORK_NOT_AVAILABLE');
+            }
+            if (!isPostTermPurchasable(currentArtwork, new Date())) {
+                throw new Error('ARTWORK_NOT_AVAILABLE');
+            }
+            if (!approvedStatus || !availableStatus
+                || approvalId !== idString(approvedStatus)
+                || saleId !== idString(availableStatus)) {
+                throw new Error('ARTWORK_NOT_AVAILABLE');
+            }
+            const lockFilter = {
+                _id: new mongo.ObjectId(artworkId),
+                'status.approval': approvedStatus._id,
+                'status.sale': availableStatus._id,
+                $or: [
+                    { 'postTermSale.applicable': { $ne: true } },
+                    { 'postTermSale.initialSaleEndsAt': { $gt: new Date() } },
+                    { 'postTermSale.mode': constants.MODES.STANDARD },
+                    { 'postTermSale.decision': constants.DECISIONS.CONTINUE }
+                ]
+            };
             
             // Atomic update: only update if not already reserved
             const updateResult = await Artwork.onUpdate(
-                { 
-                    _id: new mongo.ObjectId(artworkId),
-                    "status.approval": { $ne: reservedStatus._id }
-                },
+                lockFilter,
                 { "status.approval": reservedStatus._id },
                 undefined,
                 '',
@@ -87,29 +233,56 @@ exports.onCreate = async function (request, response) {
 
             if (!updateResult) {
                 console.log(`[Backend Checkout Flow 5.2 - Failed] Artwork ${artworkId} is already reserved! Aborting transaction.`);
-                throw new Error("RESERVED_ALREADY");
+                throw new Error('ARTWORK_NOT_AVAILABLE');
             }
+            const originalArtwork = currentArtwork;
+            lockedArtworks.push({
+                _id: artworkId,
+                approvalStatus: originalArtwork && originalArtwork.status
+                    ? originalArtwork.status.approval
+                    : null
+            });
             console.log(`[Backend Checkout Flow 5.2 - Success] Artwork ${artworkId} successfully locked.`);
         }
 
         // --- 3. CREATE ORDER RECORD ---
         console.log(`[Backend Checkout Flow 5.3] Creating order record for order number: ${customOrderNumber}`);
-        const doc = await Order.onCreate(request.body);
+        let doc;
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+            try {
+                request.body.orderNumber = customOrderNumber;
+                doc = await Order.onCreate(request.body);
+                break;
+            } catch (createError) {
+                const duplicateOrderNumber = createError?.code === 11000
+                    && (createError.keyPattern?.orderNumber || /orderNumber/i.test(createError.message || ''));
+                if (!duplicateOrderNumber || attempt === 2) throw createError;
+                customOrderNumber = await generateOrderCode({
+                    artist: orderArtist,
+                    courseLevel: firstArtwork?.courseLevel || '00'
+                });
+            }
+        }
+        createdOrder = doc;
         console.log(`[Backend Checkout Flow 5.3 - Success] Order created with _id: ${doc._id}`);
 
-        // --- 4. CONTINUING WITH OTHER PROCESSES (PDF, EMAIL, ETC.) ---
-
-        console.log(`[Backend Checkout Flow 5.4] Processing completed successfully.`);
-
+        // --- 4. QUEUE FOLLOW-UP PROCESSES (PDF, EMAIL, ETC.) ---
+        // The order is already reserved and persisted. Do not make the customer wait
+        // for Puppeteer or an external SMTP server before moving to payment.
+        console.log(`[Backend Checkout Flow 5.4] Order created; queued invoice/email follow-up.`);
+        schedulePostCreate(async () => {
+        let mailFailed = false;
+        let invoiceCompleted = false;
+        try {
         let invoiceData = {
             orderId: doc.orderNumber || doc._id.toString(),
             customerName: doc.contact?.name || "Customer",
-            customerAddress: doc.address?.shipping || doc.address?.bill || "N/A",
+            customerAddress: doc.address?.bill || doc.address?.shipping || "N/A",
             items: [],
             total: 0,
-            accountName: "กองทุนพุทธศิลป์",
-            bankName: "ธนาคารกรุงไทย",
-            accountNo: "XXX-X-XXXXX-X"
+            accountName: "มหาวิทยาลัยแม่ฟ้าหลวง (กองทุนพุทธศิลปกรรมแห่งมหาวิทยาลัยแม่ฟ้าหลวง)",
+            bankName: "ธนาคารกรุงเทพฯ สาขาแม่ฟ้าหลวงฯ",
+            accountNo: "672-0-50576-4"
         };
 
         if (doc.artwork && doc.artwork.length > 0) {
@@ -166,7 +339,12 @@ exports.onCreate = async function (request, response) {
         }
         fs.writeFileSync(filePath, pdfBuffer);
 
-        await Order.onUpdate({ _id: doc._id }, { invoiceFile: fileName });
+        await Order.onUpdate({ _id: doc._id }, {
+            invoiceFile: fileName,
+            invoiceStatus: 'Completed',
+            invoiceError: ''
+        });
+        invoiceCompleted = true;
 
         const buyerName = doc.contact?.name || "Customer";
         const to = doc.contact?.email;
@@ -229,11 +407,43 @@ exports.onCreate = async function (request, response) {
             }
         } catch (adminEmailErr) {
             console.error("Failed to send new order notification to admin:", adminEmailErr.message);
+            mailFailed = true;
         }
+        await Order.onUpdate(
+            { _id: doc._id },
+            {
+                mailStatus: mailFailed ? 'Failed' : 'Completed',
+                mailError: mailFailed ? 'Admin notification failed' : ''
+            }
+        );
+        } catch (postCreateErr) {
+            console.error(`[Backend Checkout Flow 5.4] Order ${doc._id} created, but invoice/email processing failed:`, postCreateErr);
+            await Order.onUpdate(
+                { _id: doc._id },
+                {
+                    invoiceStatus: invoiceCompleted ? 'Completed' : 'Failed',
+                    invoiceError: invoiceCompleted ? '' : String(postCreateErr.message || postCreateErr),
+                    mailStatus: 'Failed',
+                    mailError: String(postCreateErr.message || postCreateErr)
+                }
+            ).catch(statusErr => console.error('[Backend Checkout] Could not record mail failure:', statusErr));
+        }
+        });
 
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         console.error(err);
+        if (!createdOrder && reservedStatusId && lockedArtworks.length > 0) {
+            await Promise.all(lockedArtworks.map(art => ArtworkModel.updateOne(
+                { _id: art._id, 'status.approval': reservedStatusId },
+                { $set: { 'status.approval': art.approvalStatus } }
+            ))).catch(rollbackErr => {
+                console.error('[Backend Checkout Rollback] Failed to restore artwork status:', rollbackErr);
+            });
+        }
+        if (err?.message === 'ARTWORK_NOT_AVAILABLE') {
+            return sendBusinessError(response, 40900, err.message);
+        }
         return ResMessage.sendResponse(response, 0, 40400);
     }
 };
@@ -241,8 +451,21 @@ exports.onCreate = async function (request, response) {
 exports.onUpload = async function (request, response) {
     try {
         console.log(`[Backend Checkout Flow 6.1] Received upload request for payment slip...`);
+        if (!isValidObjectId(request.body?._id) || !request.file) {
+            return sendBusinessError(response, 40000, 'PAYMENT_SLIP_AND_ORDER_REQUIRED');
+        }
         let query = {};
         query._id = new mongo.ObjectId(request.body._id);
+        const currentOrder = await Order.onQuery(query);
+        if (!currentOrder) return ResMessage.sendResponse(response, 0, 40400);
+        const currentStatus = titleValue(currentOrder.status?.title || currentOrder.status);
+        if (currentStatus !== 'Reserved') {
+            return sendBusinessError(response, 40900, 'ORDER_NOT_AWAITING_PAYMENT');
+        }
+        // Compare-and-set the payment upload against the Reserved/no-slip state.
+        // This prevents a timeout cron claim from being overwritten by a late upload.
+        query.status = idString(currentOrder.status);
+        query.$or = [{ image: { $exists: false } }, { image: null }, { image: '' }];
         const imagePath = Order.getImageUrl(request, request.file.destination, request.file.filename);
 
         // Find "Pending" status in settings to update order status
@@ -259,10 +482,12 @@ exports.onUpload = async function (request, response) {
             console.log(`[Backend Checkout Flow 6.2.1] Found Pending status ID: ${pendingStatus._id}, updating order status.`);
         } else {
             console.warn(`[Backend Checkout Flow 6.2.2] Warning: Pending status not found in settings.`);
+            return sendBusinessError(response, 40000, 'PENDING_STATUS_NOT_CONFIGURED');
         }
 
         console.log(`[Backend Checkout Flow 6.2] Saving payment slip image path: ${imagePath} for order ID: ${request.body._id}`);
         const doc = await Order.onUpdate(query, updateData, [], "image status");
+        if (!doc) return sendBusinessError(response, 40900, 'ORDER_NOT_AWAITING_PAYMENT');
         
         // --- 📧 ส่งเมลแจ้งเมื่อได้รับสลิป (Bil) ---
         try {
@@ -337,13 +562,46 @@ exports.onUpload = async function (request, response) {
 
 exports.onUpdate = async function (request, response) {
     try {
-        let query = {}
-        query._id = new mongo.ObjectId(request.body._id);
+        if (!isValidObjectId(request.body?._id)) {
+            return sendBusinessError(response, 40000, 'ORDER_ID_REQUIRED');
+        }
+        const query = { _id: new mongo.ObjectId(request.body._id) };
+        const beforeDoc = await Order.onQuery(query);
+        if (!beforeDoc) return ResMessage.sendResponse(response, 0, 40400);
 
-        const doc = await Order.onUpdate(query, request.body);
+        const updateData = { ...request.body };
+        delete updateData._id;
+        const allowedFields = new Set([
+            'status', 'remark', 'contact', 'address', 'carrier',
+            'trackingId', 'deliveryDate', 'invoiceFile', 'image',
+            'invoiceStatus', 'invoiceError', 'mailStatus', 'mailError',
+            'certificateStatus', 'certificateError'
+        ]);
+        Object.keys(updateData).forEach(key => {
+            if (!allowedFields.has(key)) delete updateData[key];
+        });
+
+        const currentStatusName = titleValue(beforeDoc.status?.title || beforeDoc.status);
+        let nextStatusName = currentStatusName;
+        if (Object.prototype.hasOwnProperty.call(updateData, 'status')) {
+            const nextStatusId = idString(updateData.status);
+            if (!isValidObjectId(nextStatusId)) {
+                return sendBusinessError(response, 40000, 'ORDER_STATUS_REQUIRED');
+            }
+            const nextStatus = await StatusModel.findById(nextStatusId).lean();
+            nextStatusName = titleValue(nextStatus?.title);
+            if (!nextStatusName || !allowedTransitions[currentStatusName]?.has(nextStatusName)) {
+                return sendBusinessError(response, 40900, 'ORDER_STATE_TRANSITION_NOT_ALLOWED');
+            }
+            updateData.status = nextStatus._id;
+        }
+
+        const statusChanged = nextStatusName !== currentStatusName;
+        const doc = await Order.onUpdate(query, updateData);
+        const workflowStatuses = await loadStatuses();
 
         // If order status is "Rejected", set artwork status back to "Available"
-        if (doc && doc.status && doc.status.title) {
+        if (doc && statusChanged && doc.status && doc.status.title) {
             const isRejected = doc.status.title.some(t => t.value === 'Rejected' || t.value === 'ไม่นุมัติ');
             const isApproved = doc.status.title.some(t => t.value === 'Approved' || t.value === 'อนุมัติ');
 
@@ -355,7 +613,7 @@ exports.onUpdate = async function (request, response) {
                     if (soldOutStatus && approvedStatus) {
                         for (let art of doc.artwork) {
                              await Artwork.onUpdate(
-                                { _id: new mongo.ObjectId(art._id) },
+                                { _id: new mongo.ObjectId(art._id), 'status.approval': workflowStatuses.Reserved?._id },
                                 { "status.sale": soldOutStatus._id, "status.approval": approvedStatus._id }
                              );
                         }
@@ -364,6 +622,10 @@ exports.onUpdate = async function (request, response) {
 
                 // Automatically generate and save certificate when approved
                 console.log(`Order ${doc.orderNumber} approved. Generating certificate...`);
+                await Order.onUpdate(
+                    { _id: doc._id },
+                    { certificateStatus: 'Pending', certificateError: '' }
+                );
                 try {
                     // Re-fetch with full population to ensure art.image exists
                     const fullDoc = await Order.onQuery({ _id: doc._id });
@@ -372,23 +634,29 @@ exports.onUpdate = async function (request, response) {
                     // --- 📧 Send Approved Email ---
                     const buyerEmail = fullDoc.contact?.email;
                     if (buyerEmail) {
-                        const artworkTitle = fullDoc.artwork && fullDoc.artwork[0] 
-                            ? (fullDoc.artwork[0].title.find(t => t.key === 'en')?.value || fullDoc.artwork[0].title[0]?.value || "Artwork")
-                            : "Artwork";
-
-                        const html = approvedOrderMail({
-                            buyerName: fullDoc.contact?.name || "Customer",
-                            orderId: fullDoc.orderNumber || fullDoc._id,
-                            artworkTitle,
-                            price: fullDoc.artwork && fullDoc.artwork[0] ? fullDoc.artwork[0].price : 0
-                        });
-
+                        const artwork = fullDoc.artwork && fullDoc.artwork[0] ? fullDoc.artwork[0] : {};
+                        const artworkTitle = artwork.title?.find(t => t.key === 'en')?.value
+                            || artwork.title?.[0]?.value
+                            || "Artwork";
                         const orderIdentifier = fullDoc.orderNumber ? fullDoc.orderNumber.replace(/-/g, '_') : fullDoc._id;
                         const root = path.join(__dirname, '../../../../public');
                         const buyerName = sanitize(fullDoc.contact?.name || (fullDoc.user && fullDoc.user.name) || "Customer");
                         const buyerId = fullDoc.user ? (fullDoc.user._id || fullDoc.user) : "Guest";
 
                         const attachments = [];
+                        const artworkImagePath = resolveStoredPublicFile(artwork.image, root);
+                        const artworkImageCid = artworkImagePath
+                            ? `artwork-${String(orderIdentifier).replace(/[^a-zA-Z0-9_-]/g, '_')}@buddhist-art-mfu`
+                            : '';
+
+                        const html = approvedOrderMail({
+                            buyerName: fullDoc.contact?.name || "Customer",
+                            orderId: fullDoc.orderNumber || fullDoc._id,
+                            artworkTitle,
+                            price: artwork.price || 0,
+                            artwork,
+                            imageCid: artworkImageCid
+                        });
                         
                         // 1. Certificate (from memory buffer)
                         attachments.push({
@@ -397,7 +665,20 @@ exports.onUpdate = async function (request, response) {
                             contentType: 'application/pdf'
                         });
 
-                        // 2. Invoice (from disk)
+                        // 2. Artwork image shown inside the certificate email body.
+                        if (artworkImagePath) {
+                            attachments.push({
+                                filename: path.basename(artworkImagePath),
+                                path: artworkImagePath,
+                                cid: artworkImageCid,
+                                contentDisposition: 'inline',
+                                contentType: path.extname(artworkImagePath).toLowerCase() === '.png'
+                                    ? 'image/png'
+                                    : 'image/jpeg'
+                            });
+                        }
+
+                        // 3. Invoice (from disk)
                         if (fullDoc.invoiceFile) {
                             const invoicePath = path.join(root, `account/User/${buyerId}_${buyerName}/Invoice/${fullDoc.invoiceFile}`);
                             if (fs.existsSync(invoicePath)) {
@@ -405,7 +686,7 @@ exports.onUpdate = async function (request, response) {
                             }
                         }
 
-                        // 3. Slip/Bil (from disk)
+                        // 4. Slip/Bil (from disk)
                         let slipPath = "";
                         if (fullDoc.image) {
                             let cleanUrl = decodeURIComponent(fullDoc.image.replace(/^https?:\/\/[^/]+/, ""));
@@ -428,8 +709,16 @@ exports.onUpdate = async function (request, response) {
 
                         await sendMail(buyerEmail, 'การชำระเงินได้รับการอนุมัติและเอกสารผลงาน - พุทธศิลปกรรม มฟล.', '', html, attachments);
                     }
+                    await Order.onUpdate(
+                        { _id: doc._id },
+                        { certificateStatus: 'Completed', certificateError: '' }
+                    );
                 } catch (certErr) {
                     console.error("Auto Certificate Generation or Email Failed:", certErr.message);
+                    await Order.onUpdate(
+                        { _id: doc._id },
+                        { certificateStatus: 'Failed', certificateError: String(certErr.message || certErr) }
+                    ).catch(statusErr => console.error('[Order] Could not record certificate failure:', statusErr));
                 }
             }
 
@@ -463,10 +752,16 @@ exports.onUpdate = async function (request, response) {
 
                     if (availableStatus && approvedStatus) {
                         for (let art of doc.artwork) {
+                            const artworkState = await ArtworkModel.findById(art._id)
+                                .select('postTermSale status.approval status.sale')
+                                .lean();
+                            const restoreSaleStatus = getEffectiveMode(artworkState?.postTermSale) === constants.MODES.DISPLAY
+                                ? (workflowStatuses.Exhibition || availableStatus)
+                                : availableStatus;
                             await Artwork.onUpdate(
-                                { _id: new mongo.ObjectId(art._id) },
+                                { _id: new mongo.ObjectId(art._id), 'status.approval': workflowStatuses.Reserved?._id },
                                 { 
-                                    "status.sale": availableStatus._id,
+                                    "status.sale": restoreSaleStatus._id,
                                     "status.approval": approvedStatus._id 
                                 }
                             );
@@ -537,12 +832,12 @@ exports.onDownloadInvoice = async function (request, response) {
         let invoiceData = {
             orderId: doc.orderNumber || doc._id.toString(),
             customerName: doc.contact?.name || "Customer",
-            customerAddress: doc.address?.shipping || doc.address?.bill || "N/A",
+            customerAddress: doc.address?.bill || doc.address?.shipping || "N/A",
             items: [],
             total: 0,
-            accountName: "กองทุนพุทธศิลป์",
-            bankName: "ธนาคารกรุงไทย",
-            accountNo: "XXX-X-XXXXX-X"
+            accountName: "มหาวิทยาลัยแม่ฟ้าหลวง (กองทุนพุทธศิลปกรรมแห่งมหาวิทยาลัยแม่ฟ้าหลวง)",
+            bankName: "ธนาคารกรุงเทพฯ สาขาแม่ฟ้าหลวงฯ",
+            accountNo: "672-0-50576-4"
         };
 
         if (doc.artwork && doc.artwork.length > 0) {
@@ -590,6 +885,9 @@ exports.onDownloadInvoice = async function (request, response) {
 exports.onDownloadCertificate = async function (request, response) {
     try {
         const orderId = request.params.id;
+        response.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        response.setHeader('Pragma', 'no-cache');
+        response.setHeader('Expires', '0');
         const query = { _id: new mongo.ObjectId(orderId) };
         const doc = await Order.onQuery(query);
         
@@ -637,11 +935,19 @@ exports.onDownloadCertificate = async function (request, response) {
 
         try {
             const pdfBuffer = await generateAndSaveCertificateFile(doc);
+            await Order.onUpdate(
+                { _id: doc._id },
+                { certificateStatus: 'Completed', certificateError: '' }
+            );
             response.setHeader('Content-Type', 'application/pdf');
             response.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
             return response.send(pdfBuffer);
         } catch (genErr) {
             console.error('Certificate Generation Error:', genErr);
+            await Order.onUpdate(
+                { _id: doc._id },
+                { certificateStatus: 'Failed', certificateError: String(genErr.message || genErr) }
+            ).catch(statusErr => console.error('[Order] Could not record certificate failure:', statusErr));
             return ResMessage.sendResponse(response, 0, 40400, "Failed to generate certificate");
         }
 
@@ -673,19 +979,7 @@ async function generateAndSaveCertificateFile(doc) {
 
     for (const art of doc.artwork) {
         // 1. Resolve Artwork Image Path
-        let artworkLocalPath = "";
-        if (art.image) {
-            let cleanUrl = decodeURIComponent(art.image.replace(/^https?:\/\/[^/]+/, ""));
-            if (cleanUrl.includes('/data/uploads/')) {
-                const parts = cleanUrl.split('/data/uploads/');
-                artworkLocalPath = path.join(root, 'data/uploads', parts[1]);
-            } else if (cleanUrl.includes('/uploads/')) {
-                const parts = cleanUrl.split('/uploads/');
-                artworkLocalPath = path.join(root, parts[1]);
-            } else {
-                artworkLocalPath = path.join(root, cleanUrl.replace(/^\//, ""));
-            }
-        }
+        const artworkLocalPath = resolveStoredPublicFile(art.image, root);
 
         if (!artworkLocalPath || !fs.existsSync(artworkLocalPath)) {
             console.warn(`[SKIP] Artwork image NOT FOUND at: ${artworkLocalPath}`);
@@ -701,17 +995,21 @@ async function generateAndSaveCertificateFile(doc) {
 
         const info = {
             artistName: getVal(art.artist?.name, 'th') || getVal(art.artist?.name, 'en') || "Buddhist Art MFU",
+            artistNameEN: getVal(art.artist?.name, 'en'),
             year: new Date(art.createdAt || Date.now()).getFullYear().toString(),
             artworkNameTH: getVal(art.title, 'th'),
             artworkNameEN: getVal(art.title, 'en'),
             size: getVal(art.size, 'en') || getVal(art.size, 'th') || "N/A",
             technique: getVal(art.technique, 'th') || getVal(art.technique, 'en') || "N/A",
+            techniqueEN: getVal(art.technique, 'en'),
+            techniqueTH: getVal(art.technique, 'th'),
             price: `${(art.price || 0).toLocaleString()} THB`,
-            description: getVal(art.description, 'th') || getVal(art.description, 'en') || ""
+            description: getVal(art.description, 'th') || getVal(art.description, 'en') || "",
+            artworkCode: art.artworkCode
         };
 
-        // 3. Generate Single Certificate using Puppeteer
-        const certBytes = await PdfService.generateCertificate({
+        // 3. Generate the same Certificate of Authenticity layout used in the email.
+        const certBytes = await PdfService.generateCertificateOfAuthenticity({
             artworkPath: artworkLocalPath,
             info
         });
@@ -752,4 +1050,37 @@ function sanitize(text) {
         return String(enVal || thVal || text[0]?.value || "").trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "");
     }
     return String(text).trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "");
+}
+
+function resolveStoredPublicFile(image, root) {
+    if (!image) return "";
+
+    let cleanUrl;
+    try {
+        cleanUrl = decodeURIComponent(String(image).replace(/^https?:\/\/[^/]+/, ""));
+    } catch (error) {
+        return "";
+    }
+
+    let relativePath;
+    if (cleanUrl.includes('/data/uploads/')) {
+        relativePath = path.join('data/uploads', cleanUrl.split('/data/uploads/')[1]);
+    } else if (cleanUrl.includes('/uploads/')) {
+        relativePath = cleanUrl.split('/uploads/')[1];
+    } else {
+        relativePath = cleanUrl.replace(/^[/\\]+/, "");
+    }
+
+    const resolvedRoot = path.resolve(root);
+    const resolvedPath = path.resolve(resolvedRoot, relativePath);
+    const rootPrefix = `${resolvedRoot}${path.sep}`;
+
+    // Keep email attachments inside backend/public even if a stored URL is malformed.
+    if (resolvedPath !== resolvedRoot && !resolvedPath.startsWith(rootPrefix)) return "";
+
+    try {
+        return fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile() ? resolvedPath : "";
+    } catch (error) {
+        return "";
+    }
 }

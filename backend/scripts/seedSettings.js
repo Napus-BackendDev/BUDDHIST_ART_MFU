@@ -79,7 +79,7 @@ async function seedAll() {
         const saleStatuses = [
             {
                 _id: mongoose.Types.ObjectId("69678075e5f76f7a8c42dc12"),
-                title: [{ key: 'en', value: 'Available' }, { key: 'th', value: 'ว่าง' }],
+                title: [{ key: 'en', value: 'Available' }, { key: 'th', value: 'พร้อมขาย' }],
                 group: saleGroup._id
             },
             {
@@ -116,11 +116,11 @@ async function seedAll() {
         // Student Statuses
         const studentStatuses = [
             {
-                title: [{ key: 'en', value: 'NewStudent' }, { key: 'th', value: 'นักศึกษาใหม่' }],
+                title: [{ key: 'en', value: 'NewStudent' }, { key: 'th', value: 'ผู้เรียนใหม่' }],
                 group: studentGroup._id
             },
             {
-                title: [{ key: 'en', value: 'OldStudent' }, { key: 'th', value: 'นักศึกษาเก่า' }],
+                title: [{ key: 'en', value: 'OldStudent' }, { key: 'th', value: 'ผู้เรียนเก่า' }],
                 group: studentGroup._id
             }
         ];
@@ -249,13 +249,13 @@ async function seedAll() {
             {
                 title: [
                     { key: 'en', value: 'University' },
-                    { key: 'th', value: 'จัดเก็บอยู่ที่มหาวิทยาลัย' }
+                    { key: 'th', value: 'จัดเก็บไว้ภายในมหาลัย' }
                 ]
             },
             {
                 title: [
                     { key: 'en', value: 'Home' },
-                    { key: 'th', value: 'จัดเก็บไว้ที่บ้าน' }
+                    { key: 'th', value: 'จัดเก็บไว้ภายนอกมหาลัย' }
                 ]
             }
         ];

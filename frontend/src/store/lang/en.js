@@ -32,6 +32,7 @@ const en = {
     sidebar: {
         main: "Main",
         overview: "Overview",
+        analytics: "Analytics",
         operations: "Operations",
         orders: "Orders",
         artworks: "Artworks",
@@ -39,6 +40,7 @@ const en = {
         submissions: "Submissions",
         dataCenter: "Data Center",
         users: "User Management",
+        returnToWebsite: "Back to Website",
         signOut: "Sign Out"
     }
 }

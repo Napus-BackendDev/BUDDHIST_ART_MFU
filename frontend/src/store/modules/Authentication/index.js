@@ -2,13 +2,22 @@ import Service from "../../../service/api.js";
 import router from "../../../router/index.js";
 import store from "@/store/store";
 
+const safeRedirect = () => {
+    const value = router.currentRoute.query && router.currentRoute.query.redirect;
+    return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
+        ? value
+        : null;
+};
+
 const LoginModule = {
     namespaced: true,
     state: {
         showSignInModal: false,
         isSignIn: false,
         is2FA: false,
-        userId: null
+        userId: null,
+        role: null,
+        postLoginContext: null
 
     },
 
@@ -31,6 +40,14 @@ const LoginModule = {
             state.userId = obj
         },
 
+        postLoginContext(state, context) {
+            state.postLoginContext = context
+        },
+
+        role(state, value) {
+            state.role = value;
+        },
+
 
     },
 
@@ -41,6 +58,17 @@ const LoginModule = {
                 if (objs && objs.xAccessToken) {
                     store.commit('xAccessToken', objs.xAccessToken);
                     commit('userId', objs.accounts);
+                    commit('role', objs.role || null);
+                    let pendingCheckout = null;
+                    try {
+                        pendingCheckout = JSON.parse(localStorage.getItem('pendingCheckout') || 'null');
+                    } catch (error) {
+                        localStorage.removeItem('pendingCheckout');
+                    }
+                    if (pendingCheckout && typeof pendingCheckout.redirect === 'string') {
+                        commit('postLoginContext', pendingCheckout);
+                        localStorage.removeItem('pendingCheckout');
+                    }
                     // store.dispatch('personal/config', {}); 
                 }
             } catch (e) {
@@ -75,14 +103,37 @@ const LoginModule = {
                     store.commit('xAccessToken', token); // Update root store immediately
                     store.commit("auth/showSignInModal", false);
                     store.commit("auth/userId", user._id);
+                    store.commit("auth/role", role);
 
-                    // Redirection Logic (Avoid NavigationDuplicated)
-                    if (router.currentRoute.path !== '/payment') {
+                    const postLoginContext = store.getters['auth/postLoginContext'];
+
+                    // Checkout login returns to the artwork page and restores the cart.
+                    if (postLoginContext) {
+                        const target = postLoginContext.redirect || '/artworks';
+                        store.commit('auth/postLoginContext', null);
+
+                        const restoreCart = () => {
+                            if (postLoginContext.reopenCart) {
+                                store.commit('cart/SET_SHOW_CART', true);
+                            }
+                        };
+
+                        if (router.currentRoute.fullPath !== target) {
+                            router.push(target).then(restoreCart).catch(err => {
+                                if (err.name === 'NavigationDuplicated') restoreCart();
+                                else throw err;
+                            });
+                        } else {
+                            restoreCart();
+                        }
+                    } else if (router.currentRoute.path !== '/payment') {
                         const userRole = (role || 'Customer').toLowerCase();
-                        let target = '/user';
+                        let target = safeRedirect() || '/user';
 
-                        if (userRole === 'admin') target = '/admin';
-                        else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
+                        if (!safeRedirect()) {
+                            if (userRole === 'admin') target = '/admin';
+                            else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
+                        }
 
                         if (router.currentRoute.path !== target) {
                             router.push(target).catch(err => {
@@ -127,14 +178,37 @@ const LoginModule = {
                     store.commit('xAccessToken', token); // Update root store immediately
                     store.commit("auth/showSignInModal", false);
                     store.commit("auth/userId", user._id);
+                    store.commit("auth/role", role);
 
-                    // Redirection Logic (Avoid NavigationDuplicated)
-                    if (router.currentRoute.path !== '/payment') {
+                    const postLoginContext = store.getters['auth/postLoginContext'];
+
+                    // Checkout login returns to the artwork page and restores the cart.
+                    if (postLoginContext) {
+                        const target = postLoginContext.redirect || '/artworks';
+                        store.commit('auth/postLoginContext', null);
+
+                        const restoreCart = () => {
+                            if (postLoginContext.reopenCart) {
+                                store.commit('cart/SET_SHOW_CART', true);
+                            }
+                        };
+
+                        if (router.currentRoute.fullPath !== target) {
+                            router.push(target).then(restoreCart).catch(err => {
+                                if (err.name === 'NavigationDuplicated') restoreCart();
+                                else throw err;
+                            });
+                        } else {
+                            restoreCart();
+                        }
+                    } else if (router.currentRoute.path !== '/payment') {
                         const userRole = (role || 'Customer').toLowerCase();
-                        let target = '/user';
+                        let target = safeRedirect() || '/user';
 
-                        if (userRole === 'admin') target = '/admin';
-                        else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
+                        if (!safeRedirect()) {
+                            if (userRole === 'admin') target = '/admin';
+                            else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
+                        }
 
                         if (router.currentRoute.path !== target) {
                             router.push(target).catch(err => {
@@ -218,6 +292,12 @@ const LoginModule = {
 
         userId(state) {
             return state.userId;
+        },
+        role(state) {
+            return state.role;
+        },
+        postLoginContext(state) {
+            return state.postLoginContext;
         },
     },
 };

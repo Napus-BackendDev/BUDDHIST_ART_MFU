@@ -208,6 +208,16 @@ h1, h2, h3, h4, h5, h6 {
         color: #4299e1;
         &:hover { background-color: #ebf8ff; }
     }
+
+    &.icon-download {
+        color: #718096;
+        &:hover { background-color: #f7fafc; }
+    }
+
+    &.icon-certificate {
+        color: #dd6b20;
+        &:hover { background-color: #fffaf0; }
+    }
 }
 
 .custom-table {
@@ -327,3 +337,8 @@ a, button, .clickable {
 .ql-size-huge {
   font-size: 2.2em !important;
 }
+
+// Cross-page responsive foundations. Keep this import last so it can safely
+// correct legacy fixed widths from page and CoreUI components.
+@import "responsive";
+@import "admin-modals";

@@ -1,11 +1,11 @@
 <template>
-    <CModal 
-        :title="$i18n.locale === 'en' ? 'Edit Artwork' : 'แก้ไขผลงานศิลปะ'" 
-        :show="show" 
+    <CModal
+        :title="$i18n.locale === 'en' ? 'Edit Artwork' : 'แก้ไขผลงานศิลปะ'"
+        :show="show"
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="edit-artwork-modal"
+        class="edit-artwork-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -24,25 +24,40 @@
             </div>
         </template>
 
-        <div class="px-3 py-2">
+        <div class="wizard-body px-3 py-2">
+            <div class="wizard-content-grid">
+                <div class="wizard-form-column">
+                    <div class="wizard-panel">
+                        <div class="step-heading">
+                            <span>{{ currentStep === 1 ? '01' : '02' }}</span>
+                            <div>
+                                <h6>{{ currentStep === 1
+                                    ? ($i18n.locale === 'en' ? 'Artwork details in Thai' : 'ข้อมูลเบื้องต้นของผลงาน')
+                                    : ($i18n.locale === 'en' ? 'Artwork details in English' : 'ข้อมูลผลงานภาษาอังกฤษ') }}</h6>
+                                <p>{{ currentStep === 1
+                                    ? ($i18n.locale === 'en' ? 'Enter the Thai reference information first.' : 'กรอกข้อมูลอ้างอิงภาษาไทยก่อน')
+                                    : ($i18n.locale === 'en' ? 'Add the English information before saving.' : 'กรอกข้อมูลภาษาอังกฤษก่อนบันทึกผลงาน') }}</p>
+                            </div>
+                        </div>
+
             <!-- Row 1: Titles -->
             <CRow>
-                <CCol md="6">
+                <CCol md="12" v-show="currentStep === 1">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Title (TH)' : 'ชื่อภาษาไทย (TH)' }}</label>
-                        <CInput 
-                            v-model="form.title.th" 
-                            :placeholder="$i18n.locale === 'en' ? 'Thai Title' : 'ชื่อภาษาไทย'" 
+                        <CInput
+                            v-model="form.title.th"
+                            :placeholder="$i18n.locale === 'en' ? 'Thai Title' : 'ชื่อภาษาไทย'"
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
-                <CCol md="6">
+                <CCol md="12" v-show="currentStep === 2">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Title (EN)' : 'ชื่อภาษาอังกฤษ (EN)' }}</label>
-                        <CInput 
-                            v-model="form.title.en" 
-                            :placeholder="$i18n.locale === 'en' ? 'English Title' : 'ชื่อภาษาอังกฤษ'" 
+                        <CInput
+                            v-model="form.title.en"
+                            :placeholder="$i18n.locale === 'en' ? 'English Title' : 'ชื่อภาษาอังกฤษ'"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -57,27 +72,27 @@
                         <div class="searchable-dropdown">
                             <div class="search-input-wrapper position-relative">
                                 <CIcon name="cil-user" class="input-icon-left" />
-                                <CInput 
-                                    v-model="artistSearchQuery" 
-                                    :placeholder="$i18n.locale === 'en' ? 'Search or select artist...' : 'ค้นหาหรือเลือกศิลปิน...'" 
+                                <CInput
+                                    v-model="artistSearchQuery"
+                                    :placeholder="$i18n.locale === 'en' ? 'Search or select artist...' : 'ค้นหาหรือเลือกศิลปิน...'"
                                     class="custom-input-searchable mb-0"
                                     @focus="showArtistDropdown = true"
                                     @input="handleArtistSearch"
                                     @blur="handleArtistBlur"
                                 />
                                 <div class="dropdown-arrow-wrapper" @click="toggleArtistDropdown">
-                                    <CIcon 
-                                        :name="showArtistDropdown ? 'cil-chevron-top' : 'cil-chevron-bottom'" 
-                                        class="dropdown-arrow-icon" 
+                                    <CIcon
+                                        :name="showArtistDropdown ? 'cil-chevron-top' : 'cil-chevron-bottom'"
+                                        class="dropdown-arrow-icon"
                                     />
                                 </div>
                             </div>
-                            
+
                             <!-- Search Results List -->
                             <div v-if="showArtistDropdown" class="artist-results-list shadow-lg">
-                                <div 
-                                    v-for="artist in filteredArtists" 
-                                    :key="artist._id" 
+                                <div
+                                    v-for="artist in filteredArtists"
+                                    :key="artist._id"
                                     class="artist-result-item"
                                     :class="{ 'active': form.artist === artist._id }"
                                     @mousedown="selectArtist(artist)"
@@ -105,14 +120,14 @@
                         <CDropdown :key="form.category" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
-                                     <span class="text-dark">{{ selectedCategoryName }}</span>
-                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
+                                    <span class="text-dark">{{ selectedCategoryName }}</span>
+                                    <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
                             <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
-                                <CDropdownItem 
-                                    v-for="cat in categories" 
-                                    :key="cat._id" 
+                                <CDropdownItem
+                                    v-for="cat in categories"
+                                    :key="cat._id"
                                     @click="handleCategorySelect(cat._id)"
                                 >
                                     {{ getName($i18n.locale, cat) }}
@@ -125,22 +140,22 @@
 
             <!-- Row 4: Technique -->
             <CRow>
-                <CCol md="6">
+                <CCol md="12" v-show="currentStep === 1">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Technique (TH)' : 'เทคนิคภาษาไทย (TH)' }}</label>
-                        <CInput 
-                            v-model="form.technique.th" 
-                            :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น สีน้ำมันบนผ้าใบ'" 
+                        <CInput
+                            v-model="form.technique.th"
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น สีน้ำมันบนผ้าใบ'"
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
-                <CCol md="6">
+                <CCol md="12" v-show="currentStep === 2">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Technique (EN)' : 'เทคนิคภาษาอังกฤษ (EN)' }}</label>
-                        <CInput 
-                            v-model="form.technique.en" 
-                            :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น Oil on Canvas'" 
+                        <CInput
+                            v-model="form.technique.en"
+                            :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น Oil on Canvas'"
                             class="custom-input mb-0"
                         />
                     </div>
@@ -156,10 +171,10 @@
                             <div class="flex-grow-1">
                                 <div class="input-group-custom">
                                     <span class="dimension-prefix">W</span>
-                                    <CInput 
+                                    <CInput
                                         type="number"
-                                        v-model="form.width" 
-                                        :placeholder="$i18n.locale === 'en' ? 'Width' : 'ความกว้าง'" 
+                                        v-model="form.width"
+                                        :placeholder="$i18n.locale === 'en' ? 'Width' : 'ความกว้าง'"
                                         class="custom-input-with-prefix mb-0"
                                     />
                                 </div>
@@ -168,10 +183,10 @@
                             <div class="flex-grow-1">
                                 <div class="input-group-custom">
                                     <span class="dimension-prefix">L</span>
-                                    <CInput 
+                                    <CInput
                                         type="number"
-                                        v-model="form.height" 
-                                        :placeholder="$i18n.locale === 'en' ? 'Length' : 'ความยาว'" 
+                                        v-model="form.height"
+                                        :placeholder="$i18n.locale === 'en' ? 'Length' : 'ความยาว'"
                                         class="custom-input-with-prefix mb-0"
                                     />
                                 </div>
@@ -181,10 +196,10 @@
                                 <div class="flex-grow-1">
                                     <div class="input-group-custom">
                                         <span class="dimension-prefix">H</span>
-                                        <CInput 
+                                        <CInput
                                             type="number"
-                                            v-model="form.depth" 
-                                            :placeholder="$i18n.locale === 'en' ? 'Height' : 'ความสูง'" 
+                                            v-model="form.depth"
+                                            :placeholder="$i18n.locale === 'en' ? 'Height' : 'ความสูง'"
                                             class="custom-input-with-prefix mb-0"
                                         />
                                     </div>
@@ -212,29 +227,73 @@
 
             <!-- Row 6: Remark -->
             <CRow>
-                <CCol md="6">
+                <CCol md="12" v-show="currentStep === 1">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Remark (TH)' : 'หมายเหตุภาษาไทย (TH)' }}</label>
-                        <CInput 
-                            v-model="form.remark.th" 
-                            :placeholder="$i18n.locale === 'en' ? 'Additional notes in Thai...' : 'หมายเหตุเพิ่มเติม (ภาษาไทย)...'" 
+                        <CInput
+                            v-model="form.remark.th"
+                            :placeholder="$i18n.locale === 'en' ? 'Additional notes in Thai...' : 'หมายเหตุเพิ่มเติม (ภาษาไทย)...'"
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
-                <CCol md="6">
+                <CCol md="12" v-show="currentStep === 2">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Remark (EN)' : 'หมายเหตุภาษาอังกฤษ (EN)' }}</label>
-                        <CInput 
-                            v-model="form.remark.en" 
-                            :placeholder="$i18n.locale === 'en' ? 'Additional notes in English...' : 'หมายเหตุเพิ่มเติมภาษาอังกฤษ...'" 
+                        <CInput
+                            v-model="form.remark.en"
+                            :placeholder="$i18n.locale === 'en' ? 'Additional notes in English...' : 'หมายเหตุเพิ่มเติมภาษาอังกฤษ...'"
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
             </CRow>
 
-            <!-- Row 6: Sale Status & Price -->
+            <!-- Row 7: Sale Status & Price -->
+            <div class="artwork-description-grid">
+            <!-- Row 8: Description (TH) -->
+            <CRow v-show="currentStep === 1">
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Description (TH)' : 'คำอธิบายภาษาไทย (TH)' }}</label>
+                        <CTextarea
+                            v-model="form.description.th"
+                            :placeholder="$i18n.locale === 'en' ? 'Thai description...' : 'รายละเอียดภาษาไทย...'"
+                            rows="4"
+                            class="custom-textarea"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Row 9: Description (EN) -->
+            <CRow v-show="currentStep === 2">
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Description (EN)' : 'คำอธิบายภาษาอังกฤษ (EN)' }}</label>
+                        <CTextarea
+                            v-model="form.description.en"
+                            :placeholder="$i18n.locale === 'en' ? 'English description...' : 'คำอธิบายภาษาอังกฤษ...'"
+                            rows="4"
+                            class="custom-textarea"
+                        />
+                    </div>
+                </CCol>
+            </CRow>
+            </div>
+                    </div>
+                </div>
+
+                <aside class="wizard-image-column">
+                    <div class="image-column-heading">
+                        <span><CIcon name="cil-image1" size="lg" /></span>
+                        <div>
+                            <h6>{{ $i18n.locale === 'en' ? 'Artwork Image *' : 'รูปภาพผลงาน *' }}</h6>
+                            <p>{{ $i18n.locale === 'en' ? 'Upload the main image displayed on the website.' : 'อัปโหลดรูปหลักที่จะแสดงบนเว็บไซต์' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="sale-settings-under-image">
             <CRow>
                 <CCol :md="selectedSaleStatusName === 'Available' || selectedSaleStatusName === 'พร้อมขาย' ? '6' : '12'">
                     <div class="form-group-custom">
@@ -242,14 +301,14 @@
                         <CDropdown :key="form.status.sale" :caret="false" class="w-100">
                             <template #toggler>
                                 <CButton class="custom-select-btn">
-                                     <span class="text-dark">{{ selectedSaleStatusName }}</span>
-                                     <CIcon name="cil-filter" class="dropdown-icon" />
+                                    <span class="text-dark">{{ selectedSaleStatusName }}</span>
+                                    <CIcon name="cil-filter" class="dropdown-icon" />
                                 </CButton>
                             </template>
                             <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
-                                <CDropdownItem 
-                                    v-for="status in saleStatuses" 
-                                    :key="status._id" 
+                                <CDropdownItem
+                                    v-for="status in saleStatuses"
+                                    :key="status._id"
                                     @click="handleSaleStatusSelect(status._id)"
                                 >
                                     {{ getName($i18n.locale, status) }}
@@ -263,31 +322,69 @@
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Price' : 'ราคา' }}</label>
                         <div class="input-group-custom">
                             <span class="currency-prefix">฿</span>
-                            <CInput 
+                            <CInput
                                 type="number"
-                                v-model="form.price" 
-                                placeholder="0.00" 
+                                v-model="form.price"
+                                placeholder="0.00"
                                 class="custom-input-with-prefix text-right mb-0"
                             />
                         </div>
                     </div>
                 </CCol>
             </CRow>
+                    </div>
+
+                    <!-- Storage and exact university location -->
+                    <CRow class="storage-location-row">
+                        <CCol :md="isUniversityStorageSelected ? '6' : '12'">
+                            <div class="form-group-custom">
+                                <label class="form-label">{{ $i18n.locale === 'en' ? 'Storage location' : 'สถานที่จัดเก็บ' }}</label>
+                                <CDropdown :key="form.storage" :caret="false" class="w-100">
+                                    <template #toggler>
+                                        <CButton class="custom-select-btn">
+                                            <span class="text-dark">{{ selectedStorageName }}</span>
+                                            <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
+                                        </CButton>
+                                    </template>
+                                    <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                                        <CDropdownItem
+                                            v-for="storage in storages"
+                                            :key="getStorageId(storage)"
+                                            @click="handleStorageSelect(getStorageId(storage))"
+                                        >
+                                            {{ getName($i18n.locale, storage) || getName('en', storage) }}
+                                        </CDropdownItem>
+                                    </CDropdownMenu>
+                                </CDropdown>
+                            </div>
+                        </CCol>
+                        <CCol v-if="isUniversityStorageSelected" md="6">
+                            <div class="form-group-custom">
+                                <label class="form-label">{{ $i18n.locale === 'en' ? 'Exact location at university *' : 'ตำแหน่งจัดเก็บจริงในมหาวิทยาลัย *' }}</label>
+                                <CInput
+                                    v-model="form.storageDetail"
+                                    :placeholder="$i18n.locale === 'en' ? 'Building, room, shelf...' : 'เช่น อาคาร ห้อง ชั้นวาง...'"
+                                    class="custom-input mb-0"
+                                />
+                            </div>
+                        </CCol>
+                    </CRow>
 
             <!-- Row 7: Artwork Image -->
+                    <div class="image-upload-block">
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Artwork Image' : 'ภาพผลงานศิลปะ' }}</label>
                         <div class="file-upload-container" :class="{ 'has-image': imagePreview }">
-                            <input 
-                                type="file" 
-                                id="artwork-image-edit-upload" 
-                                @change="handleFileUpload" 
+                            <input
+                                type="file"
+                                id="artwork-image-edit-upload"
+                                @change="handleFileUpload"
                                 accept="image/*"
                                 class="file-input-hidden"
                             />
-                            <label for="artwork-image-edit-upload" class="file-upload-label w-100">
+                            <label for="artwork-image-upload" class="file-upload-label w-100">
                                 <template v-if="!imagePreview">
                                     <div class="upload-placeholder py-4 text-center">
                                         <CIcon name="cil-cloud-upload" size="xl" class="text-blue mb-2" />
@@ -304,9 +401,9 @@
                                             </div>
                                         </div>
                                         <!-- Remove Button -->
-                                        <button 
-                                            type="button" 
-                                            class="btn-remove-image shadow-sm" 
+                                        <button
+                                            type="button"
+                                            class="btn-remove-image shadow-sm"
                                             @click.stop.prevent="removeImage"
                                             :title="$i18n.locale === 'en' ? 'Remove image' : 'ลบรูปภาพ'"
                                         >
@@ -320,61 +417,49 @@
                 </CCol>
             </CRow>
 
-            <!-- Row 8: Description (TH) -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Description (TH)' : 'คำอธิบายภาษาไทย (TH)' }}</label>
-                        <CTextarea 
-                            v-model="form.description.th" 
-                            :placeholder="$i18n.locale === 'en' ? 'Thai description...' : 'รายละเอียดภาษาไทย...'" 
-                            rows="4"
-                            class="custom-textarea"
-                        />
                     </div>
-                </CCol>
-            </CRow>
+                    <div class="image-tip">
+                        <CIcon name="cil-lightbulb" />
+                        <span>{{ $i18n.locale === 'en' ? 'Use a clear image with enough light and show the whole artwork.' : 'ควรใช้ภาพคมชัด แสงเพียงพอ และเห็นผลงานครบทั้งชิ้น' }}</span>
+                    </div>
+                </aside>
 
-            <!-- Row 9: Description (EN) -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Description (EN)' : 'คำอธิบายภาษาอังกฤษ (EN)' }}</label>
-                        <CTextarea 
-                            v-model="form.description.en" 
-                            :placeholder="$i18n.locale === 'en' ? 'English description...' : 'คำอธิบายภาษาอังกฤษ...'" 
-                            rows="4"
-                            class="custom-textarea"
-                        />
-                    </div>
-                </CCol>
-            </CRow>
+            </div>
         </div>
 
         <template #footer>
-            <div class="w-100 d-flex justify-content-end align-items-center py-2">
-                <CButton 
-                    variant="ghost" 
-                    @click="$emit('update:show', false)"
-                    class="btn-cancel mr-3"
+            <div class="wizard-footer w-100 d-flex justify-content-between align-items-center py-2">
+                <CButton
+                    variant="ghost"
+                    @click="currentStep === 1 ? $emit('update:show', false) : currentStep = 1"
+                    :class="currentStep === 1 ? 'btn-cancel' : 'btn-back'"
                 >
-                    {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
+                    <CIcon v-if="currentStep === 2" name="cil-arrow-left" class="mr-1" />
+                    {{ currentStep === 1
+                        ? ($i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก')
+                        : ($i18n.locale === 'en' ? 'Back' : 'ย้อนกลับ') }}
                 </CButton>
-                <CButton 
-                    variant="ghost" 
-                    @click="handlePreview"
-                    class="btn-preview mr-3"
+                <div class="wizard-actions d-flex align-items-center">
+                <CButton
+                    v-if="currentStep === 1"
+                    color="primary"
+                    @click="currentStep = 2"
+                    class="btn-create-artwork"
+                    :disabled="!isStepOneValid"
                 >
-                    {{ $i18n.locale === 'en' ? 'Preview Mode' : 'ดูตัวอย่าง' }}
+                    {{ $i18n.locale === 'en' ? 'Continue' : 'ถัดไป' }} <CIcon name="cil-arrow-right" class="ml-2" />
                 </CButton>
-                <CButton 
-                    color="primary" 
+                <CButton
+                    v-if="currentStep === 2"
+                    color="primary"
                     @click="handleSave"
-                    class="btn-save-artwork"
-                    :disabled="!isFormValid"
+                    class="btn-create-artwork"
+                    :disabled="!isFormValid || saving"
                 >
-                    {{ $i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการเปลี่ยนแปลง' }}
+                    <CSpinner v-if="saving" size="sm" class="mr-2" />
+                    {{ saving ? ($i18n.locale === 'en' ? 'Updating...' : 'กำลังอัปเดต...') : ($i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการเปลี่ยนแปลง') }}
                 </CButton>
+                </div>
             </div>
         </template>
     </CModal>
@@ -395,11 +480,17 @@ export default {
         artwork: {
             type: Object,
             default: () => null
+        },
+        saving: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
         return {
+            currentStep: 1,
             categories: [],
+            storages: [],
             statuses: [],
             imagePreview: null,
             artistSearchQuery: '',
@@ -409,6 +500,8 @@ export default {
                 title: { en: '', th: '' },
                 artist: '',
                 category: '',
+                storage: '',
+                storageDetail: '',
                 technique: { en: '', th: '' },
                 size: { en: '', th: '' },
                 width: '',
@@ -446,17 +539,21 @@ export default {
         },
         show(newVal) {
             if (newVal && this.artwork) {
+                this.currentStep = 1;
                 this.populateForm(this.artwork);
             }
         }
     },
     computed: {
+        isStepOneValid() {
+            return true;
+        },
         ...mapGetters({
             allUsers: 'user/user'
         }),
         isFormValid() {
-            return (this.form.title.en.trim() !== '' || this.form.title.th.trim() !== '') && 
-                   this.form.artist !== '' && 
+            return (this.form.title.en.trim() !== '' || this.form.title.th.trim() !== '') &&
+                   this.form.artist !== '' &&
                    this.form.width !== '' &&
                    this.form.height !== '' &&
                    this.form.price !== '';
@@ -487,6 +584,22 @@ export default {
             const cat = this.categories.find(c => String(c._id) === String(this.form.category));
             return cat ? this.getName(this.$i18n.locale, cat) : (this.$i18n.locale === 'en' ? 'Select Category' : 'เลือกหมวดหมู่');
         },
+        selectedStorageName() {
+            const storage = this.storages.find(s => String(this.getStorageId(s)) === String(this.form.storage));
+            if (storage) {
+                return this.getStorageName(storage) || (this.$i18n.locale === 'en' ? 'Select storage' : 'เลือกสถานที่จัดเก็บ');
+            }
+            if (this.form.storage && typeof this.form.storage === 'object') {
+                return this.getStorageName(this.form.storage);
+            }
+            return this.$i18n.locale === 'en' ? 'Select storage' : 'เลือกสถานที่จัดเก็บ';
+        },
+        isUniversityStorageSelected() {
+            const storage = this.storages.find(s => String(this.getStorageId(s)) === String(this.form.storage));
+            const storageName = storage ? this.getStorageName(storage) : this.getStorageName(this.form.storage);
+            const normalizedName = String(storageName || '').toLowerCase();
+            return normalizedName.includes('university') || normalizedName.includes('mfu') || normalizedName.includes('มหาวิทยาลัย');
+        },
         selectedSaleStatusName() {
             const status = this.saleStatuses.find(s => String(s._id) === String(this.form.status.sale));
             return status ? this.getName(this.$i18n.locale, status) : (this.$i18n.locale === 'en' ? 'Select Status' : 'เลือกสถานะการขาย');
@@ -500,9 +613,9 @@ export default {
             if (!cat) return false;
             const enName = this.getName('en', cat).toLowerCase();
             const thName = this.getName('th', cat).toLowerCase();
-            return enName.includes('sculpture') || 
-                   enName.includes('installation') || 
-                   thName.includes('ประติมากรรม') || 
+            return enName.includes('sculpture') ||
+                   enName.includes('installation') ||
+                   thName.includes('ประติมากรรม') ||
                    thName.includes('จัดวาง');
         }
     },
@@ -514,6 +627,10 @@ export default {
         handleCategorySelect(id) {
             this.$set(this.form, 'category', id);
         },
+        handleStorageSelect(id) {
+            this.$set(this.form, 'storage', id);
+            if (!this.isUniversityStorageSelected) this.$set(this.form, 'storageDetail', '');
+        },
         handleSaleStatusSelect(id) {
             this.$set(this.form.status, 'sale', id);
         },
@@ -524,9 +641,12 @@ export default {
                 const categories = await this.$store.dispatch('artwork/category', { method: 'get' });
                 this.categories = categories || [];
 
+                await this.$store.dispatch('setting/storage/get', {});
+                this.storages = this.$store.getters['setting/storage/item'] || [];
+
                 await this.$store.dispatch('setting/status/get');
                 this.statuses = this.$store.getters['setting/status/item'] || [];
-                
+
                 if (this.artwork) {
                     this.populateForm(this.artwork);
                 }
@@ -543,6 +663,8 @@ export default {
                 },
                 artist: artwork.artist ? artwork.artist._id : '',
                 category: artwork.category ? artwork.category._id : '',
+                storage: artwork.storage ? (artwork.storage._id || artwork.storage) : '',
+                storageDetail: artwork.storageDetail || '',
                 technique: {
                     en: this.getName('en', { title: artwork.technique }),
                     th: this.getName('th', { title: artwork.technique })
@@ -571,12 +693,12 @@ export default {
             const sizeEn = this.getName('en', { title: artwork.size }) || '';
             const normalizedSize = sizeEn.replace(/×/g, 'x').replace(/X/g, 'x');
             const matches = normalizedSize.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)(?:\s*x\s*(\d+(?:\.\d+)?))?/i);
-            
+
             if (matches) {
                 this.form.width = matches[1];
                 this.form.height = matches[2];
                 this.form.depth = matches[3] || '';
-                
+
                 // Extract unit from the string
                 const unitMatch = normalizedSize.match(/(cm|m|inch|mm|ชม\.|ม\.|นิ้ว|มม\.)/i);
                 let unit = 'cm';
@@ -601,15 +723,23 @@ export default {
         getName(lang, item) {
             if (!item) return '';
             if (typeof item === 'string') return item;
-            
+
             const titleField = item.title || item.name || '';
             if (typeof titleField === 'string' && titleField) return titleField;
-            
+
             if (Array.isArray(titleField)) {
                 const nameObj = titleField.find(n => n.key === lang);
                 return nameObj ? nameObj.value : '';
             }
             return '';
+        },
+        getStorageId(storage) {
+            if (!storage) return '';
+            return typeof storage === 'object' ? (storage._id || storage.id || '') : storage;
+        },
+        getStorageName(storage) {
+            if (!storage || typeof storage === 'string') return '';
+            return this.getName(this.$i18n.locale, storage) || this.getName('en', storage) || this.getName('th', storage);
         },
         getArtistName(artist) {
             if (!artist) return 'N/A';
@@ -683,7 +813,7 @@ export default {
 
                         let quality = 0.9;
                         const mimeType = 'image/jpeg';
-                        
+
                         const getBlob = (q) => {
                             return new Promise((res) => {
                                 canvas.toBlob((blob) => {
@@ -728,71 +858,46 @@ export default {
         toggleArtistDropdown() {
             this.showArtistDropdown = !this.showArtistDropdown;
         },
-        handlePreview() {
-            const artist = this.form.artist || this.artistSearchQuery;
-            if (!this.form.title.en && !this.form.title.th) {
-                alert(this.$i18n.locale === 'en' ? 'Please enter a title.' : 'กรุณาระบุชื่อผลงาน');
-                return;
-            }
-            if (!artist || !this.form.price || !this.imagePreview) {
-                alert(this.$i18n.locale === 'en' ? 'Please fill in required fields (Artist, Price, and Image) before previewing.' : 'กรุณากรอกข้อมูลที่จำเป็น (ศิลปิน, ราคา และรูปภาพ) ก่อนดูตัวอย่าง');
-                return;
-            }
-            
-            const previewData = {
-                ...this.form,
-                title: this.form.title.en || this.form.title.th,
-                artist: artist,
-                image: this.imagePreview, 
-                medium: this.form.technique.en || this.form.technique.th || 'N/A',
-                dimensions: `${this.form.width} x ${this.form.height} ${this.form.unit}`,
-                description: this.form.description.en || this.form.description.th || ''
-            };
-            
-            sessionStorage.setItem('artwork_preview', JSON.stringify(previewData));
-            this.$router.push({ 
-                name: 'ArtworkDetail', 
-                params: { id: 'preview' } 
-            });
-        },
         getUnitTH(unitEN) {
             const unit = this.unitOptions.find(u => u.en === unitEN);
             return unit ? unit.th : unitEN;
         },
         handleSave() {
             if (!this.isFormValid) return;
-            
+
             const payload = {
                 _id: this.form.id,
                 title: [
-                    { key: 'en', value: this.form.title.en }, 
+                    { key: 'en', value: this.form.title.en },
                     { key: 'th', value: this.form.title.th }
                 ],
                 description: [
-                    { key: 'en', value: this.form.description.en }, 
+                    { key: 'en', value: this.form.description.en },
                     { key: 'th', value: this.form.description.th }
                 ],
                 artist: this.form.artist,
                 category: this.form.category,
                 technique: [
-                    { key: 'en', value: this.form.technique.en }, 
+                    { key: 'en', value: this.form.technique.en },
                     { key: 'th', value: this.form.technique.th }
                 ],
                 size: [
-                    { 
-                        key: 'en', 
-                        value: this.is3D 
-                            ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.form.unit}` 
-                            : `${this.form.width} x ${this.form.height} ${this.form.unit}` 
+                    {
+                        key: 'en',
+                        value: this.is3D
+                            ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.form.unit}`
+                            : `${this.form.width} x ${this.form.height} ${this.form.unit}`
                     },
-                    { 
-                        key: 'th', 
-                        value: this.is3D 
-                            ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.getUnitTH(this.form.unit)}` 
-                            : `${this.form.width} x ${this.form.height} ${this.getUnitTH(this.form.unit)}` 
+                    {
+                        key: 'th',
+                        value: this.is3D
+                            ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.getUnitTH(this.form.unit)}`
+                            : `${this.form.width} x ${this.form.height} ${this.getUnitTH(this.form.unit)}`
                     }
                 ],
                 price: parseFloat(this.form.price),
+                storage: this.form.storage || null,
+                storageDetail: this.isUniversityStorageSelected ? this.form.storageDetail.trim() : '',
                 status: this.form.status,
                 remark: [{ key: 'en', value: this.form.remark.en }, { key: 'th', value: this.form.remark.th }],
                 _image: this.form.image
@@ -855,7 +960,6 @@ export default {
     padding-left: 2.2rem !important;
 }
 
-/* Reusing styles from ArtworkCreateModal.vue for consistency */
 .form-group-custom {
     margin-bottom: 1.25rem;
 }
@@ -880,6 +984,11 @@ export default {
     transition: all 0.2s ease;
     background-color: #f8fafc;
     color: #1e293b;
+}
+
+.custom-input ::v-deep .form-control::placeholder,
+.custom-textarea ::v-deep .form-control::placeholder {
+    color: #94a3b8;
 }
 
 .custom-input ::v-deep .form-control:focus,
@@ -912,6 +1021,13 @@ export default {
     border: 1px solid #f1f5f9 !important;
     background-color: #f8fafc !important;
     font-size: 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.custom-input-with-prefix ::v-deep .form-control:focus {
+    background-color: #ffffff !important;
+    border-color: #3b82f633 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05) !important;
 }
 
 .custom-select-btn {
@@ -984,15 +1100,25 @@ export default {
 
 .custom-input-searchable {
     width: 100% !important;
+    margin-bottom: 0 !important;
 }
 
 .custom-input-searchable ::v-deep .form-control {
     padding-left: 2.85rem !important;
     padding-right: 2.85rem !important;
-    height: 52px !important;
+    width: 100% !important;
+    height: 52px !important; /* Match other inputs */
     border-radius: 12px !important;
     border: 1px solid #f1f5f9 !important;
     background-color: #f8fafc !important;
+    font-size: 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.custom-input-searchable ::v-deep .form-control:focus {
+    background-color: #ffffff !important;
+    border-color: #3b82f633 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05) !important;
 }
 
 .artist-results-list {
@@ -1027,6 +1153,14 @@ export default {
     font-weight: 600;
 }
 
+.artist-result-item:not(:last-child) {
+    border-bottom: 1px solid #f8fafc;
+}
+
+.ml-auto {
+    margin-left: auto;
+}
+
 /* File Upload Stying */
 .file-upload-container {
     border: 2px dashed #e2e8f0;
@@ -1049,6 +1183,12 @@ export default {
     cursor: pointer;
     display: block;
     margin-bottom: 0;
+}
+
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .preview-container {
@@ -1140,7 +1280,12 @@ export default {
     font-size: 1rem;
 }
 
-.btn-save-artwork {
+.btn-cancel:hover {
+    color: #64748b !important;
+    background: transparent !important;
+}
+
+.btn-create-artwork {
     background-color: #3b82f6 !important;
     border-color: #3b82f6 !important;
     color: white !important;
@@ -1151,9 +1296,361 @@ export default {
     box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
 }
 
-.btn-preview {
-    color: #3b82f6 !important;
+.btn-create-artwork:hover:not(:disabled) {
+    background-color: #2563eb !important;
+    transform: translateY(-1px);
+}
+
+/* Artwork Preview Card */
+.artwork-preview-card {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+}
+
+.preview-img-wrapper {
+    height: 180px;
+    background: #f8fafc;
+}
+
+.object-fit-cover {
+    object-fit: cover;
+}
+
+.font-weight-600 {
+    font-weight: 600;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Learner artwork form layout, kept presentation-only for the Admin modal. */
+::v-deep .modal-dialog {
+    width: calc(100% - 2rem);
+    max-width: 1100px;
+    min-height: calc(100% - 2rem);
+    margin: 1rem auto;
+}
+
+::v-deep .modal-content {
+    max-height: calc(100vh - 2rem);
+    display: flex;
+}
+
+::v-deep .modal-body {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding: 1rem 2rem;
+}
+
+.wizard-body {
+    min-height: 0;
+}
+
+.wizard-content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.85fr);
+    gap: 2rem;
+    align-items: start;
+}
+
+.wizard-form-column {
+    min-width: 0;
+}
+
+.wizard-panel {
+    padding: 0.75rem 0 0;
+}
+
+.step-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e8edf5;
+}
+
+.step-heading > span {
+    color: #b7791f;
+    font-family: Georgia, serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.step-heading h6 {
+    margin: 0 0 0.2rem;
+    color: #27364a;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.step-heading p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.wizard-image-column {
+    position: sticky;
+    top: 0;
+    min-width: 0;
+    padding: 0.75rem 0 0 2rem;
+    border-left: 1px solid #e8edf5;
+}
+
+.image-column-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.image-column-heading > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.8rem;
+    background: #eef3ff;
+    color: #6d8ff0;
+}
+
+.image-column-heading h6 {
+    margin: 0 0 0.2rem;
+    color: #27364a;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.image-column-heading p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+.wizard-image-column > .image-upload-block {
+    order: 1;
+}
+
+.wizard-image-column > .sale-settings-under-image {
+    order: 2;
+}
+
+.wizard-image-column > .storage-location-row {
+    order: 3;
+}
+
+.wizard-image-column > .image-tip {
+    order: 4;
+}
+
+.wizard-image-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.image-upload-block .form-group-custom {
+    margin-bottom: 0;
+}
+
+.image-upload-block .form-label {
+    display: none;
+}
+
+.image-upload-block .file-upload-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 2px dashed #d9e0eb;
+    border-radius: 1.25rem;
+    background: linear-gradient(145deg, #fbfcff, #f6f8fc);
+}
+
+.image-upload-block .file-upload-label,
+.image-upload-block .upload-placeholder,
+.image-upload-block .preview-container {
+    width: 100%;
+    height: 100%;
+}
+
+.image-upload-block .upload-placeholder {
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 1rem;
+    color: #52627a;
+}
+
+.image-upload-block .upload-placeholder .text-muted {
+    color: #94a3b8 !important;
+}
+
+.image-upload-block .text-blue {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 0.5rem !important;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #6d8ff0;
+    box-shadow: 0 12px 25px rgba(104, 132, 205, 0.15);
+}
+
+.image-upload-block .preview-container {
+    height: 100%;
+}
+
+.image-upload-block .upload-preview {
+    padding: 0.5rem;
+    object-fit: contain;
+}
+
+.sale-settings-under-image {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e8edf5;
+}
+
+.sale-settings-under-image ::v-deep .row {
+    display: block;
+    margin: 0;
+}
+
+.sale-settings-under-image ::v-deep [class*="col-"] {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+    padding: 0;
+}
+
+.sale-settings-under-image .form-group-custom {
+    margin-bottom: 1rem;
+}
+
+.storage-location-row {
+    width: 100%;
+    margin: 1.25rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e8edf5;
+}
+
+.storage-location-row ::v-deep .row {
+    display: block;
+    margin: 0;
+}
+
+.storage-location-row ::v-deep [class*="col-"] {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+    padding: 0;
+}
+
+.storage-location-row .form-group-custom {
+    margin-bottom: 1rem;
+}
+
+.storage-location-row .custom-select-btn,
+.storage-location-row .custom-input ::v-deep .form-control {
+    background: #ffffff !important;
+    border-color: #e8edf5 !important;
+}
+
+.sale-settings-under-image .custom-select-btn,
+.sale-settings-under-image .custom-input-with-prefix ::v-deep .form-control {
+    background: #ffffff !important;
+    border-color: #e8edf5 !important;
+}
+
+.image-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin-top: 1rem;
+    padding: 0.25rem 0 0.75rem;
+    color: #64748b;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.image-tip ::v-deep svg,
+.image-tip > svg {
+    flex: 0 0 auto;
+    margin-top: 0.1rem;
+    color: #d39a3b;
+}
+
+.artwork-description-grid {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.artwork-description-grid .form-group-custom {
+    margin-bottom: 1.25rem;
+}
+
+.wizard-footer {
+    gap: 1rem;
+}
+
+.wizard-actions {
+    gap: 0.25rem;
+}
+
+.btn-back {
+    color: #6d8ff0 !important;
     font-weight: 600;
     font-size: 1rem;
+}
+
+.btn-back:hover {
+    background: #eef3ff !important;
+}
+
+@media (max-width: 767px) {
+    ::v-deep .modal-dialog {
+        width: calc(100% - 1rem);
+        min-height: calc(100% - 1rem);
+        margin: 0.5rem auto;
+    }
+
+    ::v-deep .modal-body {
+        padding: 0.75rem 1rem;
+    }
+
+    .wizard-content-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .wizard-image-column {
+        position: static;
+        padding: 1.5rem 0 0;
+        border-top: 1px solid #e8edf5;
+        border-left: 0;
+    }
+
+    .wizard-footer {
+        align-items: stretch !important;
+        flex-direction: column;
+    }
+
+    .wizard-footer .btn-cancel {
+        align-self: flex-start;
+    }
+
+    .wizard-actions {
+        justify-content: flex-end;
+    }
 }
 </style>

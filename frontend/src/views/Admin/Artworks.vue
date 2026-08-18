@@ -1,16 +1,16 @@
 <template>
     <div class="artworks-dashboard">
-        <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานของคุณ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" themeColor="yellow" @create="onAddArtwork" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานศิลปะ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" themeColor="yellow" @create="onAddArtwork" @export="handleExport" />
         <ArtworkWidget v-model="filters.status" :items="artworks" />
         <ArtworkFilter v-model="filters" />
         <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
-        <ArtworkCreateModal :show.sync="showCreateModal" @save="handleSaveArtwork"/>
+        <ArtworkCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSaveArtwork"/>
         <ArtworkCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @download-template="downloadTemplate"/>
         <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView"/>
-        <ArtworkEditModal :show.sync="showEditModal" :artwork="selectedArtwork" @save="handleUpdateArtwork"/>
+        <ArtworkEditModal :show.sync="showEditModal" :artwork="selectedArtwork" :saving="saving" @save="handleUpdateArtwork"/>
 
         <!-- Rejection Reason Modal -->
-        <CModal :title="$i18n.locale === 'en' ? 'Reject Artwork' : 'ปฏิเสธผลงานศิลปะ'" :show.sync="showRejectModal" color="danger" size="lg">
+        <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Reject Artwork' : 'ปฏิเสธผลงานศิลปะ'" :show.sync="showRejectModal" color="danger" size="lg">
             <div class="p-3">
                 <p class="text-muted mb-3">
                     {{ $i18n.locale === 'en' ? 'Please provide a reason for rejecting this artwork. This message will be sent to the artist via email.' : 'กรุณาระบุเหตุผลในการปฏิเสธผลงานนี้ ข้อความนี้จะถูกส่งไปยังอีเมลของศิลปินเพื่อแจ้งเตือน' }}
@@ -75,7 +75,8 @@ export default {
             loadingItems: [],
             showRejectModal: false,
             rejectRemark: '',
-            loading: false
+            loading: false,
+            saving: false
         }
     },
     created() {
@@ -255,10 +256,9 @@ export default {
             reader.readAsArrayBuffer(file);
         },
         downloadTemplate() {
-            const data = [
-                ["ArtworkTitleThai", "ArtworkTitleEng", "DescriptionThai", "DescriptionEng", "TechniqueThai", "TechniqueEng", "SizeThai", "SizeEng", "Price", "ArtistID", "Category", "SaleStatus", "ShowStatuses", "RemarkThai", "RemarkEng"],
-                ["ภาพวาดพุทธศิลป์ตัวอย่าง", "Sample Buddhist Art", "คำอธิบายผลงานเบื้องต้น...", "Brief artwork description...", "สีน้ำมันบนผ้าใบ", "Oil on Canvas", "60x80 ชม.", "60x80 cm", "5500", "64XXXXXX", "Painting", "Available", "Approved", "หมายเหตุ...", "Remark..."]
-            ];
+            const data = [[
+                "ArtworkTitleThai", "ArtworkTitleEng", "DescriptionThai", "DescriptionEng", "TechniqueThai", "TechniqueEng", "SizeThai", "SizeEng", "Price", "ArtistID", "Category", "SaleStatus", "ShowStatuses", "RemarkThai", "RemarkEng"
+            ]];
             const worksheet = XLSX.utils.aoa_to_sheet(data);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Artwork_Template");
@@ -272,6 +272,8 @@ export default {
             XLSX.writeFile(workbook, "Artwork_Import_Template.xlsx");
         },
         async handleSaveArtwork(artworkData) {
+            if (this.saving) return;
+            this.saving = true;
             try {
                 // 1. Create Artwork (POST /api/v1/artwork)
                 console.log('--- Step 1: Creating Artwork Data ---', artworkData);
@@ -308,6 +310,8 @@ export default {
                     message: this.$i18n.locale === 'en' ? 'Failed to create artwork. Please try again.' : 'ไม่สามารถสร้างผลงานศิลปะได้ กรุณาลองใหม่อีกครั้ง',
                     variant: 'danger'
                 });
+            } finally {
+                this.saving = false;
             }
         },
         handleViewArtwork(artwork) {
@@ -323,6 +327,8 @@ export default {
             this.handleEditArtwork(artwork);
         },
         async handleUpdateArtwork(artworkData) {
+            if (this.saving) return;
+            this.saving = true;
             try {
                 console.log('--- Step 1: Updating Artwork Data ---', artworkData);
                 const response = await this.$store.dispatch('artwork/update', artworkData);
@@ -354,6 +360,8 @@ export default {
                     message: this.$i18n.locale === 'en' ? 'Failed to update artwork. Please try again.' : 'ไม่สามารถอัปเดตผลงานศิลปะได้ กรุณาลองใหม่อีกครั้ง',
                     variant: 'danger'
                 });
+            } finally {
+                this.saving = false;
             }
         },
         async handleApproveArtwork(artwork) {

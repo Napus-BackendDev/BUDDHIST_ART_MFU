@@ -35,7 +35,7 @@
         <OrderEditModal :show.sync="showEditModal" :order="selectedOrder" @save="handleUpdateOrder" />
 
         <!-- Rejection Reason Modal -->
-        <CModal :title="$i18n.locale === 'en' ? 'Reject Order' : 'ปฏิเสธคำสั่งซื้อ'" :show.sync="showRejectModal" color="danger" size="lg">
+        <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Reject Order' : 'ปฏิเสธคำสั่งซื้อ'" :show.sync="showRejectModal" color="danger" size="lg">
             <div class="p-3">
                 <p class="text-muted mb-3">
                     {{ $i18n.locale === 'en' ? 'Please provide a reason for rejecting this order. This message will be sent to the customer via email.' : 'กรุณาระบุเหตุผลในการปฏิเสธคำสั่งซื้อนี้ ข้อความนี้จะถูกส่งไปยังอีเมลของลูกค้า' }}

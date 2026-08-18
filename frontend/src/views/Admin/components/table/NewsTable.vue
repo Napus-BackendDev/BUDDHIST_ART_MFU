@@ -18,17 +18,22 @@
                         </template>
                         <template #title="{ item }">
                             <td>
-                                <div class="font-weight-bold text-dark mb-1">{{ getName($i18n.locale, item) || getName('en', item) }}</div>
-                                <div class="text-muted small description-truncate">
+                                <div class="font-weight-bold text-dark mb-1 title-truncate" :title="getName($i18n.locale, item) || getName('en', item)">
+                                    {{ getName($i18n.locale, item) || getName('en', item) }}
+                                </div>
+                                <div class="text-muted small description-truncate" :title="item.description || item.content ? stripHtml(getName($i18n.locale, item.description || item.content) || getName('en', item.description || item.content)) : ''">
                                     {{ item.description || item.content ? stripHtml(getName($i18n.locale, item.description || item.content) || getName('en', item.description || item.content)) : 'N/A' }}
                                 </div>
                             </td>
                         </template>
                         <template #createdAt="{ item }">
-                            <td class="text-muted text-sm">{{ formatDate(item.create ? item.create.datetime : null) }}</td>
+                            <td class="text-muted text-sm">
+                                <div>{{ formatDate(item.create ? item.create.datetime : null) }}</div>
+                                <div class="small mt-1">{{ formatTime(item.create ? item.create.datetime : null) }}</div>
+                            </td>
                         </template>
                         <template #views="{ item }">
-                            <td class="text-muted text-sm text-center">
+                            <td class="text-muted text-sm">
                                 <div class="simple-views">
                                     <CIcon name="cil-eye" size="sm" class="mr-1" />
                                     {{ item.views || 0 }}
@@ -53,23 +58,11 @@
                     </CDataTable>
                 </div>
 
-                <CCardFooter
-                    class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
-                    <div class="text-muted text-sm">
-                        {{ $i18n.locale === 'en' ? `Showing ${paginatedItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, filteredItems.length)} of ${filteredItems.length} news articles` : `แสดง ${paginatedItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} ถึง ${Math.min(currentPage * itemsPerPage, filteredItems.length)} จากทั้งหมด ${filteredItems.length} ข่าวสาร` }}
-                    </div>
-                    <CPagination
-                        :active-page.sync="currentPage"
-                        :pages="Math.max(1, Math.ceil(filteredItems.length / itemsPerPage))"
-                        size="sm"
-                        align="end"
-                        class="mb-0 pill-pagination"
-                    />
-                </CCardFooter>
+                <TablePaginationFooter :total="filteredItems.length" :active-page.sync="currentPage" :items-per-page.sync="itemsPerPage" :show-page-size="false" noun-en="news articles" noun-th="ข่าวสาร" />
             </CCard>
 
             <!-- Image Zoom Modal -->
-            <CModal :show.sync="showZoomModal" centered size="xl" class="zoom-modal" hide-footer>
+            <CModal :show.sync="showZoomModal" centered size="xl" class="zoom-modal admin-modal" hide-footer>
                 <template #header>
                     <div class="w-100 d-flex justify-content-between align-items-center">
                         <h5 class="modal-title py-0">{{ $i18n.locale === 'en' ? 'Zoom News Image' : 'ดูรูปภาพข่าวขนาดใหญ่' }}</h5>
@@ -88,9 +81,11 @@
 import moment from 'moment';
 import * as XLSX from 'xlsx';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import TablePaginationFooter from './TablePaginationFooter.vue';
 
 export default {
     name: 'NewsTable',
+    components: { TablePaginationFooter },
     mixins: [statusBadgeMixin],
     props: {
         items: { type: Array, default: () => [] },
@@ -105,7 +100,7 @@ export default {
     data() {
         return {
             currentPage: 1,
-            itemsPerPage: 5,
+            itemsPerPage: 10,
             showZoomModal: false,
             zoomImageUrl: ''
         }
@@ -116,7 +111,7 @@ export default {
                 { key: 'thumbnail', label: this.$i18n.locale === 'en' ? 'COVER' : 'รูปหน้าปก', _classes: 'border-top-0 border-bottom' },
                 { key: 'title', label: this.$i18n.locale === 'en' ? 'NEWS TITLE' : 'หัวข้อข่าว', _classes: 'border-top-0 border-bottom' },
                 { key: 'createdAt', label: this.$i18n.locale === 'en' ? 'DATE CREATED' : 'วันที่สร้าง', _classes: 'border-top-0 border-bottom' },
-                { key: 'views', label: this.$i18n.locale === 'en' ? 'VIEWS' : 'ยอดเข้าชม', _classes: 'border-top-0 border-bottom text-center' },
+                { key: 'views', label: this.$i18n.locale === 'en' ? 'VIEWS' : 'ยอดเข้าชม', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
             ];
         },
@@ -207,7 +202,7 @@ export default {
                     'หัวข้อข่าว': this.getName('th', item.title),
                     'เนื้อหาข่าว': descTh,
                     'ยอดผู้เข้าชม': item.views || 0,
-                    'วันที่สร้าง': this.formatDate(item.create ? item.create.datetime : item.createdAt)
+                    'วันที่สร้าง': this.formatDateTime(item.create ? item.create.datetime : item.createdAt)
                 };
             });
             const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -252,5 +247,25 @@ export default {
     align-items: center;
     color: #94a3b8;
     font-weight: 500;
+}
+
+.title-truncate {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    max-width: 600px;
+}
+
+.description-truncate {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    max-width: 600px;
 }
 </style>

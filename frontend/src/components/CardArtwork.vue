@@ -5,25 +5,15 @@
                 <div class="artwork-card cursor-pointer" @click="getDetail(art)">
                     <!-- Image Wrapper -->
                     <div class="card-img-wrapper">
-                        <!-- Badges -->
-                        <div class="card-badges">
-                            <div class="badge-category">
-                                {{ art.category ? getName(currentLocale, art.category) : (currentLocale === 'en' ? 'Artwork' : 'ผลงาน') }}
-                            </div>
-                            <!-- Status Badge (Top-Right) - Only in Private Mode or if not Success -->
-                            <div v-if="!isPublic && art.status && getStatusLabel(art)" 
-                                class="status-badge-mini px-3 py-1 rounded-pill shadow-sm"
-                                :class="getStatusClass(art)">
-                                <span class="small font-weight-bold text-uppercase">{{ getStatusLabel(art) }}</span>
-                            </div>
-                            <div v-else-if="isPublic && isApprovalReserved(art)" class="badge-reserved">
+                        <!-- Badges (Only in Public Mode if Reserved) -->
+                        <div class="card-badges" v-if="isPublic && isApprovalReserved(art)">
+                            <div class="badge-reserved ml-auto">
                                 <CIcon name="cil-lock-locked" size="sm" class="mr-1"/> 
                                 {{ currentLocale === 'en' ? 'Reserved' : 'จองแล้ว' }}
                             </div>
                         </div>
                         
                         <div class="card-img-bg" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + (art.image || 'https://via.placeholder.com/800x800?text=No+Image') + String.fromCharCode(34) + ')' }"></div>
-                        <div class="card-img-overlay-gradient"></div>
 
                         <!-- Status Overlays (Private Only) -->
                         <div v-if="!isPublic && isPending(art)" class="status-overlay pending-overlay">
@@ -55,12 +45,26 @@
                     <div class="card-content">
                         <div class="art-details">
                             <h4 class="art-title text-truncate" :title="getName(currentLocale, art)">{{ getName(currentLocale, art) }}</h4>
-                            <p class="art-artist text-truncate">
+                            <p class="art-artist text-truncate mb-2">
                                 <span>{{ currentLocale === 'en' ? 'By ' : 'โดย ' }}</span> 
                                 <strong>{{ art.artist ? getName(currentLocale, art.artist) : (currentLocale === 'en' ? 'Anonymous' : 'ศิลปินนิรนาม') }}</strong>
                             </p>
-                            <div class="art-technique text-truncate" v-if="art.technique">
-                                {{ getName(currentLocale, art.technique) }}
+                            <!-- Category Badge under Artwork Title/Artist -->
+                            <div class="art-meta-tags d-flex align-items-center flex-wrap gap-2">
+                                <span class="badge-category-tag" v-if="art.category">
+                                    {{ getName(currentLocale, art.category) }}
+                                </span>
+                                <span class="art-technique text-truncate" v-if="art.technique">
+                                    {{ getName(currentLocale, art.technique) }}
+                                </span>
+                            </div>
+
+                            <!-- Approval Status Badge for Artist (under Category) -->
+                            <div v-if="!isPublic && art.status && getStatusLabel(art)" class="art-status-row mt-2">
+                                <span class="status-badge-inline" :class="getStatusClass(art)">
+                                    <span class="dot"></span>
+                                    {{ getStatusLabel(art) }}
+                                </span>
                             </div>
                         </div>
 
@@ -70,47 +74,97 @@
                                 <template v-if="!isPurchasable(art)">
                                     <div class="price-label">{{ currentLocale === 'en' ? 'Status' : 'สถานะ' }}</div>
                                     <div class="price-value exhibition-only">
-                                        <span v-if="isExhibition(art)">{{ currentLocale === 'en' ? 'Exhibition Only' : 'โชว์เท่านั้น' }}</span>
-                                        <span v-else-if="isSoldOut(art)">{{ currentLocale === 'en' ? 'Sold Out' : 'ขายแล้ว' }}</span>
+                                        <span v-if="isExhibition(art)">{{ currentLocale === 'en' ? 'Exhibition Only' : 'จัดโชว์เพียงเท่านั้น' }}</span>
+                                        <span v-else-if="isSoldOut(art)">{{ currentLocale === 'en' ? 'Sold Out' : 'จำหน่ายแล้ว' }}</span>
                                         <span v-else>{{ currentLocale === 'en' ? 'Not for Sale' : 'ไม่ขาย' }}</span>
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <div class="price-label">{{ currentLocale === 'en' ? 'Current Price' : 'ราคาปัจจุบัน' }}</div>
+                                    <div class="price-label">{{ currentLocale === 'en' ? 'Current Price' : 'ราคา' }}</div>
                                     <div class="price-value">
                                         {{ formatPrice(art.price) }} <span class="price-currency">{{ currentLocale === 'en' ? 'THB' : 'บาท' }}</span>
                                     </div>
                                 </template>
                             </div>
                             
-                            <!-- Add to Cart Button (Only in Public Mode AND if For Sale) -->
-                            <div v-if="isPublic && isPurchasable(art)" class="action-btn-wrapper" @click.stop="handleCartAction(art)">
-                                <!-- Loading State -->
-                                <button 
-                                    v-if="loadingItems.includes(art._id)"
-                                    class="action-btn-circle-premium d-flex align-items-center justify-content-center in-cart"
-                                    disabled
-                                >
-                                    <CIcon name="cil-reload" class="spinner-animation" />
-                                </button>
-                                <!-- Normal States -->
-                                <button 
-                                    v-else
-                                    class="action-btn-circle-premium d-flex align-items-center justify-content-center" 
-                                    :class="{ 'in-cart': isInCart(art._id), 'reserved': isApprovalReserved(art) }"
-                                    :title="isInCart(art._id) ? (currentLocale === 'en' ? 'Remove from Cart' : 'นำออกจากตะกร้า') : (isApprovalReserved(art) ? (currentLocale === 'en' ? 'Reserved' : 'จองแล้ว') : (currentLocale === 'en' ? 'Add to Cart' : 'เพิ่มลงตะกร้า'))"
-                                    :disabled="isApprovalReserved(art)"
-                                >
-                                    <CIcon v-if="isInCart(art._id)" name="cil-check" />
-                                    <CIcon v-else-if="isApprovalReserved(art)" name="cil-lock-locked" />
-                                    <CIcon v-else name="cil-cart" />
-                                </button>
+                            <!-- Right side: View count + Cart Action Button -->
+                            <div class="card-actions-wrapper d-flex align-items-center">
+                                <!-- View Count Display near Cart Button -->
+                                <div class="artwork-view-count mr-2" :title="currentLocale === 'en' ? `${formatViews(art.views)} views` : `ผู้เข้าชม ${formatViews(art.views)} ครั้ง`">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="view-icon mr-1" fill="currentColor">
+                                        <path d="M256 96c-106.6 0-199.3 64.9-239.3 160 40 95.1 132.7 160 239.3 160s199.3-64.9 239.3-160c-40-95.1-132.7-160-239.3-160zm0 272a112 112 0 1 1 112-112 112.1 112.1 0 0 1-112 112zm0-184a72 72 0 1 0 72 72 72.1 72.1 0 0 0-72-72z"/>
+                                    </svg>
+                                    <span class="view-number">{{ formatViews(art.views) }}</span>
+                                </div>
+
+                                <!-- Add to Cart Button (Only in Public Mode AND if For Sale) -->
+                                <div v-if="isPublic && isPurchasable(art)" class="action-btn-wrapper" @click.stop="handleCartAction(art)">
+                                    <!-- Loading State -->
+                                    <button 
+                                        v-if="loadingItems.includes(art._id)"
+                                        class="action-btn-circle-premium d-flex align-items-center justify-content-center in-cart"
+                                        disabled
+                                        :aria-label="currentLocale === 'en' ? 'Adding artwork to cart' : 'กำลังเพิ่มผลงานลงตะกร้า'"
+                                    >
+                                        <CIcon name="cil-reload" class="spinner-animation" aria-hidden="true" />
+                                    </button>
+                                    <!-- Normal States -->
+                                    <button 
+                                        v-else
+                                        class="action-btn-circle-premium d-flex align-items-center justify-content-center" 
+                                        :class="{ 'in-cart': isInCart(art._id), 'reserved': isApprovalReserved(art) }"
+                                        :title="isInCart(art._id) ? (currentLocale === 'en' ? 'Remove from Cart' : 'นำออกจากตะกร้า') : (isApprovalReserved(art) ? (currentLocale === 'en' ? 'Reserved' : 'จองแล้ว') : (currentLocale === 'en' ? 'Add to Cart' : 'เพิ่มลงตะกร้า'))"
+                                        :aria-label="isInCart(art._id) ? (currentLocale === 'en' ? 'Remove artwork from cart' : 'นำผลงานออกจากตะกร้า') : (isApprovalReserved(art) ? (currentLocale === 'en' ? 'Artwork reserved' : 'ผลงานถูกจองแล้ว') : (currentLocale === 'en' ? 'Add artwork to cart' : 'เพิ่มผลงานลงตะกร้า'))"
+                                        :disabled="isApprovalReserved(art)"
+                                    >
+                                        <CIcon v-if="isInCart(art._id)" name="cil-check" aria-hidden="true" />
+                                        <CIcon v-else-if="isApprovalReserved(art)" name="cil-lock-locked" aria-hidden="true" />
+                                        <CIcon v-else name="cil-cart" aria-hidden="true" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </CCol>
         </CRow>
+
+        <!-- Clean & Prominent Added to Cart Success Modal -->
+        <CModal
+            :show.sync="showAddedModal"
+            centered
+            size="md"
+            class="cart-alert-modal"
+            :closeOnBackdrop="true"
+        >
+            <div class="cart-alert-card p-4 p-md-5 text-center position-relative">
+                <!-- Top Right Close Button -->
+                <button type="button" class="alert-close-btn position-absolute" @click="showAddedModal = false" title="ปิด">
+                    <CIcon name="cil-x" size="lg" />
+                </button>
+
+                <!-- Big Success Icon -->
+                <div class="alert-icon-wrapper mx-auto mb-4">
+                    <div class="alert-icon-pulse"></div>
+                    <div class="alert-icon-circle">
+                        <CIcon name="cil-check" size="2xl" class="text-white" />
+                    </div>
+                </div>
+
+                <!-- Title & Message -->
+                <h3 class="alert-modal-title font-weight-bold mb-2">
+                    {{ currentLocale === 'en' ? 'Added to Cart Successfully!' : 'เพิ่มลงในตะกร้าเรียบร้อยแล้ว' }}
+                </h3>
+                <p class="alert-modal-subtitle text-muted mb-4">
+                    {{ currentLocale === 'en' ? 'Artwork has been added to your shopping cart.' : 'ผลงานศิลปะชิ้นนี้ได้ถูกเพิ่มลงในตะกร้าของคุณเรียบร้อยแล้ว' }}
+                </p>
+
+                <!-- Bottom Dismiss Button -->
+                <button type="button" class="btn-alert-dismiss px-5 py-2" @click="showAddedModal = false">
+                    {{ currentLocale === 'en' ? 'Close' : 'ตกลง' }}
+                </button>
+            </div>
+        </CModal>
     </div>
     <div v-else class="text-center py-5 no-results-box bg-light rounded-xl mt-4">
         <CIcon name="cil-brush" size="3xl" class="text-muted mb-3 opacity-30" />
@@ -138,7 +192,8 @@ export default {
     },
     data() {
         return {
-            loadingItems: []
+            loadingItems: [],
+            showAddedModal: false
         }
     },
     computed: {
@@ -179,6 +234,17 @@ export default {
             if (value === undefined || value === null) return '0';
             return parseFloat(value).toLocaleString('en-US');
         },
+        formatViews(views) {
+            if (!views && views !== 0) return '0';
+            const num = Number(views) || 0;
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            }
+            return num.toLocaleString();
+        },
         async handleCartAction(art) {
             if (!this.isPurchasable(art)) return;
 
@@ -202,7 +268,7 @@ export default {
                         return;
                     }
                     this.$store.dispatch('cart/addToCart', latest || art);
-                    this.$store.dispatch('cart/setShowCart', true);
+                    this.showAddedModal = true;
                 } else {
                     this.$store.dispatch('cart/removeFromCart', art._id);
                 }
@@ -279,7 +345,7 @@ export default {
 .artwork-card {
     background: #ffffff;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     display: flex;
     flex-direction: column;
@@ -291,8 +357,8 @@ export default {
 
 .artwork-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 20px 40px rgba(74, 29, 24, 0.06);
-    border-color: rgba(74, 29, 24, 0.1);
+    box-shadow: 0 12px 30px rgba(74, 29, 24, 0.08);
+    border-color: rgba(74, 29, 24, 0.12);
 }
 
 .card-img-wrapper {
@@ -300,8 +366,8 @@ export default {
     width: 100%;
     padding-top: 100%; /* 1:1 Aspect Ratio (Square) */
     overflow: hidden;
-    background-color: #faf9f6;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .card-img-bg {
@@ -310,29 +376,15 @@ export default {
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: cover;
+    /* Keep the complete artwork visible */
+    background-size: contain;
+    background-repeat: no-repeat;
     background-position: center;
-    transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background-color: #ffffff;
 }
 
 .artwork-card:hover .card-img-bg {
-    transform: scale(1.05);
-}
-
-.card-img-overlay-gradient {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 35%;
-    background: linear-gradient(to top, rgba(0,0,0,0.15) 0%, transparent 100%);
-    pointer-events: none;
-    opacity: 0.5;
-    transition: opacity 0.4s ease;
-}
-
-.artwork-card:hover .card-img-overlay-gradient {
-    opacity: 0.8;
+    transform: none;
 }
 
 .card-badges {
@@ -341,28 +393,14 @@ export default {
     left: 12px;
     right: 12px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: flex-start;
     z-index: 10;
     pointer-events: none;
 }
 
-.badge-category {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #4b5563;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-}
-
 .badge-reserved {
-    background: rgba(74, 29, 24, 0.75);
+    background: rgba(74, 29, 24, 0.85);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     color: #ffffff;
@@ -377,37 +415,64 @@ export default {
 }
 
 .card-content {
-    padding: 20px;
+    padding: 16px 18px 16px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    justify-content: space-between;
     background: #ffffff;
     z-index: 5;
+    gap: 12px;
 }
 
 .art-details {
-    margin-bottom: 16px;
+    margin-bottom: 0;
 }
 
 .art-title {
     font-family: 'Cinzel', serif;
-    font-size: 1.15rem;
+    font-size: 1.12rem;
     font-weight: 700;
     color: #1c1917;
-    margin-bottom: 6px;
-    line-height: 1.35;
+    margin-bottom: 4px;
+    line-height: 1.3;
 }
 
 .art-artist {
     font-family: 'Sarabun', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     color: #6b7280;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 .art-artist strong {
     color: #374151;
+}
+
+/* Category & Meta Tags under Artwork Title */
+.art-meta-tags {
+    gap: 6px;
+}
+
+.badge-category-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #fbf7f1;
+    color: #4a1d18;
+    border: 1px solid rgba(74, 29, 24, 0.15);
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.badge-category-tag:hover {
+    background-color: #4a1d18;
+    border-color: #4a1d18;
+    color: #ffffff;
 }
 
 .art-technique {
@@ -416,12 +481,71 @@ export default {
     color: #9ca3af;
 }
 
+/* Inline Approval Status under Category (Artist Mode) */
+.art-status-row {
+    display: flex;
+    align-items: center;
+}
+
+.status-badge-inline {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    user-select: none;
+    border: 1px solid transparent;
+}
+
+.status-badge-inline .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 5px;
+    background-color: currentColor;
+}
+
+.status-badge-inline.badge-approved {
+    background-color: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+}
+
+.status-badge-inline.badge-pending {
+    background-color: #fffbeb;
+    color: #d97706;
+    border-color: #fde68a;
+}
+
+.status-badge-inline.badge-rejected {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+.status-badge-inline.badge-draft {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border-color: #e5e7eb;
+}
+
+.status-badge-inline.badge-info {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
+
 .card-footer-box {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 14px;
+    gap: 10px;
+    padding-top: 10px;
     border-top: 1px solid #f3f4f6;
+    margin-top: auto;
 }
 
 .price-container {
@@ -460,14 +584,56 @@ export default {
     margin-left: 2px;
 }
 
+/* View Count near Cart Button */
+.card-actions-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.artwork-view-count {
+    display: inline-flex;
+    align-items: center;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 5px 9px;
+    background-color: #f8fafc;
+    border-radius: 20px;
+    border: 1px solid #f1f5f9;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.artwork-view-count:hover {
+    color: #4a1d18;
+    background-color: #fbf7f1;
+    border-color: #e8decb;
+}
+
+.view-icon {
+    width: 14px;
+    height: 14px;
+    color: #94a3b8;
+}
+
+.artwork-view-count:hover .view-icon {
+    color: #4a1d18;
+}
+
+.view-number {
+    line-height: 1;
+}
+
 .action-btn-wrapper {
     z-index: 10;
 }
 
 /* Premium Circle Cart Button */
 .action-btn-circle-premium {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
     background: #ffffff;
     border-radius: 50%;
     color: #4a1d18;
@@ -494,7 +660,7 @@ export default {
 }
 
 .action-btn-circle-premium.in-cart:hover {
-    background: #dc2626; /* Turn red for removal alert */
+    background: #dc2626;
     border-color: #dc2626;
     box-shadow: 0 6px 15px rgba(220, 38, 38, 0.25);
 }
@@ -535,8 +701,10 @@ export default {
 }
 
 .action-btn {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -588,6 +756,129 @@ export default {
     padding: 1rem;
     border-radius: 15px;
     background: rgba(0, 0, 0, 0.3);
+}
+
+/* Clean & Prominent Cart Alert Modal */
+.cart-alert-modal ::v-deep .modal-dialog {
+    max-width: 460px;
+    margin: 1.75rem auto;
+}
+
+.cart-alert-modal ::v-deep .modal-content {
+    border-radius: 28px;
+    border: none;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.cart-alert-modal ::v-deep .modal-header,
+.cart-alert-modal ::v-deep .modal-footer {
+    display: none !important;
+}
+
+.cart-alert-card {
+    background: #ffffff;
+}
+
+.alert-close-btn {
+    top: 18px;
+    right: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.alert-close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    transform: scale(1.05);
+}
+
+.alert-icon-wrapper {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alert-icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 24px rgba(16, 185, 129, 0.35);
+    z-index: 2;
+    animation: alertPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.alert-icon-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.2);
+    animation: alertPulse 1.8s infinite;
+    z-index: 1;
+}
+
+@keyframes alertPop {
+    0% { transform: scale(0.3); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes alertPulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 0; }
+    100% { transform: scale(0.95); opacity: 0; }
+}
+
+.alert-modal-title {
+    font-size: 1.45rem;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.alert-modal-subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.btn-alert-dismiss {
+    background: linear-gradient(135deg, #4a1d18, #612721);
+    color: #ffffff;
+    border: none;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(74, 29, 24, 0.25);
+    transition: all 0.2s ease;
+    min-width: 130px;
+}
+
+.btn-alert-dismiss:hover {
+    background: linear-gradient(135deg, #612721, #7a312a);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(74, 29, 24, 0.35);
 }
 
 /* Grid Layout definitions */

@@ -78,16 +78,18 @@
                                 <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
                                 <CIcon v-else name="cil-x" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบกำกับภาษี'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id)">
-                                <CIcon name="cil-file" size="lg" />
+                            <button class="action-btn icon-download" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบกำกับภาษี'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id) || downloadingItems.includes(item._id)">
+                                <CSpinner v-if="downloadingItems.includes(item._id)" size="sm" />
+                                <CIcon v-else name="cil-file" size="lg" />
                             </button>
                         </div>
                         <div v-else class="d-inline-flex align-items-center">
                             <button class="action-btn icon-view mr-2" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบกำกับภาษี'" @click="downloadInvoice(item)">
-                                <CIcon name="cil-file" size="lg" />
+                            <button class="action-btn icon-download" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบกำกับภาษี'" @click="downloadInvoice(item)" :disabled="downloadingItems.includes(item._id)">
+                                <CSpinner v-if="downloadingItems.includes(item._id)" size="sm" />
+                                <CIcon v-else name="cil-file" size="lg" />
                             </button>
                         </div>
                     </td>
@@ -147,7 +149,8 @@ export default {
     },
     data() {
         return {
-            activePage: 1
+            activePage: 1,
+            downloadingItems: []
         }
     },
     watch: {
@@ -332,6 +335,8 @@ export default {
             return this.getName(this.$i18n.locale, status);
         },
         async downloadInvoice(item) {
+            if (!item || !item._id || this.downloadingItems.includes(item._id)) return;
+            this.downloadingItems.push(item._id);
             try {
                 const response = await this.$store.dispatch('order/getInvoice', item._id);
                 const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -349,6 +354,8 @@ export default {
                     message: this.$i18n.locale === 'en' ? 'Could not download invoice.' : 'ไม่สามารถดาวน์โหลดใบเสร็จได้',
                     variant: 'danger'
                 });
+            } finally {
+                this.downloadingItems = this.downloadingItems.filter(id => id !== item._id);
             }
         },
         pageChange(val) {

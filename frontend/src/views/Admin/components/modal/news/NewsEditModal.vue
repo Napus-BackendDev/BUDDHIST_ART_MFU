@@ -5,7 +5,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="edit-news-modal"
+        class="edit-news-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -124,29 +124,24 @@
 
         <template #footer>
             <div class="w-100 d-flex justify-content-end align-items-center py-2">
-                <CButton 
+                <LoadingButton 
                     variant="ghost" 
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
+                    :disabled="saving"
                 >
                     {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
-                </CButton>
-                <CButton 
-                    color="outline-primary" 
-                    @click="onPreview"
-                    class="btn-preview-news mr-2"
-                    :disabled="previewLoading"
-                >
-                    {{ previewLoading ? ($i18n.locale === 'en' ? 'Preparing...' : 'กำลังเตรียม...') : ($i18n.locale === 'en' ? 'Preview' : 'ดูตัวอย่าง') }}
-                </CButton>
-                <CButton 
+                </LoadingButton>
+                <LoadingButton 
                     color="primary" 
                     @click="onSave"
                     class="btn-save-news"
                     :disabled="!isFormValid"
+                    :loading="saving"
+                    :loading-text="$i18n.locale === 'en' ? 'Updating...' : 'กำลังอัปเดต...'"
                 >
                     {{ $i18n.locale === 'en' ? 'Update News' : 'อัปเดตข่าว' }}
-                </CButton>
+                </LoadingButton>
             </div>
         </template>
     </CModal>
@@ -163,11 +158,11 @@ export default {
     },
     props: {
         show: { type: Boolean, default: false },
-        news: { type: Object, default: () => null }
+        news: { type: Object, default: () => null },
+        saving: { type: Boolean, default: false }
     },
     data() {
         return {
-            previewLoading: false,
             imagePreviews: [],
             existingImages: [],
             coverIndex: 0,
@@ -284,81 +279,6 @@ export default {
                 newCoverIndex: newCoverIndex
             };
             this.$emit('save', payload);
-        },
-        async onPreview() {
-            if (this.previewLoading) return;
-            this.previewLoading = true;
-            
-            try {
-                // Resize images for preview to avoid localStorage limits
-                const compressedImages = await Promise.all(
-                    this.imagePreviews.map(img => this.resizeImage(img, 800))
-                );
-
-                const combinedImages = [...this.existingImages, ...compressedImages];
-                
-                // Reorder combined images based on coverIndex
-                if (this.coverIndex > 0 && this.coverIndex < combinedImages.length) {
-                    const coverImg = combinedImages[this.coverIndex];
-                    combinedImages.splice(this.coverIndex, 1);
-                    combinedImages.unshift(coverImg);
-                }
-
-                // Create preview data structure
-                const previewData = {
-                    title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
-                    description: [{ key: 'en', value: this.form.description }, { key: 'th', value: this.form.description }],
-                    images: combinedImages,
-                    views: this.news ? this.news.views : 0,
-                    create: { datetime: this.news ? (this.news.create ? this.news.create.datetime : new Date()) : new Date() }
-                };
-
-                // Store in Vuex
-                this.$store.commit('news/setPreviewData', previewData);
-
-                // Also store in localStorage to persist across tabs
-                try {
-                    localStorage.setItem('news_preview_data', JSON.stringify(previewData));
-                } catch (e) {
-                    console.error('LocalStorage error:', e);
-                    previewData.images = [];
-                    localStorage.setItem('news_preview_data', JSON.stringify(previewData));
-                }
-
-                // Open in new tab
-                const routeData = this.$router.resolve({ 
-                    name: 'NewsDetail', 
-                    params: { id: 'preview' },
-                    query: { preview: 'true' }
-                });
-                window.open(routeData.href, '_blank');
-            } catch (error) {
-                console.error('Preview error:', error);
-            } finally {
-                this.previewLoading = false;
-            }
-        },
-        resizeImage(base64Str, maxWidth) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.src = base64Str;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > maxWidth) {
-                        height = (maxWidth / width) * height;
-                        width = maxWidth;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7)); // 0.7 quality
-                };
-            });
         },
     }
 }

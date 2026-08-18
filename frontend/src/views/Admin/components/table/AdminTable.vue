@@ -10,13 +10,21 @@
                 hover 
                 :border="false"
                 :striped="false"
-                :items-per-page="10"
+                :items-per-page="itemsPerPage"
                 :active-page="activePage"
                 @page-change="pageChange"
             >
                 <template #thumbnail="{ item }">
                     <td>
-                        <div class="thumbnail-wrapper clickable" @click="zoomImg(item.image)">
+                        <div
+                            class="thumbnail-wrapper clickable"
+                            role="button"
+                            tabindex="0"
+                            :aria-label="$i18n.locale === 'en' ? `View ${getName($i18n.locale, item)} image` : `ดูภาพ ${getName($i18n.locale, item)}`"
+                            @click="zoomImg(item)"
+                            @keydown.enter="zoomImg(item)"
+                            @keydown.space.prevent="zoomImg(item)"
+                        >
                             <img :src="item.image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName($i18n.locale, item).charAt(0)}`"
                                 :alt="getName($i18n.locale, item)" class="thumbnail-img">
                              <div class="zoom-overlay">
@@ -38,7 +46,10 @@
                     </td>
                 </template>
                 <template #updatedAt="{ item }">
-                    <td class="text-muted text-sm">{{ formatDate(item.updatedAt) }}</td>
+                    <td class="text-muted text-sm">
+                        <div>{{ formatDate(item.updatedAt) }}</div>
+                        <div class="small mt-1">{{ formatTime(item.updatedAt) }}</div>
+                    </td>
                 </template>
                 <template #category="{ item }">
                     <td>
@@ -50,6 +61,20 @@
                         <div :class="['status-badge', getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').class]">
                             <CIcon :name="getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').icon" size="sm" class="status-icon" /> 
                             {{ getStatusBadge(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending').label }}
+                        </div>
+                    </td>
+                </template>
+                <template #storage="{ item }">
+                    <td>
+                        <div class="storage-cell">
+                            <div class="storage-main-row">
+                                <span class="storage-name">{{ item.storage ? (getName($i18n.locale, item.storage) || getName('en', item.storage)) : '-' }}</span>
+                                <span v-if="isUniversityStorage(item.storage) && !item.storageDetail" class="storage-warning" v-c-tooltip="$i18n.locale === 'en' ? 'Exact location required' : 'กรุณาระบุตำแหน่งจัดเก็บจริง'">!</span>
+                                <button v-if="isUniversityStorage(item.storage)" type="button" class="storage-edit-btn" @click="onEdit(item)" v-c-tooltip="$i18n.locale === 'en' ? 'Edit exact location' : 'แก้ไขตำแหน่งจัดเก็บจริง'">
+                                    <CIcon name="cil-pencil" size="sm" />
+                                </button>
+                            </div>
+                            <small v-if="isUniversityStorage(item.storage) && item.storageDetail" class="storage-detail">{{ item.storageDetail }}</small>
                         </div>
                     </td>
                 </template>
@@ -73,22 +98,20 @@
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button 
+                                v-if="!loadingItems.includes(item._id)"
                                 class="action-btn icon-success mx-2" 
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'"
                                 @click="onApprove(item)"
-                                :disabled="loadingItems.includes(item._id)"
                             >
-                                <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
-                                <CIcon v-else name="cil-check" size="lg" />
+                                <CIcon name="cil-check" size="lg" />
                             </button>
                             <button 
+                                v-if="!loadingItems.includes(item._id)"
                                 class="action-btn icon-danger" 
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'"
                                 @click="onReject(item)"
-                                :disabled="loadingItems.includes(item._id)"
                             >
-                                <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
-                                <CIcon v-else name="cil-x" size="lg" />
+                                <CIcon name="cil-x" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
@@ -107,6 +130,9 @@
                             >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
+                            <button v-if="approvalStatus(item) === 'Approved'" class="action-btn icon-edit ml-2" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
+                                <CIcon name="cil-pencil" size="lg" />
+                            </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
@@ -120,45 +146,43 @@
             </CDataTable>
         </div>
 
-        <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                {{ $i18n.locale === 'en' ? `Showing ${(activePage - 1) * 10 + 1} to ${Math.min(activePage * 10, filteredItems.length)} of ${filteredItems.length} artworks` : `แสดง ${(activePage - 1) * 10 + 1} ถึง ${Math.min(activePage * 10, filteredItems.length)} จากทั้งหมด ${filteredItems.length} ผลงาน` }}
-            </div>
-            <div class="text-muted text-sm" v-else>
-                {{ $i18n.locale === 'en' ? 'Showing 0 artworks' : 'แสดง 0 ผลงาน' }}
-            </div>
-            <CPagination
-                :active-page.sync="activePage"
-                :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
-                size="sm"
-                align="end"
-                class="mb-0 pill-pagination"
-            />
-        </CCardFooter>
+        <TablePaginationFooter :total="filteredItems.length" :active-page.sync="activePage" :items-per-page.sync="itemsPerPage" :show-page-size="false" noun-en="artworks" noun-th="ผลงาน" />
     </CCard>
 
-        <!-- Image Zoom Modal -->
-        <CModal 
-            :show.sync="showZoomModal"
-            centered 
-            size="xl" 
-            class="zoom-modal"
-            hide-footer
-            @update:show="showZoomModal = $event"
+        <!-- Artwork Image Viewer: same immersive style as public artwork detail -->
+        <div
+            v-if="showZoomModal"
+            class="artwork-lightbox"
+            role="dialog"
+            aria-modal="true"
+            :aria-label="$i18n.locale === 'en' ? 'Artwork image viewer' : 'ตัวดูภาพผลงานศิลปะ'"
+            tabindex="-1"
+            @click="closeZoom"
+            @keydown.esc="closeZoom"
         >
-            <template #header>
-                <div class="w-100 d-flex justify-content-between align-items-center">
-                    <h5 class="modal-title py-0">{{ $i18n.locale === 'en' ? 'Zoom Artwork Image' : 'ดูรูปผลงานศิลปะขนาดใหญ่' }}</h5>
-                    <CButton close @click="showZoomModal = false" />
+            <div class="artwork-lightbox-content" @click.stop>
+                <img
+                    :src="zoomImageUrl"
+                    class="artwork-lightbox-image"
+                    :alt="zoomArtwork ? getName($i18n.locale, zoomArtwork) : ($i18n.locale === 'en' ? 'Artwork preview' : 'ตัวอย่างผลงานศิลปะ')"
+                >
+                <div v-if="zoomArtwork" class="artwork-lightbox-caption text-center">
+                    <h4 class="artwork-lightbox-title">{{ getName($i18n.locale, zoomArtwork) || getName('en', zoomArtwork) }}</h4>
+                    <p class="artwork-lightbox-artist">
+                        {{ zoomArtwork.artist ? (getName($i18n.locale, zoomArtwork.artist) || getName('en', zoomArtwork.artist)) : ($i18n.locale === 'en' ? 'Artist' : 'ศิลปิน') }}
+                    </p>
                 </div>
-            </template>
-            <div class="zoom-content position-relative">
-                <div class="text-center">
-                    <img :src="zoomImageUrl" class="zoomed-image shadow-lg" alt="Full Preview">
-                </div>
+                <button
+                    ref="zoomCloseButton"
+                    type="button"
+                    class="artwork-lightbox-close"
+                    :aria-label="$i18n.locale === 'en' ? 'Close artwork viewer' : 'ปิดตัวดูภาพผลงานศิลปะ'"
+                    @click="closeZoom"
+                >
+                    <CIcon name="cilX" size="xl" aria-hidden="true" />
+                </button>
             </div>
-        </CModal>
+        </div>
         </CCol>
     </CRow>
 </template>
@@ -167,9 +191,11 @@
 import moment from 'moment';
 import * as XLSX from 'xlsx';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import TablePaginationFooter from './TablePaginationFooter.vue';
 
 export default {
     name: 'AdminTable',
+    components: { TablePaginationFooter },
     mixins: [statusBadgeMixin],
     props: {
         items: {
@@ -193,7 +219,10 @@ export default {
         return {
             showZoomModal: false,
             zoomImageUrl: '',
-            activePage: 1
+            zoomArtwork: null,
+            zoomTriggerElement: null,
+            activePage: 1,
+            itemsPerPage: 10
         }
     },
     watch: {
@@ -202,6 +231,18 @@ export default {
                 this.activePage = 1;
             },
             deep: true
+        },
+        showZoomModal(isVisible) {
+            this.setBodyScrollLock(isVisible);
+
+            if (isVisible) {
+                this.$nextTick(() => {
+                    if (this.$refs.zoomCloseButton) this.$refs.zoomCloseButton.focus();
+                });
+            } else if (this.zoomTriggerElement && typeof this.zoomTriggerElement.focus === 'function') {
+                this.zoomTriggerElement.focus();
+                this.zoomTriggerElement = null;
+            }
         }
     },
     computed: {
@@ -212,6 +253,7 @@ export default {
                 { key: 'artist', label: this.$i18n.locale === 'en' ? 'ARTIST' : 'ศิลปิน', _classes: 'border-top-0 border-bottom' },
                 { key: 'updatedAt', label: this.$i18n.locale === 'en' ? 'LAST UPDATED' : 'อัปเดตล่าสุด', _classes: 'border-top-0 border-bottom' },
                 { key: 'category', label: this.$i18n.locale === 'en' ? 'CATEGORY' : 'หมวดหมู่', _classes: 'border-top-0 border-bottom' },
+                { key: 'storage', label: this.$i18n.locale === 'en' ? 'STORAGE' : 'สถานที่จัดเก็บ', _classes: 'border-top-0 border-bottom' },
                 { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom' },
                 { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right' }
             ];
@@ -257,13 +299,30 @@ export default {
         }
     },
     methods: {
+        approvalStatus(item) {
+            return item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
+        },
+        isUniversityStorage(storage) {
+            if (!storage) return false;
+            const name = `${this.getName('en', storage)} ${this.getName('th', storage)}`.toLowerCase();
+            return name.includes('university') || name.includes('mfu') || name.includes('มหาวิทยาลัย');
+        },
         onView(item) {
             this.$emit('view', item);
         },
-        zoomImg(url) {
-            if (!url) return;
-            this.zoomImageUrl = url;
+        zoomImg(item) {
+            if (!item || !item.image) return;
+            this.zoomTriggerElement = document.activeElement;
+            this.zoomImageUrl = item.image;
+            this.zoomArtwork = item;
             this.showZoomModal = true;
+        },
+        closeZoom() {
+            this.showZoomModal = false;
+        },
+        setBodyScrollLock(isLocked) {
+            if (typeof document === 'undefined') return;
+            document.body.style.overflow = isLocked ? 'hidden' : '';
         },
         onApprove(item) {
             this.$emit('approve', item);
@@ -330,20 +389,132 @@ export default {
             XLSX.utils.book_append_sheet(wb, ws, 'Artworks');
             XLSX.writeFile(wb, `Artworks_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
         }
+    },
+    beforeDestroy() {
+        this.setBodyScrollLock(false);
     }
 }
 </script>
 
 <style scoped>
-/* Custom Modal Tweaks for Zoom */
-.zoom-modal >>> .modal-content {
-    background-color: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+/* Immersive artwork viewer */
+.artwork-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 4.5rem 1rem 4rem;
+    background: rgba(0, 0, 0, 0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: artworkLightboxFadeIn 0.3s ease;
 }
 
-.zoom-modal >>> .modal-body {
-    padding: 1.5rem; /* Give some nice breathing room */
+@keyframes artworkLightboxFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.artwork-lightbox-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min(94vw, 1500px);
+    max-width: 100%;
+}
+
+.artwork-lightbox-image {
+    display: block;
+    width: auto;
+    max-width: 94vw;
+    max-height: 82vh;
+    max-height: calc(100dvh - 10rem);
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+
+.artwork-lightbox-caption {
+    width: min(92vw, 720px);
+    margin-top: 1.25rem;
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.artwork-lightbox-title {
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(1.25rem, 2vw, 1.65rem);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.artwork-lightbox-artist {
+    margin: 0.35rem 0 0;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.artwork-lightbox-close {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.artwork-lightbox-close:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+    transform: rotate(90deg) scale(1.05);
+}
+
+.artwork-lightbox-close:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.92);
+    outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+    .artwork-lightbox {
+        padding: 4.5rem 0.75rem 5rem;
+    }
+
+    .artwork-lightbox-image {
+        max-width: 96vw;
+        max-height: 76vh;
+        max-height: calc(100dvh - 11rem);
+        border-radius: 6px;
+    }
+
+    .artwork-lightbox-close {
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .artwork-lightbox,
+    .artwork-lightbox-close,
+    .thumbnail-img,
+    .zoom-overlay {
+        animation: none;
+        transition: none;
+    }
 }
 
 .thumbnail-wrapper {
@@ -365,6 +536,11 @@ export default {
 .clickable {
     cursor: pointer;
     position: relative;
+}
+
+.clickable:focus-visible {
+    outline: 3px solid rgba(74, 29, 24, 0.35);
+    outline-offset: 3px;
 }
 
 .clickable:hover .thumbnail-img {
@@ -390,20 +566,6 @@ export default {
     opacity: 1;
 }
 
-.zoom-content {
-    background: transparent;
-    padding: 0;
-    overflow: hidden;
-    border-radius: 12px;
-}
-
-.zoomed-image {
-    width: 100%;
-    max-height: 90vh;
-    object-fit: contain;
-    border-radius: 12px;
-}
-
 .artist-name {
     color: #4a5568;
     font-weight: 600;
@@ -421,6 +583,14 @@ export default {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
     margin-top: 1rem;
 }
+.storage-cell { display:flex; flex-direction:column; align-items:flex-start; gap:5px; min-width:150px; }
+.storage-main-row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; max-width:100%; }
+.storage-name { min-width:0; color:#172b4d; font-weight:600; line-height:1.35; }
+.storage-detail { display:block; color:#64748b; line-height:1.35; }
+.storage-warning { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#fff; background:#dc2626; font-weight:800; }
+.storage-edit-btn { flex:0 0 30px; width:30px; height:30px; border:1px solid #dfd6d1; border-radius:8px; color:#8f2419; background:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s ease; }
+.storage-edit-btn:hover { background:#f9efec; border-color:#8f2419; box-shadow:0 4px 10px rgba(143,36,25,0.12); }
+.storage-edit-btn:focus-visible { outline:3px solid rgba(143,36,25,0.25); outline-offset:2px; }
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

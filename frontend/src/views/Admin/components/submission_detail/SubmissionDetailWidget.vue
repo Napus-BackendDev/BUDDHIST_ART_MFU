@@ -20,7 +20,7 @@
       <CCard :class="['widget-card', { 'active-widget': false }]">
         <CCardBody class="d-flex justify-content-between align-items-center p-4">
           <div>
-            <div class="widget-title">{{ $i18n.locale === 'en' ? 'Students Enrolled' : 'นักศึกษาที่เข้าร่วม' }}</div>
+            <div class="widget-title">{{ $i18n.locale === 'en' ? 'Enrolled Learners' : 'ผู้เรียนที่เข้าร่วม' }}</div>
             <div class="widget-value text-info">{{ studentsEnrolled }}</div>
           </div>
           <div class="icon-wrapper bg-soft-info text-info border-info">

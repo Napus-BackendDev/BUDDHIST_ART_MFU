@@ -6,7 +6,11 @@ const Role = require('../../server/Project/Settings/models/role.model');
 const Status = require('../../server/Project/Settings/models/status.model');
 const ResMessage = require('../../server/Project/Settings/service/message');
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_SECRET,
+    process.env.REDIRECT_URL || undefined
+);
 
 if (!process.env.GOOGLE_CLIENT_ID) {
     console.error("FATAL ERROR: GOOGLE_CLIENT_ID is not defined in environment variables!");
@@ -33,11 +37,30 @@ exports.onQuery = async function (request, response, next) {
         }
 
         // 1. Verify ID Token
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
+        let payload;
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            payload = ticket.getPayload();
+        } catch (verifyError) {
+            // Local development can run without outbound access to Google's cert endpoint.
+            // Never enable this fallback in production: signature verification remains mandatory there.
+            const allowDevFallback = process.env.NODE_ENV === 'development' && process.env.ALLOW_UNVERIFIED_GOOGLE_DEV === 'true';
+            if (!allowDevFallback) throw verifyError;
+
+            const decoded = jwt.decode(token);
+            const now = Math.floor(Date.now() / 1000);
+            const audience = Array.isArray(decoded?.aud) ? decoded.aud : [decoded?.aud];
+            if (!decoded || !audience.includes(process.env.GOOGLE_CLIENT_ID) ||
+                !['accounts.google.com', 'https://accounts.google.com'].includes(decoded.iss) ||
+                !decoded.exp || decoded.exp <= now) {
+                throw verifyError;
+            }
+            console.warn('Google certificate unavailable; using development-only validated payload fallback.');
+            payload = decoded;
+        }
         const { email, name, picture, given_name } = payload;
 
         if (!email) {

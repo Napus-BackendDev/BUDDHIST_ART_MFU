@@ -88,68 +88,8 @@ exports.randomNumber = function(nummber){
 }
 
 
-exports.compareJSON = function(obj1, obj2) {
-    const diffs = {};
-
-    for (const key in obj1) {
-        if (obj1.hasOwnProperty(key)) {
-            if (Array.isArray(obj1[key]) && Array.isArray(obj2[key])) {
-                const arrayDiffs = obj1[key].map((item, index) => compareJSON(item, obj2[key][index]));
-                diffs[key] = arrayDiffs.filter(diff => Object.keys(diff).length > 0);
-            } else if (typeof obj1[key] === 'object' && obj1[key] !== null && obj2[key] !== null) {
-                const deepDiff = compareJSON(obj1[key], obj2[key]);
-                if (Object.keys(deepDiff).length > 0) {
-                    diffs[key] = deepDiff;
-                }
-            } else if (obj1[key] !== obj2[key]) {
-                diffs[key] = { value1: obj1[key], value2: obj2[key] };
-            }
-        }
-    }
-
-    for (const key in obj2) {
-        if (obj2.hasOwnProperty(key) && !obj1.hasOwnProperty(key)) {
-            diffs[key] = { value1: undefined, value2: obj2[key] };
-        }
-    }
-
-    return diffs;
-}
-exports.createNewDataFromDifferences = function(differences) {
-    const result = {};
-
-    for (const key in differences) {
-        if (Array.isArray(differences[key])) {
-            result[key] = differences[key].map(diff => createNewDataFromDifferences(diff));
-        } else if (typeof differences[key] === 'object' && differences[key] !== null && 'value1' in differences[key] && 'value2' in differences[key]) {
-            result[key] = differences[key].value2; // หรือเลือก value1 ตามที่ต้องการ
-        } else if (typeof differences[key] === 'object' && differences[key] !== null) {
-            result[key] = createNewDataFromDifferences(differences[key]);
-        }
-    }
-
-    return result;
-}
-
-// Example usage:
-// const json1 = {
-//     name: "John",
-//     age: 30,
-//     address: [{
-//         city: "New York",
-//         zip: "10001"
-//     }]
-// };
-// const json2 = {
-//     name: "Johns",
-//     age: 31,
-//     ap:{code:11},
-//     address: [{
-//         city: "New York",
-//         zip: "10002"
-//     }]
-// };
-//
-// const differences = compareJSON(json1, json2);
-// const newData = createNewDataFromDifferences(differences);
+// NOTE: compareJSON / createNewDataFromDifferences were removed — they had no callers
+// anywhere in the codebase and their recursive branch referenced the bare function name
+// (they are assigned to `exports.*`, so the name is undefined in scope) which threw a
+// ReferenceError on any nested/array input. Re-add as named function declarations if needed.
 // console.log(newData);

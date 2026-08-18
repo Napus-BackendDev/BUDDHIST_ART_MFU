@@ -31,6 +31,9 @@ const ArtworkModule = {
                     return response.data.data;
                 });
         },
+        updateView({ commit }, id) {
+            return Service.artwork('view', id, {});
+        },
         create({ commit }, data) {
             return Service.artwork('post', data, {});
         },

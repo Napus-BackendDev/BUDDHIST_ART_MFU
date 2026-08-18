@@ -1,973 +1,112 @@
 <template>
-    <CModal 
-        :title="$i18n.locale === 'en' ? 'Submit Artwork' : 'ส่งผลงานสร้างสรรค์'" 
-        :show="show" 
-        @update:show="$emit('update:show', $event)"
-        size="lg"
-        centered
-        class="submit-artwork-modal"
-    >
-        <template #header>
-            <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <div class="icon-square bg-red-light text-red mr-3">
-                        <CIcon name="cil-cloud-upload" size="lg" />
-                    </div>
-                    <div>
-                        <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Submit Artwork' : 'ส่งผลงานสร้างสรรค์' }}</h5>
-                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Enter the details of your artwork for this assignment.' : 'กรอกรายละเอียดผลงานของคุณสำหรับงานที่ได้รับมอบหมายนี้' }}</p>
-                    </div>
-                </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
-                    <CIcon name="cil-x" size="sm" />
-                </button>
-            </div>
-        </template>
-
-        <div class="px-3 py-2">
-            <!-- Basic Info Row -->
-            <!-- Titles EN/TH -->
-            <CRow>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Artwork Title (EN)</label>
-                        <CInput 
-                            v-model="form.title.en" 
-                            placeholder="e.g. The Golden Serenity" 
-                            class="custom-input mb-0"
-                        />
-                    </div>
-                </CCol>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Artwork Title (TH)</label>
-                        <CInput 
-                            v-model="form.title.th" 
-                            placeholder="ชื่อผลงานภาษาไทย" 
-                            class="custom-input mb-0"
-                        />
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Category Row -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">Category</label>
-                        <CDropdown :key="form.category" :caret="false" class="w-100">
-                            <template #toggler>
-                                <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ selectedCategoryName }}</span>
-                                    <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
-                                </CButton>
-                            </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
-                                <CDropdownItem 
-                                    v-for="cat in categories" 
-                                    :key="cat._id" 
-                                    @click="handleCategorySelect(cat._id)"
-                                >
-                                    {{ getName('en', cat) }}
-                                </CDropdownItem>
-                            </CDropdownMenu>
-                        </CDropdown>
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Storage Row -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Storage Location' : 'สถานที่จัดเก็บ' }}</label>
-                        <CDropdown :key="form.storage" :caret="false" class="w-100">
-                            <template #toggler>
-                                <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ selectedStorageName }}</span>
-                                    <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
-                                </CButton>
-                            </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
-                                <CDropdownItem 
-                                    v-for="store in storages" 
-                                    :key="store._id" 
-                                    @click="handleStorageSelect(store._id)"
-                                >
-                                    {{ getName($i18n.locale, store) }}
-                                </CDropdownItem>
-                            </CDropdownMenu>
-                        </CDropdown>
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Technique & Status Row -->
-            <!-- Technique Row EN/TH -->
-            <CRow>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Technique (EN)</label>
-                        <CInput 
-                            v-model="form.technique.en" 
-                            placeholder="e.g. Oil on Canvas" 
-                            class="custom-input mb-0"
-                        />
-                    </div>
-                </CCol>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Technique (TH)</label>
-                        <CInput 
-                            v-model="form.technique.th" 
-                            placeholder="เช่น สีน้ำมันบนผ้าใบ" 
-                            class="custom-input mb-0"
-                        />
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Size Row -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">Dimensions / ขนาด ({{ is3D ? 'กว้าง x ยาว x สูง' : 'กว้าง x ยาว' }})</label>
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <div class="input-group-custom">
-                                    <span class="dimension-prefix">W</span>
-                                    <CInput 
-                                        type="number"
-                                        v-model="form.width" 
-                                        placeholder="Width" 
-                                        class="custom-input-with-prefix mb-0"
-                                    />
-                                </div>
-                            </div>
-                            <div class="mx-2 text-muted font-weight-bold">×</div>
-                            <div class="flex-grow-1">
-                                <div class="input-group-custom">
-                                    <span class="dimension-prefix">L</span>
-                                    <CInput 
-                                        type="number"
-                                        v-model="form.height" 
-                                        placeholder="Length" 
-                                        class="custom-input-with-prefix mb-0"
-                                    />
-                                </div>
-                            </div>
-                            <template v-if="is3D">
-                                <div class="mx-2 text-muted font-weight-bold">×</div>
-                                <div class="flex-grow-1">
-                                    <div class="input-group-custom">
-                                        <span class="dimension-prefix">H</span>
-                                        <CInput 
-                                            type="number"
-                                            v-model="form.depth" 
-                                            placeholder="Height" 
-                                            class="custom-input-with-prefix mb-0"
-                                        />
-                                    </div>
-                                </div>
-                            </template>
-                            <div class="ml-2">
-                                <CDropdown :key="form.unit" :caret="false">
-                                    <template #toggler>
-                                        <CButton class="custom-select-btn" style="min-width: 80px; height: 46px;">
-                                            <span class="text-dark">{{ form.unit || 'Unit' }}</span>
-                                            <CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" />
-                                        </CButton>
-                                    </template>
-                                    <CDropdownMenu class="border-0 shadow-lg mt-2">
-                                        <CDropdownItem v-for="u in unitOptions" :key="u.en" @click="form.unit = u.en">
-                                            {{ u.en }} ({{ u.th }})
-                                        </CDropdownItem>
-                                    </CDropdownMenu>
-                                </CDropdown>
-                            </div>
-                        </div>
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Remark Row -->
-            <CRow>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Remark (EN)</label>
-                        <CInput 
-                            v-model="form.remark.en" 
-                            placeholder="Additional notes in English..." 
-                            class="custom-input mb-0"
-                        />
-                    </div>
-                </CCol>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">Remark (TH) / หมายเหตุ</label>
-                        <CInput 
-                            v-model="form.remark.th" 
-                            placeholder="หมายเหตุเพิ่มเติม (ภาษาไทย)..." 
-                            class="custom-input mb-0"
-                        />
-                    </div>
-                </CCol>
-            </CRow>
-
-            <CRow>
-                <CCol :md="isPriceVisible ? '6' : '12'">
-                    <div class="form-group-custom">
-                        <label class="form-label">Sale Status</label>
-                        <CDropdown :key="form.status.sale" :caret="false" class="w-100">
-                            <template #toggler>
-                                <CButton class="custom-select-btn">
-                                    <span class="text-dark">{{ selectedSaleStatusName }}</span>
-                                    <CIcon name="cil-filter" class="dropdown-icon" />
-                                </CButton>
-                            </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
-                                <CDropdownItem 
-                                    v-for="status in saleStatuses" 
-                                    :key="status._id" 
-                                    @click="handleSaleStatusSelect(status._id)"
-                                >
-                                    {{ getName('en', status) }}
-                                </CDropdownItem>
-                            </CDropdownMenu>
-                        </CDropdown>
-                    </div>
-                </CCol>
-                <CCol md="6" v-if="isPriceVisible">
-                    <div class="form-group-custom">
-                        <label class="form-label">Price</label>
-                        <div class="input-group-custom">
-                            <span class="currency-prefix">฿</span>
-                            <CInput 
-                                type="number"
-                                v-model="form.price" 
-                                placeholder="0.00" 
-                                class="custom-input-with-prefix text-right mb-0"
-                            />
-                        </div>
-                    </div>
-                </CCol>
-                
-            </CRow>
-
-            <!-- File Upload Row -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">Artwork Image</label>
-                        <div class="file-upload-container" :class="{ 'has-image': imagePreview }">
-                            <input 
-                                type="file" 
-                                id="artwork-image-edit-upload" 
-                                @change="handleFileUpload" 
-                                accept="image/*"
-                                class="file-input-hidden"
-                            />
-                            <label for="artwork-image-edit-upload" class="file-upload-label w-100">
-                                <template v-if="!imagePreview">
-                                    <div class="upload-placeholder py-4 text-center">
-                                        <CIcon name="cil-cloud-upload" size="xl" class="text-red mb-2" />
-                                        <div class="font-weight-bold">Click to upload image</div>
-                                        <div class="text-muted small">PNG, JPG or JPEG (Max 5MB)</div>
-                                    </div>
-                                </template>
-                                <template v-else>
-                                    <div class="preview-container position-relative">
-                                        <img :src="imagePreview" class="upload-preview" />
-                                        <div class="preview-overlay">
-                                            <div class="overlay-content">
-                                                <CIcon name="cil-pencil" class="mr-2" /> Change Image
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </label>
-                        </div>
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Description Row -->
-            <!-- Description Row (EN) -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">Description (EN)</label>
-                        <CTextarea 
-                            v-model="form.description.en" 
-                            placeholder="English description..." 
-                            rows="4"
-                            class="custom-textarea"
-                        />
-                    </div>
-                </CCol>
-            </CRow>
-
-            <!-- Description Row (TH) -->
-            <CRow>
-                <CCol md="12">
-                    <div class="form-group-custom">
-                        <label class="form-label">Description (TH)</label>
-                        <CTextarea 
-                            v-model="form.description.th" 
-                            placeholder="รายละเอียดภาษาไทย..." 
-                            rows="4"
-                            class="custom-textarea"
-                        />
-                    </div>
-                </CCol>
-            </CRow>
+  <CModal :show="show" @update:show="$emit('update:show', $event)" centered class="submit-artwork-modal">
+    <template #header>
+      <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+          <div class="icon-square mr-3"><CIcon name="cil-cloud-upload" size="lg" /></div>
+          <div>
+            <h5 class="modal-title font-weight-bold mb-1">{{ $i18n.locale === 'en' ? 'Submit Artwork' : 'ส่งผลงานสร้างสรรค์' }}</h5>
+            <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Complete two short steps to submit your work.' : 'กรอกข้อมูล 2 ขั้นตอนสั้น ๆ เพื่อส่งผลงาน' }}</p>
+          </div>
         </div>
+        <button class="close-btn" @click="$emit('update:show', false)"><CIcon name="cil-x" /></button>
+      </div>
+    </template>
 
-        <template #footer>
-            <div class="w-100 d-flex justify-content-end align-items-center py-2">
-                <CButton 
-                    variant="ghost" 
-                    @click="$emit('update:show', false)"
-                    class="btn-cancel mr-3"
-                >
-                    Cancel
-                </CButton>
-                <CButton 
-                    variant="ghost" 
-                    @click="handlePreview"
-                    class="btn-preview mr-3"
-                >
-                    Preview Mode
-                </CButton>
-                <CButton 
-                    color="primary" 
-                    @click="handleSave"
-                    class="btn-save-artwork"
-                    :disabled="!isFormValid"
-                >
-                    {{ $i18n.locale === 'en' ? 'Submit Artwork' : 'ส่งผลงาน' }}
-                </CButton>
-            </div>
-        </template>
-    </CModal>
+    <div class="wizard-body">
+      <div class="wizard-grid">
+        <main class="wizard-form-column">
+          <section v-show="currentStep === 1">
+            <div class="step-heading"><span>01</span><div><h6>ข้อมูลผลงานภาษาไทย</h6><p>กรอกข้อมูลอ้างอิงภาษาไทยก่อน</p></div></div>
+            <div class="form-group-custom"><label class="form-label">ชื่อผลงาน (ภาษาไทย) *</label><CInput v-model="form.title.th" placeholder="กรอกชื่อผลงานภาษาไทย" class="custom-input mb-0" /></div>
+            <div class="form-group-custom"><label class="form-label">หมวดหมู่ *</label><CDropdown :caret="false" class="w-100"><template #toggler><CButton class="custom-select-btn"><span>{{ categoryLabel }}</span><CIcon name="cil-chevron-bottom" /></CButton></template><CDropdownMenu class="w-100"><CDropdownItem v-for="item in categories" :key="item._id" @click="form.category = item._id">{{ getName('th', item) }}</CDropdownItem></CDropdownMenu></CDropdown></div>
+            <div class="form-group-custom"><label class="form-label">เทคนิคที่ใช้ (ภาษาไทย)</label><CInput v-model="form.technique.th" placeholder="เช่น สีน้ำมันบนผ้าใบ" class="custom-input mb-0" /></div>
+            <div class="form-group-custom"><label class="form-label">ขนาด (กว้าง × ยาว{{ is3D ? ' × สูง' : '' }}) *</label><div class="dimensions"><CInput type="number" v-model="form.width" placeholder="ความกว้าง" class="custom-input mb-0" /><b>×</b><CInput type="number" v-model="form.height" placeholder="ความยาว" class="custom-input mb-0" /><template v-if="is3D"><b>×</b><CInput type="number" v-model="form.depth" placeholder="ความสูง" class="custom-input mb-0" /></template><div class="unit-dropdown-wrap"><CDropdown :key="form.unit" :caret="false"><template #toggler><CButton class="custom-select-btn unit-select-btn"><span>{{ getUnitLabel }}</span><CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" /></CButton></template><CDropdownMenu class="border-0 shadow-lg mt-2"><CDropdownItem v-for="unit in units" :key="unit.en" @click="form.unit = unit.en">{{ unit.th }}</CDropdownItem></CDropdownMenu></CDropdown></div></div></div>
+            <div class="form-group-custom"><label class="form-label">หมายเหตุ (ภาษาไทย)</label><CInput v-model="form.remark.th" placeholder="หมายเหตุเพิ่มเติมเกี่ยวกับผลงาน" class="custom-input mb-0" /></div>
+            <div class="form-group-custom mb-0"><label class="form-label">รายละเอียดผลงาน (ภาษาไทย)</label><CTextarea v-model="form.description.th" rows="4" placeholder="อธิบายแนวคิด ที่มา หรือรายละเอียดของผลงาน" class="custom-textarea" /></div>
+          </section>
+
+          <section v-show="currentStep === 2">
+            <div class="step-heading"><span>02</span><div><h6>Artwork details in English</h6><p>Enter matching English information for the same artwork.</p></div></div>
+            <div class="form-group-custom"><label class="form-label">Artwork title (English) *</label><CInput v-model="form.title.en" placeholder="e.g. The Golden Serenity" class="custom-input mb-0" /></div>
+            <div class="form-group-custom"><label class="form-label">Category *</label><CDropdown :caret="false" class="w-100"><template #toggler><CButton class="custom-select-btn"><span>{{ categoryLabelEn }}</span><CIcon name="cil-chevron-bottom" /></CButton></template><CDropdownMenu class="w-100"><CDropdownItem v-for="item in categories" :key="item._id" @click="form.category = item._id">{{ getName('en', item) }}</CDropdownItem></CDropdownMenu></CDropdown></div>
+            <div class="form-group-custom"><label class="form-label">Technique (English)</label><CInput v-model="form.technique.en" placeholder="e.g. Oil on Canvas" class="custom-input mb-0" /></div>
+            <div class="form-group-custom"><label class="form-label">Dimensions (width × length{{ is3D ? ' × height' : '' }}) *</label><div class="dimensions"><CInput type="number" v-model="form.width" placeholder="Width" class="custom-input mb-0" /><b>×</b><CInput type="number" v-model="form.height" placeholder="Length" class="custom-input mb-0" /><template v-if="is3D"><b>×</b><CInput type="number" v-model="form.depth" placeholder="Height" class="custom-input mb-0" /></template><div class="unit-dropdown-wrap"><CDropdown :key="form.unit" :caret="false"><template #toggler><CButton class="custom-select-btn unit-select-btn"><span>{{ form.unit }}</span><CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" /></CButton></template><CDropdownMenu class="border-0 shadow-lg mt-2"><CDropdownItem v-for="unit in units" :key="unit.en" @click="form.unit = unit.en">{{ unit.en }}</CDropdownItem></CDropdownMenu></CDropdown></div></div></div>
+            <div class="form-group-custom"><label class="form-label">Remark (English)</label><CInput v-model="form.remark.en" placeholder="Additional notes in English" class="custom-input mb-0" /></div>
+            <div class="form-group-custom mb-0"><label class="form-label">Description (English)</label><CTextarea v-model="form.description.en" rows="4" placeholder="Describe the artwork in English" class="custom-textarea" /></div>
+          </section>
+        </main>
+
+        <aside class="wizard-image-column">
+          <div class="image-heading"><span><CIcon name="cil-image1" size="lg" /></span><div><h6>{{ $i18n.locale === 'en' ? 'Artwork image *' : 'รูปภาพผลงาน *' }}</h6><p>{{ $i18n.locale === 'en' ? 'Upload the main image shown on the website.' : 'อัปโหลดรูปหลักที่จะแสดงบนเว็บไซต์' }}</p></div></div>
+          <div class="image-upload-panel"><input id="submission-image" type="file" accept="image/png,image/jpeg" @change="handleFileUpload" /><label for="submission-image"><template v-if="imagePreview"><img :src="imagePreview" alt="Artwork preview" /><span>เปลี่ยนรูปภาพ</span></template><template v-else><i><CIcon name="cil-cloud-upload" size="xl" /></i><strong>{{ $i18n.locale === 'en' ? 'Choose artwork image' : 'เลือกรูปภาพผลงาน' }}</strong><small>PNG, JPG or JPEG</small><em>{{ $i18n.locale === 'en' ? 'Maximum 5 MB' : 'ขนาดไม่เกิน 5 MB' }}</em></template></label></div>
+          <div class="sale-box"><div class="form-group-custom"><label class="form-label">{{ $i18n.locale === 'en' ? 'Storage location' : 'สถานที่จัดเก็บ' }}</label><CDropdown :caret="false" class="w-100"><template #toggler><CButton class="custom-select-btn"><span>{{ $i18n.locale === 'en' ? storageLabelEn : storageLabel }}</span><CIcon name="cil-chevron-bottom" /></CButton></template><CDropdownMenu class="w-100"><CDropdownItem v-for="item in storages" :key="item._id" @click="form.storage = item._id">{{ getName($i18n.locale === 'en' ? 'en' : 'th', item) }}</CDropdownItem></CDropdownMenu></CDropdown></div><div class="form-group-custom mb-0"><label class="form-label">{{ $i18n.locale === 'en' ? 'Price' : 'ราคา' }}</label><CInput v-model="form.price" type="number" placeholder="฿ 0.00" class="custom-input mb-0" /></div></div>
+        </aside>
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="wizard-footer w-100 d-flex justify-content-between align-items-center">
+        <CButton variant="ghost" :class="currentStep === 1 ? 'btn-cancel' : 'btn-back'" @click="currentStep === 1 ? $emit('update:show', false) : currentStep = 1"><CIcon v-if="currentStep === 2" name="cil-arrow-left" class="mr-1" />{{ currentStep === 1 ? ($i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก') : ($i18n.locale === 'en' ? 'Back' : 'ย้อนกลับ') }}</CButton>
+        <div><CButton v-if="currentStep === 1" color="primary" class="btn-submit" @click="currentStep = 2">{{ $i18n.locale === 'en' ? 'Next' : 'ถัดไป' }} <CIcon name="cil-arrow-right" class="ml-1" /></CButton><CButton v-else color="primary" class="btn-submit" :disabled="!isFormValid || loading" @click="handleSave">{{ $i18n.locale === 'en' ? 'Submit artwork' : 'ส่งผลงาน' }}</CButton></div>
+      </div>
+    </template>
+  </CModal>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex'
 
 export default {
-    name: 'ArtworkEditModal',
-    components: {
-    },
-    props: {
-        show: {
-            type: Boolean,
-            default: false
-        },
-        artwork: {
-            type: Object,
-            default: () => null
-        }
-    },
-    data() {
-        return {
-            categories: [],
-            statuses: [],
-            storages: [],
-            imagePreview: null,
-            form: {
-                id: null,
-                title: { en: '', th: '' },
-                artist: '',
-                category: '',
-                storage: '',
-                technique: { en: '', th: '' },
-                size: { en: '', th: '' },
-                width: '',
-                height: '',
-                depth: '',
-                unit: 'cm',
-                price: '',
-                description: { en: '', th: '' },
-                status: {
-                    approval: '',
-                    sale: ''
-                },
-                remark: { en: '', th: '' },
-                image: null
-            },
-            unitOptions: [
-                { en: 'cm', th: 'ชม.' },
-                { en: 'm', th: 'ม.' },
-                { en: 'inch', th: 'นิ้ว' },
-                { en: 'mm', th: 'มม.' }
-            ]
-        }
-    },
-    async created() {
-        await this.fetchInitialData();
-    },
-    watch: {
-        artwork: {
-            immediate: true,
-            handler(newVal) {
-                if (newVal) {
-                    this.populateForm(newVal);
-                }
-            }
-        },
-        show(newVal) {
-            if (newVal) {
-                if (this.artwork) {
-                    this.populateForm(this.artwork);
-                } else {
-                    this.resetForm();
-                }
-            }
-        }
-    },
-    computed: {
-        ...mapGetters({
-            userId: 'auth/userId',
-            allUsers: 'user/user'
-        }),
-        isFormValid() {
-            const basicValid = this.form.title.en.trim() !== '' && 
-                               this.form.title.th.trim() !== '' && 
-                               this.form.artist !== '' && 
-                               this.form.width !== '' &&
-                               this.form.height !== '' &&
-                               this.form.category !== '' && 
-                               this.imagePreview !== null;
-            
-            if (this.isPriceVisible) {
-                return basicValid && this.form.price !== '' && parseFloat(this.form.price) >= 0;
-            }
-            return basicValid;
-        },
-        saleStatuses() {
-            if (!this.statuses) return [];
-            return this.statuses.filter(s => {
-                const groupName = s.group ? this.getName('en', s.group).trim() : '';
-                const statusName = this.getName('en', s).trim();
-                return groupName === 'Sale Status' && statusName === 'Available';
-            });
-        },
-        approvalStatuses() {
-            if (!this.statuses) return [];
-            return this.statuses.filter(s => {
-                const groupName = s.group ? this.getName('en', s.group).trim() : '';
-                return groupName === 'Show Status';
-            });
-        },
-        selectedCategoryName() {
-            const cat = this.categories.find(c => String(c._id) === String(this.form.category));
-            return cat ? this.getName('en', cat) : 'Select Category';
-        },
-        selectedStorageName() {
-            const store = this.storages.find(s => String(s._id) === String(this.form.storage));
-            return store ? this.getName(this.$i18n.locale, store) : (this.$i18n.locale === 'en' ? 'Select Storage Location' : 'เลือกสถานที่จัดเก็บ');
-        },
-        selectedSaleStatusName() {
-            const status = this.saleStatuses.find(s => String(s._id) === String(this.form.status.sale));
-            return status ? this.getName('en', status) : 'Select Status';
-        },
-        selectedApprovalStatusName() {
-            const status = this.statuses.find(s => s._id === this.form.status.approval);
-            return status ? this.getName('en', status) : 'Select Approval Status';
-        },
-        is3D() {
-            const cat = this.categories.find(c => String(c._id) === String(this.form.category));
-            if (!cat) return false;
-            const enName = this.getName('en', cat).toLowerCase();
-            const thName = this.getName('th', cat).toLowerCase();
-            return enName.includes('sculpture') || 
-                   enName.includes('installation') || 
-                   thName.includes('ประติมากรรม') || 
-                   thName.includes('จัดวาง');
-        },
-        isPriceVisible() {
-            if (!this.form.status.sale) return false;
-            return this.selectedSaleStatusName === 'Available';
-        }
-    },
-    methods: {
-        handleCategorySelect(id) {
-            console.log('Category selected:', id);
-            this.$set(this.form, 'category', id);
-        },
-        handleStorageSelect(id) {
-            console.log('Storage selected:', id);
-            this.$set(this.form, 'storage', id);
-        },
-        handleSaleStatusSelect(id) {
-            console.log('Sale Status selected:', id);
-            this.$set(this.form.status, 'sale', id);
-        },
-        async fetchInitialData() {
-            try {
-                this.$store.dispatch('user/get', {});
-
-                const categories = await this.$store.dispatch('artwork/category', { method: 'get' });
-                console.log('--- Edit Artwork Categories ---', categories);
-                this.categories = categories || [];
-
-                await this.$store.dispatch('setting/status/get');
-                this.statuses = this.$store.getters['setting/status/item'] || [];
-                console.log('--- Edit Artwork Statuses ---', this.statuses);
-
-                // Fetch storage options
-                await this.$store.dispatch('setting/storage/get');
-                this.storages = this.$store.getters['setting/storage/item'] || [];
-                console.log('--- Edit Artwork Storages ---', this.storages);
-                
-                if (this.artwork) {
-                    console.log('--- Populating Form with Artwork ---', this.artwork);
-                    this.populateForm(this.artwork);
-                } else {
-                    // Set current user as artist for new submissions
-                    this.form.artist = this.userId;
-                }
-            } catch (error) {
-                console.error('Error fetching initial data:', error);
-            }
-        },
-        populateForm(artwork) {
-            const getVal = (field, lang) => {
-                if (!field) return '';
-                if (typeof field === 'string') return field;
-                if (Array.isArray(field)) {
-                    const obj = field.find(n => n.key === lang);
-                    return obj ? obj.value : '';
-                }
-                return '';
-            };
-
-            this.form = {
-                id: artwork._id,
-                title: {
-                    en: getVal(artwork.title, 'en'),
-                    th: getVal(artwork.title, 'th')
-                },
-                artist: artwork.artist ? (artwork.artist._id || artwork.artist) : (artwork.owner ? (artwork.owner._id || artwork.owner) : ''),
-                category: artwork.category ? artwork.category._id : '',
-                storage: artwork.storage ? (artwork.storage._id || artwork.storage) : '',
-                technique: {
-                    en: getVal(artwork.technique, 'en'),
-                    th: getVal(artwork.technique, 'th')
-                },
-                size: {
-                    en: getVal(artwork.size, 'en'),
-                    th: getVal(artwork.size, 'th')
-                },
-                price: this.cleanPrice(artwork.price),
-                description: {
-                    en: getVal(artwork.description, 'en'),
-                    th: getVal(artwork.description, 'th')
-                },
-                status: {
-                    approval: artwork.status?.approval?._id || '',
-                    sale: artwork.status?.sale?._id || ''
-                },
-                remark: {
-                    en: getVal(artwork.remark, 'en'),
-                    th: getVal(artwork.remark, 'th')
-                },
-                image: null
-            };
-            this.imagePreview = artwork.image || null;
-
-            // Parse size string
-            const sizeEn = getVal(artwork.size, 'en') || '';
-            const sizeParts = sizeEn.split('x').map(p => p.trim());
-            
-            if (sizeParts.length >= 3) {
-                // Handle 3D: W x L x H Unit
-                this.form.width = sizeParts[0].replace(/[^0-9.]/g, '');
-                this.form.height = sizeParts[1].replace(/[^0-9.]/g, '');
-                
-                const heightWithUnit = sizeParts[2].split(' ');
-                this.form.depth = heightWithUnit[0].replace(/[^0-9.]/g, '');
-                this.form.unit = heightWithUnit[1] || 'cm';
-            } else if (sizeParts.length >= 2) {
-                // Handle 2D: W x H Unit
-                this.form.width = sizeParts[0].replace(/[^0-9.]/g, '');
-                const heightWithUnit = sizeParts[1].split(' ');
-                this.form.height = heightWithUnit[0].replace(/[^0-9.]/g, '');
-                this.form.depth = '';
-                this.form.unit = heightWithUnit[1] || 'cm';
-            } else {
-                this.form.width = '';
-                this.form.height = '';
-                this.form.depth = '';
-                this.form.unit = 'cm';
-            }
-        },
-        cleanPrice(price) {
-            if (!price) return '';
-            return String(price).replace(/[^0-9.]/g, '');
-        },
-        handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!file.type.match('image.*')) {
-                alert('Please select an image file');
-                return;
-            }
-
-            this.form.image = file;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.imagePreview = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        },
-        handlePreview() {
-            const artist = this.form.artist;
-            if (!this.form.title.en && !this.form.title.th || !artist || !this.form.price || !this.imagePreview) {
-                alert('Please fill in all required fields (Title, Price, and Image) before previewing.');
-                return;
-            }
-            
-            const previewData = {
-                ...this.form,
-                artist: artist,
-                image: this.imagePreview, 
-                medium: this.form.technique || 'N/A',
-                dimensions: '60 x 80 cm', 
-            };
-            
-            sessionStorage.setItem('artwork_preview', JSON.stringify(previewData));
-            this.$router.push({ 
-                name: 'ArtworkDetail', 
-                params: { id: 'preview' } 
-            });
-        },
-        getUnitTH(unitEN) {
-            const unit = this.unitOptions.find(u => u.en === unitEN);
-            return unit ? unit.th : unitEN;
-        },
-        handleSave() {
-            if (!this.isFormValid) return;
-            
-            // Find the "Pending" status to reset approval upon edit
-            const pendingStatus = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
-            if (pendingStatus) {
-                this.form.status.approval = pendingStatus._id;
-            }
-
-            const payload = {
-                _id: this.form.id,
-                title: [{ key: 'en', value: this.form.title.en }, { key: 'th', value: this.form.title.th }],
-                description: [{ key: 'en', value: this.form.description.en }, { key: 'th', value: this.form.description.th }],
-                artist: this.form.artist,
-                category: this.form.category,
-                storage: this.form.storage || null,
-                technique: [{ key: 'en', value: this.form.technique.en }, { key: 'th', value: this.form.technique.th }],
-                size: [
-                    { 
-                        key: 'en', 
-                        value: this.is3D 
-                            ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.form.unit}` 
-                            : `${this.form.width} x ${this.form.height} ${this.form.unit}` 
-                    },
-                    { 
-                        key: 'th', 
-                        value: this.is3D 
-                            ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.getUnitTH(this.form.unit)}` 
-                            : `${this.form.width} x ${this.form.height} ${this.getUnitTH(this.form.unit)}` 
-                    }
-                ],
-                price: this.isPriceVisible ? parseFloat(this.form.price) : 0,
-                status: this.form.status,
-                remark: [{ key: 'en', value: this.form.remark.en }, { key: 'th', value: this.form.remark.th }],
-                _image: this.form.image
-            };
-
-            this.$emit('submit', payload);
-            this.$emit('update:show', false);
-        },
-        resetForm() {
-            this.form = {
-                id: null,
-                title: { en: '', th: '' },
-                artist: this.userId,
-                category: '',
-                storage: '',
-                technique: { en: '', th: '' },
-                size: { en: '', th: '' },
-                width: '',
-                height: '',
-                depth: '',
-                unit: 'cm',
-                price: '',
-                description: { en: '', th: '' },
-                status: {
-                    approval: '',
-                    sale: ''
-                },
-                remark: { en: '', th: '' },
-                image: null
-            };
-            this.imagePreview = null;
-            
-            // Set default category if available
-            if (this.categories && this.categories.length > 0) {
-                this.form.category = this.categories[0]._id;
-            }
-            
-            // Set default sale status to Available
-            if (this.saleStatuses && this.saleStatuses.length > 0) {
-                const defaultSale = this.saleStatuses.find(s => this.getName('en', s) === 'Available');
-                this.form.status.sale = defaultSale ? defaultSale._id : this.saleStatuses[0]._id;
-            }
-
-            // Set default approval status to Pending
-            if (this.approvalStatuses && this.approvalStatuses.length > 0) {
-                const defaultApproval = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
-                this.form.status.approval = defaultApproval ? defaultApproval._id : this.approvalStatuses[0]._id;
-            }
-        }
-    }
+  name: 'SubmissionCreateModal',
+  props: { show: Boolean, loading: Boolean, assignmentTitle: String },
+  data: () => ({
+    currentStep: 1, categories: [], storages: [], statuses: [], imagePreview: null,
+    units: [{ en: 'cm', th: 'ซม' }, { en: 'm', th: 'ม.' }, { en: 'inch', th: 'นิ้ว' }, { en: 'mm', th: 'มม.' }],
+    form: { title: { th: '', en: '' }, artist: '', category: '', storage: '', technique: { th: '', en: '' }, width: '', height: '', depth: '', unit: 'cm', price: '', description: { th: '', en: '' }, remark: { th: '', en: '' }, status: { approval: '', sale: '' }, image: null }
+  }),
+  computed: {
+    ...mapGetters({ userId: 'auth/userId' }),
+    saleStatuses () { return this.statuses.filter(item => this.getName('en', item) === 'Available') },
+    approvalStatuses () { return this.statuses.filter(item => this.getName('en', item) === 'Pending') },
+    selectedCategory () { return this.categories.find(item => String(item._id) === String(this.form.category)) },
+    selectedStorage () { return this.storages.find(item => String(item._id) === String(this.form.storage)) },
+    categoryLabel () { return this.selectedCategory ? this.getName('th', this.selectedCategory) : 'เลือกหมวดหมู่' },
+    categoryLabelEn () { return this.selectedCategory ? this.getName('en', this.selectedCategory) : 'Select category' },
+    storageLabel () { return this.selectedStorage ? this.getName('th', this.selectedStorage) : 'เลือกสถานที่จัดเก็บ' },
+    storageLabelEn () { return this.selectedStorage ? this.getName('en', this.selectedStorage) : 'Select storage location' },
+    getUnitLabel () { const unit = this.units.find(item => item.en === this.form.unit); return unit ? unit.th : this.form.unit },
+    is3D () { const name = this.getName('en', this.selectedCategory || {}).toLowerCase(); return name.includes('sculpture') || name.includes('installation') },
+    isFormValid () { return this.form.title.th.trim() && this.form.title.en.trim() && this.form.category && this.form.width !== '' && this.form.height !== '' && this.imagePreview && this.form.price !== '' }
+  },
+  watch: { show (visible) { if (visible) this.resetForm() } },
+  async created () { await this.fetchInitialData() },
+  methods: {
+    getName (lang, item) { const title = item && (item.title || item.name); if (Array.isArray(title)) return title.find(value => value.key === lang)?.value || title[0]?.value || ''; return typeof title === 'string' ? title : '' },
+    async fetchInitialData () { try { this.categories = await this.$store.dispatch('artwork/category', { method: 'get' }) || []; await this.$store.dispatch('setting/status/get'); this.statuses = this.$store.getters['setting/status/item'] || []; await this.$store.dispatch('setting/storage/get'); this.storages = this.$store.getters['setting/storage/item'] || []; this.resetForm() } catch (error) { console.error('Unable to load submission form data:', error) } },
+    resetForm () { const sale = this.saleStatuses[0]; const approval = this.approvalStatuses[0]; this.currentStep = 1; this.imagePreview = null; this.form = { title: { th: '', en: '' }, artist: this.userId || '', category: this.categories[0]?._id || '', storage: '', technique: { th: '', en: '' }, width: '', height: '', depth: '', unit: 'cm', price: '', description: { th: '', en: '' }, remark: { th: '', en: '' }, status: { approval: approval?._id || '', sale: sale?._id || '' }, image: null } },
+    handleFileUpload (event) { const file = event.target.files && event.target.files[0]; if (!file) return; if (!file.type.match(/^image\//) || file.size > 5 * 1024 * 1024) { alert(this.$i18n.locale === 'en' ? 'Use an image file no larger than 5 MB.' : 'กรุณาใช้ไฟล์รูปภาพขนาดไม่เกิน 5 MB'); event.target.value = ''; return } this.form.image = file; const reader = new FileReader(); reader.onload = value => { this.imagePreview = value.target.result }; reader.readAsDataURL(file) },
+    handleSave () { if (!this.isFormValid) return; const sizeEn = this.is3D ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${this.form.unit}` : `${this.form.width} x ${this.form.height} ${this.form.unit}`; const unitTh = this.getUnitLabel; const sizeTh = this.is3D ? `${this.form.width} x ${this.form.height} x ${this.form.depth} ${unitTh}` : `${this.form.width} x ${this.form.height} ${unitTh}`; this.$emit('submit', { title: [{ key: 'en', value: this.form.title.en }, { key: 'th', value: this.form.title.th }], description: [{ key: 'en', value: this.form.description.en }, { key: 'th', value: this.form.description.th }], artist: this.form.artist, category: this.form.category, storage: this.form.storage || null, technique: [{ key: 'en', value: this.form.technique.en }, { key: 'th', value: this.form.technique.th }], size: [{ key: 'en', value: sizeEn }, { key: 'th', value: sizeTh }], price: Number(this.form.price), status: this.form.status, remark: [{ key: 'en', value: this.form.remark.en }, { key: 'th', value: this.form.remark.th }], _image: this.form.image }); this.$emit('update:show', false) }
+  }
 }
 </script>
 
 <style scoped>
-/* Reusing styles from ArtworkCreateModal.vue for consistency */
-.form-group-custom {
-    margin-bottom: 1.25rem;
-}
-
-.form-label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 0.75rem;
-    letter-spacing: 0.05em;
-}
-
-.custom-input ::v-deep .form-control,
-.custom-textarea ::v-deep .form-control {
-    border-radius: 12px;
-    border: 1px solid #f1f5f9;
-    padding: 0.85rem 1.25rem;
-    height: auto;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-    background-color: #f8fafc;
-    color: #1e293b;
-}
-
-.custom-input ::v-deep .form-control:focus,
-.custom-textarea ::v-deep .form-control:focus {
-    border-color: #8c151533;
-    background-color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05);
-}
-
-.input-group-custom {
-    position: relative;
-}
-
-.currency-prefix {
-    position: absolute;
-    left: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-weight: 600;
-    color: #1e293b;
-    z-index: 10;
-    font-size: 1.1rem;
-    pointer-events: none;
-}
-
-.custom-input-with-prefix ::v-deep .form-control {
-    padding-left: 2.85rem !important;
-    height: 52px !important;
-    border-radius: 12px !important;
-    border: 1px solid #f1f5f9 !important;
-    background-color: #f8fafc !important;
-    font-size: 1rem !important;
-}
-
-.custom-input-with-prefix ::v-deep .form-control:focus {
-    background-color: #ffffff !important;
-    border-color: #8c151533 !important;
-    box-shadow: 0 0 0 4px rgba(140, 21, 21, 0.05) !important;
-}
-
-.dimension-prefix {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-weight: 700;
-    color: #94a3b8;
-    font-size: 0.7rem;
-    z-index: 10;
-}
-
-.custom-input-with-prefix ::v-deep .form-control {
-    padding-left: 2.2rem !important;
-}
-
-.custom-select-btn {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #f8fafc;
-    border: 1px solid #f1f5f9;
-    border-radius: 12px;
-    padding: 0.85rem 1.25rem;
-    height: auto;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-    outline: none;
-    cursor: pointer;
-}
-
-.custom-select-btn:hover {
-    background: #ffffff;
-    border-color: #e2e8f0;
-}
-
-.dropdown-icon {
-    color: #94a3b8;
-    width: 14px;
-}
-
-/* File Upload Stying */
-.file-upload-container {
-    border: 2px dashed #e2e8f0;
-    border-radius: 16px;
-    background-color: #f8fafc;
-    transition: all 0.2s ease;
-    overflow: hidden;
-}
-
-.file-upload-container:hover {
-    border-color: #8c1515;
-    background-color: #f1f5f9;
-}
-
-.file-input-hidden {
-    display: none;
-}
-
-.file-upload-label {
-    cursor: pointer;
-    display: block;
-    margin-bottom: 0;
-}
-
-.preview-container {
-    width: 100%;
-    height: 180px;
-}
-
-.upload-preview {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background-color: #ffffff;
-}
-
-.preview-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(30, 41, 59, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.preview-container:hover .preview-overlay {
-    opacity: 1;
-}
-
-.overlay-content {
-    color: white;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-}
-
-/* Header & Modal Stying */
-.icon-square {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.bg-red-light {
-    background-color: #8c151511;
-}
-
-.text-red {
-    color: #8c1515;
-}
-
-.close-btn {
-    background: transparent;
-    border: none;
-    padding: 8px;
-    color: #94a3b8;
-    transition: color 0.2s;
-}
-
-.close-btn:hover {
-    color: #64748b;
-}
-
-::v-deep .modal-content {
-    border-radius: 20px;
-    border: none;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-}
-
-::v-deep .modal-header {
-    border-bottom: 1px solid #f1f5f9;
-    padding: 1.5rem 2rem;
-}
-
-::v-deep .modal-footer {
-    border-top: 1px solid #f1f5f9;
-    padding: 1.5rem 2.5rem;
-}
-
-.btn-cancel {
-    color: #94a3b8 !important;
-    font-weight: 600;
-    font-size: 1rem;
-}
-
-.btn-save-artwork {
-    background-color: #8c1515 !important;
-    border-color: #8c1515 !important;
-    color: white !important;
-    border-radius: 30px !important;
-    padding: 0.8rem 2.5rem !important;
-    font-weight: 600 !important;
-    font-size: 1rem;
-    box-shadow: 0 10px 15px -3px rgba(140, 21, 21, 0.2);
-}
-
-.btn-preview {
-    color: #8c1515 !important;
-    font-weight: 600;
-    font-size: 1rem;
-}
+::v-deep .modal-dialog { max-width: 1100px; width: calc(100% - 2rem); }
+::v-deep .modal-content { border: 0; border-radius: 22px; overflow: hidden; box-shadow: 0 25px 55px rgba(20, 17, 36, .22); }
+::v-deep .modal-header { padding: 1.1rem 2rem; border-bottom: 1px solid #f0ecea; }
+::v-deep .modal-body { max-height: calc(100vh - 215px); overflow-y: auto; padding: 1.5rem 2.5rem; }
+::v-deep .modal-footer { padding: .9rem 2.5rem; border-top: 1px solid #f0ecea; }
+.icon-square, .image-heading > span { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 13px; color: #8c1515; background: rgba(140,21,21,.08); }
+.close-btn { border: 0; background: transparent; color: #94a3b8; padding: .45rem; }
+.wizard-grid { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(265px, .8fr); gap: 2rem; }
+.wizard-image-column { border-left: 1px solid #eee7e4; padding-left: 2rem; position: sticky; top: 0; align-self: start; }
+.step-heading, .image-heading { display: flex; gap: .85rem; align-items: flex-start; border-bottom: 1px solid #f1e9e5; padding-bottom: 1rem; margin-bottom: 1.25rem; }
+.step-heading > span { font: 700 1.4rem Georgia, serif; color: #b7791f; padding-top: .08rem; }.step-heading h6,.image-heading h6 { margin:0; color:#27364a; font-weight:800; }.step-heading p,.image-heading p { margin:.2rem 0 0; font-size:.75rem; color:#94a3b8; }
+.form-group-custom { margin-bottom: 1.15rem; }.form-label { display:block; margin-bottom:.55rem; font-size:.75rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:#64748b; }
+.custom-input ::v-deep .form-control,.custom-textarea ::v-deep .form-control { min-height:52px; border:1px solid #eef1f4; border-radius:12px; background:#f8fafc; padding:.8rem 1rem; }.custom-textarea ::v-deep .form-control { min-height:110px; }.custom-input ::v-deep .form-control:focus,.custom-textarea ::v-deep .form-control:focus { background:#fff; border-color:#8c1515; box-shadow:0 0 0 3px rgba(140,21,21,.08); }
+.custom-select-btn { width:100%; min-height:52px; display:flex; align-items:center; justify-content:space-between; border:1px solid #eef1f4; background:#f8fafc; border-radius:12px; padding:.75rem 1rem; color:#475569; transition:all .3s cubic-bezier(.4,0,.2,1); }.custom-select-btn:hover { background:#fff; border-color:#e2e8f0; }.unit-dropdown-wrap { flex:0 0 auto!important; }.unit-select-btn { min-width:96px; }.dropdown-icon { width:14px; color:#94a3b8; }.dimensions { display:flex; align-items:center; gap:.55rem; }.dimensions > div { flex:1; }.dimensions b { color:#94a3b8; }
+.image-upload-panel { aspect-ratio:1; border:2px dashed #dccdc8; border-radius:16px; overflow:hidden; background:linear-gradient(145deg,#fffdfb,#f8f5f3); }.image-upload-panel input { display:none; }.image-upload-panel label { width:100%; height:100%; margin:0; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.45rem; color:#344155; text-align:center; }.image-upload-panel i { display:grid; place-items:center; width:66px; height:66px; border-radius:50%; background:#fff; color:#8c1515; box-shadow:0 10px 25px rgba(140,21,21,.12); }.image-upload-panel small { color:#94a3b8; }.image-upload-panel em { font-style:normal; font-size:.68rem; font-weight:700; color:#9a681d; background:rgba(183,121,31,.1); border-radius:99px; padding:.25rem .6rem; }.image-upload-panel img { width:100%; height:calc(100% - 27px); object-fit:contain; padding:.5rem; }.image-upload-panel label span { font-size:.78rem; color:#8c1515; font-weight:700; }.sale-box { margin-top:1.15rem; padding-top:1.15rem; border-top:1px solid #eee7e4; }
+.btn-cancel,.btn-back { color:#64748b!important; font-weight:700; }.btn-submit { border-radius:999px!important; padding:.65rem 1.7rem!important; background:#8c1515!important; border-color:#8c1515!important; font-weight:700; }
+@media (max-width: 767px) { ::v-deep .modal-body { padding:1.25rem; }.wizard-grid { grid-template-columns:1fr; }.wizard-image-column { position:static; padding:1.5rem 0 0; border-left:0; border-top:1px solid #eee7e4; }.dimensions { flex-wrap:wrap; }.dimensions > div { min-width:40%; } }
 </style>

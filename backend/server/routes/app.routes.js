@@ -5,11 +5,13 @@ const orderRoutes = require("../Project/Order/order.routes");
 const userRoutes = require("../Project/User/user.routes");
 const submissionRoutes = require("../Project/Submission/submission.routes");
 const googleRoutes = require("../Project/Settings/google.routes");
+const realtimeMutationEmitter = require("../../middleware/realtime");
 
 // const sync = require("../sync/mis");
 module.exports = function (app) {
 
   var path = "/api/v1";
+  app.use(path, realtimeMutationEmitter);
   app.use(path + '/google', googleRoutes);
 
   // app.use(path + '/organization', organizationRoutes); // complete

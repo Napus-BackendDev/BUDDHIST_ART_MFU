@@ -1,30 +1,36 @@
 const nodemailer = require("nodemailer");
 
-let transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.SMTP_USER, // อีเมลผู้ส่ง
-        pass: process.env.SMTP_PASS, // รหัสผ่าน (หรือ App Password)
-    },
+const smtpPort = Number.parseInt(process.env.SMTP_PORT || "25", 10);
+const smtpSecure = process.env.SMTP_SECURE === "true" || smtpPort === 465;
+
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: process.env.SMTP_USER && process.env.SMTP_PASS
+        ? {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        }
+        : undefined,
 });
 
 exports.sendMail = async function (to, subject, text, html, attachments = []) {
     try {
-        let mailOptions = {
+        const mailOptions = {
             from: process.env.SMTP_USER,
-            to: to,
-            subject: subject,
-            text: text,
-            html: html,
-            attachments: attachments
+            to,
+            subject,
+            text,
+            html,
+            attachments,
         };
-        let info = await transporter.sendMail(mailOptions);
+
+        const info = await transporter.sendMail(mailOptions);
         console.log(`[Email] Mail sent successfully to ${to}. Message ID: ${info.messageId}`);
         return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error(`[Email] Failed to send email to ${to}:`, error);
         throw error;
     }
-}
-
-
+};

@@ -4,7 +4,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="view-user-modal"
+        class="view-user-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">

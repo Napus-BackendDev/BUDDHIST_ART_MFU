@@ -15,6 +15,7 @@ import Accounts from "@/store/modules/Accounts/index";
 import Dialog from "@/store/modules/Dialog/index";
 import Payments from "@/store/modules/Payments/index";
 import Dashboard from "@/store/modules/Dashboard/index";
+import Realtime from "@/store/modules/Realtime/index";
 
 
 
@@ -63,6 +64,7 @@ export default new Vuex.Store({
     account: Accounts,
     dialog: Dialog,
     payment: Payments,
-    dashboard: Dashboard
+    dashboard: Dashboard,
+    realtime: Realtime
   }
 });

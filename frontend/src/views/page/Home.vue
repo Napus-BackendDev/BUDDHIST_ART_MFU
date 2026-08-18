@@ -1,43 +1,32 @@
 <template>
     <div>
         <SectionHeroHome />
-        <SectionSocialProof />
         <SectionFeaturedHome />
-        <SectionCatalog />
-        <SectionTestimonials />
+        <!-- hidden per client 2026-07: user testimonials / voice section (เสียงตอบรับจากผู้ใช้งาน) removed from Home -->
+        <!-- <SectionTestimonials /> -->
         <SectionStudentShowcase />
-        <SectionStudentBatches />
-        <SectionAboutHome />
-        <SectionSubmissionReviews />
+        <!-- <SectionSubmissionReviews /> -->
         <SectionNews />
     </div>
 </template>
 
 <script>
 import SectionHeroHome from './components/SectionHeroHome.vue';
-import SectionSocialProof from './components/SectionSocialProof.vue';
 import SectionFeaturedHome from './components/SectionFeaturedHome.vue';
-import SectionCatalog from './components/SectionCatalog.vue';
 import SectionStudentShowcase from './components/SectionStudentShowcase.vue';
-import SectionStudentBatches from './components/SectionStudentBatches.vue';
 import SectionSubmissionReviews from './components/SectionSubmissionReviews.vue';
 import SectionTestimonials from './components/SectionTestimonials.vue';
 import SectionNews from './components/SectionNews.vue';
-import SectionAboutHome from './components/SectionAboutHome.vue';
 
 export default {
     name: 'UserIndex',
     components: {
         SectionHeroHome,
-        SectionSocialProof,
         SectionFeaturedHome,
-        SectionCatalog,
         SectionStudentShowcase,
-        SectionStudentBatches,
         SectionSubmissionReviews,
         SectionTestimonials,
-        SectionNews,
-        SectionAboutHome
+        SectionNews
     },
     data() {
         return {}

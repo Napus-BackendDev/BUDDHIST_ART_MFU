@@ -5,7 +5,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="order-view-modal"
+        class="order-view-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -87,7 +87,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Fallback for mock data that doesn't have artwork array yet -->
+                    <!-- Fallback for legacy order records without an artwork array -->
                     <div v-else class="selected-art-item d-flex align-items-center p-3 mb-2 rounded-lg bg-light">
                         <div class="thumbnail-wrapper-view mr-3">
                             <div :style="`background-color: #${order.imgBg || 'eee'}; color: #${order.imgColor || '888'}`" class="thumb-placeholder-view">

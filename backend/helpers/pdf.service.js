@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
+const certificateOfAuthenticityMail = require('../server/Project/Mail/certificateOfAuthenticity');
 
 class PdfService {
     constructor() {
@@ -35,14 +36,6 @@ class PdfService {
                 const logoData = fs.readFileSync(logoFilePath);
                 const contentType = 'image/png';
                 logoBase64 = `data:${contentType};base64,${logoData.toString('base64')}`;
-            }
-
-            // Load signature and convert to Base64
-            const signFilePath = path.join(__dirname, '../public/system/Signature/sign.png');
-            let signBase64 = '';
-            if (fs.existsSync(signFilePath)) {
-                const signData = fs.readFileSync(signFilePath);
-                signBase64 = `data:image/png;base64,${signData.toString('base64')}`;
             }
 
             const fontPath = `file://${path.join(__dirname, '../public/assets/fonts/mfu.ttf').replace(/\\/g, '/')}`;
@@ -136,12 +129,6 @@ class PdfService {
                         width: 45%;
                         position: relative;
                     }
-                    .signature-image {
-                        height: 50px;
-                        margin-bottom: -15px;
-                        position: relative;
-                        z-index: 1;
-                    }
                     .line {
                         border-bottom: 1px dotted #333;
                         margin-bottom: 5px;
@@ -197,7 +184,7 @@ class PdfService {
 
                 <div class="payment-info">
                     <strong>ช่องทางการชำระเงิน (Payment Methods)</strong><br/>
-                    ชื่อบัญชี: มหาวิทยาลัยแม่ฟ้าหลวง (${data.accountName || '............................................................'})<br/>
+                    ชื่อบัญชี: ${data.accountName || '............................................................'}<br/>
                     ธนาคาร: ${data.bankName || '............................................................'} เลขที่บัญชี: ${data.accountNo || '...............................................'}
                 </div>
 
@@ -205,7 +192,7 @@ class PdfService {
                     <strong>ข้อกำหนดและเงื่อนไข (Terms & Conditions)</strong>
                     <ul>
                         <li>การสั่งจองจะสมบูรณ์เมื่อผู้จองชำระเงินและส่งหลักฐานการโอนเงินเรียบร้อยแล้ว</li>
-                        <li>การจัดส่ง: ดำเนินการจัดส่งผลงานตามที่อยู่ที่ระบุข้างต้น โดยใช้ระบบ จัดส่งปลายทาง (ผู้ซื้อเป็นผู้รับผิดชอบค่าบริการขนส่งเมื่อได้รับสินค้า)</li>
+                        <li>การจัดส่ง: ดำเนินการจัดส่งผลงานตามที่อยู่ที่ระบุข้างต้น</li>
                         <li>มหาวิทยาลัยจะออกใบเสร็จรับเงินอย่างเป็นทางการหลังจากได้รับชำระเงินครบถ้วน</li>
                     </ul>
                 </div>
@@ -217,7 +204,7 @@ class PdfService {
                         ( ${data.customerName || '............................................................'} )
                     </div>
                     <div class="signature-box">
-                        <img src="${signBase64}" class="signature-image" /><br/>
+                        <div style="height: 50px;"></div>
                         (ลงชื่อ)............................................................<br/>
                         ( นาย ณภัทร เสมือนโพธิ์ )<br/>
                         เจ้าหน้าที่/ผู้รับจอง
@@ -244,6 +231,53 @@ class PdfService {
     }
 
     /**
+     * Generate the same Certificate of Authenticity layout used in the email body.
+     * The artwork is embedded as a data URI so the resulting PDF is self-contained.
+     * @param {Object} data - Certificate data and local artwork path
+     * @returns {Promise<Buffer>} - PDF buffer
+     */
+    async generateCertificateOfAuthenticity(data) {
+        const browser = await this.getBrowser();
+        let page;
+
+        try {
+            page = await browser.newPage();
+
+            let imageSrc = '';
+            if (data?.artworkPath && fs.existsSync(data.artworkPath)) {
+                const artworkData = fs.readFileSync(data.artworkPath);
+                const extension = path.extname(data.artworkPath).toLowerCase();
+                const mimeType = extension === '.png' ? 'image/png' : 'image/jpeg';
+                imageSrc = `data:${mimeType};base64,${artworkData.toString('base64')}`;
+            }
+
+            const info = data?.info || {};
+            const htmlContent = certificateOfAuthenticityMail({
+                imageSrc,
+                titleEN: info.titleEN || info.artworkNameEN,
+                titleTH: info.titleTH || info.artworkNameTH,
+                artistEN: info.artistEN || info.artistNameEN,
+                artistTH: info.artistTH || info.artistName,
+                size: info.size,
+                year: info.year,
+                techniqueEN: info.techniqueEN || info.technique,
+                techniqueTH: info.techniqueTH,
+                artworkCode: info.artworkCode
+            });
+
+            await page.setContent(htmlContent, { waitUntil: 'load' });
+
+            return await page.pdf({
+                format: 'A4',
+                printBackground: true,
+                margin: { top: '0', right: '0', bottom: '0', left: '0' }
+            });
+        } finally {
+            if (page) await page.close();
+        }
+    }
+
+    /**
      * Generate a PDF Certificate of Authenticity using Puppeteer
      * @param {Object} data - Certificate data (artwork, artist, etc.)
      * @returns {Promise<Buffer>} - PDF buffer
@@ -260,14 +294,6 @@ class PdfService {
             if (fs.existsSync(logoFilePath)) {
                 const logoData = fs.readFileSync(logoFilePath);
                 logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
-            }
-
-            // Load signature and convert to Base64
-            const signFilePath = path.join(__dirname, '../public/system/Signature/sign.png');
-            let signBase64 = '';
-            if (fs.existsSync(signFilePath)) {
-                const signData = fs.readFileSync(signFilePath);
-                signBase64 = `data:image/png;base64,${signData.toString('base64')}`;
             }
 
             // Load artwork image and convert to Base64
@@ -480,7 +506,7 @@ class PdfService {
                             <div>ผู้รับรองผลงาน</div>
                         </div>
                         <div class="sign-box">
-                            ${signBase64 ? '<img src="' + signBase64 + '" class="sign-img" />' : '<div style="height: 50px;"></div>'}
+                            <div style="height: 50px;"></div>
                             <div>(${data.info.artistName || '...................................'})</div>
                             <div>ผู้เรียนหลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม</div>
                             <div>มหาวิทยาลัยแม่ฟ้าหลวง รุ่นที่ 5 พ.ศ. 2568</div>

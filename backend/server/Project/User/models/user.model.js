@@ -21,7 +21,7 @@ var objsSchema = new Schema({
         bill: { type: String, default: null },
         shipping: { type: String, default: null },
     },
-    password: { type: String, default: null },
+    password: { type: String, default: null, select: false },
     status: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Status', default: null },
 }, { timestamps: true });
 

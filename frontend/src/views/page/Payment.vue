@@ -190,7 +190,9 @@ export default {
             loading: false,
             createdOrder: null,
             currentStep: 1,
-            syncTimer: null
+            syncTimer: null,
+            submittingOrder: false,
+            submittingPayment: false
         }
     },
     created() {
@@ -266,17 +268,25 @@ export default {
 
                 const pendingOrder = orders.find(order => {
                     const orderUser = order.user?._id || order.user;
-                    if (orderUser !== userId) return false;
+                    if (String(orderUser || '') !== String(userId || '')) return false;
 
                     if (order.image) return false;
+
+                    const currentStatus = this.getName('en', order.status);
+                    const normalizedStatus = currentStatus ? currentStatus.toLowerCase() : '';
+                    if (normalizedStatus !== 'reserved' && normalizedStatus !== 'pending') return false;
+                    const currentArtworkIds = [...new Set(this.cartItems.map(item => String(item._id)))].sort();
+                    const pendingArtworkIds = [...new Set((order.artwork || []).map(art => String(art._id || art)))].sort();
+                    return currentArtworkIds.length === pendingArtworkIds.length
+                        && currentArtworkIds.every((id, index) => id === pendingArtworkIds[index]);
 
                     const statusLabel = this.getName('en', order.status);
                     const s = statusLabel ? statusLabel.toLowerCase() : '';
                     const isCancelledOrApproved = s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success') || s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail');
                     if (isCancelledOrApproved) return false;
 
-                    const cartArtIds = this.cartItems.map(item => item._id);
-                    const orderArtIds = order.artwork ? order.artwork.map(art => art._id || art) : [];
+                    const cartArtIds = this.cartItems.map(item => String(item._id));
+                    const orderArtIds = order.artwork ? order.artwork.map(art => String(art._id || art)) : [];
                     
                     return cartArtIds.some(id => orderArtIds.includes(id));
                 });
@@ -292,12 +302,14 @@ export default {
         },
         async handleCreateOrder(shippingForm) {
             console.log(`[Checkout Flow] Creating Order...`, shippingForm);
+            if (this.submittingOrder) return;
             if (this.cartItems.length === 0) {
                 alert(this.$i18n.locale === 'en' ? 'Your cart is empty!' : 'ตะกร้าสินค้าของคุณว่างเปล่า!');
                 return;
             }
 
             try {
+                this.submittingOrder = true;
                 this.loading = true;
 
                 // If order was already created, update it instead of creating a new one
@@ -311,18 +323,23 @@ export default {
                         },
                         address: {
                             shipping: shippingForm.shipping,
-                            bill: shippingForm.bill || shippingForm.shipping
+                            bill: shippingForm.bill
                         }
                     };
                     const response = await this.$store.dispatch('order/update', orderData);
-                    this.createdOrder = response.data.data;
+                    const updatedOrder = response?.data?.data;
+                    if (!updatedOrder?._id) throw new Error('ORDER_UPDATE_RESPONSE_INVALID');
+                    this.createdOrder = updatedOrder;
                     this.currentStep = 2;
                     return;
                 }
 
                 // Final check for Reserved status
-                for (let item of this.cartItems) {
-                    const latest = await this.$store.dispatch('artwork/explore', { _id: item._id });
+                const artworkChecks = this.cartItems.map(item =>
+                    this.$store.dispatch('artwork/explore', { _id: item._id }).then(latest => ({ item, latest }))
+                );
+                for (let check of await Promise.all(artworkChecks)) {
+                    const { item, latest } = check;
                     if (latest && latest.status && latest.status.approval) {
                         const status = this.getName('en', latest.status.approval);
                         if (status === 'Reserved') {
@@ -345,12 +362,14 @@ export default {
                     },
                     address: {
                         shipping: shippingForm.shipping,
-                        bill: shippingForm.bill || shippingForm.shipping
+                        bill: shippingForm.bill
                     }
                 };
 
                 const response = await this.$store.dispatch('order/create', orderData);
-                this.createdOrder = response.data.data;
+                const createdOrder = response?.data?.data;
+                if (!createdOrder?._id) throw new Error('ORDER_CREATE_RESPONSE_INVALID');
+                this.createdOrder = createdOrder;
 
                 // Update local status representation
                 for (let item of this.cartItems) {
@@ -370,25 +389,37 @@ export default {
 
             } catch (error) {
                 console.error('Order creation failed:', error);
-                const msg = error.response?.data?.message || error.message || '';
-                if (msg.includes('RESERVED_ALREADY') || msg.includes('Reserved') || msg.includes('Sold Out')) {
+                // Server may have created and reserved the order before a follow-up
+                // invoice/email integration failed. Recover that order for this buyer
+                // and continue to payment instead of leaving the checkout stuck.
+                await this.checkExistingPendingOrder();
+                if (this.createdOrder) {
+                    this.currentStep = 2;
+                    return;
+                }
+                const serverError = error.response?.data?.data?.error || error.response?.data?.error;
+                const statusCode = error.response?.status;
+                if (serverError === 'ARTWORK_NOT_AVAILABLE' || statusCode === 409) {
                     alert(this.$i18n.locale === 'en' ? 'One of your items has just been reserved by someone else. Returning to cart.' : 'ขออภัย สินค้าบางรายการในตะกร้าของคุณเพิ่งถูกผู้อื่นจองตัดหน้าไป ระบบจะพากลับไปที่ตะกร้าสินค้า');
                     this.$router.push('/');
                 } else {
                     alert(this.$i18n.locale === 'en' ? 'Error creating order. Please try again.' : 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
                 }
             } finally {
+                this.submittingOrder = false;
                 this.loading = false;
             }
         },
         async handleSubmitPayment(payload) {
             console.log(`[Checkout Flow] Submitting Payment Slip...`);
+            if (this.submittingPayment) return;
             if (!this.createdOrder) {
                 alert(this.$i18n.locale === 'en' ? 'Order not found. Please try again.' : 'ไม่พบข้อมูลคำสั่งซื้อ กรุณาทำรายการใหม่');
                 return;
             }
 
             try {
+                this.submittingPayment = true;
                 this.loading = true;
 
                 // Upload payment slip if attached
@@ -422,8 +453,8 @@ export default {
             } catch (error) {
                 console.error('Slip upload failed:', error);
                 alert(this.$i18n.locale === 'en' ? 'Error uploading payment slip. Please check your profile.' : 'เกิดข้อผิดพลาดในการอัปโหลดสลิปชำระเงิน กรุณาตรวจสอบในหน้าโปรไฟล์ของคุณ');
-                this.currentStep = 3;
             } finally {
+                this.submittingPayment = false;
                 this.loading = false;
             }
         },

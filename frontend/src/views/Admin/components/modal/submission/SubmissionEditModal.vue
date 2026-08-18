@@ -4,7 +4,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="edit-submission-modal"
+        class="edit-submission-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -253,17 +253,20 @@
                     variant="ghost" 
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
+                    :disabled="saving"
                 >
                     {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
-                <CButton 
+                <LoadingButton 
                     color="warning" 
                     @click="handleUpdate"
                     class="btn-update-submission"
                     :disabled="!isFormValid"
+                    :loading="saving"
+                    :loading-text="$i18n.locale === 'en' ? 'Updating...' : 'กำลังอัปเดต...'"
                 >
                     {{ $i18n.locale === 'en' ? 'Update Submission Portal' : 'อัปเดตช่องทางส่งงาน' }}
-                </CButton>
+                </LoadingButton>
             </div>
         </template>
 </CModal>
@@ -282,6 +285,10 @@ export default {
         submissionData: {
             type: Object,
             default: () => null
+        },
+        saving: {
+            type: Boolean,
+            default: false
         }
     },
     data() {

@@ -24,10 +24,13 @@ const io = require('socket.io')(server, {
     }
 });
 
+app.set('io', io);
 require('./server/routes/socket.js')(io);
 
 // Initialize Cron Jobs
 require('./server/crons/cartTimeout.js')();
+require('./server/crons/submissionDeadline.js')();
+require('./server/crons/postTermSaleDeadline.js')();
 
 /**
  * Listen on provided port.

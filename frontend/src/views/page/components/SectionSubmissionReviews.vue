@@ -3,7 +3,7 @@
         <CContainer class="my-4">
             <div class="text-center mb-5">
                 <span class="badge text-uppercase font-weight-bold px-3 py-2 mb-3" style="color: #612721; background-color: rgba(97,39,33,0.08); border-radius: 50px; font-size: 0.8rem; letter-spacing: 1px;">
-                    {{ $i18n.locale === 'en' ? 'Student Experiences' : 'ประสบการณ์จากผู้เรียน' }}
+                    {{ $i18n.locale === 'en' ? 'Learner Experiences' : 'ประสบการณ์จากผู้เรียน' }}
                 </span>
                 <h2 class="font-weight-bold mb-3" style="color: #2c3e50; font-family: 'Cinzel', serif; font-size: 2.2rem;">
                     {{ $i18n.locale === 'en' ? 'Syllabus & Submission Feedback' : 'เสียงสะท้อนจากระบบประเมินผลงาน' }}

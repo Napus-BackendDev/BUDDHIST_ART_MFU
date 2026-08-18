@@ -3,7 +3,7 @@
         <div>
             <!-- Main Data Table -->
             <CDataTable :items="currentItems" :fields="currentFields" class="custom-table mb-0" hover :border="false"
-                :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
+                :striped="false" :items-per-page="itemsPerPage" :active-page="activePage" @page-change="pageChange">
 
                 <!-- Orders -->
                 <template v-if="currentTab === 'Orders'" #date_time="{ item }">
@@ -109,25 +109,10 @@
             </CDataTable>
         </div>
 
-        <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm" v-if="currentItems.length > 0">
-                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, currentItems.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ currentItems.length }} {{ getTranslatedTabName(currentTab) }}
-            </div>
-            <div class="text-muted text-sm" v-else>
-                {{ $i18n.locale === 'en' ? `Showing 0 ${currentTab.toLowerCase()}` : `แสดง 0 ${getTranslatedTabName(currentTab)}` }}
-            </div>
-            <CPagination
-                :active-page.sync="activePage"
-                :pages="Math.max(1, Math.ceil(currentItems.length / 10))"
-                size="sm"
-                align="end"
-                class="mb-0 pill-pagination"
-            />
-        </CCardFooter>
+        <TablePaginationFooter :total="currentItems.length" :active-page.sync="activePage" :items-per-page.sync="itemsPerPage" :noun-en="currentTab.toLowerCase()" :noun-th="getTranslatedTabName(currentTab)" />
 
         <!-- Internal Modals for Actions -->
-        <CModal :show.sync="showViewModal" :title="this.$i18n.locale === 'en' ? `View ${currentTab.slice(0, -1)} Detail` : `รายละเอียด${getTranslatedTabName(currentTab)}`" color="info">
+        <CModal class="admin-modal" :show.sync="showViewModal" :title="this.$i18n.locale === 'en' ? `View ${currentTab.slice(0, -1)} Detail` : `รายละเอียด${getTranslatedTabName(currentTab)}`" color="info">
             <pre v-if="selectedItem" class="bg-light p-3 rounded" style="white-space: pre-wrap;">{{ JSON.stringify(selectedItem,
                 null, 2) }}</pre>
             <template #footer>
@@ -135,7 +120,7 @@
             </template>
         </CModal>
 
-        <CModal :show.sync="showEditModal" :title="this.$i18n.locale === 'en' ? `Edit ${currentTab.slice(0, -1)}` : `แก้ไข${getTranslatedTabName(currentTab)}`" color="primary">
+        <CModal class="admin-modal" :show.sync="showEditModal" :title="this.$i18n.locale === 'en' ? `Edit ${currentTab.slice(0, -1)}` : `แก้ไข${getTranslatedTabName(currentTab)}`" color="primary">
             <div v-if="selectedItem">
                 <p class="text-muted">{{ $i18n.locale === 'en' ? `Editor form for ${selectedItem.id} goes here...` : `ฟอร์มแก้ไขสำหรับ ${selectedItem.id}...` }}</p>
                 <CInput v-for="(val, key) in selectedItem" :key="key" :label="key" :value="val" />
@@ -150,8 +135,10 @@
 </template>
 
 <script>
+import TablePaginationFooter from './TablePaginationFooter.vue'
 export default {
     name: 'DatabaseTable',
+    components: { TablePaginationFooter },
     props: {
         currentTab: {
             type: String,
@@ -162,26 +149,14 @@ export default {
     data() {
         return {
             activePage: 1,
+            itemsPerPage: 10,
             showViewModal: false,
             showEditModal: false,
             selectedItem: null,
 
-            // Mock Data
-            orders: [
-                { id: 'ORD-001', date_time: '2023-11-20 14:30', customer: 'John Doe', artwork_picture: '', artwork: 'Mountains at Dusk', artist: 'Jane Smith', amount: '$540.00', status: 'Completed' },
-                { id: 'ORD-002', date_time: '2023-11-21 09:15', customer: 'Alice Wong', artwork_picture: '', artwork: 'Abstract Chaos', artist: 'Bob Ross', amount: '$1,200.00', status: 'Pending' },
-                { id: 'ORD-003', date_time: '2023-11-22 16:45', customer: 'Charlie Chaplin', artwork_picture: '', artwork: 'City Lights', artist: 'Sam Taylor', amount: '$300.00', status: 'Cancelled' }
-            ],
-            artworks: [
-                { id: 'ART-101', artwork_picture: '', title: 'Mountains at Dusk', artist: 'Jane Smith', category: 'Landscape', price: '$540.00', create_date: '2023-10-05', status: 'Available' },
-                { id: 'ART-102', artwork_picture: '', title: 'Abstract Chaos', artist: 'Bob Ross', category: 'Abstract', price: '$1,200.00', create_date: '2023-10-10', status: 'Sold' },
-                { id: 'ART-103', artwork_picture: '', title: 'City Lights', artist: 'Sam Taylor', category: 'Photography', price: '$300.00', create_date: '2023-11-01', status: 'Draft' }
-            ],
-            submissions: [
-                { id: 'SUB-201', art_picture: '', student_name: 'Mark Lee', student_email: 'mark.l@student.com', generation: 'Gen 4', assignment: 'Final Project', submitted: '2023-12-15 10:00', status: 'Passed' },
-                { id: 'SUB-202', art_picture: '', student_name: 'Sarah Connor', student_email: 's.connor@student.com', generation: 'Gen 4', assignment: 'Midterm Sketch', submitted: '2023-12-16 11:30', status: 'Pending' },
-                { id: 'SUB-203', art_picture: '', student_name: 'Peter Parker', student_email: 'peter.p@student.com', generation: 'Gen 3', assignment: 'Color Theory', submitted: '2023-12-18 14:20', status: 'Fail' }
-            ]
+            orders: [],
+            artworks: [],
+            submissions: []
         }
     },
     computed: {
@@ -242,7 +217,7 @@ export default {
                 'Completed': this.$i18n.locale === 'en' ? 'Completed' : 'เสร็จสมบูรณ์',
                 'Pending': this.$i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ',
                 'Cancelled': this.$i18n.locale === 'en' ? 'Cancelled' : 'ยกเลิก',
-                'Available': this.$i18n.locale === 'en' ? 'Available' : 'ว่าง',
+                'Available': this.$i18n.locale === 'en' ? 'Available' : 'พร้อมขาย',
                 'Sold': this.$i18n.locale === 'en' ? 'Sold' : 'ขายแล้ว',
                 'Draft': this.$i18n.locale === 'en' ? 'Draft' : 'ฉบับร่าง',
                 'Passed': this.$i18n.locale === 'en' ? 'Passed' : 'ผ่าน',

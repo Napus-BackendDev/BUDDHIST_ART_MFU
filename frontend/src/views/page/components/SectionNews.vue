@@ -1,5 +1,5 @@
 <template>
-    <div class="events-section py-5 bg-white">
+    <div class="events-section py-5">
         <CContainer>
             <!-- Left-aligned Header with View All Button -->
             <div class="d-flex align-items-center justify-content-between mb-4">
@@ -68,6 +68,12 @@ export default {
 </script>
 
 <style scoped>
+.events-section {
+    background-color: #FAF9F6;
+    border-top: 1px solid rgba(97, 39, 33, 0.05);
+    border-bottom: 1px solid rgba(97, 39, 33, 0.05);
+}
+
 .section-title-home {
     color: #612721;
     font-size: 2.2rem;

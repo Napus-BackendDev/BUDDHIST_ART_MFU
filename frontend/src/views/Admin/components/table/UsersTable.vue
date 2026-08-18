@@ -74,6 +74,15 @@
                     </td>
                 </template>
 
+
+                <!-- Registered Column -->
+                <template #createdAt="{ item }">
+                    <td class="text-muted text-sm py-3">
+                        <div>{{ formatDate(item.createdAt) }}</div>
+                        <div class="small mt-1">{{ formatTime(item.createdAt) }}</div>
+                    </td>
+                </template>
+
                 <!-- Actions Column -->
                 <template #actions="{ item }">
                     <td class="text-right py-3 pr-4">
@@ -148,9 +157,10 @@ export default {
     computed: {
         fields() {
             return [
-                { key: 'name_student_id', label: this.$i18n.locale === 'en' ? 'NAME / STUDENT ID' : 'ชื่อ / รหัสนักศึกษา', _classes: 'border-top-0 border-bottom w-30' },
+                { key: 'name_student_id', label: this.$i18n.locale === 'en' ? 'NAME / STUDENT ID' : 'ชื่อ / รหัสนักศึกษา', _classes: 'border-top-0 border-bottom w-25' },
                 { key: 'email_details', label: this.$i18n.locale === 'en' ? 'EMAIL OFFICE / PERSONAL' : 'อีเมลสำนักงาน / ส่วนตัว', _classes: 'border-top-0 border-bottom w-25' },
-                { key: 'tel_role', label: this.$i18n.locale === 'en' ? 'TEL / ROLE' : 'เบอร์โทรศัพท์ / บทบาท', _classes: 'border-top-0 border-bottom w-20' },
+                { key: 'tel_role', label: this.$i18n.locale === 'en' ? 'TEL / ROLE' : 'เบอร์โทรศัพท์ / บทบาท', _classes: 'border-top-0 border-bottom w-15' },
+                { key: 'createdAt', label: this.$i18n.locale === 'en' ? 'REGISTERED' : 'วันที่สมัคร', _classes: 'border-top-0 border-bottom w-15' },
                 { key: 'status', label: this.$i18n.locale === 'en' ? 'STATUS' : 'สถานะ', _classes: 'border-top-0 border-bottom w-10' },
                 { key: 'actions', label: this.$i18n.locale === 'en' ? 'ACTIONS' : 'การจัดการ', _classes: 'border-top-0 border-bottom text-right w-5' }
             ];

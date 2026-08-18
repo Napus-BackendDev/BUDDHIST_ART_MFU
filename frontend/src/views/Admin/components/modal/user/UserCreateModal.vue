@@ -4,7 +4,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="create-user-modal"
+        class="create-user-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -159,17 +159,20 @@
                     variant="ghost" 
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
+                    :disabled="saving"
                 >
                     {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
-                <CButton 
+                <LoadingButton 
                     color="primary" 
                     @click="handleSave"
                     class="btn-create-user"
                     :disabled="!isFormValid"
+                    :loading="saving"
+                    :loading-text="$i18n.locale === 'en' ? 'Creating...' : 'กำลังสร้าง...'"
                 >
                     {{ $i18n.locale === 'en' ? 'Create User Account' : 'สร้างบัญชีผู้ใช้' }}
-                </CButton>
+                </LoadingButton>
             </div>
         </template>
     </CModal>
@@ -180,6 +183,10 @@ export default {
     name: 'UserCreateModal',
     props: {
         show: {
+            type: Boolean,
+            default: false
+        },
+        saving: {
             type: Boolean,
             default: false
         },

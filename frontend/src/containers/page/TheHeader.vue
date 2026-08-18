@@ -1,11 +1,12 @@
 <template>
     <CHeader fixed with-subheader class="p-0 border-0 main-app-header">
         <!-- Tier 1: Main Header (White) -->
-        <div class="header-top-tier bg-white w-100 d-flex align-items-center px-3" style="height: 75px; z-index: 1030; position: relative;">
+        <div class="header-top-tier bg-white w-100 d-flex align-items-center px-3">
             <CHeaderBrand class="d-flex align-items-center text-decoration-none brand-link-custom" to="/">
-                <img src="@/assets/icons/logo.png" height="55" class="mr-3 brand-logo-img">
+                <img src="@/assets/icons/logo.png" height="55" class="mr-3 brand-logo-img" alt="Mae Fah Luang University">
                 <div class="brand-text-wrapper d-flex flex-column justify-content-center">
                     <span class="brand-main-title">Buddhist Art Mae Fah Luang University</span>
+                    <span class="brand-mobile-title">Buddhist Art MFU</span>
                     <span class="brand-subtitle">{{ $i18n.locale === 'en' ? 'Short Course Program in Buddhist Art, MFU' : 'หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง' }}</span>
                 </div>
             </CHeaderBrand>
@@ -75,7 +76,12 @@
                 </CHeaderNavItem>
 
                 <CHeaderNavItem class="px-2 d-lg-none">
-                    <CToggler in-header @click="mobileMenu = !mobileMenu">
+                    <CToggler
+                        in-header
+                        :aria-label="$i18n.locale === 'en' ? 'Open navigation menu' : 'เปิดเมนูนำทาง'"
+                        :aria-expanded="String(mobileMenu)"
+                        @click="mobileMenu = !mobileMenu"
+                    >
                         <CIcon name="cil-menu" size="xl" class="text-dark" />
                     </CToggler>
                 </CHeaderNavItem>
@@ -382,10 +388,7 @@ export default {
             localStorage.removeItem('objs');
             this.checkLoginStatus();
             this.$store.commit('auth/showSignInModal', false);
-            if (this.$route.path !== '/') {
-                this.$router.push('/');
-            }
-            window.location.reload(); // Force full reload to reset all states securely
+            window.location.href = '/';
         },
         handleCheckout() {
             if (!this.userId) {
@@ -446,9 +449,23 @@ export default {
     z-index: 1030 !important;
 }
 
+.header-top-tier {
+    position: relative;
+    z-index: 1030;
+    height: 75px;
+}
+
 .c-header-brand.brand-link-custom {
+    flex: 0 1 auto;
+    justify-content: flex-start !important;
+    min-width: 0;
+    margin-right: 1rem;
     text-decoration: none !important;
     color: inherit !important;
+}
+
+.brand-text-wrapper {
+    min-width: 0;
 }
 
 .brand-main-title {
@@ -460,6 +477,13 @@ export default {
     display: inline-block;
 }
 
+.brand-mobile-title {
+    display: none;
+    color: #3c4b64;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
 .brand-subtitle {
     color: #612721 !important; /* Burgundy */
     text-decoration: none !important;
@@ -469,7 +493,13 @@ export default {
 }
 
 .brand-logo-img {
+    flex: 0 0 auto;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.header-top-tier > .c-header-nav {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
 }
 
 /* Burgundy Navigation Bar */
@@ -590,11 +620,81 @@ export default {
 .fade-enter, .fade-leave-to { opacity: 0; }
 
 @media (max-width: 991.98px) {
+    .c-header-brand.brand-link-custom {
+        margin-right: 0.5rem;
+    }
+
     .brand-main-title {
         font-size: 1.25rem;
     }
+
     .brand-logo-img {
         height: 55px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .header-top-tier {
+        height: 72px;
+        padding-right: 8px !important;
+        padding-left: 12px !important;
+    }
+
+    .brand-main-title {
+        display: none;
+    }
+
+    .brand-mobile-title {
+        display: block;
+        overflow: hidden;
+        font-size: 0.95rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .brand-subtitle {
+        display: -webkit-box;
+        overflow: hidden;
+        margin-top: 2px;
+        font-size: 0.68rem;
+        line-height: 1.15;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .brand-logo-img {
+        width: auto;
+        height: 44px;
+        margin-right: 8px !important;
+    }
+
+    .header-top-tier > .c-header-nav > .c-header-nav-item,
+    .header-top-tier > .c-header-nav > .c-header-nav-items {
+        padding-right: 4px !important;
+        padding-left: 4px !important;
+    }
+
+    .header-top-tier > .c-header-nav .user-login-trigger,
+    .header-top-tier > .c-header-nav .cart-trigger,
+    .header-top-tier > .c-header-nav .c-header-toggler {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 359.98px) {
+    .brand-mobile-title {
+        max-width: 92px;
+        font-size: 0.85rem;
+    }
+
+    .header-top-tier > .c-header-nav > .c-header-nav-item,
+    .header-top-tier > .c-header-nav > .c-header-nav-items {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
     }
 }
 </style>

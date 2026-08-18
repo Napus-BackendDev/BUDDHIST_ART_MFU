@@ -2,7 +2,7 @@
     <CCard class="submission-table-card mb-4">
         <div>
             <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
-                :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
+                :striped="false" :items-per-page="itemsPerPage" :active-page="activePage" @page-change="pageChange">
 
                 <template #title="{ item }">
                     <td class="font-weight-bold text-dark">{{ getName($i18n.locale, item) || getName('en', item) }}</td>
@@ -43,7 +43,10 @@
                     <td style="white-space: nowrap;">
                         <div class="d-flex align-items-center" v-if="item.create">
                             <CIcon name="cil-calendar" class="mr-2 text-muted" size="sm" />
-                            <span class="text-muted date-text-sm">{{ formatDate(item.create.startAt) }} &ndash; {{ formatDate(item.create.endAt) }}</span>
+                            <div class="text-muted date-text-sm">
+                                <div>{{ formatDate(item.create.startAt) }} &ndash; {{ formatDate(item.create.endAt) }}</div>
+                                <div class="small mt-1">{{ formatTime(item.create.startAt) }} &ndash; {{ formatTime(item.create.endAt) }}</div>
+                            </div>
                         </div>
                         <div class="d-flex align-items-center" v-else>
                             <span class="text-muted date-text-sm">N/A</span>
@@ -81,32 +84,20 @@
             </CDataTable>
         </div>
 
-        <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                {{ $i18n.locale === 'en' ? `Showing ${(activePage - 1) * 10 + 1} to ${Math.min(activePage * 10, filteredItems.length)} of ${filteredItems.length} submissions` : `แสดง ${(activePage - 1) * 10 + 1} ถึง ${Math.min(activePage * 10, filteredItems.length)} จากทั้งหมด ${filteredItems.length} รายการส่งงาน` }}
-            </div>
-            <div class="text-muted text-sm" v-else>
-                {{ $i18n.locale === 'en' ? 'Showing 0 submissions' : 'แสดง 0 รายการส่งงาน' }}
-            </div>
-            <CPagination
-                :active-page.sync="activePage"
-                :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
-                size="sm"
-                align="end"
-                class="mb-0 pill-pagination"
-            />
-        </CCardFooter>
+        <TablePaginationFooter :total="filteredItems.length" :active-page.sync="activePage" :items-per-page.sync="itemsPerPage" :show-page-size="false" noun-en="submissions" noun-th="รายการส่งงาน" />
     </CCard>
 </template>
 
 <script>
 import moment from 'moment'
+import * as XLSX from 'xlsx';
 import { mapGetters } from 'vuex'
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import TablePaginationFooter from './TablePaginationFooter.vue';
 
 export default {
     name: 'SubmissionTable',
+    components: { TablePaginationFooter },
     mixins: [statusBadgeMixin],
     props: {
         filters: {
@@ -121,7 +112,8 @@ export default {
     },
     data() {
         return {
-            activePage: 1
+            activePage: 1,
+            itemsPerPage: 10
         }
     },
     watch: {
@@ -166,6 +158,115 @@ export default {
         },
         pageChange(val) {
             this.activePage = val;
+        },
+        exportDate(date) {
+            // Round-trippable (re-importable) date; blank when absent
+            return date ? moment(date).format('YYYY-MM-DD') : '';
+        },
+        nameOrBlank(lang, field) {
+            // Bilingual value or a truly empty string. The mixin's getName returns 'N/A' for an
+            // empty translation array; export blanks so re-import reconstructs the same tree
+            // (a literal 'N/A' cell would otherwise be stored as [{value:'N/A'}]).
+            if (!field) return '';
+            if (Array.isArray(field) && field.length === 0) return '';
+            const val = this.getName(lang, field);
+            return (!val || val === 'N/A') ? '' : val;
+        },
+        getStudentId(ref) {
+            // ref may be a populated user object or a bare ObjectId
+            if (!ref) return '';
+            if (typeof ref === 'object' && ref.studentId) return ref.studentId;
+            const id = typeof ref === 'object' ? ref._id : ref;
+            const users = this.$store.getters['user/user'] || [];
+            const u = users.find(x => x._id === String(id));
+            return u ? (u.studentId || '') : '';
+        },
+        getCategoryName(cat) {
+            // Only readable when the ref is populated; a bare id can't be resolved here
+            if (!cat || typeof cat === 'string') return '';
+            return this.nameOrBlank(this.$i18n.locale, cat);
+        },
+        exportExcel() {
+            const headers = [
+                'SubmissionTitleThai', 'SubmissionTitleEng', 'CourseLevel', 'SubmissionStartDate', 'SubmissionEndDate',
+                'AssignmentTitleThai', 'AssignmentTitleEng', 'AssignmentStartDate', 'AssignmentEndDate',
+                'ArtistStudentID',
+                'ArtworkTitleThai', 'ArtworkTitleEng', 'ArtworkDescriptionThai', 'ArtworkDescriptionEng', 'Technique', 'Size', 'Price', 'Category'
+            ];
+
+            const rows = [];
+            this.filteredItems.forEach(sub => {
+                const subCols = [
+                    this.nameOrBlank('th', sub),
+                    this.nameOrBlank('en', sub),
+                    sub.courseLevel || '',
+                    sub.create ? this.exportDate(sub.create.startAt) : '',
+                    sub.create ? this.exportDate(sub.create.endAt) : ''
+                ];
+
+                const represented = new Set(); // studentIds already emitted for this submission
+                const assignments = sub.assignments || [];
+
+                assignments.forEach(asg => {
+                    const asgCols = [
+                        this.nameOrBlank('th', asg),
+                        this.nameOrBlank('en', asg),
+                        asg.create ? this.exportDate(asg.create.startAt) : '',
+                        asg.create ? this.exportDate(asg.create.endAt) : ''
+                    ];
+                    const artworks = asg.artworks || [];
+                    const artists = asg.artist || [];
+
+                    if (artworks.length > 0) {
+                        artworks.forEach(aw => {
+                            const sid = this.getStudentId(aw.owner);
+                            if (sid) represented.add(sid);
+                            rows.push([
+                                ...subCols, ...asgCols,
+                                sid,
+                                this.nameOrBlank('th', aw),
+                                this.nameOrBlank('en', aw),
+                                this.nameOrBlank('th', aw.description),
+                                this.nameOrBlank('en', aw.description),
+                                this.nameOrBlank(this.$i18n.locale, aw.technique),
+                                this.nameOrBlank(this.$i18n.locale, aw.size),
+                                aw.price || 0,
+                                this.getCategoryName(aw.category)
+                            ]);
+                        });
+                    } else if (artists.length > 0) {
+                        // people enrolled in the assignment but no artworks yet -> one row per person
+                        artists.forEach(person => {
+                            const sid = this.getStudentId(person);
+                            if (sid) represented.add(sid);
+                            rows.push([...subCols, ...asgCols, sid, '', '', '', '', '', '', '', '']);
+                        });
+                    } else {
+                        // assignment with neither people nor artworks
+                        rows.push([...subCols, ...asgCols, '', '', '', '', '', '', '', '', '']);
+                    }
+                });
+
+                // Enrolled-at-submission artists not represented by any assignment/artwork row.
+                // Emit them so re-import preserves the enrollment (and any pending student transition).
+                (sub.artist || []).forEach(person => {
+                    const sid = this.getStudentId(person);
+                    if (sid && !represented.has(sid)) {
+                        represented.add(sid);
+                        rows.push([...subCols, '', '', '', '', sid, '', '', '', '', '', '', '', '']);
+                    }
+                });
+
+                // Submission with no assignment rows and no enrolled artists -> one bare row
+                if (assignments.length === 0 && represented.size === 0) {
+                    rows.push([...subCols, '', '', '', '', '', '', '', '', '', '', '', '', '']);
+                }
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Submissions');
+            XLSX.writeFile(wb, `Submissions_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
         }
     },
     computed: {

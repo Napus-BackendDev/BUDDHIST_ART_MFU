@@ -4,9 +4,9 @@
         <NewsWidget v-model="filters.status" :items="newsItems" />
         <NewsFilter v-model="filters" />
         <NewsTable ref="adminTable" :filters="filters" :items="newsItems" @view="handleViewNews" @edit="handleEditNews" @delete="handleDeleteNews" />
-        <NewsCreateModal :show.sync="showCreateModal" @save="handleSaveNews"/>
+        <NewsCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSaveNews"/>
         <NewsViewModal :show.sync="showViewModal" :news="selectedNews" @edit="handleEditNewsFromView"/>
-        <NewsEditModal :show.sync="showEditModal" :news="selectedNews" @save="handleUpdateNews"/>
+        <NewsEditModal :show.sync="showEditModal" :news="selectedNews" :saving="saving" @save="handleUpdateNews"/>
     </div>
 </template>
 
@@ -36,6 +36,7 @@ export default {
             showViewModal: false,
             showEditModal: false,
             selectedNews: null,
+            saving: false,
             filters: {
                 search: '',
                 startDate: null,
@@ -64,6 +65,8 @@ export default {
             this.showCreateModal = true;
         },
         async handleSaveNews(newNews) {
+            if (this.saving) return;
+            this.saving = true;
             try {
                 // 1. Create the news entry
                 const response = await this.$store.dispatch('news/create', {
@@ -102,6 +105,8 @@ export default {
                     message: error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to create news.' : 'ไม่สามารถสร้างข่าวสารได้'),
                     variant: 'danger'
                 });
+            } finally {
+                this.saving = false;
             }
         },
         handleViewNews(news) {
@@ -117,6 +122,8 @@ export default {
             this.handleEditNews(news);
         },
         async handleUpdateNews(updatedNews) {
+            if (this.saving) return;
+            this.saving = true;
             try {
                 // 1. Update news details
                 await this.$store.dispatch('news/update', {
@@ -155,6 +162,8 @@ export default {
                     message: error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to update news.' : 'ไม่สามารถอัปเดตข่าวสารได้'),
                     variant: 'danger'
                 });
+            } finally {
+                this.saving = false;
             }
         },
         async handleDeleteNews(news) {

@@ -65,6 +65,12 @@ export default {
             icon: 'cil-window-restore'
           },
           {
+            _name: 'CSidebarNavItem',
+            name: this.$t('sidebar.analytics'),
+            to: '/admin/analytics',
+            icon: 'cil-chart'
+          },
+          {
             _name: 'CSidebarNavTitle',
             _children: [this.$t('sidebar.operations')]
           },
@@ -120,9 +126,16 @@ export default {
           },
           {
             _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.signOut'),
+            name: this.$t('sidebar.returnToWebsite'),
             to: '/',
-            icon: 'cil-account-logout'
+            icon: 'cil-home'
+          },
+          {
+            _name: 'CSidebarNavItem',
+            name: this.$t('sidebar.signOut'),
+            href: '#',
+            icon: 'cil-account-logout',
+            _nativeOn: { click: this.logout }
           }
         ]
       }]
@@ -231,6 +244,13 @@ export default {
     this.$store.dispatch('artwork/get').catch(err => console.error('Error loading artworks in sidebar:', err));
     this.$store.dispatch('submission/get').catch(err => console.error('Error loading submissions in sidebar:', err));
     this.$store.dispatch('setting/status/get').catch(err => console.error('Error loading statuses in sidebar:', err));
+  },
+  methods: {
+    logout() {
+      localStorage.removeItem('objs');
+      this.$store.commit('auth/showSignInModal', false);
+      window.location.href = '/';
+    }
   },
   data: function () {
     return {}

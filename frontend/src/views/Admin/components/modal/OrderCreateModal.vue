@@ -5,7 +5,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="create-order-modal"
+        class="create-order-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -187,24 +187,6 @@ export default {
         return {
             artworkSearchQuery: '',
             searchResults: [],
-            // Mock Artwork Data for Search
-            mockArtworks: [
-                { id: 1, title: 'Morning Haze', artist: 'Elena G.', price: 4500, image: 'https://via.placeholder.com/80/2d3748/ffffff?text=MH' },
-                { id: 2, title: 'City Lights', artist: 'Davide B.', price: 12500, image: 'https://via.placeholder.com/80/e2e8f0/808080?text=CL' },
-                { id: 3, title: 'Ocean Blue', artist: 'Sarah L.', price: 8500, image: 'https://via.placeholder.com/80/cbd5e0/808080?text=OB' },
-                { id: 4, title: 'Forest Path', artist: 'Mike R.', price: 3200, image: 'https://via.placeholder.com/80/a0aec0/ffffff?text=FP' },
-                { id: 5, title: 'Golden Buddha', artist: 'Ananda S.', price: 15000, image: 'https://via.placeholder.com/80/ecc94b/ffffff?text=GB' },
-                { id: 6, title: 'Lotus Serenity', artist: 'Malee W.', price: 5500, image: 'https://via.placeholder.com/80/fbb6ce/ffffff?text=LS' },
-                { id: 7, title: 'Deep Meditation', artist: 'Somsak K.', price: 18000, image: 'https://via.placeholder.com/80/4a5568/ffffff?text=DM' },
-                { id: 8, title: 'Temple Sunset', artist: 'Elena G.', price: 7200, image: 'https://via.placeholder.com/80/ed8936/ffffff?text=TS' },
-                { id: 9, title: 'Abstract Zen', artist: 'Jiro K.', price: 9800, image: 'https://via.placeholder.com/80/2d3748/ffffff?text=AZ' },
-                { id: 10, title: 'River of Life', artist: 'Sarah L.', price: 4200, image: 'https://via.placeholder.com/80/4299e1/ffffff?text=RL' },
-                { id: 11, title: 'Ancestral Spirit', artist: 'Panya T.', price: 25000, image: 'https://via.placeholder.com/80/744210/ffffff?text=AS' },
-                { id: 12, title: 'Ethereal Soul', artist: 'Malee W.', price: 6800, image: 'https://via.placeholder.com/80/9f7aea/ffffff?text=ES' },
-                { id: 13, title: 'Wisdom Tree', artist: 'Ananda S.', price: 11000, image: 'https://via.placeholder.com/80/48bb78/ffffff?text=WT' },
-                { id: 14, title: 'Sacred Mandala', artist: 'Somsak K.', price: 13500, image: 'https://via.placeholder.com/80/f6ad55/ffffff?text=SM' },
-                { id: 15, title: 'Infinity Silence', artist: 'Jiro K.', price: 8900, image: 'https://via.placeholder.com/80/edf2f7/2d3748?text=IS' }
-            ],
             form: {
                 customer: '',
                 phone: '',
@@ -216,6 +198,9 @@ export default {
         }
     },
     watch: {
+        show(val) {
+            if (val && this.allArtworks.length === 0) this.$store.dispatch('artwork/get');
+        },
         'form.artworks': {
             handler(newVal) {
                 this.form.amount = newVal.reduce((sum, art) => sum + art.price, 0)
@@ -224,14 +209,22 @@ export default {
         }
     },
     methods: {
+        getName(item) {
+            if (!item) return 'N/A';
+            const field = item.title || item.name;
+            if (typeof field === 'string') return field;
+            if (Array.isArray(field)) return (field.find(value => value.key === this.$i18n.locale) || field[0] || {}).value || 'N/A';
+            return 'N/A';
+        },
         handleArtworkSearch() {
             if (this.artworkSearchQuery.length < 2) {
                 this.searchResults = []
                 return
             }
-            this.searchResults = this.mockArtworks.filter(art => 
-                art.title.toLowerCase().includes(this.artworkSearchQuery.toLowerCase()) ||
-                art.artist.toLowerCase().includes(this.artworkSearchQuery.toLowerCase())
+            const query = this.artworkSearchQuery.toLowerCase();
+            this.searchResults = this.allArtworks.filter(art =>
+                this.getName(art).toLowerCase().includes(query) ||
+                this.getName(art.artist).toLowerCase().includes(query)
             )
         },
         selectArtwork(art) {
@@ -268,6 +261,17 @@ export default {
             }
             this.artworkSearchQuery = ''
             this.searchResults = []
+        }
+    },
+    computed: {
+        allArtworks() {
+            return (this.$store.getters['artwork/artworks'] || []).map(artwork => ({
+                ...artwork,
+                id: artwork._id,
+                title: this.getName(artwork),
+                artist: this.getName(artwork.artist),
+                image: artwork.image || ''
+            }));
         }
     }
 }

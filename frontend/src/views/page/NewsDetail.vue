@@ -11,7 +11,7 @@
                         </div>
 
                         <!-- Content -->
-                        <div class="article-content mb-5" v-html="getName($i18n.locale, currentNews.description)">
+                        <div class="article-content mb-5" v-html="safeDescription">
                         </div>
 
                         <!-- Gallery (All images moved here) -->
@@ -19,7 +19,7 @@
                             <CRow>
                                 <CCol md="4" sm="6" v-for="(img, index) in currentNews.images" :key="index" class="mb-4 px-2">
                                     <div class="gallery-item shadow-sm rounded overflow-hidden h-100 bg-light">
-                                        <img :src="img" class="img-fluid cursor-pointer transition-all w-100" style="height: 250px; object-fit: cover;" @click="zoomImage(img)">
+                                        <img :src="img" :alt="`${getName($i18n.locale, currentNews.title)} ${index + 1}`" class="img-fluid cursor-pointer transition-all w-100" style="height: 250px; object-fit: cover;" @click="zoomImage(index)">
                                     </div>
                                 </CCol>
                             </CRow>
@@ -54,25 +54,65 @@
         </div>
 
         <!-- Lightbox -->
-        <div v-if="showZoom" class="lightbox-overlay" @click="showZoom = false">
-            <img :src="selectedImg" class="img-fluid">
+        <div
+            v-if="showZoom"
+            class="lightbox-overlay"
+            role="dialog"
+            aria-modal="true"
+            :aria-label="$i18n.locale === 'en' ? 'News image gallery' : 'แกลเลอรีภาพข่าว'"
+            @click.self="closeZoom"
+            @touchstart.passive="onTouchStart"
+            @touchend.passive="onTouchEnd"
+        >
+            <button type="button" class="lightbox-close" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="closeZoom">&times;</button>
+            <button v-if="galleryImages.length > 1" type="button" class="lightbox-nav lightbox-prev" :aria-label="$i18n.locale === 'en' ? 'Previous image' : 'ภาพก่อนหน้า'" @click.stop="previousImage">&#8249;</button>
+            <div class="lightbox-stage" @click.stop>
+                <transition name="lightbox-fade" mode="out-in">
+                    <img :key="selectedImg" :src="selectedImg" class="lightbox-image" :alt="`${getName($i18n.locale, currentNews.title)} ${selectedIndex + 1}`">
+                </transition>
+                <div class="lightbox-counter">{{ selectedIndex + 1 }} / {{ galleryImages.length }}</div>
+            </div>
+            <button v-if="galleryImages.length > 1" type="button" class="lightbox-nav lightbox-next" :aria-label="$i18n.locale === 'en' ? 'Next image' : 'ภาพถัดไป'" @click.stop="nextImage">&#8250;</button>
         </div>
     </div>
 </template>
 
 <script>
+import DOMPurify from 'dompurify';
+
 export default {
     name: 'NewsDetail',
     data() {
         return {
             showZoom: false,
-            selectedImg: '',
+            selectedIndex: 0,
+            touchStartX: 0,
             loading: true,
             currentNews: null
         }
     },
     async created() {
         await this.fetchNewsDetail();
+    },
+    mounted() {
+        window.addEventListener('keydown', this.handleLightboxKeydown);
+    },
+    beforeDestroy() {
+        window.removeEventListener('keydown', this.handleLightboxKeydown);
+        document.body.style.overflow = '';
+    },
+    computed: {
+        safeDescription() {
+            return DOMPurify.sanitize(
+                this.getName(this.$i18n.locale, this.currentNews && this.currentNews.description) || ''
+            );
+        },
+        galleryImages() {
+            return this.currentNews && Array.isArray(this.currentNews.images) ? this.currentNews.images : [];
+        },
+        selectedImg() {
+            return this.galleryImages[this.selectedIndex] || '';
+        }
     },
     methods: {
         async fetchNewsDetail() {
@@ -115,11 +155,39 @@ export default {
         formatDate(dateStr) {
             if (!dateStr) return '';
             const date = new Date(dateStr);
-            return date.toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' });
+            const locale = this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH';
+            return date.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' });
         },
-        zoomImage(img) {
-            this.selectedImg = img;
+        zoomImage(index) {
+            this.selectedIndex = index;
             this.showZoom = true;
+            document.body.style.overflow = 'hidden';
+        },
+        closeZoom() {
+            this.showZoom = false;
+            document.body.style.overflow = '';
+        },
+        previousImage() {
+            if (!this.galleryImages.length) return;
+            this.selectedIndex = (this.selectedIndex - 1 + this.galleryImages.length) % this.galleryImages.length;
+        },
+        nextImage() {
+            if (!this.galleryImages.length) return;
+            this.selectedIndex = (this.selectedIndex + 1) % this.galleryImages.length;
+        },
+        handleLightboxKeydown(event) {
+            if (!this.showZoom) return;
+            if (event.key === 'ArrowLeft') this.previousImage();
+            if (event.key === 'ArrowRight') this.nextImage();
+            if (event.key === 'Escape') this.closeZoom();
+        },
+        onTouchStart(event) {
+            this.touchStartX = event.changedTouches[0].clientX;
+        },
+        onTouchEnd(event) {
+            const distance = event.changedTouches[0].clientX - this.touchStartX;
+            if (Math.abs(distance) < 50) return;
+            distance > 0 ? this.previousImage() : this.nextImage();
         },
         goToFacebook() {
             window.open('https://www.facebook.com/BuddhistArtMFU', '_blank');
@@ -154,10 +222,133 @@ export default {
 
 .lightbox-overlay {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9);
-    display: flex; align-items: center; justify-content: center;
+    inset: 0;
+    padding: 2rem 5rem;
+    background: rgba(14, 10, 9, 0.96);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     z-index: 9999;
 }
-.lightbox-overlay img { max-width: 90%; max-height: 90%; }
+
+.lightbox-stage {
+    position: relative;
+    max-width: min(1200px, 100%);
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-image {
+    display: block;
+    max-width: 100%;
+    max-height: 86vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.lightbox-close,
+.lightbox-nav {
+    position: absolute;
+    z-index: 2;
+    width: 48px;
+    height: 48px;
+    box-sizing: border-box;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: rgba(97, 39, 33, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+    line-height: 1;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lightbox-close:hover,
+.lightbox-close:focus-visible,
+.lightbox-nav:hover,
+.lightbox-nav:focus-visible {
+    background: #8a3a30;
+    transform: scale(1.08);
+    outline: 2px solid #e8c77e;
+    outline-offset: 3px;
+}
+
+.lightbox-close {
+    top: 1.25rem;
+    right: 1.25rem;
+    font-size: 0;
+}
+
+.lightbox-close::before,
+.lightbox-close::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    transform-origin: center;
+}
+
+.lightbox-close::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.lightbox-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.lightbox-nav {
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2.5rem;
+}
+
+.lightbox-nav:hover,
+.lightbox-nav:focus-visible {
+    transform: translateY(-50%) scale(1.08);
+}
+
+.lightbox-prev { left: 1.25rem; }
+.lightbox-next { right: 1.25rem; }
+
+.lightbox-counter {
+    position: absolute;
+    left: 50%;
+    bottom: 1rem;
+    transform: translateX(-50%);
+    padding: 0.4rem 0.85rem;
+    color: #fff;
+    background: rgba(20, 14, 12, 0.72);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+}
+
+.lightbox-fade-enter-active,
+.lightbox-fade-leave-active {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.lightbox-fade-enter,
+.lightbox-fade-leave-to {
+    opacity: 0;
+    transform: scale(0.98);
+}
+
+@media (max-width: 767.98px) {
+    .lightbox-overlay { padding: 4.5rem 0.75rem 5rem; }
+    .lightbox-image { max-height: 78vh; border-radius: 8px; }
+    .lightbox-nav { top: auto; bottom: 1rem; }
+    .lightbox-prev { left: calc(50% - 64px); }
+    .lightbox-next { right: calc(50% - 64px); }
+    .lightbox-counter { bottom: -2.7rem; }
+}
 </style>

@@ -5,7 +5,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="view-news-modal"
+        class="view-news-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -35,7 +35,7 @@
                 <CIcon name="cil-calendar" class="mr-1" /> {{ formatDate(news.create ? news.create.datetime : news.createdAt) }}
             </div>
 
-            <div class="news-content-text" v-html="getName('en', news.description || news.content)">
+            <div class="news-content-text" v-html="safeDescription">
             </div>
         </div>
 
@@ -47,13 +47,6 @@
                     class="btn-cancel mr-3"
                 >
                     {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
-                </CButton>
-                <CButton 
-                    color="outline-primary" 
-                    @click="onPreview"
-                    class="btn-preview-news mr-2"
-                >
-                    {{ $i18n.locale === 'en' ? 'Preview' : 'ดูตัวอย่าง' }}
                 </CButton>
                 <CButton 
                     color="primary" 
@@ -68,13 +61,18 @@
 </template>
 
 <script>
-import moment from 'moment';
+import DOMPurify from 'dompurify';
 
 export default {
     name: 'NewsViewModal',
     props: {
         show: { type: Boolean, default: false },
         news: { type: Object, default: () => null }
+    },
+    computed: {
+        safeDescription() {
+            return DOMPurify.sanitize(this.getName(this.$i18n.locale, this.news && (this.news.description || this.news.content)) || '');
+        }
     },
     methods: {
         getName(lang, field) {
@@ -93,38 +91,13 @@ export default {
             return 'https://via.placeholder.com/800x400?text=No+Image';
         },
         formatDate(date) {
-            return moment(date).format('DD/MM/YYYY HH:mm');
+            if (!date) return '';
+            const locale = this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH';
+            return new Intl.DateTimeFormat(locale, {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            }).format(new Date(date));
         },
-        onPreview() {
-            if (!this.news) return;
-
-            // Create preview data structure
-            const previewData = {
-                title: this.news.title,
-                description: this.news.description || this.news.content,
-                images: this.news.images || (this.news.image ? [this.news.image] : []),
-                views: this.news.views || 0,
-                create: this.news.create || { datetime: this.news.createdAt || new Date() }
-            };
-
-            // Store in Vuex
-            this.$store.commit('news/setPreviewData', previewData);
-
-            // Also store in localStorage to persist across tabs
-            try {
-                localStorage.setItem('news_preview_data', JSON.stringify(previewData));
-            } catch (e) {
-                console.error('LocalStorage error:', e);
-            }
-
-            // Open in new tab
-            const routeData = this.$router.resolve({ 
-                name: 'NewsDetail', 
-                params: { id: 'preview' },
-                query: { preview: 'true' }
-            });
-            window.open(routeData.href, '_blank');
-        }
     }
 }
 </script>

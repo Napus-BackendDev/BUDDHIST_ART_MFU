@@ -65,70 +65,49 @@
                     </div>
                 </div>
 
-                <!-- Payment Options -->
-                <div class="payment-options mb-4">
-                    <!-- Scan QR Code -->
-                    <div class="payment-option p-3 border rounded-lg mb-3 cursor-pointer d-flex justify-content-between align-items-center"
-                        :class="{ 'active-option': paymentMethod === 'qrcode' }" @click="paymentMethod = 'qrcode'">
-                        <div class="d-flex align-items-center">
-                            <div class="radio-circle mr-3" :class="{ 'active': paymentMethod === 'qrcode' }">
-                            </div>
-                            <span class="font-weight-bold">{{ $i18n.locale === 'en' ? 'Scan QR Code' : 'สแกนคิวอาร์โค้ด' }}</span>
+                <!-- One payment channel with both QR and bank details -->
+                <div class="payment-method-combined mb-4">
+                    <div class="payment-method-heading d-flex align-items-center mb-4">
+                        <div class="payment-method-icon mr-3">
+                            <CIcon name="cil-bank" size="lg" />
                         </div>
-                        <CIcon name="cil-qr-code" class="text-danger" />
+                        <div>
+                            <h6 class="font-weight-bold text-dark mb-1">{{ $i18n.locale === 'en' ? 'QR Code / Bank Transfer' : 'ชำระเงินด้วย QR Code หรือโอนผ่านบัญชีธนาคาร' }}</h6>
+                            <div class="text-muted small">{{ $i18n.locale === 'en' ? 'Choose either method below using the same bank account.' : 'เลือกชำระได้ตามสะดวก โดยใช้บัญชีธนาคารเดียวกัน' }}</div>
+                        </div>
                     </div>
 
-                    <!-- Bank Transfer -->
-                    <div class="payment-option p-3 border rounded-lg mb-3 cursor-pointer d-flex justify-content-between align-items-center"
-                        :class="{ 'active-option': paymentMethod === 'bank' }" @click="paymentMethod = 'bank'">
-                        <div class="d-flex align-items-center">
-                            <div class="radio-circle mr-3" :class="{ 'active': paymentMethod === 'bank' }">
+                    <div class="payment-method-grid">
+                        <div class="payment-column qr-container text-center">
+                            <h6 class="font-weight-bold mb-3 text-dark">{{ $i18n.locale === 'en' ? 'Scan QR Code' : 'สแกน QR Code' }}</h6>
+                            <div class="qr-wrapper p-2 d-inline-block rounded bg-white mb-3 position-relative shadow-sm">
+                                <img src="/payment-qr-code.png"
+                                    width="180" height="180" alt="QR Code สำหรับชำระเงิน" class="d-block p-1 qr-image">
                             </div>
-                            <span class="font-weight-bold">{{ $i18n.locale === 'en' ? 'Bank Transfer' : 'โอนเงินผ่านธนาคาร' }}</span>
+                            <p class="text-muted mb-0">{{ $i18n.locale === 'en' ? 'Amount:' : 'ยอดชำระ:' }}
+                                <span class="text-danger font-weight-bold h5 ml-1">฿{{ formatPrice(total) }}</span>
+                            </p>
                         </div>
-                        <CIcon name="cil-bank" class="text-muted" />
+
+                        <div class="payment-column bank-container">
+                            <h6 class="font-weight-bold mb-3 text-dark">{{ $i18n.locale === 'en' ? 'Bank Account Details' : 'ข้อมูลบัญชีธนาคาร' }}</h6>
+                            <div class="bank-detail-row mb-3">
+                                <span class="bank-detail-label">{{ $i18n.locale === 'en' ? 'Bank' : 'ธนาคาร' }}</span>
+                                <strong>{{ $i18n.locale === 'en' ? 'Bangkok Bank, Mae Fah Luang Branch' : 'ธนาคารกรุงเทพฯ สาขาแม่ฟ้าหลวงฯ' }}</strong>
+                            </div>
+                            <div class="bank-detail-row mb-3">
+                                <span class="bank-detail-label">{{ $i18n.locale === 'en' ? 'Account Name' : 'ชื่อบัญชี' }}</span>
+                                <strong>{{ $i18n.locale === 'en' ? 'Mae Fah Luang University (Mae Fah Luang University Buddhist Art Fund)' : 'มหาวิทยาลัยแม่ฟ้าหลวง (กองทุนพุทธศิลปกรรมแห่งมหาวิทยาลัยแม่ฟ้าหลวง)' }}</strong>
+                            </div>
+                            <div class="bank-detail-row">
+                                <span class="bank-detail-label">{{ $i18n.locale === 'en' ? 'Account Number' : 'เลขบัญชี' }}</span>
+                                <div class="account-number">672-0-50576-4</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- QR Code Content -->
-                <div v-if="paymentMethod === 'qrcode'" class="mb-4">
-                    <div class="qr-container border-dashed text-center p-4 rounded-lg bg-light w-100">
-                        <h6 class="font-weight-bold mb-4" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Scan this QR Code to pay' : 'สแกนคิวอาร์โค้ดนี้เพื่อชำระเงิน' }}
-                        </h6>
-
-                        <div class="qr-wrapper p-2 d-inline-block rounded bg-white mb-4 position-relative shadow-sm">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=PAYMENT_DEMO_123"
-                                width="180" height="180" alt="QR Code" class="d-block p-1">
-                        </div>
-
-                        <p class="text-muted mb-0">{{ $i18n.locale === 'en' ? 'Amount to pay:' : 'ยอดที่ต้องชำระ:' }} <span
-                                class="text-danger font-weight-bold h5 ml-1">฿{{ formatPrice(total) }}</span></p>
-                    </div>
-                </div>
-
-                <!-- Bank Transfer Content -->
-                <div v-if="paymentMethod === 'bank'" class="mb-4">
-                    <div class="bg-light p-4 rounded-lg border">
-                        <h6 class="font-weight-bold mb-4 text-dark">{{ $i18n.locale === 'en' ? 'Bank Account Details' : 'รายละเอียดบัญชีธนาคาร' }}</h6>
-
-                        <div class="d-flex align-items-start p-3 mb-3 rounded-lg bg-white border">
-                            <div class="mr-3 d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 shadow-sm"
-                                style="width: 48px; height: 48px; background-color: #e6fffa;">
-                                <CIcon name="cil-bank" size="lg" style="color: #38b2ac;" />
-                            </div>
-                            <div>
-                                <div class="font-weight-bold text-dark mb-1" style="font-size: 0.95rem;">{{ $i18n.locale === 'en' ? 'Kasikorn Bank (KBank)' : 'ธนาคารกสิกรไทย' }}</div>
-                                <div class="text-muted small mb-2">Artsy Studio Co., Ltd.</div>
-                                <div class="bg-light px-3 py-1 rounded border d-inline-block font-weight-bold text-dark shadow-sm"
-                                    style="letter-spacing: 0.5px; font-size: 1.1rem;">
-                                    123-4-56789-0
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-3 rounded-lg small border-0" style="background-color: #ebf8ff; color: #2b6cb0;">
-                            {{ $i18n.locale === 'en' ? 'Please transfer the specified amount and' : 'กรุณาโอนเงินตามยอดที่ระบุ และ' }} <strong>{{ $i18n.locale === 'en' ? 'upload the payment slip after transfer.' : 'หลังโอนเงินกรุณาอัพโหลดใบเสร็จด้วยครับ' }}</strong>
-                        </div>
+                    <div class="payment-note mt-3">
+                        {{ $i18n.locale === 'en' ? 'After payment, please upload your payment slip below.' : 'หลังชำระเงิน กรุณาอัปโหลดหลักฐานการชำระเงินด้านล่าง' }}
                     </div>
                 </div>
 
@@ -199,7 +178,7 @@ export default {
     },
     data() {
         return {
-            paymentMethod: 'qrcode',
+            paymentMethod: 'bank',
             paymentProofImage: null,
             paymentProofFile: null,
             paymentProofName: '',
@@ -382,35 +361,6 @@ export default {
     cursor: pointer;
 }
 
-.active-option {
-    border-color: #FEC260 !important;
-    background-color: #fffaf0 !important;
-}
-
-.radio-circle {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #adb5bd;
-    border-radius: 50%;
-    position: relative;
-}
-
-.radio-circle.active {
-    border-color: #612721;
-}
-
-.radio-circle.active::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 10px;
-    height: 10px;
-    background-color: #612721;
-    border-radius: 50%;
-}
-
 .upload-area {
     border: 2px dashed #dee2e6;
     transition: all 0.2s;
@@ -435,8 +385,105 @@ export default {
   animation: spin 1s linear infinite;
 }
 
-.qr-container {
-    background-color: #f8fafc;
+.payment-method-combined {
+    padding: 1.25rem;
+    border: 1px solid rgba(97, 39, 33, 0.14);
+    border-radius: 16px;
+    background: linear-gradient(145deg, #fffdf9 0%, #faf7f2 100%);
+    box-shadow: 0 10px 28px rgba(97, 39, 33, 0.07);
+}
+
+.payment-method-icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, #612721, #8b4337);
+}
+
+.payment-method-grid {
+    display: grid;
+    grid-template-columns: minmax(210px, 0.8fr) minmax(280px, 1.2fr);
+    gap: 1rem;
+}
+
+.payment-column {
+    padding: 1.25rem;
+    border: 1px solid rgba(97, 39, 33, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.qr-image {
+    width: 150px;
+    height: 150px;
+}
+
+.bank-detail-row {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eee7df;
+}
+
+.bank-detail-row:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.bank-detail-label {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: #8a7c78;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.account-number {
+    display: inline-block;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid rgba(97, 39, 33, 0.16);
+    border-radius: 8px;
+    background: #f8f3ed;
+    color: #612721;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.payment-note {
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    background: #fff5df;
+    color: #96611f;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+@media (max-width: 767.98px) {
+    .payment-method-combined {
+        padding: 1rem;
+    }
+
+    .payment-method-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-column {
+        padding: 1rem;
+    }
+
+    .qr-image {
+        width: 140px;
+        height: 140px;
+    }
+
+    .payment-method-heading {
+        align-items: flex-start !important;
+    }
 }
 
 .border-dashed {

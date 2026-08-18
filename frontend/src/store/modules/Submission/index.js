@@ -90,6 +90,7 @@ const SubmissionModule = {
                 description: artwork.description,
                 category: artwork.category,
                 storage: artwork.storage || null,
+                storageDetail: artwork.storageDetail || '',
                 technique: artwork.technique,
                 size: artwork.size,
                 price: artwork.price,

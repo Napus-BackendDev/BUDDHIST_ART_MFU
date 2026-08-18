@@ -6,7 +6,13 @@ const objsSchema = new Schema({
         key: { type: String, default: null },
         value: { type: String, default: null },
     }],
+    description: [{
+        key: { type: String, default: null },
+        value: { type: String, default: null },
+    }],
+    submissionCode: { type: String, default: null },
     courseLevel: { type: String, default: "1" },
+    academicYear: { type: String, default: () => String(new Date().getFullYear() + 543), index: true },
     artist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     assignments: [{
         title: [{
@@ -19,6 +25,7 @@ const objsSchema = new Schema({
             endAt: { type: Date, default: Date.now },
         },
         artworks: [{
+            artworkCode: { type: String, default: null },
             title: [{
                 key: { type: String, default: null },
                 value: { type: String, default: null },
@@ -47,6 +54,7 @@ const objsSchema = new Schema({
             }],
             rejectionReason: { type: String, default: null },
             storage: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Storage', default: null },
+            storageDetail: { type: String, trim: true, default: '' },
             create: {
                 at: { type: Date, default: Date.now },
             },
@@ -54,8 +62,16 @@ const objsSchema = new Schema({
     }],
     create: {
         startAt: { type: Date, default: Date.now },
-        endAt: { type: Date, default: Date.now },
+        // No default deadline: a submission saved without an explicit endAt must NOT be
+        // treated as already past-deadline (which would instantly flip its artists to
+        // OldStudent). processStudentStatus and the cron both skip a missing endAt.
+        endAt: { type: Date },
     },
 }, { timestamps: true });
+
+objsSchema.index(
+    { submissionCode: 1 },
+    { unique: true, partialFilterExpression: { submissionCode: { $type: 'string' } } }
+);
 
 module.exports = mongoose.model('Submission', objsSchema, 'Submission');

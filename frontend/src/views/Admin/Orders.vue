@@ -4,12 +4,12 @@
         <OrderWidget v-model="filters.status" :orders="orders" />
         <OrderFilter v-model="filters" />
         <OrderTable ref="orderTable" :filters="filters" :items="orders" :loadingItems="loadingItems" @view-order="onViewOrder" @edit-order="onEditOrder" @approve="handleApproveOrder" @reject="handleRejectOrder"/>
-        <OrderCreateModal :show.sync="showCreateModal" @save="handleSaveOrder" />
+        <OrderCreateModal :show.sync="showCreateModal" :saving="loading" @save="handleSaveOrder" />
         <OrderViewModal :show.sync="showViewModal" :order="selectedOrder" />
-        <OrderEditModal :show.sync="showEditModal" :order="selectedOrder" @save="handleUpdateOrder" />
+        <OrderEditModal :show.sync="showEditModal" :order="selectedOrder" :saving="loading" @save="handleUpdateOrder" />
         
         <!-- Rejection Reason Modal -->
-        <CModal :title="$i18n.locale === 'en' ? 'Reject Order' : 'ปฏิเสธคำสั่งซื้อ'" :show.sync="showRejectModal" color="danger" size="lg">
+        <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Reject Order' : 'ปฏิเสธคำสั่งซื้อ'" :show.sync="showRejectModal" color="danger" size="lg">
             <div class="p-3">
                 <p class="text-muted mb-3">
                     {{ $i18n.locale === 'en' ? 'Please provide a reason for rejecting this order. This message will be sent to the customer via email.' : 'กรุณาระบุเหตุผลในการปฏิเสธคำสั่งซื้อนี้ ข้อความนี้จะถูกส่งไปยังอีเมลของลูกค้า' }}
@@ -62,7 +62,8 @@ export default {
                 search: '',
                 status: 'All Status',
                 startDate: null,
-                endDate: null
+                endDate: null,
+                quickRange: 'All Time'
             },
             showRejectModal: false,
             rejectRemark: '',
@@ -230,9 +231,9 @@ export default {
                 
                 let translatedStatus = statusName;
                 if (statusName === 'Approved') {
-                    translatedStatus = this.$i18n.locale === 'en' ? 'Approved' : 'อนุมัติแล้ว';
+                    translatedStatus = this.$i18n.locale === 'en' ? 'Approved' : 'อนุมัติ';
                 } else if (statusName === 'Rejected') {
-                    translatedStatus = this.$i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธแล้ว';
+                    translatedStatus = this.$i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธ';
                 }
 
                 this.$store.commit('dialog/showToast', {
@@ -254,9 +255,9 @@ export default {
                 this.loadingItems = this.loadingItems.filter(id => id !== order._id);
             }
         },
-        handleExport() {
+        async handleExport() {
             if (this.$refs.orderTable) {
-                this.$refs.orderTable.exportExcel();
+                await this.$refs.orderTable.exportExcel();
             }
         }
     }

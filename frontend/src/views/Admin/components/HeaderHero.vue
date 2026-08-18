@@ -13,16 +13,18 @@
         </div>
       </div>
       <div class="header-actions mt-3 mt-sm-0 d-flex">
-        <CButton 
+        <LoadingButton 
           v-if="showExportButton"
           color="info" 
           variant="outline"
           class="px-4 py-2 mr-2 shadow-sm rounded-pill font-weight-bold d-flex align-items-center btn-export"
-          @click="$emit('export')"
+          :loading="exportLoading || actionLoading === 'export'"
+          :loading-text="$i18n.locale === 'en' ? 'Exporting...' : 'กำลังส่งออก...'"
+          @click="handleExport"
         >
           <CIcon name="cil-cloud-download" class="mr-2" />
-          Export Excel
-        </CButton>
+          {{ $i18n.locale === 'en' ? 'Export Excel' : 'ส่งออก Excel' }}
+        </LoadingButton>
         <CButton 
           v-if="showCreateButton"
           color="primary" 
@@ -69,10 +71,34 @@ export default {
       type: Boolean,
       default: false
     },
+    exportLoading: {
+      type: Boolean,
+      default: false
+    },
     themeColor: {
       type: String,
       default: 'blue'
     }
+  },
+  data() {
+    return {
+      actionLoading: null,
+      exportTimer: null
+    }
+  },
+  methods: {
+    handleExport() {
+      if (this.exportLoading || this.actionLoading === 'export') return;
+      this.actionLoading = 'export';
+      this.$emit('export');
+      clearTimeout(this.exportTimer);
+      this.exportTimer = setTimeout(() => {
+        this.actionLoading = null;
+      }, 350);
+    }
+  },
+  beforeDestroy() {
+    clearTimeout(this.exportTimer);
   }
 }
 </script>

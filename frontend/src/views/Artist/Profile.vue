@@ -7,6 +7,8 @@
       @edit="isEditing = true" 
       @navigate="handleNavigate"
     />
+
+    <PostTermSaleNotice v-if="!isPublic" />
  
       <transition name="fade" mode="out-in">
         
@@ -15,7 +17,7 @@
           <CCard class="profile-portfolio-card mt-4 border-0 shadow-premium rounded-xl overflow-hidden">
             <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
               <div class="header-title-group mb-3 mb-md-0">
-                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ $i18n.locale === 'en' ? 'My Artwork Portfolio' : 'พอร์ตโฟลิโอผลงานศิลปะของฉัน' }}</h3>
+                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ $i18n.locale === 'en' ? 'My Artwork Portfolio' : 'ข้อมูลผลงานของฉัน' }}</h3>
                 <p class="text-muted mb-0 portfolio-subtitle">{{ $i18n.locale === 'en' ? 'Explore and manage your collection of digital and physical art pieces.' : 'สำรวจและจัดการคอลเลกชันผลงานศิลปะดิจิทัลและศิลปะบนผืนผ้าใบของคุณ' }}</p>
               </div>
               <div v-if="!isPublic" class="header-actions-group">
@@ -174,7 +176,7 @@
                       <!-- Certificate (Only if Approved) -->
                       <button 
                         class="action-btn-doc icon-cert mr-1" 
-                        v-c-tooltip="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดเกียรติบัตร')"
+                        v-c-tooltip="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน')"
                         @click="downloadCertificate(item)"
                         :disabled="!isApprovedOrder(item)"
                         :class="{ 'disabled-btn': !isApprovedOrder(item) }"
@@ -227,6 +229,7 @@
       v-if="!isPublic"
       :show="showEditModal"
       :artwork="selectedArtwork"
+      :loading="loading"
       @update:show="showEditModal = $event"
       @save="handleArtworkUpdate"
     />
@@ -245,9 +248,9 @@ import OrderModal from './components/modal/OrderModal.vue'
 import ArtworkCreateModal from './components/modal/ArtworkCreateModal.vue'
 import ArtworkEditModal from './components/modal/ArtworkEditModal.vue'
 import EditProfileModal from './components/modal/EditProfileModal.vue'
+import PostTermSaleNotice from './components/PostTermSaleNotice.vue'
 import { mapGetters } from 'vuex';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
-import Service from '@/service/api';
 
 export default {
   name: 'ArtistProfile',
@@ -261,7 +264,8 @@ export default {
     OrderModal,
     ArtworkCreateModal,
     ArtworkEditModal,
-    EditProfileModal
+    EditProfileModal,
+    PostTermSaleNotice
   },
   data() {
     return {
@@ -462,11 +466,26 @@ export default {
     },
     async downloadCertificate(item) {
       try {
-        const res = await Service.order('certificate', item._id);
-        this.downloadFile(res.data, `Certificate_${item.orderIdDisplay || item._id}.pdf`);
+        const baseUrl = (process.env.VUE_APP_API_URL || '').replace(/\/$/, '');
+        const token = this.$store.state.xAccessToken;
+        const response = await fetch(`${baseUrl}/api/v1/order/certificate/${item._id}`, {
+          method: 'GET',
+          cache: 'no-store',
+          headers: token ? {
+            'X-Access-Token': token,
+            Authorization: `Bearer ${token}`
+          } : {}
+        });
+
+        if (!response.ok) {
+          throw new Error(`Certificate download failed with status ${response.status}`);
+        }
+
+        const pdfBlob = await response.blob();
+        this.downloadFile(pdfBlob, `Certificate_${item.orderIdDisplay || item._id}.pdf`);
       } catch (error) {
         console.error('Download Certificate Error:', error);
-        alert(this.$i18n.locale === 'en' ? 'Failed to download certificate.' : 'ดาวน์โหลดเกียรติบัตรไม่สำเร็จ');
+        alert(this.$i18n.locale === 'en' ? 'Failed to download certificate.' : 'ดาวน์โหลดใบรับรองผลงานไม่สำเร็จ');
       }
     },
     downloadFile(data, fileName) {
@@ -706,7 +725,8 @@ export default {
           category: payload.category,
           size: payload.size,
           price: payload.price,
-          status: payload.status
+          status: payload.status,
+          remark: payload.remark
         };
 
         this.$store.commit('dialog/showToast', {
@@ -785,7 +805,8 @@ export default {
           category: payload.category,
           size: payload.size,
           price: payload.price,
-          status: payload.status
+          status: payload.status,
+          remark: payload.remark
         };
 
         await this.$store.dispatch('artwork/update', updatePayload);

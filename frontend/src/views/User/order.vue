@@ -133,7 +133,7 @@
                   <!-- Certificate (Only if Approved) -->
                   <button 
                     class="action-btn-doc icon-cert mr-1" 
-                    v-c-tooltip="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดเกียรติบัตร')"
+                    v-c-tooltip="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน')"
                     @click="downloadCertificate(item)"
                     :disabled="!isApprovedOrder(item)"
                     :class="{ 'disabled-btn': !isApprovedOrder(item) }"
@@ -213,12 +213,12 @@ export default {
     }),
     fields() {
       return [
-        { key: 'orderId', label: this.$i18n.locale === 'en' ? 'ARTWORK' : 'ผลงานพุทธศิลป์', _classes: 'font-weight-bold' },
+        { key: 'orderId', label: this.$i18n.locale === 'en' ? 'ARTWORK' : 'ผลงานศิลปะ', _classes: 'font-weight-bold' },
         { key: 'date', label: this.$i18n.locale === 'en' ? 'Date Purchased' : 'วันที่สั่งซื้อ' },
         { key: 'total', label: this.$i18n.locale === 'en' ? 'Total Amount' : 'ยอดสุทธิ' },
         { key: 'status', label: this.$i18n.locale === 'en' ? 'Status' : 'สถานะ' },
         { key: 'timeLeft', label: this.$i18n.locale === 'en' ? 'Time Left' : 'เวลาที่เหลือ' },
-        { key: 'action', label: this.$i18n.locale === 'en' ? 'Actions' : 'การกระทำ', sorter: false, filter: false, _classes: 'text-right' }
+        { key: 'action', label: this.$i18n.locale === 'en' ? 'Actions' : 'สถานะดำเนินการ', sorter: false, filter: false, _classes: 'text-right' }
       ]
     },
     processedOrders() {
@@ -238,7 +238,7 @@ export default {
           statusName: (() => {
             const statusLabel = this.getName('en', order.status);
             const s = statusLabel ? statusLabel.toLowerCase() : '';
-            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'เสร็จสิ้น';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'ยืนยันข้อมูล';
             if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return this.$i18n.locale === 'en' ? 'Rejected' : 'ยกเลิก';
             
             if (!order.image) {
@@ -432,9 +432,60 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
 }
+
+.action-btn-doc.icon-receipt {
+    background-color: #fff9db;
+    color: #f59f00;
+    border-color: rgba(245, 159, 0, 0.35);
+}
+.action-btn-doc.icon-receipt:hover {
+    background-color: #f59f00;
+    color: white;
+    border-color: #f59f00;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(245, 159, 0, 0.2);
+}
+
+.action-btn-doc.icon-invoice {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+.action-btn-doc.icon-invoice:hover {
+    background-color: #8c1515;
+    color: white;
+    border-color: #8c1515;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(140, 21, 21, 0.15);
+}
+
+.action-btn-doc.icon-cert {
+    background-color: #ebfbee;
+    color: #40c057;
+    border-color: rgba(64, 192, 87, 0.35);
+}
+.action-btn-doc.icon-cert:not(.disabled-btn):hover {
+    background-color: #40c057;
+    color: white;
+    border-color: #40c057;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(64, 192, 87, 0.2);
+}
+
+.action-btn.icon-view {
+    background-color: #f0f7ff;
+    color: #007bff;
+    border: 1px solid #d6eaff;
+}
+.action-btn.icon-view:hover {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
 .action-btn-doc:hover {
     background-color: #8c1515;
     color: white;
@@ -449,6 +500,20 @@ export default {
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+}
+.action-btn-doc.disabled-btn:hover {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    border-color: #e2e8f0;
+    transform: none;
+    box-shadow: none;
+}
+
+.action-btn-doc:focus-visible,
+.action-btn.icon-view:focus-visible,
+.btn-quick-pay:focus-visible {
+    outline: 3px solid rgba(0, 123, 255, 0.25);
+    outline-offset: 2px;
 }
 
 .action-btn.icon-download {

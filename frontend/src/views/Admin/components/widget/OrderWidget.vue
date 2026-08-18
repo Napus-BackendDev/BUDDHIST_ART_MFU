@@ -64,8 +64,11 @@
 </template>
 
 <script>
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+
 export default {
     name: 'OrderWidget',
+    mixins: [statusBadgeMixin],
     props: {
         value: {
             type: String,
@@ -99,27 +102,7 @@ export default {
     },
     methods: {
         getStatusLabel(order) {
-            if (!order || !order.status) return 'Pending';
-            
-            let status = '';
-            if (typeof order.status === 'string') {
-                status = order.status;
-            } else if (order.status.title) {
-                const enStatus = order.status.title.find(t => t.key === 'en');
-                status = enStatus ? enStatus.value : '';
-            }
-
-            switch (status) {
-                case 'Completed':
-                case 'Success':
-                case 'Approved':
-                    return 'Completed';
-                case 'Cancelled':
-                case 'Rejected':
-                    return 'Cancelled';
-                default:
-                    return 'Pending';
-            }
+            return this.getOrderStatusGroup(order && order.status);
         }
     }
 }

@@ -1,16 +1,17 @@
 <template>
   <CHeader with-subheader class="px-3 px-md-4">
-<!--    <CToggler-->
-<!--      in-header-->
-<!--      class="ml-3 d-lg-none"-->
-<!--      @click="$store.commit('toggleSidebarMobile')"-->
-<!--    />-->
+    <CToggler
+      in-header
+      class="mr-2 d-lg-none admin-mobile-toggler"
+      aria-label="Toggle navigation"
+      @click="$store.commit('toggleSidebarMobile')"
+    />
     <CToggler
       in-header
       class="ml-0 d-md-down-none"
       @click="$store.commit('toggleSidebarDesktop')"
     />
-    <CHeaderBrand class="mx-auto d-lg-none w-100 bg-danger d-flex align-items-center justify-content-center" to="/">
+    <CHeaderBrand class="mx-auto d-lg-none admin-mobile-brand bg-danger d-flex align-items-center justify-content-center" to="/">
       <img src="@/assets/logo.svg" height="35" class="mr-2">
       <label class="font-weight-bold h5 mt-2 text-white">Buddhist Art MFU</label>
     </CHeaderBrand>
@@ -112,5 +113,32 @@ export default {
 .lang-switcher-pill:hover {
   background-color: #f1f3f5;
   border-color: #cbd5e0;
+}
+
+.admin-mobile-brand {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: .5rem !important;
+  margin-left: .25rem !important;
+  padding: .35rem .75rem;
+  border-radius: .625rem;
+}
+
+@media (max-width: 575.98px) {
+  .admin-mobile-brand label {
+    max-width: 9.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .9rem !important;
+  }
+
+  .admin-mobile-brand img {
+    height: 28px;
+  }
+
+  .lang-switcher-pill {
+    padding: 6px 9px;
+  }
 }
 </style>

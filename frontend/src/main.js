@@ -9,10 +9,12 @@ import { iconsSet as icons } from './assets/icons/icons.js'
 import i18n from './i18n.js'
 import store from "@/store/store";
 import i18nMixin from './mixins/i18nMixin.js';
+import LoadingButton from './components/LoadingButton.vue';
 
 import OtpInput from "@bachdgvn/vue-otp-input";
 Vue.component("v-otp-input", OtpInput);
 Vue.mixin(i18nMixin);
+Vue.component('LoadingButton', LoadingButton);
 
 import VueKonva from 'vue-konva'
 Vue.use(VueKonva)
@@ -27,17 +29,9 @@ import moment from 'moment'
 Vue.prototype.moment = moment
 
 
-import GAuth from 'vue-google-oauth2'
-const gauthOption = {
-  clientId: process.env.VUE_APP_CLIENTID,
-  scope: process.env.VUE_APP_SCOPE,
-  prompt: process.env.VUE_APP_PROMPT
-}
-Vue.use(GAuth, gauthOption)
-console.log(gauthOption)
-
 // Restore session on load
 store.dispatch('auth/supportReload');
+store.dispatch('realtime/start');
 
 new Vue({
   el: '#app',

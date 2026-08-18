@@ -4,25 +4,28 @@
             <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between mb-5">
                 <div class="text-left mb-3 mb-md-0">
                     <span class="badge text-uppercase font-weight-bold px-3 py-2 mb-3" style="color: #612721; background-color: rgba(97,39,33,0.08); border-radius: 50px; font-size: 0.8rem; letter-spacing: 1px;">
-                        {{ $i18n.locale === 'en' ? 'Academic Gallery' : 'นิทรรศการวิชาการ' }}
+                        {{ $i18n.locale === 'en' ? 'Artwork Gallery' : 'ผลงานศิลปะ' }}
                     </span>
+                    <!-- hidden per client 2026-07: showcase H2 + description hidden; badge & artworks grid kept -->
+                    <!--
                     <h2 class="font-weight-bold mb-2 section-title-home" style="color: #612721; font-family: 'Cinzel', serif; font-size: 2.2rem;">
                         {{ $i18n.locale === 'en' ? 'Student Creative Showcase' : 'หอศิลป์ผลงานสร้างสรรค์โดยผู้เรียน' }}
                     </h2>
                     <p class="text-muted mb-0 lead-sub" style="font-family: 'Sarabun', sans-serif; font-size: 1.05rem;">
-                        {{ $i18n.locale === 'en' 
-                            ? 'Masterpieces submitted as course assignments and approved by our Buddhist Art curators.' 
+                        {{ $i18n.locale === 'en'
+                            ? 'Masterpieces submitted as course assignments and approved by our Buddhist Art curators.'
                             : 'ผลงานพุทธศิลปกรรมและล้านนาสร้างสรรค์ที่ผ่านการคัดสรรจากรายวิชาเรียนของนักศึกษา' }}
                     </p>
+                    -->
                 </div>
                 <CButton color="danger" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold btn-view-all align-self-start align-self-md-end" @click="$router.push('/artworks')">
-                    {{ $i18n.locale === 'en' ? 'Explore Student Works' : 'ดูผลงานนักศึกษาทั้งหมด' }}
+                    {{ $i18n.locale === 'en' ? 'Explore Learner Works' : 'ดูผลงานผู้เรียนทั้งหมด' }}
                 </CButton>
             </div>
 
             <div v-if="loading" class="text-center py-5">
                 <CSpinner color="danger" variant="grow" />
-                <p class="mt-3 text-muted">{{ $i18n.locale === 'en' ? 'Loading student showcase...' : 'กำลังโหลดผลงานผู้เรียน...' }}</p>
+                <p class="mt-3 text-muted">{{ $i18n.locale === 'en' ? 'Loading learner artworks...' : 'กำลังโหลดผลงานผู้เรียน...' }}</p>
             </div>
 
             <template v-else>
@@ -32,7 +35,7 @@
                 
                 <div v-else class="text-center py-5 bg-light rounded-xl shadow-sm border mt-3">
                     <CIcon name="cil-search" size="xl" class="text-muted mb-3" />
-                    <p class="text-muted">{{ $i18n.locale === 'en' ? 'No student works available at this time' : 'ยังไม่มีผลงานของนักศึกษาในระบบในขณะนี้' }}</p>
+                    <p class="text-muted">{{ $i18n.locale === 'en' ? 'No learner artworks are available at this time' : 'ยังไม่มีผลงานของผู้เรียนในระบบในขณะนี้' }}</p>
                 </div>
             </template>
         </CContainer>

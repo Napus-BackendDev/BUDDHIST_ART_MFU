@@ -86,9 +86,41 @@ export const statusBadgeMixin = {
             }
             return 'N/A';
         },
+        getOrderStatusGroup(status) {
+            if (!status) return 'Pending';
+
+            const title = typeof status === 'string' ? status : status.title || status.name;
+            const statusText = Array.isArray(title)
+                ? title.map(item => item && item.value).filter(Boolean).join(' ')
+                : String(title || '');
+            const normalizedStatus = statusText.toLowerCase();
+
+            if (/(approved|completed|success|อนุมัติ)/.test(normalizedStatus)) {
+                return 'Completed';
+            }
+            if (/(cancelled|canceled|rejected|ปฏิเสธ|ยกเลิก)/.test(normalizedStatus)) {
+                return 'Cancelled';
+            }
+            return 'Pending';
+        },
         formatDate(date) {
             if (!date) return 'N/A';
-            return moment(date).format('DD/MM/YYYY');
+            const m = moment(date);
+            return m.isValid() ? m.format('DD/MM/YYYY') : String(date);
+        },
+        formatTime(date) {
+            if (!date) return '';
+            const m = moment(date);
+            if (!m.isValid()) return '';
+            const prefix = this.$i18n && this.$i18n.locale === 'en' ? 'Time: ' : 'เวลา: ';
+            return prefix + m.format('HH:mm');
+        },
+        formatDateTime(date) {
+            if (!date) return 'N/A';
+            const m = moment(date);
+            if (!m.isValid()) return String(date);
+            const prefix = this.$i18n && this.$i18n.locale === 'en' ? 'Time: ' : 'เวลา: ';
+            return m.format('DD/MM/YYYY') + ' ' + prefix + m.format('HH:mm');
         }
     }
 };

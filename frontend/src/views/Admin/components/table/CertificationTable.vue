@@ -2,7 +2,7 @@
     <CCard class="certification-table-card mb-4">
         <div>
             <CDataTable :items="sortedItems" :fields="fields" class="custom-table mb-0" hover :border="false"
-                :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
+                :striped="false" :items-per-page="itemsPerPage" :active-page="activePage" @page-change="pageChange">
 
                 <!-- Certificate Name -->
                 <template #certificate_name="{ item }">
@@ -52,28 +52,15 @@
             </CDataTable>
         </div>
 
-        <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm" v-if="items.length > 0">
-                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, items.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ items.length }} {{ $i18n.locale === 'en' ? 'certificates' : 'ใบรับรอง' }}
-            </div>
-            <div class="text-muted text-sm" v-else>
-                {{ $i18n.locale === 'en' ? 'Showing 0 certificates' : 'แสดง 0 ใบรับรอง' }}
-            </div>
-            <CPagination
-                :active-page.sync="activePage"
-                :pages="Math.max(1, Math.ceil(items.length / 10))"
-                size="sm"
-                align="end"
-                class="mb-0 pill-pagination"
-            />
-        </CCardFooter>
+        <TablePaginationFooter :total="items.length" :active-page.sync="activePage" :items-per-page.sync="itemsPerPage" noun-en="certificates" noun-th="ใบรับรอง" />
     </CCard>
 </template>
 
 <script>
+import TablePaginationFooter from './TablePaginationFooter.vue'
 export default {
     name: 'CertificationTable',
+    components: { TablePaginationFooter },
     data() {
         return {
             items: [
@@ -118,7 +105,8 @@ export default {
                     status: 'Inactive'
                 }
             ],
-            activePage: 1
+            activePage: 1,
+            itemsPerPage: 10
         }
     },
     computed: {

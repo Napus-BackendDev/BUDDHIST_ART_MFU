@@ -2,26 +2,39 @@
     <footer class="footer-user">
         <div class="footer-main py-5">
             <CContainer>
-                <CRow>
+                <!-- Top Section: 3 Main Columns (Brand, Quick Links, Contact Info) -->
+                <CRow class="mb-4 pb-2">
                     <!-- Column 1: Brand & Identity -->
-                    <CCol lg="4" class="mb-4 mb-lg-0 pr-lg-5">
+                    <CCol lg="4" class="mb-4 mb-lg-0 pr-lg-3 pr-xl-4">
                         <div class="footer-brand mb-4">
                             <h2 class="brand-title">Buddhist Art <span class="highlight">SPACE</span></h2>
                             <div class="brand-sub">{{ $i18n.locale === 'en' ? 'Mae Fah Luang University' : 'มหาวิทยาลัยแม่ฟ้าหลวง' }}</div>
                         </div>
-                        <p class="brand-description mt-4">
-                            {{ $i18n.locale === 'en' ? 'A digital space for learning, archiving, and disseminating contemporary Buddhist artwork to support creativity, knowledge extension, and the cultural creative economy.' : 'พื้นที่ดิจิทัลสำหรับการเรียนรู้ จัดเก็บ และเผยแพร่ผลงานพุทธศิลปกรรมร่วมสมัย เพื่อสนับสนุนการสร้างสรรค์ ต่อยอดองค์ความรู้ และเศรษฐกิจสร้างสรรค์ทางศิลปวัฒนธรรม' }}
+                        <p class="brand-description mt-4" v-if="$i18n.locale === 'th'">
+                            พื้นที่ดิจิทัลสำหรับการเรียนรู้ จัดเก็บ<br />
+                            และเผยแพร่ผลงานพุทธศิลปกรรมร่วมสมัย<br />
+                            เพื่อสนับสนุนการสร้างสรรค์ ต่อยอดองค์ความรู้<br />
+                            และเศรษฐกิจสร้างสรรค์ทางศิลปวัฒนธรรม
+                        </p>
+                        <p class="brand-description mt-4" v-else>
+                            A digital space for learning, archiving,<br />
+                            and disseminating contemporary Buddhist artwork<br />
+                            to support creativity, knowledge extension,<br />
+                            and the cultural creative economy.
                         </p>
                         <!-- Sleek Round Social Media Buttons -->
                         <div class="social-links mt-4">
-                            <a href="https://facebook.com/BuddhistArtMFU" target="_blank" rel="noopener noreferrer" class="social-btn" title="Facebook">
-                                <CIcon name="cib-facebook" />
+                            <a href="https://www.facebook.com/BuddhistArtMFU" target="_blank" rel="noopener noreferrer" class="social-btn" title="Facebook" aria-label="Facebook">
+                                <CIcon name="cib-facebook" aria-hidden="true" />
                             </a>
-                            <a href="https://buddhistart.mfu.ac.th" target="_blank" rel="noopener noreferrer" class="social-btn" title="Official Website">
-                                <CIcon name="cil-globe-alt" />
+                            <a href="https://www.youtube.com/@BuddhistArtMFU" target="_blank" rel="noopener noreferrer" class="social-btn" title="YouTube" aria-label="YouTube">
+                                <CIcon name="cib-youtube" aria-hidden="true" />
                             </a>
-                            <a href="mailto:buddhistart@mfu.ac.th" class="social-btn" title="Email Us">
-                                <CIcon name="cil-envelope-closed" />
+                            <a href="https://buddhistart.mfu.ac.th" target="_blank" rel="noopener noreferrer" class="social-btn" title="Official Website" aria-label="Official Website">
+                                <CIcon name="cil-globe-alt" aria-hidden="true" />
+                            </a>
+                            <a href="mailto:buddhistart@mfu.ac.th" class="social-btn" title="Email Us" aria-label="Email Us">
+                                <CIcon name="cil-envelope-closed" aria-hidden="true" />
                             </a>
                         </div>
                     </CCol>
@@ -43,7 +56,7 @@
                         </ul>
                     </CCol>
 
-                    <!-- Column 3: Contact Info -->
+                    <!-- Column 3: Contact Info (ติดต่อเรา) -->
                     <CCol md="8" lg="5" class="mb-4 mb-lg-0 ml-lg-auto pl-lg-4">
                         <h5 class="footer-heading text-uppercase mb-4">{{ $i18n.locale === 'en' ? 'Contact Us' : 'ติดต่อเรา' }}</h5>
                         <div class="contact-info">
@@ -54,7 +67,7 @@
                                 </div>
                                 <div class="contact-text" style="line-height: 1.6;">
                                     <div class="font-weight-bold mb-1" style="color: #fff;">
-                                        {{ $i18n.locale === 'en' ? 'Center for Buddhist Art, Mae Fah Luang University' : 'ศูนย์บริการวิชาการ (ฝ่ายบริการวิชาการ) มหาวิทยาลัยแม่ฟ้าหลวง' }}
+                                        {{ $i18n.locale === 'en' ? 'Academic Services Center (Academic Services Division), Mae Fah Luang University' : 'ศูนย์บริการวิชาการ (ฝ่ายบริการวิชาการ) มหาวิทยาลัยแม่ฟ้าหลวง' }}
                                     </div>
                                     <div class="small text-white-50">
                                         {{ $i18n.locale === 'en' ? 'Gen. Sampao Choosri Building (E4), 333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'อาคารพลเอกสำเภา ชูศรี (E4) เลขที่ 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
@@ -92,6 +105,29 @@
                         </div>
                     </CCol>
                 </CRow>
+
+                <!-- Bottom Section: Spacious & Elegant Supporters Section (อยู่ใต้ คอลัมน์ติดต่อเรา) -->
+                <div class="footer-supporters-section mt-5 pt-4 border-top border-secondary-light">
+                    <!-- Section Header Centered with breathing room -->
+                    <div class="text-center mb-4 pb-1">
+                        <span class="supporters-eyebrow">{{ $i18n.locale === 'en' ? 'Partnerships & Collaboration' : 'ความร่วมมือทางวิชาการและศิลปวัฒนธรรม' }}</span>
+                        <h4 class="supporters-title text-white font-weight-bold mb-0">{{ $i18n.locale === 'en' ? 'Our Supporters' : 'หน่วยงานผู้สนับสนุน' }}</h4>
+                        <div class="supporters-accent-bar mx-auto mt-2"></div>
+                    </div>
+
+                    <!-- 4 Spacious Partner Cards Grid -->
+                    <CRow class="justify-content-center">
+                        <CCol cols="6" md="6" lg="3" v-for="partner in partners" :key="partner.id" class="mb-3 px-2 px-lg-3">
+                            <div class="footer-supporter-card text-center p-3 h-100" :title="getAltText(partner)">
+                                <div class="footer-supporter-icon-box mx-auto mb-2">
+                                    <img :src="partner.img" :alt="getAltText(partner)" class="footer-supporter-img" />
+                                </div>
+                                <span class="footer-supporter-badge mb-1 d-inline-block">{{ partner.sub }}</span>
+                                <div class="footer-supporter-name" v-html="$i18n.locale === 'en' ? partner.nameEn : partner.nameTh"></div>
+                            </div>
+                        </CCol>
+                    </CRow>
+                </div>
             </CContainer>
         </div>
 
@@ -100,11 +136,11 @@
             <CContainer>
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
                     <p class="mb-0 small text-muted">
-                        &copy; {{ new Date().getFullYear() }} Center for Buddhist Art, Mae Fah Luang University. All rights reserved.
+                        &copy; {{ new Date().getFullYear() }} {{ $i18n.locale === 'en' ? 'Short Course Program in Buddhist Art, Mae Fah Luang University. All rights reserved.' : 'หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง สงวนลิขสิทธิ์' }}
                     </p>
                     <div class="footer-policy mt-3 mt-md-0">
-                        <a href="#" class="small text-muted mr-3">{{ $i18n.locale === 'en' ? 'Privacy Policy' : 'นโยบายความเป็นส่วนตัว' }}</a>
-                        <a href="#" class="small text-muted">{{ $i18n.locale === 'en' ? 'Terms of Service' : 'ข้อกำหนดการให้บริการ' }}</a>
+                        <router-link to="/privacy" class="small text-muted mr-3">{{ $i18n.locale === 'en' ? 'Privacy Policy' : 'นโยบายความเป็นส่วนตัว' }}</router-link>
+                        <router-link to="/terms" class="small text-muted">{{ $i18n.locale === 'en' ? 'Terms of Service' : 'ข้อกำหนดการให้บริการ' }}</router-link>
                     </div>
                 </div>
             </CContainer>
@@ -114,7 +150,47 @@
 
 <script>
 export default {
-    name: 'TheFooterUser'
+    name: 'TheFooterUser',
+    data() {
+        return {
+            partners: [
+                {
+                    id: 'LocalMFU',
+                    img: '/img/partner_mfu.png',
+                    nameEn: 'Mae Fah Luang<br>University',
+                    nameTh: 'มหาวิทยาลัย<br>แม่ฟ้าหลวง',
+                    sub: 'MFU'
+                },
+                {
+                    id: 'LocalCAS',
+                    img: '/img/partner_cas.png',
+                    nameEn: 'Academic Services<br>Center',
+                    nameTh: 'ศูนย์บริการ<br>วิชาการ',
+                    sub: 'CAS'
+                },
+                {
+                    id: 'LocalEart',
+                    img: '/img/partner_museum.png',
+                    nameEn: 'Short Course Program<br>in Buddhist Art',
+                    nameTh: 'หลักสูตรระยะสั้น<br>สาขาวิชาพุทธศิลปกรรม',
+                    sub: 'Buddhist Art'
+                },
+                {
+                    id: 'Museum',
+                    img: '/img/partner_eart.png',
+                    nameEn: 'Institute for Mekong Basin<br>Civilisation Art & Culture',
+                    nameTh: 'สถาบันศิลปวัฒนธรรม<br>อารยธรรมลุ่มน้ำโขง',
+                    sub: 'IMAC'
+                }
+            ]
+        }
+    },
+    methods: {
+        getAltText(partner) {
+            const raw = this.$i18n.locale === 'en' ? partner.nameEn : partner.nameTh;
+            return raw ? raw.replace(/<br\s*[\/]?>/gi, ' ') : '';
+        }
+    }
 }
 </script>
 
@@ -157,9 +233,10 @@ export default {
 }
 
 .brand-description {
-    line-height: 1.7;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.95rem;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.92rem;
+    word-break: keep-all;
 }
 
 .footer-heading {
@@ -187,6 +264,9 @@ export default {
 }
 
 .footer-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: all 0.25s ease;
@@ -208,14 +288,22 @@ export default {
     color: rgba(255, 255, 255, 0.9);
 }
 
+.footer-policy a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+
 .social-links {
     display: flex;
     gap: 15px;
 }
 
 .social-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
     background: rgba(255,255,255,0.1);
     border-radius: 50%;
     display: flex;
@@ -232,26 +320,97 @@ export default {
     transform: translateY(-3px);
 }
 
-.footer-map-deco {
-    height: 100px;
-    background: linear-gradient(rgba(74, 29, 24, 0.8), rgba(74, 29, 24, 0.8)), url('~@/assets/images/backgrounds/news_hero.png');
-    background-size: cover;
-    background-position: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+/* Redesigned Spacious Supporters Section */
+.footer-supporters-section {
+    position: relative;
 }
 
-.footer-map-deco:hover {
-    filter: brightness(1.2);
-    border-color: #f0c24d !important;
+.supporters-eyebrow {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #f0c24d;
+    margin-bottom: 4px;
 }
 
-.map-overlay {
-    height: 100%;
-    color: #fff;
-    font-weight: 600;
-    font-size: 0.9rem;
+.supporters-title {
+    font-family: 'Cinzel', 'Sarabun', serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.supporters-accent-bar {
+    width: 36px;
+    height: 2px;
+    background: #f0c24d;
+    border-radius: 2px;
+    opacity: 0.8;
+}
+
+.footer-supporter-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem 1rem !important;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    cursor: default;
+}
+
+.footer-supporter-card:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(240, 194, 77, 0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.footer-supporter-icon-box {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    transition: transform 0.3s ease;
+}
+
+.footer-supporter-card:hover .footer-supporter-icon-box {
+    transform: scale(1.06);
+}
+
+.footer-supporter-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.footer-supporter-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #f0c24d;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 4px;
+}
+
+.footer-supporter-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.4;
+    text-align: center;
 }
 
 .border-secondary {
@@ -259,12 +418,23 @@ export default {
 }
 
 .border-secondary-light {
-    border-color: rgba(255,255,255,0.08) !important;
+    border-color: rgba(255,255,255,0.12) !important;
 }
 
 @media (max-width: 991.98px) {
     .footer-heading {
         margin-top: 20px;
+    }
+    .footer-supporter-card {
+        padding: 1rem 0.75rem !important;
+    }
+    .footer-supporter-icon-box {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+    }
+    .footer-supporter-name {
+        font-size: 0.76rem;
     }
 }
 </style>

@@ -3,20 +3,15 @@ const Artwork = require("../controller/artwork");
 const ArtworkModel = require("../models/artwork.model");
 const User = require("../../User/models/user.model");
 const ResMessage = require("../../Settings/service/message");
+const { generateArtworkCode } = require('./artworkCode');
+const { getEffectiveMode, isAdminUser, requestUserId, constants } = require('./postTermSale');
 
-const generateArtworkCode = async (artistId) => {
+const generateDirectArtworkCode = async (artistId, courseLevel, academicYear) => {
   if (!artistId) return null;
   try {
     const artist = await User.findById(artistId);
     if (!artist) return null;
-    const beYear = (new Date().getFullYear() + 543) % 100;
-    const yy = String(beYear).padStart(2, '0');
-    const c = "1"; // Default course level for manual registration
-    const studentId = artist.studentId || "";
-    const aa = studentId.length >= 2 ? studentId.substring(studentId.length - 2) : "00";
-    const count = await ArtworkModel.countDocuments({ artist: artistId });
-    const nnn = String(count + 1).padStart(3, '0');
-    return `${yy}8${c}${aa}${nnn}`;
+    return generateArtworkCode({ artist, courseLevel, academicYear });
   } catch (err) {
     console.error("Error generating artwork code:", err);
     return null;
@@ -28,10 +23,22 @@ exports.onQuery = async function (request, response) {
     let query = {};
     query._id = new mongo.ObjectId(request.body._id);
 
-    // Increment view count
-    await ArtworkModel.findByIdAndUpdate(query._id, { $inc: { views: 1 } });
-
     const doc = await Artwork.onQuery(query);
+    return ResMessage.sendResponse(response, 0, 20000, doc);
+  } catch (err) {
+    return ResMessage.sendResponse(response, 0, 40400);
+  }
+};
+
+exports.onUpdateView = async function (request, response) {
+  try {
+    const artworkId = new mongo.ObjectId(request.params.id);
+    const doc = await ArtworkModel.findByIdAndUpdate(
+      artworkId,
+      { $inc: { views: 1 } },
+      { new: true }
+    ).lean();
+
     return ResMessage.sendResponse(response, 0, 20000, doc);
   } catch (err) {
     return ResMessage.sendResponse(response, 0, 40400);
@@ -54,6 +61,10 @@ exports.onCreate = async function (request, response) {
     const data = isArray ? request.body : { ...request.body };
 
     const cleanObject = async (obj) => {
+      // Post-term lifecycle is written only by the dedicated decision API.
+      // Direct artwork creation must never opt into Submission's one-year rule.
+      delete obj.postTermSale;
+      delete obj.submissionArtworkId;
       if (obj.status) {
         if (obj.status.approval === "") delete obj.status.approval;
         if (obj.status.sale === "") delete obj.status.sale;
@@ -80,7 +91,9 @@ exports.onCreate = async function (request, response) {
 
       // Generate artworkCode if not already present
       if (!obj.artworkCode && obj.artist) {
-        obj.artworkCode = await generateArtworkCode(obj.artist);
+        obj.academicYear = String(obj.academicYear || (new Date().getFullYear() + 543));
+        obj.courseLevel = String(obj.courseLevel || '00');
+        obj.artworkCode = await generateDirectArtworkCode(obj.artist, obj.courseLevel, obj.academicYear);
       }
 
       return obj;
@@ -132,6 +145,18 @@ exports.onUpdate = async function (request, response) {
 
     const data = { ...request.body };
     delete data._id; // IMPORTANT: Remove immutable _id before updating
+
+    // During the initial Submission term, artists may edit artwork metadata but
+    // cannot turn off the platform's sale right. Admins retain control.
+    const currentArtwork = await ArtworkModel.findOne(query).lean();
+    if (currentArtwork?.postTermSale?.applicable
+      && !isAdminUser(request)
+      && String(currentArtwork.artist) === String(requestUserId(request))
+      && getEffectiveMode(currentArtwork.postTermSale) === constants.MODES.INITIAL
+      && data.status && Object.prototype.hasOwnProperty.call(data.status, 'sale')) {
+      data.status.sale = currentArtwork.status?.sale;
+    }
+    delete data.postTermSale;
 
     // Clean up empty strings for ObjectId fields to allow schema defaults/nulls to work
     if (data.status) {

@@ -1,23 +1,10 @@
 <template>
   <div class="contact-page min-vh-100 pb-5">
-    <!-- Hero Header -->
-    <div class="contact-hero mb-5">
-      <div class="hero-overlay"></div>
-      <CContainer class="hero-content-wrapper">
-        <div class="hero-text-content">
-          <div class="reveal-animation">
-            <h1 class="hero-title text-uppercase mb-2">
-              {{ $i18n.locale === 'en' ? 'Contact' : 'ติดต่อ' }} <span class="text-highlight">{{ $i18n.locale === 'en' ? 'Us' : 'เรา' }}</span>
-            </h1>
-            <div class="title-separator mb-4"></div>
-            <p class="hero-subtitle mb-0">
-              {{ $i18n.locale === 'en' ? 'Get in touch with the Buddhist Art Center, Mae Fah Luang University' : 'ติดต่อสอบถามข้อมูลกับโครงการพัฒนาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง' }}
-            </p>
-          </div>
-        </div>
-      </CContainer>
-      <div class="decorative-blob"></div>
-    </div>
+    <SectionPageHero
+      variant="contact"
+      :title-lead="$i18n.locale === 'en' ? 'Contact' : 'ติดต่อ'"
+      :title-highlight="$i18n.locale === 'en' ? 'Us' : 'เรา'"
+    />
 
     <!-- Main Content Section -->
     <CContainer class="pt-4 mt-2">
@@ -93,18 +80,14 @@
                 <h6 class="social-title text-uppercase mb-3 font-weight-bold">
                   {{ $i18n.locale === 'en' ? 'Social Channels' : 'ช่องทางโซเชียลมีเดีย' }}
                 </h6>
-                <div class="d-flex flex-wrap" style="gap: 3px;">
-                  <a href="https://facebook.com" target="_blank" class="social-pill-btn d-flex align-items-center">
+                <div class="d-flex flex-wrap" style="gap: 10px;">
+                  <a href="https://www.facebook.com/BuddhistArtMFU" target="_blank" rel="noopener noreferrer" class="social-pill-btn d-flex align-items-center">
                     <CIcon name="cib-facebook" class="mr-2 social-icon-brand" />
                     <span>Facebook</span>
                   </a>
-                  <a href="https://line.me" target="_blank" class="social-pill-btn d-flex align-items-center">
-                    <CIcon name="cib-line" class="mr-2 social-icon-brand" />
-                    <span>Line Official</span>
-                  </a>
-                  <a href="https://instagram.com" target="_blank" class="social-pill-btn d-flex align-items-center">
-                    <CIcon name="cib-instagram" class="mr-2 social-icon-brand" />
-                    <span>Instagram</span>
+                  <a href="https://www.youtube.com/@BuddhistArtMFU" target="_blank" rel="noopener noreferrer" class="social-pill-btn d-flex align-items-center">
+                    <CIcon name="cib-youtube" class="mr-2 social-icon-brand" />
+                    <span>YouTube</span>
                   </a>
                 </div>
               </div>
@@ -175,11 +158,11 @@
                     <div class="form-group-custom mb-4">
                       <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Subject' : 'หัวข้อเรื่อง' }} <span class="required">*</span></label>
                       <input 
-                        type="text" 
-                        v-model="form.subject" 
-                        required 
-                        class="form-control-custom"
-                        :placeholder="$i18n.locale === 'en' ? 'How can we help you?' : 'ระบุหัวข้อที่ต้องการติดต่อสอบถาม'"
+                            type="text" 
+                            v-model="form.subject" 
+                            required 
+                            class="form-control-custom"
+                            :placeholder="$i18n.locale === 'en' ? 'How can we help you?' : 'ระบุหัวข้อที่ต้องการติดต่อสอบถาม'"
                       />
                     </div>
 
@@ -240,8 +223,11 @@
 </template>
 
 <script>
+import SectionPageHero from './components/SectionPageHero.vue'
+
 export default {
   name: 'Contact',
+  components: { SectionPageHero },
   data() {
     return {
       form: {
@@ -253,6 +239,13 @@ export default {
       submitting: false,
       submitted: false
     }
+  },
+  computed: {
+    heroDescription() {
+      return this.$i18n.locale === 'en'
+        ? 'Contact us for more information about the Buddhist Art Short Course Program at Mae Fah Luang University.'
+        : 'ติดต่อสอบถามข้อมูลเพิ่มเติมเกี่ยวกับหลักสูตรระยะสั้นพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง'
+    },
   },
   methods: {
     handleSubmit() {
@@ -285,87 +278,6 @@ export default {
 <style scoped>
 .contact-page {
   background-color: #FAF9F6 !important;
-}
-
-/* Hero Header */
-.contact-hero {
-  position: relative;
-  height: 400px;
-  display: flex;
-  align-items: center;
-  background-image: url('~@/assets/images/backgrounds/news_hero.png'); /* Fallback / reuse image background */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  margin-top: -80px; 
-  padding-top: 80px;
-  overflow: hidden;
-  color: white;
-}
-
-.hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-      rgba(0,0,0,0.85) 0%, 
-      rgba(0,0,0,0.6) 40%, 
-      rgba(0,0,0,0.3) 100%);
-  z-index: 1;
-}
-
-.hero-content-wrapper {
-  position: relative;
-  z-index: 2;
-}
-
-.hero-text-content {
-  max-width: 800px;
-}
-
-.hero-title {
-  font-family: 'Cinzel', serif;
-  font-size: 3.5rem;
-  font-weight: 900;
-  line-height: 1.1;
-  letter-spacing: 2px;
-  text-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.text-highlight {
-  color: white;
-  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.4);
-  font-style: italic;
-  text-shadow: 0 0 20px rgba(255,255,255,0.3);
-}
-
-.title-separator {
-  width: 60px;
-  height: 4px;
-  background: #612721;
-  border-radius: 2px;
-}
-
-.hero-subtitle {
-  font-family: 'Sarabun', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 400;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.decorative-blob {
-  position: absolute;
-  bottom: -50px;
-  right: -50px;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(97, 39, 33, 0.2) 0%, transparent 70%);
-  border-radius: 50%;
-  filter: blur(40px);
-  z-index: 1;
 }
 
 /* Card Styling */
@@ -585,31 +497,7 @@ textarea.form-control-custom {
   to { opacity: 1; transform: scale(1); }
 }
 
-/* Responsive adjustments */
-@media (max-width: 991.98px) {
-  .contact-hero {
-    height: 320px;
-  }
-  .hero-title {
-    font-size: 2.8rem;
-  }
-  .hero-subtitle {
-    font-size: 1.1rem;
-  }
-}
-
 @media (max-width: 575.98px) {
-  .contact-hero {
-    height: 260px;
-    margin-top: -60px;
-    padding-top: 60px;
-  }
-  .hero-title {
-    font-size: 2.2rem;
-  }
-  .hero-subtitle {
-    font-size: 0.95rem;
-  }
   .p-5 {
     padding: 1.5rem !important;
   }

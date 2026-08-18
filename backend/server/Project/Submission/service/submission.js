@@ -1,5 +1,6 @@
 const mongo = require('mongodb');
 const Submission = require('../controller/submission');
+const SubmissionModel = require('../models/submission.model');
 const Status = require('../../Settings/models/status.model');
 const Artwork = require("../../Artwork/models/artwork.model");
 const User = require("../../User/models/user.model");
@@ -7,15 +8,26 @@ const Role = require("../../Settings/models/role.model");
 const ResMessage = require("../../Settings/service/message");
 const { sendMail } = require("../../../../helpers/google/Mail");
 const { approvedSubmissionMail, rejectedSubmissionMail } = require("../../Mail");
+const {
+    generateArtworkCode,
+    generateSubmissionCode
+} = require('../../Artwork/service/artworkCode');
+const { buildPostTermSale } = require('../../Artwork/service/postTermSale');
 
-/** 
+/**
  * HELPER FUNCTIONS (Internal)
  */
 
 // Extract artworks from a submission document matching a specific status ID
-const getArtworksByStatus = (doc, statusId) => {
+const getArtworksByStatus = (doc, statusId, previousDoc = null) => {
     if (!doc?.assignments || !statusId) return [];
     const targetId = statusId.toString();
+    const previousById = new Map();
+    (previousDoc?.assignments || []).forEach(assignment => {
+        (assignment.artworks || []).forEach(artwork => {
+            previousById.set((artwork._id || artwork).toString(), artwork);
+        });
+    });
 
     return doc.assignments.flatMap(assignment => {
         // Get assignment title for metadata
@@ -24,7 +36,11 @@ const getArtworksByStatus = (doc, statusId) => {
         return (assignment.artworks || [])
             .filter(artwork => {
                 const currentId = (artwork.status?._id || artwork.status)?.toString();
-                return currentId === targetId;
+                if (currentId !== targetId) return false;
+                if (!previousDoc) return true;
+                const previous = previousById.get((artwork._id || artwork).toString());
+                const previousId = (previous?.status?._id || previous?.status)?.toString();
+                return previousId !== targetId;
             })
             .map(artwork => {
                 // Convert to plain object if it's a Mongoose document to allow adding temp properties
@@ -39,7 +55,7 @@ const getArtworksByStatus = (doc, statusId) => {
 
 // Process email notifications and listing on Sell Page for approved artworks
 const processApprovals = async (doc, approvedArtworks, statuses) => {
-    const { Approved, Available } = statuses;
+    const { Approved, Available, Exhibition } = statuses;
     if (!Approved || approvedArtworks.length === 0) return;
 
     // Group approved artworks by owner to prevent duplicate emails and wrong assignments
@@ -57,20 +73,15 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
 
         const email = artist.contact?.studentEmail || artist.contact?.personalEmail;
 
-        let currentCount = await Artwork.countDocuments({ artist: ownerId });
-
         for (const artwork of artworks) {
             const artworkId = artwork._id ? artwork._id.toString() : 'unknown';
 
-            const existing = await Artwork.findOne({
-                $or: [
-                    { submissionArtworkId: artwork._id },
-                    { image: artwork.image }
-                ]
-            });
+            // `submissionArtworkId` is the stable identity. Two distinct
+            // submission artworks may legitimately reuse the same image URL.
+            const existing = await Artwork.findOne({ submissionArtworkId: artwork._id });
 
             if (existing) {
-                console.log(`[Submission] Artwork ${artworkId} already published (found by ID or Image). Skipping.`);
+                console.log(`[Submission] Artwork ${artworkId} already published (found by submission artwork ID). Skipping.`);
                 continue;
             }
 
@@ -99,21 +110,28 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
             const assignTitle = artwork._assignmentTitle || "";
             const combinedPiece = subTitle + (assignTitle ? ` - ${assignTitle}` : "");
 
-            // Generate unique 9-digit Artwork Code
-            const beYear = (new Date().getFullYear() + 543) % 100;
-            const yy = String(beYear).padStart(2, '0');
-            const c = String(doc.courseLevel || "1").charAt(0) || "1";
-            const studentId = artist.studentId || "";
-            const aa = studentId.length >= 2 ? studentId.substring(studentId.length - 2) : "00";
-            
-            currentCount++;
-            const nnn = String(currentCount).padStart(3, '0');
-            const generatedCode = `${yy}8${c}${aa}${nnn}`;
+            const generatedCode = artwork.artworkCode || await generateArtworkCode({
+                artist,
+                courseLevel: doc.courseLevel,
+                academicYear: doc.academicYear
+            });
 
+            await SubmissionModel.updateOne(
+                { _id: doc._id },
+                { $set: { 'assignments.$[assignment].artworks.$[item].artworkCode': generatedCode } },
+                { arrayFilters: [
+                    { 'assignment.artworks._id': artwork._id },
+                    { 'item._id': artwork._id }
+                ] }
+            );
+
+            const postTermSale = buildPostTermSale(doc.create?.endAt);
             await Artwork.create({
                 submissionArtworkId: artwork._id,
                 artworkPiece: combinedPiece,
                 artworkCode: generatedCode,
+                academicYear: String(doc.academicYear || (new Date().getFullYear() + 543)),
+                courseLevel: String(doc.courseLevel || '00'),
                 image: artwork.image,
                 title: artwork.title,
                 description: artwork.description,
@@ -124,9 +142,11 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
                 price: artwork.price || 0,
                 category: artwork.category,
                 storage: artwork.storage || null,
+                storageDetail: artwork.storageDetail || '',
+                postTermSale,
                 status: {
                     approval: Approved._id,
-                    sale: Available?._id || null
+                    sale: postTermSale.needsReview ? (Exhibition?._id || Available?._id || null) : (Available?._id || null)
                 }
             });
             console.log(`[Submission] Successfully published artwork ${artworkId} to main collection.`);
@@ -177,31 +197,70 @@ const processStudentStatus = async (doc, statuses, roles) => {
     const now = new Date();
     const endDate = doc.create?.endAt;
 
-    if (!endDate || now <= endDate || !NewStudent || !OldStudent || !doc.artist?.length) return;
+    if (!endDate || now <= endDate || !NewStudent || !OldStudent || !Artist || !doc.artist?.length) return false;
 
-    for (const artist of doc.artist) {
-        const artistId = artist._id || artist;
+    const artistIds = doc.artist.map(artist => artist._id || artist);
+    const result = await User.updateMany(
+        {
+            _id: { $in: artistIds },
+            status: NewStudent._id,
+            role: Artist?._id
+        },
+        { status: OldStudent._id }
+    );
+    return (result?.modifiedCount || result?.nModified || 0) > 0;
+};
 
-        // Check if artist participated in this submission
-        const hasSubmitted = (doc.assignments || []).some(assign =>
-            (assign.artworks || []).some(aw => {
-                const ownerId = (aw.owner?._id || aw.owner)?.toString();
-                return ownerId === artistId.toString();
-            })
-        );
+// Helper to handle transitions for multiple submissions
+const checkAndTransitionSubmissions = async (submissions) => {
+    if (!submissions) return false;
+    const docs = Array.isArray(submissions) ? submissions : [submissions];
+    if (docs.length === 0) return false;
 
-        if (hasSubmitted) {
-            const updated = await User.findOneAndUpdate(
-                {
-                    _id: artistId,
-                    status: NewStudent._id,
-                    role: Artist?._id
-                },
-                { status: OldStudent._id },
-                { new: true }
-            );
+    // Fetch NewStudent and OldStudent statuses
+    const statusDocs = await Status.find({ "title.value": { $in: ["NewStudent", "OldStudent"] } });
+    const statuses = statusDocs.reduce((acc, s) => {
+        const titleEn = s.title.find(t => t.key === 'en')?.value;
+        if (titleEn) acc[titleEn] = s;
+        return acc;
+    }, {});
+
+    // Fetch Artist role
+    const roleDocs = await Role.find({ "title.value": "Artist" });
+    const roles = roleDocs.reduce((acc, r) => {
+        const titleEn = r.title.find(t => t.key === 'en')?.value;
+        if (titleEn) acc[titleEn] = r;
+        return acc;
+    }, {});
+
+    let anyTransitioned = false;
+    for (const doc of docs) {
+        const transitioned = await processStudentStatus(doc, statuses, roles);
+        if (transitioned) {
+            anyTransitioned = true;
         }
     }
+    return anyTransitioned;
+};
+
+// Stamp one stable code per submission. First artist identifies multi-artist
+// submissions; artwork codes remain individually scoped per artist.
+const ensureSubmissionCode = async (doc) => {
+    if (!doc || doc.submissionCode) return doc;
+
+    const firstArtistId = doc.artist?.[0]?._id || doc.artist?.[0];
+    const artist = firstArtistId ? await User.findById(firstArtistId).lean() : null;
+    const submissionCode = await generateSubmissionCode({
+        artist,
+        courseLevel: doc.courseLevel
+    });
+
+    await SubmissionModel.updateOne(
+        { _id: doc._id, $or: [{ submissionCode: null }, { submissionCode: { $exists: false } }] },
+        { $set: { submissionCode } }
+    );
+    doc.submissionCode = submissionCode;
+    return doc;
 };
 
 /**
@@ -211,7 +270,13 @@ const processStudentStatus = async (doc, statuses, roles) => {
 exports.onQuery = async (request, response) => {
     try {
         const query = { _id: new mongo.ObjectId(request.body._id) };
-        const doc = await Submission.onQuery(query);
+        let doc = await Submission.onQuery(query);
+        if (doc) {
+            const transitioned = await checkAndTransitionSubmissions(doc);
+            if (transitioned) {
+                doc = await Submission.onQuery(query);
+            }
+        }
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
@@ -220,8 +285,12 @@ exports.onQuery = async (request, response) => {
 
 exports.onQuerys = async (request, response) => {
     try {
-        const doc = await Submission.onQuerys(request.query || {});
-        return ResMessage.sendResponse(response, 0, 20000, doc);
+        let docs = await Submission.onQuerys(request.query || {});
+        const transitioned = await checkAndTransitionSubmissions(docs);
+        if (transitioned) {
+            docs = await Submission.onQuerys(request.query || {});
+        }
+        return ResMessage.sendResponse(response, 0, 20000, docs);
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
     }
@@ -229,7 +298,22 @@ exports.onQuerys = async (request, response) => {
 
 exports.onCreate = async (request, response) => {
     try {
-        const doc = await Submission.onCreate(request.body);
+        let doc = await Submission.onCreate(request.body);
+        if (doc) {
+            if (Array.isArray(doc)) {
+                for (const item of doc) await ensureSubmissionCode(item);
+            } else {
+                doc = await ensureSubmissionCode(doc);
+            }
+            const transitioned = await checkAndTransitionSubmissions(doc);
+            if (transitioned) {
+                // onCreate returns an array for bulk create; re-query accordingly so
+                // the response reflects the transitioned statuses in both shapes.
+                doc = Array.isArray(doc)
+                    ? await Submission.onQuerys({ _id: { $in: doc.map(d => d._id) } })
+                    : await Submission.onQuery({ _id: doc._id });
+            }
+        }
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         console.error("Create Error:", err);
@@ -240,11 +324,16 @@ exports.onCreate = async (request, response) => {
 exports.onUpdate = async (request, response) => {
     try {
         const query = { _id: new mongo.ObjectId(request.body._id) };
-        const doc = await Submission.onUpdate(query, request.body);
+        const previousDoc = await Submission.onQuery(query);
+        if (!previousDoc) return ResMessage.sendResponse(response, 0, 40400);
+        let doc = await Submission.onUpdate(query, request.body);
         if (!doc) return ResMessage.sendResponse(response, 0, 40400);
 
+        // Backfill shared identifier for legacy submissions on update.
+        doc = await ensureSubmissionCode(doc);
+
         // Fetch all relevant statuses in parallel
-        const statusValues = ["Approved", "Rejected", "Available", "NewStudent", "OldStudent"];
+        const statusValues = ["Approved", "Rejected", "Available", "Exhibition", "NewStudent", "OldStudent"];
         const statusDocs = await Status.find({ "title.value": { $in: statusValues } });
 
         const statuses = statusDocs.reduce((acc, s) => {
@@ -262,15 +351,21 @@ exports.onUpdate = async (request, response) => {
         }, {});
 
         // Extract artworks by category
+        // Approval publication is idempotent and must be retryable if a prior
+        // publish/PDF/mail side effect failed after the status was saved.
         const approvedArtworks = getArtworksByStatus(doc, statuses.Approved?._id);
-        const rejectedArtworks = getArtworksByStatus(doc, statuses.Rejected?._id);
+        const rejectedArtworks = getArtworksByStatus(doc, statuses.Rejected?._id, previousDoc);
 
         // Process various side-effects
-        await Promise.all([
+        const [_, __, statusTransitioned] = await Promise.all([
             processApprovals(doc, approvedArtworks, statuses),
             processRejections(doc, rejectedArtworks),
             processStudentStatus(doc, statuses, roles)
         ]);
+
+        if (statusTransitioned) {
+            doc = await Submission.onQuery(query);
+        }
 
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {

@@ -86,7 +86,7 @@ module.exports = function adminNewOrderMailTemplate({ buyerName, orderId, artwor
                     </tr>
                     <tr>
                         <td><strong>ราคา:</strong></td>
-                        <td style="color: #8c1515; font-weight: bold;">฿${price.toLocaleString()} THB</td>
+                        <td style="color: #8c1515; font-weight: bold;">฿${Number(price || 0).toLocaleString()} THB</td>
                     </tr>
                     <tr>
                         <td><strong>วันที่จอง:</strong></td>

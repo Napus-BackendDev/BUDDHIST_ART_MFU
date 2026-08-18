@@ -8,7 +8,7 @@
         >
           <template #header-wrapper>
             <div class="px-4 pt-4 text-right">
-              <button type="button" class="close" @click="isAuthe = false">
+              <button type="button" class="close" @click="isAuthe = false" aria-label="Close sign in dialog">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
@@ -16,7 +16,7 @@
           <template #body-wrapper>
             <div class="p-4 p-md-5 text-center">
               <div class="mb-5">
-                <img src="@/assets/icons/logo.png" height="80" class="brand-logo mb-3">
+                <img src="@/assets/icons/logo.png" height="80" class="brand-logo mb-3" alt="Buddhist Art MFU">
                 <h2 class="brand-main-text mb-0">Buddhist Art MFU</h2>
                 <p class="brand-sub-text">พุทธศิลป์</p>
               </div>
@@ -26,13 +26,10 @@
                 <p class="text-muted small">Sign in with your Google account to continue.</p>
               </div>
 
-              <!-- Google Auth Only -->
               <div class="d-flex justify-content-center mt-4">
-                 <button class="google-signin-btn" @click="onAuthenGoogle">
-                   <img src="@/assets/icons/logo-google.png" width="24" class="mr-3">
-                   <span>Sign in with Google</span>
-                 </button>
+                <div ref="googleSignInButton" class="google-signin-button" aria-label="Sign in with Google"></div>
               </div>
+              <p v-if="googleError" class="text-danger small mt-3 mb-0">{{ googleError }}</p>
             </div>
           </template>
           <template #footer-wrapper>
@@ -49,28 +46,94 @@
         name: 'SignIn',
         data() {
             return {
-              oAuth2: true
+              googleError: '',
+              googleInitialized: false
             }
         },
+        mounted() {
+          this.initializeGoogleSignIn();
+        },
         methods: {
-          async onAuthenGoogle() {
+          async loadGoogleIdentity() {
+            if (window.google && window.google.accounts && window.google.accounts.id) return;
+
+            if (!window.__googleIdentityScriptPromise) {
+              window.__googleIdentityScriptPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.async = true;
+                script.defer = true;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('Unable to load Google Identity Services'));
+                document.head.appendChild(script);
+              });
+            }
+
+            await window.__googleIdentityScriptPromise;
+          },
+          async initializeGoogleSignIn() {
+            if (this.googleInitialized) return;
+
             try {
-              console.log("onAuthenGoogle initiated")
-              const googleUser = await this.$gAuth.signIn();
-              const authResponse = googleUser.getAuthResponse ? googleUser.getAuthResponse() : (googleUser.Gc || googleUser.uc || googleUser);
-              const id_token = authResponse.id_token;
-              
-              if (!id_token) {
-                console.error('ID Token missing in Google response');
-                this.$toast?.error('Authentication failed: ID Token missing.');
-                return;
+              const clientId = process.env.VUE_APP_CLIENTID;
+              if (!clientId) throw new Error('Google Client ID is not configured');
+
+              await this.loadGoogleIdentity();
+              if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+                throw new Error('Google Identity Services is unavailable');
               }
 
-              this.$store.dispatch("auth/onGoogleLogin", { token: id_token })
+                window.google.accounts.id.initialize({
+                client_id: clientId,
+                callback: this.onGoogleCredential,
+                auto_select: false,
+                cancel_on_tap_outside: true,
+                  context: 'signin'
+                });
+                this.googleInitialized = true;
+
+              if (this.$refs.googleSignInButton) {
+                this.$refs.googleSignInButton.innerHTML = '';
+                window.google.accounts.id.renderButton(this.$refs.googleSignInButton, {
+                  type: 'standard',
+                  theme: 'outline',
+                  size: 'large',
+                  text: 'signin_with',
+                  shape: 'pill',
+                  logo_alignment: 'left',
+                  width: 280,
+                  locale: this.$i18n.locale === 'th' ? 'th' : 'en'
+                });
+              }
+            } catch (err) {
+              console.error('Google Identity initialization error:', err);
+              this.googleError = this.$i18n.locale === 'en'
+                ? 'Google Sign-In is unavailable. Please refresh and try again.'
+                : 'ไม่สามารถเปิด Google Sign-In ได้ กรุณารีเฟรชและลองใหม่';
+            }
+          },
+          async onGoogleCredential(response) {
+            if (!response || !response.credential) {
+              this.googleError = this.$i18n.locale === 'en'
+                ? 'Google did not return an identity token. Please try again.'
+                : 'Google ไม่ได้ส่งข้อมูลยืนยันตัวตน กรุณาลองใหม่';
+              return;
+            }
+
+            this.googleError = '';
+            try {
+              await this.$store.dispatch('auth/onGoogleLogin', { token: response.credential });
             } catch (err) {
               console.error('Google sign-in error:', err);
-              this.$toast?.error('Google Sign-In failed. Please try again.');
             }
+          }
+        },
+        watch: {
+          '$i18n.locale'() {
+            this.initializeGoogleSignIn();
+          },
+          isAuthe(value) {
+            if (value) this.$nextTick(() => this.initializeGoogleSignIn());
           }
         },
         computed: {
@@ -80,6 +143,9 @@
               },
               set(val) {
                 this.$store.commit('auth/showSignInModal', val);
+                if (!val) {
+                  this.$store.commit('auth/postLoginContext', null);
+                }
               }
             }
         }
@@ -100,32 +166,18 @@
   font-size: 1.1rem;
 }
 
-.google-signin-btn {
+.google-signin-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #ffffff;
-  color: #3c4b64;
-  border: 1px solid #e2e8f0;
-  border-radius: 50px;
-  padding: 12px 24px;
-  font-weight: 600;
-  font-size: 1rem;
-  transition: all 0.3s ease;
   width: 100%;
   max-width: 280px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  min-height: 44px;
 }
 
-.google-signin-btn:hover {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  transform: translateY(-1px);
-}
-
-.google-signin-btn:active {
-  transform: translateY(0);
+.google-signin-button > div,
+.google-signin-button [role="button"] {
+  min-height: 44px;
 }
 
 .shadow-premium {

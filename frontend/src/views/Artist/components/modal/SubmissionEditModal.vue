@@ -342,13 +342,6 @@
                     Cancel
                 </CButton>
                 <CButton 
-                    variant="ghost" 
-                    @click="handlePreview"
-                    class="btn-preview mr-3"
-                >
-                    Preview Mode
-                </CButton>
-                <CButton 
                     color="primary" 
                     @click="handleSave"
                     class="btn-save-artwork"
@@ -627,27 +620,6 @@ export default {
                 this.imagePreview = e.target.result;
             };
             reader.readAsDataURL(file);
-        },
-        handlePreview() {
-            const artist = this.form.artist;
-            if (!this.form.title.en && !this.form.title.th || !artist || !this.form.price || !this.imagePreview) {
-                alert('Please fill in all required fields (Title, Price, and Image) before previewing.');
-                return;
-            }
-            
-            const previewData = {
-                ...this.form,
-                artist: artist,
-                image: this.imagePreview, 
-                medium: this.form.technique || 'N/A',
-                dimensions: '60 x 80 cm', 
-            };
-            
-            sessionStorage.setItem('artwork_preview', JSON.stringify(previewData));
-            this.$router.push({ 
-                name: 'ArtworkDetail', 
-                params: { id: 'preview' } 
-            });
         },
         getUnitTH(unitEN) {
             const unit = this.unitOptions.find(u => u.en === unitEN);
@@ -928,9 +900,4 @@ export default {
     box-shadow: 0 10px 15px -3px rgba(140, 21, 21, 0.2);
 }
 
-.btn-preview {
-    color: #8c1515 !important;
-    font-weight: 600;
-    font-size: 1rem;
-}
 </style>

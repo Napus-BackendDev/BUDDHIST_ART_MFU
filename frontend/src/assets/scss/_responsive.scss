@@ -1,0 +1,380 @@
+// ================================================================
+// Responsive foundations shared by public, learner, artist and admin pages
+// ================================================================
+
+html,
+body,
+#app,
+.c-app {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+video {
+  height: auto;
+}
+
+.c-wrapper,
+.c-body,
+.c-main,
+.container,
+.container-fluid,
+.row,
+[class*="col-"] {
+  min-width: 0;
+}
+
+.table-responsive,
+.c-datatable,
+.custom-table,
+.artwork-table-card,
+.order-table-card,
+.users-table-card,
+.news-table-card,
+.submission-table-card {
+  max-width: 100%;
+}
+
+.table-responsive,
+.c-datatable-wrapper,
+.custom-table-wrapper {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.custom-table table,
+.c-datatable table {
+  width: 100%;
+}
+
+.modal-dialog {
+  width: calc(100% - 2rem);
+  max-width: min(1100px, calc(100vw - 2rem));
+  margin: 1rem auto;
+}
+
+.modal-content {
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+}
+
+.modal-body {
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dropdown-menu {
+  max-width: calc(100vw - 1.5rem);
+}
+
+.form-control,
+.custom-select,
+select,
+textarea,
+input,
+button {
+  max-width: 100%;
+}
+
+button,
+[role="button"],
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(97, 39, 33, 0.45);
+  outline-offset: 2px;
+}
+
+@media (max-width: 991.98px) {
+  .c-main {
+    padding-top: 1.25rem;
+  }
+
+  .c-main > .container-fluid {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .admin-filter-card .card-body,
+  .admin-filter-card .c-card-body {
+    padding: 1rem !important;
+  }
+
+  .admin-filter-card .row {
+    row-gap: .25rem;
+  }
+
+  .quick-range-group {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-range-group > .btn {
+    width: 100%;
+    margin-left: 0 !important;
+    border-radius: .5rem !important;
+  }
+
+  .page-header,
+  .section-header,
+  .analytics-toolbar,
+  .filter-toolbar,
+  .toolbar-actions {
+    flex-wrap: wrap;
+    gap: .75rem;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 991.98px) {
+  body {
+    font-size: 1rem;
+  }
+
+  h1 { font-size: clamp(1.65rem, 8vw, 2.15rem); }
+  h2 { font-size: clamp(1.35rem, 6vw, 1.8rem); }
+  h3 { font-size: clamp(1.15rem, 5vw, 1.5rem); }
+
+  .c-main {
+    padding-top: 1rem;
+  }
+
+  .c-main > .container-fluid {
+    padding-right: .75rem;
+    padding-left: .75rem;
+  }
+
+  .card,
+  .admin-filter-card,
+  .artwork-table-card,
+  .order-table-card,
+  .users-table-card,
+  .news-table-card,
+  .submission-table-card {
+    border-radius: .875rem !important;
+  }
+
+  .custom-table th,
+  .custom-table td {
+    padding: .875rem .75rem;
+    white-space: nowrap;
+  }
+
+  .custom-table td .text-truncate,
+  .custom-table td .line1 {
+    max-width: 11rem !important;
+  }
+
+  .status-badge,
+  .category-pill {
+    white-space: nowrap;
+  }
+
+  .action-btn {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    min-height: 2.75rem;
+    padding: .5rem;
+  }
+
+  .btn,
+  button:not(.close),
+  [role="button"] {
+    min-height: 2.75rem;
+  }
+
+  .form-control,
+  .custom-select,
+  select,
+  textarea,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]) {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
+
+  .close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+  }
+
+  .social-btn,
+  .social-pill-btn {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .footer-nav a,
+  .footer-policy a,
+  .footer-user .contact-text a,
+  a[href^="mailto:"],
+  a[href^="tel:"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+
+  .search-box,
+  .filter-selection,
+  [style*="min-width: 300px"],
+  [style*="min-width: 250px"],
+  [style*="min-width: 220px"] {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: .4rem;
+  }
+
+  .modal-dialog {
+    width: calc(100% - 1rem);
+    max-width: calc(100vw - 1rem);
+    margin: .5rem auto;
+  }
+
+  .modal-content {
+    max-height: calc(100dvh - 1rem);
+    border-radius: 1rem !important;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-right: 1rem !important;
+    padding-left: 1rem !important;
+  }
+
+  .modal-footer {
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+
+  .modal-footer > .btn,
+  .modal-footer > button {
+    flex: 1 1 auto;
+    margin: 0 !important;
+  }
+
+  .btn-group:not(.quick-range-group) {
+    flex-wrap: wrap;
+  }
+
+  .form-row > [class*="col-"],
+  .row > [class*="col-"] {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .c-main > .container-fluid {
+    padding-right: .625rem;
+    padding-left: .625rem;
+  }
+
+  .card-body,
+  .c-card-body {
+    padding: 1rem;
+  }
+
+  .btn:not(.action-btn):not(.close),
+  button:not(.action-btn):not(.close) {
+    min-height: 2.75rem;
+  }
+
+  .modal-footer > .btn,
+  .modal-footer > button {
+    flex-basis: 100%;
+  }
+
+  .description-truncate {
+    max-width: 14rem;
+  }
+
+  .chart-wrap,
+  .chart-empty {
+    min-height: 260px;
+    height: 260px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+// iPad landscape and compact touch laptops use the desktop layout, but still
+// need touch-sized controls.
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  .btn,
+  button,
+  [role="button"],
+  .form-control,
+  .custom-select,
+  select,
+  textarea,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]) {
+    min-height: 2.75rem;
+  }
+
+  .close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+  }
+
+  .footer-nav a,
+  .footer-policy a,
+  .footer-user .contact-text a,
+  a[href^="mailto:"],
+  a[href^="tel:"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+}

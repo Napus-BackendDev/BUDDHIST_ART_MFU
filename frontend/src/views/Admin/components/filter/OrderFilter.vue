@@ -133,8 +133,8 @@ export default {
             if (range === 'This Week') {
                 return this.$i18n.locale === 'en' ? 'This Week' : 'สัปดาห์นี้';
             }
-            if (range === 'Last 30 Days') {
-                return this.$i18n.locale === 'en' ? 'Last 30 Days' : '30 วันที่ผ่านมา';
+            if (range === 'Last 30 Days' || range === 'This Month' || range === 'Month') {
+                return this.$i18n.locale === 'en' ? 'Month' : 'เดือน';
             }
             if (range === 'This Year') {
                 return this.$i18n.locale === 'en' ? 'This Year' : 'ปีนี้';
@@ -168,7 +168,7 @@ export default {
                     end = moment().endOf('week')
                     break
                 case 'Last 30 Days':
-                    start = moment().subtract(30, 'days').startOf('day')
+                    start = moment().subtract(29, 'days').startOf('day')
                     end = moment().endOf('day')
                     break
                 case 'This Year':

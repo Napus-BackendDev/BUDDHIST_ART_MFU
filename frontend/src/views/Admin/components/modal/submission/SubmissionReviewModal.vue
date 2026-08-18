@@ -4,7 +4,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="review-artwork-modal"
+        class="review-artwork-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -23,187 +23,340 @@
             </div>
         </template>
 
-        <div class="px-4 py-3" v-if="artwork">
-            <div class="artwork-detail-container">
-                <!-- 1) Image Section -->
-                <div class="view-section mb-4 text-center">
-                    <div class="artwork-image-view rounded-xl overflow-hidden shadow-sm border mx-auto">
-                        <img 
-                            :src="artwork.preview" 
-                            class="w-100 h-100 object-fit-contain bg-white" 
-                            :alt="artwork.title_en"
-                        />
-                    </div>
-                </div>
-
-                <!-- 2) Status Section -->
-                <div class="view-section mb-4">
-                    <div class="d-flex flex-wrap align-items-center justify-content-center gap-4 status-container-stacked">
-                        <div class="status-item text-center px-3">
-                            <label class="view-label-center">{{ $i18n.locale === 'en' ? 'Submission Status' : 'สถานะการส่งงาน' }}</label>
-                            <CBadge :class="['status-badge-lg px-4 py-2', getStatusBadge(artwork.status).class]">
-                                <CIcon :name="getStatusBadge(artwork.status).icon" size="sm" class="status-icon-lg" />
-                                {{ $i18n.locale === 'en' ? artwork.status : (artwork.status === 'Approved' || artwork.status === 'Passed' ? 'ผ่าน/อนุมัติ' : artwork.status === 'Rejected' || artwork.status === 'Fail' ? 'ไม่ผ่าน' : 'รอการตรวจสอบ') }}
-                            </CBadge>
+        <div class="wizard-body px-3 py-2" v-if="artwork">
+            <div class="wizard-content-grid">
+                <!-- Left Column: Artwork Information -->
+                <div class="wizard-form-column">
+                    <div class="wizard-panel">
+                        <div class="step-heading">
+                            <span>{{ activeLanguage === 'th' ? '01' : '02' }}</span>
+                            <div>
+                                <h6>{{ activeLanguage === 'th'
+                                    ? ($i18n.locale === 'en' ? 'Artwork details in Thai' : 'ข้อมูลเบื้องต้นของผลงาน')
+                                    : ($i18n.locale === 'en' ? 'Artwork details in English' : 'ข้อมูลผลงานภาษาอังกฤษ') }}</h6>
+                                <p>{{ activeLanguage === 'th'
+                                    ? ($i18n.locale === 'en' ? 'Thai reference information.' : 'ข้อมูลอ้างอิงภาษาไทย')
+                                    : ($i18n.locale === 'en' ? 'English artwork information.' : 'ข้อมูลผลงานภาษาอังกฤษ') }}</p>
+                            </div>
                         </div>
-                        <div class="status-item text-center px-3 border-left-light">
-                            <label class="view-label-center">{{ $i18n.locale === 'en' ? 'Deadline Progress' : 'ความตรงต่อเวลา' }}</label>
-                            <CBadge :class="['status-badge-lg px-4 py-2', artwork.on_time ? 'status-completed' : 'status-cancelled']">
-                                <CIcon :name="artwork.on_time ? 'cil-check-circle' : 'cil-warning'" size="sm" class="status-icon-lg" />
-                                {{ artwork.on_time ? ($i18n.locale === 'en' ? 'On Time' : 'ตรงเวลา') : ($i18n.locale === 'en' ? 'Late' : 'ส่งช้า') }}
-                            </CBadge>
-                        </div>
-                    </div>
-                </div>
 
-                <hr class="my-4 opacity-5">
-
-                <!-- 3) Artwork Title (TH, EN) -->
-                <div class="row mb-4">
-                    <div class="col-md-6 mb-3 mb-md-0">
-                        <div class="view-section">
-                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artwork Title (Thai)' : 'ชื่อผลงาน (ภาษาไทย)' }}</label>
-                            <h2 class="view-value-title font-weight-bold mb-0 text-dark">{{ artwork.title_th || 'N/A' }}</h2>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="view-section">
-                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artwork Title (English)' : 'ชื่อผลงาน (ภาษาอังกฤษ)' }}</label>
-                            <h2 class="view-value-title font-weight-bold mb-0 text-muted">{{ artwork.title_en || 'N/A' }}</h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <!-- 4) Artist -->
-                    <div class="col-md-6 mb-4">
-                        <div class="view-section">
-                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Artist' : 'ศิลปิน' }}</label>
-                            <div class="d-flex align-items-center">
-                                <div class="artist-avatar-md mr-3" :style="{ backgroundColor: getAvatarColor(artwork.artist_name) }">
-                                    {{ getInitials(artwork.artist_name) }}
-                                </div>
-                                <div class="view-value">
-                                    <div class="font-weight-bold text-dark h5 mb-0">
-                                        {{ artwork.artist_name }}
+                        <!-- Row 1: Title -->
+                        <CRow>
+                            <CCol md="12">
+                                <div class="form-group-custom">
+                                    <label class="form-label">
+                                        {{ activeLanguage === 'th'
+                                            ? ($i18n.locale === 'en' ? 'Title (TH)' : 'ชื่อภาษาไทย (TH)')
+                                            : ($i18n.locale === 'en' ? 'Title (EN)' : 'ชื่อภาษาอังกฤษ (EN)') }}
+                                    </label>
+                                    <div class="custom-display-box font-weight-500">
+                                        {{ (activeLanguage === 'th' ? (artwork.title_th || artwork.title_en) : (artwork.title_en || artwork.title_th)) || '-' }}
                                     </div>
-                                    <div class="small text-muted">{{ $i18n.locale === 'en' ? 'Student ID' : 'รหัสนักศึกษา' }}: {{ artwork.student_id }}</div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
+                            </CCol>
+                        </CRow>
 
-                    <!-- 5) Category -->
-                    <div class="col-md-6 mb-4">
-                        <div class="view-section">
-                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
-                            <div class="view-value font-weight-bold text-dark h5">
-                                {{ $i18n.locale === 'en' ? artwork.category : (artwork.category === 'Painting' ? 'จิตรกรรม' : artwork.category === 'Sculpture' ? 'ประติมากรรม' : artwork.category === 'Digital Art' ? 'ดิจิทัลอาร์ต' : artwork.category === 'Photography' ? 'ภาพถ่าย' : artwork.category) }}
-                            </div>
+                        <!-- Row 2: Artist / Submitter -->
+                        <CRow>
+                            <CCol md="12">
+                                <div class="form-group-custom">
+                                    <label class="form-label">{{ $i18n.locale === 'en' ? 'Artist / Submitter' : 'ชื่อศิลปิน / ผู้ส่งผลงาน' }}</label>
+                                    <div class="custom-display-box with-icon-left">
+                                        <CIcon name="cil-user" class="input-icon-left" />
+                                        <div class="d-flex align-items-center justify-content-between w-100 pr-2">
+                                            <span class="font-weight-500 text-dark">{{ artwork.artist_name || artwork.student_name || 'N/A' }}</span>
+                                            <span v-if="artwork.student_id" class="text-muted small">
+                                                ({{ artwork.student_id }})
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CCol>
+                        </CRow>
+
+                        <!-- Row 3: Category -->
+                        <CRow>
+                            <CCol md="12">
+                                <div class="form-group-custom">
+                                    <label class="form-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
+                                    <div class="custom-display-box">
+                                        <span class="font-weight-500 text-dark">{{ getCategoryDisplayName(artwork.category) }}</span>
+                                        <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
+                                    </div>
+                                </div>
+                            </CCol>
+                        </CRow>
+
+                        <!-- Row 4: Technique -->
+                        <CRow>
+                            <CCol md="12">
+                                <div class="form-group-custom">
+                                    <label class="form-label">
+                                        {{ activeLanguage === 'th'
+                                            ? ($i18n.locale === 'en' ? 'Technique (TH)' : 'เทคนิคภาษาไทย (TH)')
+                                            : ($i18n.locale === 'en' ? 'Technique (EN)' : 'เทคนิคภาษาอังกฤษ (EN)') }}
+                                    </label>
+                                    <div class="custom-display-box">
+                                        <span class="font-weight-500 text-dark">
+                                            {{ (activeLanguage === 'th' ? (artwork.technique_th || artwork.technique_en) : (artwork.technique_en || artwork.technique_th)) || '-' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </CCol>
+                        </CRow>
+
+                        <!-- Row 5: Dimensions -->
+                        <CRow>
+                            <CCol md="12">
+                                <div class="form-group-custom">
+                                    <label class="form-label">
+                                        {{ $i18n.locale === 'en'
+                                            ? 'Dimensions (' + (dimensions.is3D ? 'Width x Length x Height' : 'Width x Length') + ')'
+                                            : 'ขนาด (' + (dimensions.is3D ? 'กว้าง x ยาว x สูง' : 'กว้าง x ยาว') + ')' }}
+                                    </label>
+                                    <div v-if="dimensions.width && dimensions.height" class="d-flex align-items-center">
+                                        <div class="flex-grow-1">
+                                            <div class="custom-display-box px-3 justify-content-start">
+                                                <span class="dimension-prefix">W</span>
+                                                <span class="font-weight-600 text-dark">{{ dimensions.width }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="mx-2 text-muted font-weight-bold">×</div>
+                                        <div class="flex-grow-1">
+                                            <div class="custom-display-box px-3 justify-content-start">
+                                                <span class="dimension-prefix">L</span>
+                                                <span class="font-weight-600 text-dark">{{ dimensions.height }}</span>
+                                            </div>
+                                        </div>
+                                        <template v-if="dimensions.depth">
+                                            <div class="mx-2 text-muted font-weight-bold">×</div>
+                                            <div class="flex-grow-1">
+                                                <div class="custom-display-box px-3 justify-content-start">
+                                                    <span class="dimension-prefix">H</span>
+                                                    <span class="font-weight-600 text-dark">{{ dimensions.depth }}</span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <div class="ml-2">
+                                            <div class="custom-display-box px-3" style="min-width: 80px; height: 50px;">
+                                                <span class="text-dark font-weight-500">{{ dimensions.unit }}</span>
+                                                <CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="custom-display-box">
+                                        <span class="font-weight-500 text-dark">{{ dimensions.raw || '-' }}</span>
+                                    </div>
+                                </div>
+                            </CCol>
+                        </CRow>
+
+                        <!-- Row 6: Remark (if available) -->
+                        <CRow v-if="hasRemark">
+                            <CCol md="12">
+                                <div class="form-group-custom">
+                                    <label class="form-label">
+                                        {{ activeLanguage === 'th'
+                                            ? ($i18n.locale === 'en' ? 'Remark (TH)' : 'หมายเหตุภาษาไทย (TH)')
+                                            : ($i18n.locale === 'en' ? 'Remark (EN)' : 'หมายเหตุภาษาอังกฤษ (EN)') }}
+                                    </label>
+                                    <div class="custom-display-box">
+                                        <span class="text-dark">{{ (activeLanguage === 'th' ? (artwork.remark_th || artwork.remark_en) : (artwork.remark_en || artwork.remark_th)) || '-' }}</span>
+                                    </div>
+                                </div>
+                            </CCol>
+                        </CRow>
+
+                        <!-- Row 7: Description -->
+                        <div class="artwork-description-grid">
+                            <CRow>
+                                <CCol md="12">
+                                    <div class="form-group-custom">
+                                        <label class="form-label">
+                                            {{ activeLanguage === 'th'
+                                                ? ($i18n.locale === 'en' ? 'Description (TH)' : 'คำอธิบายภาษาไทย (TH)')
+                                                : ($i18n.locale === 'en' ? 'Description (EN)' : 'คำอธิบายภาษาอังกฤษ (EN)') }}
+                                        </label>
+                                        <div class="custom-display-box custom-textarea-box">
+                                            <span :class="hasDescription ? 'text-dark' : 'text-muted font-italic'">
+                                                {{ currentDescription || ($i18n.locale === 'en' ? 'No description provided.' : 'ไม่มีคำอธิบาย') }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </CCol>
+                            </CRow>
                         </div>
                     </div>
                 </div>
 
-                <!-- 6) Technique, Size & Remark -->
-                <div class="row mb-4">
-                    <div class="col-md-4 mb-3 mb-md-0">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
-                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Technique' : 'เทคนิค' }}</label>
-                            <div class="view-value text-dark mb-2 d-flex align-items-center">
-                                <span class="badge badge-white-outline mr-3">TH</span> 
-                                <span class="font-weight-bold">{{ artwork.technique_th || 'N/A' }}</span>
-                            </div>
-                            <div class="view-value text-muted d-flex align-items-center">
-                                <span class="badge badge-white-outline mr-3">EN</span> 
-                                <span>{{ artwork.technique_en || 'N/A' }}</span>
+                <!-- Right Column: Artwork Image & Submission Settings -->
+                <aside class="wizard-image-column">
+                    <div class="image-column-heading">
+                        <span><CIcon name="cil-image1" size="lg" /></span>
+                        <div>
+                            <h6>{{ $i18n.locale === 'en' ? 'Artwork Image *' : 'รูปภาพผลงาน *' }}</h6>
+                            <p>{{ $i18n.locale === 'en' ? 'Main image submitted by the student.' : 'รูปหลักที่ส่งโดยนักศึกษา' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Artwork Image Box -->
+                    <div class="image-upload-block">
+                        <div class="file-upload-container">
+                            <div class="preview-container">
+                                <img 
+                                    :src="artwork.preview || artwork.image || `https://via.placeholder.com/600/e2e8f0/808080?text=Artwork`" 
+                                    class="upload-preview" 
+                                    :alt="artwork.title_en || artwork.title_th || 'Artwork'"
+                                />
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3 mb-md-0">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
-                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Size' : 'ขนาด' }}</label>
-                            <div class="view-value text-dark mb-2 d-flex align-items-center">
-                                <span class="badge badge-white-outline mr-3">TH</span> 
-                                <span class="font-weight-bold">{{ artwork.size_th || 'N/A' }}</span>
+
+                    <!-- Status Settings Under Image -->
+                    <div class="sale-settings-under-image">
+                        <CRow>
+                            <!-- Submission Status -->
+                            <CCol md="6">
+                                <div class="form-group-custom">
+                                    <label class="form-label">{{ $i18n.locale === 'en' ? 'Submission Status' : 'สถานะการส่งงาน' }}</label>
+                                    <div class="custom-display-box bg-white">
+                                        <div class="d-flex align-items-center">
+                                            <CIcon :name="getStatusBadge(artwork.status).icon" class="mr-2" :class="getStatusBadge(artwork.status).iconColor" />
+                                            <span class="font-weight-500" :class="getStatusBadge(artwork.status).textColor">
+                                                {{ getTranslatedStatus(artwork.status) }}
+                                            </span>
+                                        </div>
+                                        <CBadge :class="['px-3 py-1 font-weight-bold', getStatusBadge(artwork.status).class]">
+                                            {{ getTranslatedStatus(artwork.status) }}
+                                        </CBadge>
+                                    </div>
+                                </div>
+                            </CCol>
+
+                            <!-- Deadline Progress (Punctuality) -->
+                            <CCol md="6">
+                                <div class="form-group-custom">
+                                    <label class="form-label">{{ $i18n.locale === 'en' ? 'Deadline Progress' : 'ความตรงต่อเวลา' }}</label>
+                                    <div class="custom-display-box bg-white">
+                                        <div class="d-flex align-items-center">
+                                            <CIcon :name="artwork.on_time ? 'cil-check-circle' : 'cil-warning'" class="mr-2" :class="artwork.on_time ? 'text-success' : 'text-danger'" />
+                                            <span class="font-weight-500" :class="artwork.on_time ? 'text-success' : 'text-danger'">
+                                                {{ artwork.on_time ? ($i18n.locale === 'en' ? 'On Time' : 'ตรงเวลา') : ($i18n.locale === 'en' ? 'Late' : 'ส่งช้า') }}
+                                            </span>
+                                        </div>
+                                        <CBadge :class="['px-3 py-1 font-weight-bold', artwork.on_time ? 'status-completed' : 'status-cancelled']">
+                                            {{ artwork.on_time ? ($i18n.locale === 'en' ? 'On Time' : 'ตรงเวลา') : ($i18n.locale === 'en' ? 'Late' : 'ส่งช้า') }}
+                                        </CBadge>
+                                    </div>
+                                </div>
+                            </CCol>
+                        </CRow>
+                    </div>
+
+                    <!-- Price, Storage Location & Details -->
+                    <div class="storage-location-row">
+                        <!-- Price (if available) -->
+                        <div v-if="artwork.price && Number(artwork.price) > 0" class="form-group-custom">
+                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Price / Value' : 'ราคา / มูลค่า' }}</label>
+                            <div class="custom-display-box bg-white justify-content-start">
+                                <span class="currency-prefix">฿</span>
+                                <span class="font-weight-bold text-dark h6 mb-0">{{ formatPrice(artwork.price) }}</span>
                             </div>
-                            <div class="view-value text-muted d-flex align-items-center">
-                                <span class="badge badge-white-outline mr-3">EN</span> 
-                                <span>{{ artwork.size_en || 'N/A' }}</span>
+                        </div>
+
+                        <!-- Artwork Code (if available) -->
+                        <div v-if="artwork.artworkCode" class="form-group-custom">
+                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Artwork Code' : 'รหัสผลงาน' }}</label>
+                            <div class="custom-display-box bg-white">
+                                <span class="text-dark font-weight-bold">{{ artwork.artworkCode }}</span>
+                                <CIcon name="cil-qr-code" class="dropdown-icon text-muted" />
+                            </div>
+                        </div>
+
+                        <!-- Storage Location (underneath Artwork Code) -->
+                        <div class="form-group-custom">
+                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Storage location' : 'สถานที่จัดเก็บ' }}</label>
+                            <div class="custom-display-box bg-white">
+                                <span class="text-dark font-weight-500">{{ getStorageDisplayName(artwork.storage) }}</span>
+                                <CIcon name="cil-location-pin" class="dropdown-icon text-danger" />
+                            </div>
+                            <p v-if="artwork.storageDetail" class="small text-muted mt-1 mb-0 px-1">
+                                {{ artwork.storageDetail }}
+                            </p>
+                        </div>
+
+                        <!-- Submitted Date (if available) -->
+                        <div v-if="artwork.submitted_date" class="form-group-custom mb-0">
+                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Submitted Date' : 'วันที่ส่งงาน' }}</label>
+                            <div class="custom-display-box bg-white">
+                                <span class="text-muted small">{{ artwork.submitted_date }}</span>
+                                <CIcon name="cil-clock" class="dropdown-icon text-muted" />
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="view-section p-4 bg-white rounded-xl border-premium-sm shadow-sm h-100">
-                            <label class="view-label">{{ $i18n.locale === 'en' ? 'Remark' : 'หมายเหตุ' }}</label>
-                            <div class="view-value text-dark mb-2 d-flex align-items-center">
-                                <span class="badge badge-white-outline mr-3">TH</span> 
-                                <span class="font-weight-bold">{{ artwork.remark_th || 'N/A' }}</span>
-                            </div>
-                            <div class="view-value text-muted d-flex align-items-center">
-                                <span class="badge badge-white-outline mr-3">EN</span> 
-                                <span>{{ artwork.remark_en || 'N/A' }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 7) Price / Value -->
-                <div class="view-section mb-4 p-3 border rounded-xl bg-primary-faded">
-                    <label class="view-label mb-1">{{ $i18n.locale === 'en' ? 'Price / Value' : 'ราคา / มูลค่า' }}</label>
-                    <div class="view-value-price font-weight-bold h2 mb-0 text-primary">
-                        ฿ {{ artwork.price ? artwork.price.toLocaleString() : '0' }}
-                    </div>
-                </div>
-
-                <!-- 8) Description (EN) -->
-                <div class="view-section mb-4">
-                    <label class="view-label">{{ $i18n.locale === 'en' ? 'Description (English)' : 'รายละเอียด (ภาษาอังกฤษ)' }}</label>
-                    <div class="view-description-box p-3 border rounded-lg bg-white shadow-sm">
-                        {{ artwork.description_en || ($i18n.locale === 'en' ? 'No English description provided.' : 'ไม่มีรายละเอียดภาษาอังกฤษ') }}
-                    </div>
-                </div>
-
-                <!-- 9) Description (TH) -->
-                <div class="view-section mb-4">
-                    <label class="view-label">{{ $i18n.locale === 'en' ? 'Description (Thai)' : 'รายละเอียด (ภาษาไทย)' }}</label>
-                    <div class="view-description-box p-3 border rounded-lg bg-white shadow-sm">
-                        {{ artwork.description_th || ($i18n.locale === 'en' ? 'No Thai description provided.' : 'ไม่มีคำอธิบายภาษาไทย.') }}
-                    </div>
-                </div>
+                </aside>
             </div>
         </div>
 
         <template #footer>
-            <div class="w-100 d-flex justify-content-between align-items-center py-2 px-3">
-                <CButton 
-                    color="light" 
-                    @click="$emit('update:show', false)"
-                    class="btn-close-view px-4"
-                    :disabled="isUpdating"
-                >
-                    {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
-                </CButton>
-                
-                <div class="d-flex" v-if="artwork.status === 'Pending'">
-                    <CButton 
-                        class="btn-action-modal btn-passed-modal mr-3" 
-                        :disabled="isUpdating"
-                        @click="handleAction('Approved')"
+            <div class="wizard-footer w-100 d-flex justify-content-between align-items-center py-2">
+                <div class="language-tabs" role="tablist" aria-label="Artwork language">
+                    <button
+                        type="button"
+                        class="language-tab"
+                        :class="{ active: activeLanguage === 'th' }"
+                        :aria-selected="activeLanguage === 'th'"
+                        role="tab"
+                        @click="activeLanguage = 'th'"
                     >
-                        <CSpinner v-if="isUpdating === 'Approved'" size="sm" class="mr-2" />
-                        {{ isUpdating === 'Approved' ? ($i18n.locale === 'en' ? 'Sending Email...' : 'กำลังส่งอีเมล...') : ($i18n.locale === 'en' ? 'Mark Passed' : 'อนุมัติผ่าน') }}
-                    </CButton>
-                    <CButton 
-                        class="btn-action-modal btn-failed-modal" 
-                        :disabled="isUpdating"
-                        @click="handleAction('Rejected')"
+                        ภาษาไทย
+                    </button>
+                    <button
+                        type="button"
+                        class="language-tab"
+                        :class="{ active: activeLanguage === 'en' }"
+                        :aria-selected="activeLanguage === 'en'"
+                        role="tab"
+                        @click="activeLanguage = 'en'"
                     >
-                        <CSpinner v-if="isUpdating === 'Rejected'" size="sm" class="mr-2" />
-                        {{ isUpdating === 'Rejected' ? ($i18n.locale === 'en' ? 'Sending Email...' : 'กำลังส่งอีเมล...') : ($i18n.locale === 'en' ? 'Mark Fail' : 'ปฏิเสธไม่ผ่าน') }}
-                    </CButton>
+                        ภาษาอังกฤษ
+                    </button>
                 </div>
-                <div v-else class="text-muted font-italic small">
-                    {{ $i18n.locale === 'en' ? `Action unavailable: This submission is already ${artwork.status.toLowerCase()}` : `ไม่สามารถดำเนินการได้: การส่งงานนี้ได้รับการ${artwork.status === 'Approved' || artwork.status === 'Passed' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}` }}
+                
+                <div class="wizard-actions d-flex align-items-center">
+                    <div class="d-flex align-items-center mr-3" v-if="artwork && artwork.status === 'Pending'">
+                        <CButton 
+                            class="btn-action-modal btn-passed-modal mr-2" 
+                            :disabled="!!isUpdating"
+                            @click="handleAction('Approved')"
+                        >
+                            <CSpinner v-if="isUpdating === 'Approved'" size="sm" class="mr-2" />
+                            <CIcon v-else name="cil-check" size="sm" class="mr-1" />
+                            {{ isUpdating === 'Approved' ? ($i18n.locale === 'en' ? 'Sending...' : 'กำลังส่ง...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติผ่าน') }}
+                        </CButton>
+                        <CButton 
+                            class="btn-action-modal btn-failed-modal" 
+                            :disabled="!!isUpdating"
+                            @click="handleAction('Rejected')"
+                        >
+                            <CSpinner v-if="isUpdating === 'Rejected'" size="sm" class="mr-2" />
+                            <CIcon v-else name="cil-x" size="sm" class="mr-1" />
+                            {{ isUpdating === 'Rejected' ? ($i18n.locale === 'en' ? 'Sending...' : 'กำลังส่ง...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธไม่ผ่าน') }}
+                        </CButton>
+                    </div>
+                    <div v-else-if="artwork" class="text-muted font-italic small mr-3">
+                        {{ $i18n.locale === 'en' ? `Action unavailable: This submission is already ${artwork.status.toLowerCase()}` : `ไม่สามารถดำเนินการได้: การส่งงานได้รับการ${artwork.status === 'Approved' || artwork.status === 'Passed' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}` }}
+                    </div>
+
+                    <CButton 
+                        color="secondary" 
+                        variant="ghost"
+                        @click="$emit('update:show', false)"
+                        class="btn-close-modal"
+                        :disabled="!!isUpdating"
+                    >
+                        {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
+                    </CButton>
                 </div>
             </div>
         </template>
@@ -227,242 +380,606 @@ export default {
             default: null
         }
     },
+    data() {
+        return {
+            activeLanguage: 'th'
+        };
+    },
+    created() {
+        this.$store.dispatch('setting/storage/get', {});
+    },
+    watch: {
+        show(isVisible) {
+            if (isVisible) this.activeLanguage = 'th';
+        }
+    },
+    computed: {
+        hasRemark() {
+            if (!this.artwork) return false;
+            const remarkTh = this.artwork.remark_th || (typeof this.artwork.remark === 'string' ? this.artwork.remark : '');
+            const remarkEn = this.artwork.remark_en || '';
+            return (remarkTh && remarkTh.trim() !== '') || (remarkEn && remarkEn.trim() !== '');
+        },
+        currentDescription() {
+            if (!this.artwork) return '';
+            if (this.activeLanguage === 'th') {
+                return this.artwork.description_th || this.artwork.description_en || '';
+            }
+            return this.artwork.description_en || this.artwork.description_th || '';
+        },
+        hasDescription() {
+            return this.currentDescription && this.currentDescription.trim() !== '';
+        },
+        dimensions() {
+            if (!this.artwork) return { width: '', height: '', depth: '', unit: 'cm', is3D: false, raw: '' };
+            const sizeStr = (this.activeLanguage === 'th' ? (this.artwork.size_th || this.artwork.size_en) : (this.artwork.size_en || this.artwork.size_th)) || (typeof this.artwork.size === 'string' ? this.artwork.size : '') || '';
+            const normalizedSize = sizeStr.replace(/×/g, 'x').replace(/X/g, 'x');
+            const matches = normalizedSize.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)(?:\s*x\s*(\d+(?:\.\d+)?))?/i);
+
+            // Check if 3D
+            const cat = this.artwork.category ? String(this.artwork.category).toLowerCase() : '';
+            const is3D = cat.includes('sculpture') || cat.includes('installation') || cat.includes('ประติมากรรม') || cat.includes('จัดวาง');
+
+            // Extract unit
+            const unitMatch = normalizedSize.match(/(cm|m|inch|mm|ชม\.|ม\.|นิ้ว|มม\.)/i);
+            let unit = this.$i18n.locale === 'en' ? 'cm' : 'ชม.';
+            if (unitMatch) {
+                const u = unitMatch[0].toLowerCase();
+                if (u === 'cm' || u === 'ชม.') unit = this.$i18n.locale === 'en' ? 'cm' : 'ชม.';
+                else if (u === 'm' || u === 'ม.') unit = this.$i18n.locale === 'en' ? 'm' : 'ม.';
+                else if (u === 'inch' || u === 'นิ้ว') unit = this.$i18n.locale === 'en' ? 'inch' : 'นิ้ว';
+                else if (u === 'mm' || u === 'มม.') unit = this.$i18n.locale === 'en' ? 'mm' : 'มม.';
+            }
+
+            if (matches) {
+                return {
+                    width: matches[1],
+                    height: matches[2],
+                    depth: matches[3] || '',
+                    unit: unit,
+                    is3D: is3D || !!matches[3],
+                    raw: sizeStr
+                };
+            }
+            return {
+                width: '',
+                height: '',
+                depth: '',
+                unit: unit,
+                is3D: is3D,
+                raw: sizeStr
+            };
+        }
+    },
     methods: {
         handleAction(statusName) {
             this.$emit('update-status', statusName);
         },
-        getInitials(name) {
-            if (!name) return '??';
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        getCategoryDisplayName(category) {
+            if (!category) return '-';
+            if (typeof category === 'string') return category;
+            return this.getName(this.activeLanguage, category) || '-';
         },
-        getAvatarColor(name) {
-            const colors = ['#e06e64', '#4299e1', '#48bb78', '#ed8936', '#9f7aea', '#a0aec0'];
-            if (!name) return colors[0];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) {
-                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        getName(lang, item) {
+            if (!item) return '';
+            if (typeof item === 'string') return item;
+
+            if (Array.isArray(item)) {
+                const target = item.find(n => n.key === lang) || item[0];
+                return target ? target.value : '';
             }
-            return colors[Math.abs(hash) % colors.length];
+
+            const field = item.title || item.name || item.key;
+            if (field) {
+                if (typeof field === 'string') return field;
+                if (Array.isArray(field)) {
+                    const target = field.find(n => n.key === lang) || field[0];
+                    return target ? target.value : '';
+                }
+            }
+
+            if (typeof item === 'object') {
+                return item.value || '';
+            }
+
+            return '';
+        },
+        getStorageDisplayName(storage) {
+            if (!storage) return this.$i18n.locale === 'en' ? 'Not specified' : 'ไม่ได้ระบุ';
+            if (typeof storage === 'string') {
+                const storages = this.$store.getters['setting/storage/item'] || [];
+                const found = storages.find(s => String(s._id || s.id) === String(storage));
+                if (found) {
+                    return this.getName(this.activeLanguage, found) || this.getName(this.$i18n.locale, found) || this.getName('th', found) || this.getName('en', found);
+                }
+                if (storage.length === 24 && /^[0-9a-fA-F]+$/.test(storage)) {
+                    return this.$i18n.locale === 'en' ? 'University Storage' : 'คลังมหาวิทยาลัย';
+                }
+                return storage;
+            }
+            const name = this.getName(this.activeLanguage, storage) || this.getName(this.$i18n.locale, storage) || this.getName('th', storage) || this.getName('en', storage);
+            return name || (this.$i18n.locale === 'en' ? 'Not specified' : 'ไม่ได้ระบุ');
+        },
+        formatPrice(value) {
+            if (value === undefined || value === null) return '0.00';
+            const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+            return isNaN(num) ? '0.00' : num.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        },
+        getTranslatedStatus(status) {
+            if (status === 'Approved' || status === 'Passed') return this.$i18n.locale === 'en' ? 'Approved' : 'ผ่าน/อนุมัติ';
+            if (status === 'Rejected' || status === 'Fail') return this.$i18n.locale === 'en' ? 'Rejected' : 'ไม่ผ่าน';
+            if (status === 'Pending') return this.$i18n.locale === 'en' ? 'Pending' : 'รอการตรวจสอบ';
+            return status || '-';
         },
         getStatusBadge(status) {
-            if (status === 'Passed' || status === 'Approved') return { class: 'status-completed', icon: 'cil-check-circle' };
-            if (status === 'Fail' || status === 'Rejected') return { class: 'status-cancelled', icon: 'cil-ban' };
-            if (status === 'Pending') return { class: 'status-pending', icon: 'cil-clock' };
-            return { class: 'status-update', icon: 'cil-history' };
+            if (status === 'Passed' || status === 'Approved') {
+                return { class: 'status-completed', icon: 'cil-check-circle', textColor: 'text-success', iconColor: 'text-success' };
+            }
+            if (status === 'Fail' || status === 'Rejected') {
+                return { class: 'status-cancelled', icon: 'cil-ban', textColor: 'text-danger', iconColor: 'text-danger' };
+            }
+            if (status === 'Pending') {
+                return { class: 'status-pending', icon: 'cil-clock', textColor: 'text-warning', iconColor: 'text-warning' };
+            }
+            return { class: 'status-update', icon: 'cil-history', textColor: 'text-info', iconColor: 'text-info' };
         }
     }
 }
 </script>
 
 <style scoped>
-.review-artwork-modal {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-.artwork-detail-container {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.artwork-image-view {
-    max-width: 100%;
-    height: 450px;
-    background-color: #f8fafc;
-}
-
-.view-label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #94a3b8;
-    margin-bottom: 0.6rem;
-    letter-spacing: 0.08em;
-}
-
-.view-label-center {
-    display: block;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #94a3b8;
-    margin-bottom: 0.75rem;
-    letter-spacing: 0.05em;
-}
-
-.view-value-title {
-    color: #0f172a;
-    font-size: 1.75rem;
-    line-height: 1.2;
-}
-
-.artist-avatar-md {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    font-weight: 700;
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.status-badge-lg {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 99px;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    border: 1px solid transparent;
-}
-
-.status-icon-lg {
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
-}
-
-.border-left-light {
-    border-left: 1px solid #f1f5f9;
-}
-
-.bg-primary-faded {
-    background-color: #3b82f608;
-    border-color: #3b82f622 !important;
-}
-
-.view-description-box {
-    line-height: 1.7;
-    font-size: 1rem;
-    color: #334155;
-    white-space: pre-line;
-}
-
-.badge-white-outline {
-    background: white;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-    font-weight: 800;
-    font-size: 0.7rem;
-    padding: 3px 8px;
-    border-radius: 6px;
-    min-width: 32px;
-    text-align: center;
-}
-
-.border-premium-sm {
-    border: 2px solid #f1f5f9 !important;
-}
-
-.status-completed {
-    background-color: #f0fdf4;
-    color: #166534;
-    border-color: #bbf7d0;
-}
-
-.status-pending {
-    background-color: #fffbeb;
-    color: #92400e;
-    border-color: #fef3c7;
-}
-
-.status-cancelled {
-    background-color: #fef2f2;
-    color: #991b1b;
-    border-color: #fee2e2;
-}
-
-.status-update {
-    background-color: #eff6ff;
-    color: #1e40af;
-    border-color: #dbeafe;
-}
-
-.btn-close-view {
-    border-radius: 12px;
-    font-weight: 600;
-}
-
-.btn-action-modal {
-    height: 44px;
-    border-radius: 12px;
-    font-weight: 700;
-    padding: 0 1.5rem;
-    transition: all 0.2s;
-    border: 2px solid transparent;
-}
-
-.btn-passed-modal {
-    background-color: #10b981;
-    color: white;
-}
-
-.btn-passed-modal:hover:not(:disabled) {
-    background-color: #059669;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-}
-
-.btn-failed-modal {
-    background-color: #ef4444;
-    color: white;
-}
-
-.btn-failed-modal:hover:not(:disabled) {
-    background-color: #dc2626;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
-}
-
-.btn-action-modal:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
+/* Modal Structure & Layout */
+::v-deep .modal-dialog {
+    width: calc(100% - 2rem);
+    max-width: 1100px;
+    min-height: calc(100% - 2rem);
+    margin: 1rem auto;
 }
 
 ::v-deep .modal-content {
-    border-radius: 24px;
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    border-radius: 20px;
     border: none;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
-.rounded-xl { border-radius: 20px; }
-.rounded-lg { border-radius: 12px; }
-
-.modal-header-custom {
-    padding: 1.25rem 1.5rem;
+::v-deep .modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1.5rem 2rem;
 }
 
+::v-deep .modal-body {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding: 1rem 2rem;
+}
+
+::v-deep .modal-footer {
+    border-top: 1px solid #f1f5f9;
+    padding: 1.25rem 2rem;
+}
+
+/* Header Styling */
 .icon-square {
-    width: 44px;
-    height: 44px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
 }
 
-.bg-blue-light { background-color: #eef2ff; }
-.text-blue { color: #4f46e5; }
+.bg-blue-light {
+    background-color: #3b82f611;
+}
+
+.text-blue {
+    color: #3b82f6;
+}
 
 .close-btn {
-    background: #f1f5f9;
+    background: transparent;
     border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #64748b;
-    transition: all 0.2s;
+    padding: 8px;
+    color: #94a3b8;
+    transition: color 0.2s;
 }
 
 .close-btn:hover {
-    background: #e2e8f0;
+    color: #64748b;
+}
+
+/* Grid Layout matching Edit Modal */
+.wizard-content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.85fr);
+    gap: 2rem;
+    align-items: start;
+}
+
+.wizard-form-column {
+    min-width: 0;
+}
+
+.wizard-panel {
+    padding: 0.75rem 0 0;
+}
+
+.step-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e8edf5;
+}
+
+.step-heading > span {
+    color: #b7791f;
+    font-family: Georgia, serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.step-heading h6 {
+    margin: 0 0 0.2rem;
+    color: #27364a;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.step-heading p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+/* Form Groups & Custom Readonly Display Boxes */
+.form-group-custom {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.custom-display-box {
+    width: 100%;
+    min-height: 52px;
+    padding: 0.85rem 1.25rem;
+    background-color: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    font-size: 1rem;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.custom-display-box.with-icon-left {
+    position: relative;
+    padding-left: 2.85rem;
+    justify-content: flex-start;
+}
+
+.custom-display-box .input-icon-left {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    width: 16px;
+}
+
+.custom-display-box.custom-textarea-box {
+    min-height: 100px;
+    align-items: flex-start;
+    line-height: 1.6;
+    white-space: pre-wrap;
     color: #0f172a;
+}
+
+.dropdown-icon {
+    color: #94a3b8;
+    width: 14px;
+}
+
+.dimension-prefix {
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-right: 0.65rem;
+}
+
+.artwork-description-grid {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+/* Right Column: Image & Settings */
+.wizard-image-column {
+    position: sticky;
+    top: 0;
+    min-width: 0;
+    padding: 0.75rem 0 0 2rem;
+    border-left: 1px solid #e8edf5;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-column-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.image-column-heading > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.8rem;
+    background: #eef3ff;
+    color: #6d8ff0;
+}
+
+.image-column-heading h6 {
+    margin: 0 0 0.2rem;
+    color: #27364a;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.image-column-heading p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+/* Image Container */
+.image-upload-block {
+    margin-bottom: 0;
+}
+
+.file-upload-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 2px dashed #d9e0eb;
+    border-radius: 1.25rem;
+    background: linear-gradient(145deg, #fbfcff, #f6f8fc);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-preview {
+    width: 100%;
+    height: 100%;
+    padding: 0.5rem;
+    object-fit: contain;
+    background-color: transparent;
+}
+
+.sale-settings-under-image {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e8edf5;
+}
+
+.sale-settings-under-image ::v-deep .row {
+    display: block;
+    margin: 0;
+}
+
+.sale-settings-under-image ::v-deep [class*="col-"] {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+    padding: 0;
+}
+
+.storage-location-row {
+    width: 100%;
+    margin: 1.25rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e8edf5;
+}
+
+.storage-location-row ::v-deep .row {
+    display: block;
+    margin: 0;
+}
+
+.storage-location-row ::v-deep [class*="col-"] {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+    padding: 0;
+}
+
+.currency-prefix {
+    color: #6366f1;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+}
+
+/* Badges */
+.status-completed {
+    background-color: #ecfdf5 !important;
+    color: #059669 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+
+.status-cancelled {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+}
+
+.status-pending {
+    background-color: #fffbeb !important;
+    color: #d97706 !important;
+    border: 1px solid #fde68a !important;
+}
+
+.status-update {
+    background-color: #eff6ff !important;
+    color: #2563eb !important;
+    border: 1px solid #bfdbfe !important;
+}
+
+/* Action Buttons */
+.btn-action-modal {
+    border-radius: 30px !important;
+    padding: 0.6rem 1.5rem !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.btn-passed-modal {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+    color: white !important;
+}
+
+.btn-passed-modal:hover:not(:disabled) {
+    background-color: #059669 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.btn-failed-modal {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: white !important;
+}
+
+.btn-failed-modal:hover:not(:disabled) {
+    background-color: #dc2626 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+/* Footer Styling & Language Tabs */
+.wizard-footer {
+    gap: 1rem;
+}
+
+.language-tabs {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 30px;
+    gap: 4px;
+}
+
+.language-tab {
+    border: none;
+    background: transparent;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    outline: none;
+}
+
+.language-tab:hover {
+    color: #1e293b;
+}
+
+.language-tab.active {
+    background: #ffffff;
+    color: #1e293b;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-close-modal {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
+    padding: 0.65rem 2.25rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.btn-close-modal:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+/* Responsive Rules */
+@media (max-width: 767px) {
+    ::v-deep .modal-dialog {
+        width: calc(100% - 1rem);
+        min-height: calc(100% - 1rem);
+        margin: 0.5rem auto;
+    }
+
+    ::v-deep .modal-body {
+        padding: 0.75rem 1rem;
+    }
+
+    .wizard-content-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .wizard-image-column {
+        position: static;
+        padding: 1.5rem 0 0;
+        border-top: 1px solid #e8edf5;
+        border-left: 0;
+    }
+
+    .wizard-footer {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1rem;
+    }
+
+    .language-tabs {
+        justify-content: center;
+    }
+
+    .wizard-actions {
+        justify-content: flex-end;
+    }
 }
 </style>

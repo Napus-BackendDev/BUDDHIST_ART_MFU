@@ -89,8 +89,8 @@ export default {
                         ticks: {
                             beginAtZero: true,
                             maxTicksLimit: 5,
-                            stepSize: 15,
-                            max: 80,
+                            // No fixed `max`: let Chart.js auto-scale to the data so
+                            // real values above 80 are not clipped off the top.
                             fontColor: '#97a0ac',
                             padding: 10
                         },

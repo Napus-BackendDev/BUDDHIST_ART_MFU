@@ -36,6 +36,7 @@
             :show.sync="showManualImportModal"
             :roles="roles"
             :statuses="studentStatuses"
+            :saving="saving"
             @save="handleSaveUser"
         />
 
@@ -52,6 +53,7 @@
             :user="selectedUser"
             :roles="roles"
             :statuses="studentStatuses"
+            :saving="saving"
             @save="handleUpdateUser"
         />
     </div>
@@ -88,6 +90,7 @@ export default {
             showViewModal: false,
             showEditModal: false,
             selectedUser: null,
+            saving: false,
             filters: {
                 search: '',
                 role: 'All Roles',
@@ -163,6 +166,8 @@ export default {
             this.showEditModal = true;
         },
         handleUpdateUser(userData) {
+            if (this.saving) return;
+            this.saving = true;
             this.$store.dispatch('user/update', userData)
                 .then(() => {
                     this.fetchUsers();
@@ -172,6 +177,9 @@ export default {
                 .catch(err => {
                     console.error('Update user error:', err);
                     alert(this.$i18n.locale === 'en' ? "Failed to update user." : "ไม่สามารถอัปเดตข้อมูลผู้ใช้งานได้");
+                })
+                .finally(() => {
+                    this.saving = false;
                 });
         },
         handleDeleteUser(user) {
@@ -296,10 +304,9 @@ export default {
             reader.readAsArrayBuffer(file);
         },
         downloadTemplate() {
-            const data = [
-                ["StudentID", "UsernameThai", "UsernameEng", "Official Email", "Personal Email", "Telephone", "Temporary Password", "Role", "Status"],
-                ["64XXXXXX", "ตัวอย่าง ชื่อ-นามสกุล", "Sample Name", "sample.nam@lamduan.mfu.ac.th", "sample@gmail.com", "0812345678", "123456", "Student", "NewStudent"]
-            ];
+            const data = [[
+                "StudentID", "UsernameThai", "UsernameEng", "Official Email", "Personal Email", "Telephone", "Temporary Password", "Role", "Status"
+            ]];
             const worksheet = XLSX.utils.aoa_to_sheet(data);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
@@ -313,6 +320,8 @@ export default {
             XLSX.writeFile(workbook, "User_Import_Template.xlsx");
         },
         handleSaveUser(userData) {
+            if (this.saving) return;
+            this.saving = true;
             this.$store.dispatch('user/create', userData)
                 .then(() => {
                     this.fetchUsers();
@@ -322,6 +331,9 @@ export default {
                 .catch(err => {
                     console.error('Create user error:', err);
                     alert(this.$i18n.locale === 'en' ? "Failed to create user." : "ไม่สามารถสร้างผู้ใช้งานได้");
+                })
+                .finally(() => {
+                    this.saving = false;
                 });
         },
         exportToExcel() {

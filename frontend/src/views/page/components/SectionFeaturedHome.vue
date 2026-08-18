@@ -1,9 +1,9 @@
 <template>
-    <div class="featured-section py-5 bg-light">
+    <div class="featured-section py-5">
         <CContainer>
             <div class="text-center mb-5">
                 <h2 class="font-weight-bold mb-3 section-title-home-centered" style="color: #612721; font-family: 'Cinzel', serif; font-size: 2.2rem;">
-                    {{ $i18n.locale === 'en' ? 'Best Sellers' : 'ผลงานยอดนิยมล่าสุด' }}
+                    {{ $i18n.locale === 'en' ? 'Latest Popular Artworks' : 'ผลงานยอดนิยมล่าสุด' }}
                 </h2>
                 <div class="mx-auto" style="width: 60px; height: 3px; background-color: #612721; border-radius: 2px;"></div>
             </div>
@@ -46,18 +46,15 @@ export default {
             return this.$store.getters['artwork/artworks'] || [];
         },
         filteredArtworks() {
-            // Filter only approved or reserved artworks
-            let result = this.allArtworks.filter(art => {
+            // Popular artworks can come from direct uploads or student submissions.
+            // Filter only publicly visible approval states; do not exclude submission provenance.
+            const result = this.allArtworks.filter(art => {
                 const status = this.getStatusLabel(art);
-                const isApproved = ['Approved', 'Success', 'Reserved'].includes(status);
-                
-                // Only show artworks WITHOUT submission provenance (Direct uploads/Featured)
-                const isFeatured = !art.submissionArtworkId && !art.artworkPiece;
-                
-                return isApproved && isFeatured;
+                return ['Approved', 'Success', 'Reserved'].includes(status);
             });
-            // Sort by views count descending to get the most viewed artworks
-            let sorted = [...result].sort((a, b) => {
+
+            // Sort by views count descending to get the most viewed artworks.
+            const sorted = [...result].sort((a, b) => {
                 return (b.views || 0) - (a.views || 0);
             });
             
@@ -113,6 +110,8 @@ export default {
 }
 
 .featured-section {
-    background-color: #f8f9fa;
+    background-color: #FAF9F6;
+    border-top: 1px solid rgba(97, 39, 33, 0.05);
+    border-bottom: 1px solid rgba(97, 39, 33, 0.05);
 }
 </style>

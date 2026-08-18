@@ -2,7 +2,7 @@
     <CCard class="submission-detail-table-card mb-4">
         <div>
             <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
-                :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange">
+                :striped="false" :items-per-page="itemsPerPage" :active-page="activePage" @page-change="pageChange">
 
                 <template #assignmentTitle="{ item }">
                     <td class="font-weight-bold text-dark">{{ getName($i18n.locale, item) }}</td>
@@ -21,7 +21,13 @@
                     <td style="white-space: nowrap;">
                         <div class="d-flex align-items-center" v-if="item.create">
                             <CIcon name="cil-calendar" class="mr-2 text-muted" size="sm" />
-                            <span class="text-muted date-text-sm">{{ formatDate(item.create.startAt) }} &ndash; {{ formatDate(item.create.endAt) }}</span>
+                            <div class="text-muted date-text-sm">
+                                <div>{{ formatDate(item.create.startAt) }} &ndash; {{ formatDate(item.create.endAt) }}</div>
+                                <div class="small mt-1">{{ formatTime(item.create.startAt) }} &ndash; {{ formatTime(item.create.endAt) }}</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center" v-else>
+                            <span class="text-muted date-text-sm">N/A</span>
                         </div>
                     </td>
                 </template>
@@ -36,7 +42,7 @@
                             </div>
                             <div class="d-flex align-items-center">
                                 <span class="status-count mr-1">{{ getUniqueSubmitters(item) }}</span>
-                                <span class="text-muted text-xs mt-1">/ {{ getEffectiveTotalStudents(item) }} {{ $i18n.locale === 'en' ? 'students' : 'คน' }}</span>
+                                <span class="text-muted text-xs mt-1">/ {{ getEffectiveTotalStudents(item) }} {{ $i18n.locale === 'en' ? 'students' : 'รูป/คน' }}</span>
                             </div>
                         </div>
                     </td>
@@ -102,30 +108,19 @@
             </CDataTable>
         </div>
 
-        <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-            <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, filteredItems.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredItems.length }} {{ $i18n.locale === 'en' ? 'assignments' : 'รายการ' }}
-            </div>
-            <div class="text-muted text-sm" v-else>
-                {{ $i18n.locale === 'en' ? 'Showing 0 assignments' : 'แสดง 0 รายการ' }}
-            </div>
-            <CPagination
-                :active-page.sync="activePage"
-                :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
-                size="sm"
-                align="end"
-                class="mb-0 pill-pagination"
-            />
-        </CCardFooter>
+        <TablePaginationFooter :total="filteredItems.length" :active-page.sync="activePage" :items-per-page.sync="itemsPerPage" noun-en="assignments" noun-th="รายการ" />
     </CCard>
 </template>
 
 <script>
 import moment from 'moment'
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin'
+import TablePaginationFooter from './TablePaginationFooter.vue'
 
 export default {
     name: 'SubmissionDetailTable',
+    components: { TablePaginationFooter },
+    mixins: [statusBadgeMixin],
     props: {
         items: {
             type: Array,
@@ -145,7 +140,8 @@ export default {
     },
     data() {
         return {
-            activePage: 1
+            activePage: 1,
+            itemsPerPage: 10
         }
     },
     watch: {
@@ -192,7 +188,7 @@ export default {
         },
         formatDate(date) {
             if (!date) return 'N/A';
-            return moment(date).format('DD/MM/YYYY')
+            return moment(date).format('DD/MM/YYYY HH:mm')
         },
         moment(arg) {
             return moment(arg);

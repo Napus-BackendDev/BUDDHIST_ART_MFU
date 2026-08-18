@@ -32,6 +32,7 @@ const en = {
     sidebar: {
         main: "หน้าหลัก",
         overview: "ภาพรวม",
+        analytics: "วิเคราะห์ข้อมูล",
         operations: "การดำเนินการ",
         orders: "คำสั่งซื้อ",
         artworks: "ผลงานศิลปะ",
@@ -39,6 +40,7 @@ const en = {
         submissions: "ผลงานที่ส่ง",
         dataCenter: "ศูนย์ข้อมูล",
         users: "จัดการผู้ใช้งาน",
+        returnToWebsite: "กลับไปหน้าหลัก",
         signOut: "ออกจากระบบ"
     }
 }

@@ -90,11 +90,11 @@ module.exports = function confirmationOrderMailTemplate({ buyerName, orderId, ar
                                 <strong>${artworkTitle}</strong><br>
                                 <span style="font-size: 12px; color: #777777;">รหัสใบสั่งซื้อ: ${orderId}</span>
                             </td>
-                            <td style="text-align: right;">฿${price.toLocaleString()}</td>
+                            <td style="text-align: right;">฿${Number(price || 0).toLocaleString()}</td>
                         </tr>
                         <tr class="total-row">
                             <td style="text-align: right;">ยอดรวมทั้งสิ้น:</td>
-                            <td style="text-align: right; color: #2c3e50;">฿${price.toLocaleString()}</td>
+                            <td style="text-align: right; color: #2c3e50;">฿${Number(price || 0).toLocaleString()}</td>
                         </tr>
                     </tbody>
                 </table>

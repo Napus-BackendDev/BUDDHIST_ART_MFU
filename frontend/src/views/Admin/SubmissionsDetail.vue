@@ -8,12 +8,12 @@
             </CLink>
         </div>
 
-        <HeaderHero :title="getName($i18n.locale, submission)" :description="($i18n.locale === 'en' ? 'Managing assignments and tracking progress for ' : 'จัดการงานและติดตามความคืบหน้าของนักศึกษาจำนวน ') + (submission.artist ? submission.artist.length : 0) + ($i18n.locale === 'en' ? ' students.' : ' คน')" icon="cil-list" :showCreateButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Assignment' : 'สร้างงานมอบหมาย'" :showExportButton="true" themeColor="green" @create="addAssignment" @export="handleExport" />
+        <HeaderHero :title="getName($i18n.locale, submission)" :description="($i18n.locale === 'en' ? 'Managing assignments and tracking progress for ' : 'จัดการงานและติดตามความคืบหน้าของผู้เรียนจำนวน ') + (submission.artist ? submission.artist.length : 0) + ($i18n.locale === 'en' ? ' learners.' : ' รูป/คน')" icon="cil-list" :showCreateButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Assignment' : 'สร้างงานมอบหมาย'" :showExportButton="true" themeColor="green" @create="addAssignment" @export="handleExport" />
         <SubmissionDetailWidget :submission="submission" v-model="filters.status" />
         <SubmissionDetailFilter v-model="filters" @create="addAssignment" />
         <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
-        <AssignmentCreateModal :show.sync="showAssignmentModal" :enrolledStudents="submission.artist || []" @save="handleAssignmentSave" />
-        <AssignmentEditModal :show.sync="showEditAssignmentModal" :assignmentData="selectedAssignment" :enrolledStudents="submission.artist || []" @update="handleAssignmentUpdate" />
+        <AssignmentCreateModal :show.sync="showAssignmentModal" :enrolledStudents="submission.artist || []" :saving="saving" @save="handleAssignmentSave" />
+        <AssignmentEditModal :show.sync="showEditAssignmentModal" :assignmentData="selectedAssignment" :enrolledStudents="submission.artist || []" :saving="saving" @update="handleAssignmentUpdate" />
     </div>
 </template>
 
@@ -42,6 +42,7 @@ export default {
             showAssignmentModal: false,
             showEditAssignmentModal: false,
             selectedAssignment: null,
+            saving: false,
             filters: {
                 search: '',
                 status: 'All Status',
@@ -49,14 +50,6 @@ export default {
                 endDate: null,
                 quickRange: 'All Time'
             },
-            // Mock enrolled students for this submission
-            mockEnrolledStudents: [
-                { id: 'USR-001', name: 'Albus Dumbledore', student_id: '6450001' },
-                { id: 'USR-002', name: 'Harry Potter', student_id: '6450002' },
-                { id: 'USR-003', name: 'Hermione Granger', student_id: '6450003' },
-                { id: 'USR-004', name: 'Severus Snape', student_id: '6450004' },
-                { id: 'USR-005', name: 'Ron Weasley', student_id: '6450005' }
-            ]
         }
     },
     created() {
@@ -85,6 +78,8 @@ export default {
             this.showAssignmentModal = true;
         },
         handleAssignmentSave(data) {
+            if (this.saving) return;
+            this.saving = true;
             const updatedSubmission = { ...this.submission };
             if (!updatedSubmission.assignments) updatedSubmission.assignments = [];
             
@@ -109,6 +104,9 @@ export default {
                 .catch(err => {
                     console.error('Create assignment error:', err);
                     alert(this.$i18n.locale === 'en' ? "Failed to create assignment." : "ไม่สามารถสร้างงานมอบหมายได้");
+                })
+                .finally(() => {
+                    this.saving = false;
                 });
         },
         handleView(item) {
@@ -125,6 +123,8 @@ export default {
             this.showEditAssignmentModal = true;
         },
         handleAssignmentUpdate(data) {
+            if (this.saving) return;
+            this.saving = true;
             const updatedSubmission = { ...this.submission };
             const index = updatedSubmission.assignments.findIndex(a => a._id === data._id);
             if (index !== -1) {
@@ -145,7 +145,13 @@ export default {
                     .catch(err => {
                         console.error('Update assignment error:', err);
                         alert(this.$i18n.locale === 'en' ? "Failed to update assignment." : "ไม่สามารถอัปเดตงานมอบหมายได้");
+                    })
+                    .finally(() => {
+                        this.saving = false;
                     });
+            }
+            else {
+                this.saving = false;
             }
         },
         handleDelete(item) {

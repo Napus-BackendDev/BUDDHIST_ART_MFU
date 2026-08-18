@@ -4,6 +4,7 @@ const confirmationOrderMail = require('./confirmationOrder');
 const approvedOrderMail = require('./approvedOrder');
 const rejectedOrderMail = require('./rejectedOrder');
 const adminNewOrderMail = require('./adminNewOrder');
+const certificateOfAuthenticityMail = require('./certificateOfAuthenticity');
 
 module.exports = {
     approvedSubmissionMail,
@@ -11,5 +12,6 @@ module.exports = {
     confirmationOrderMail,
     approvedOrderMail,
     rejectedOrderMail,
-    adminNewOrderMail
+    adminNewOrderMail,
+    certificateOfAuthenticityMail
 };

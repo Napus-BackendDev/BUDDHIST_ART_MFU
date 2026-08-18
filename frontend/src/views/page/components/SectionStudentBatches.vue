@@ -3,10 +3,10 @@
         <CContainer class="my-4">
             <div class="text-center mb-5">
                 <span class="badge text-uppercase font-weight-bold px-3 py-2 mb-3" style="color: #612721; background-color: rgba(97,39,33,0.08); border-radius: 50px; font-size: 0.8rem; letter-spacing: 1px;">
-                    {{ $i18n.locale === 'en' ? 'Syllabus Archives' : 'ทำเนียบรุ่นวิชาการ' }}
+                    {{ $i18n.locale === 'en' ? 'Academic Cohort Directory' : 'ทำเนียบรุ่นวิชาการ' }}
                 </span>
                 <h2 class="font-weight-bold mb-3" style="color: #2c3e50; font-family: 'Cinzel', serif; font-size: 2.2rem; letter-spacing: 0.5px;">
-                    {{ $i18n.locale === 'en' ? 'Exhibition Registry' : 'ทะเบียนรุ่นและนิทรรศการผลงานศึกษา' }}
+                    {{ $i18n.locale === 'en' ? 'Cohort and Student Artwork Exhibition Registry' : 'ทะเบียนรุ่นและนิทรรศการผลงานศึกษา' }}
                 </h2>
                 <div class="mx-auto" style="width: 50px; height: 3px; background-color: #612721; border-radius: 2px;"></div>
             </div>
@@ -35,14 +35,14 @@
                                     {{ getName($i18n.locale, batch.title) }}
                                 </h5>
                                 <p class="plaque-subtitle text-muted small mb-0">
-                                    {{ $i18n.locale === 'en' ? 'Contemporary Lanna Creative Research' : 'ศิลปกรรมวิจัยล้านนาสร้างสรรค์' }}
+                                    {{ getBatchDescription(batch) }}
                                 </p>
                             </div>
                             
                             <!-- Plaque Footer -->
                             <div class="d-flex justify-content-end align-items-center mt-3 pt-3 border-top border-light-custom">
                                 <span class="badge font-weight-bold count-badge px-3 py-2">
-                                    {{ batch.approvedCount }} {{ $i18n.locale === 'en' ? 'Approved Masterpieces' : 'ผลงานที่สำเร็จ' }}
+                                    {{ batch.approvedCount }} {{ $i18n.locale === 'en' ? 'Completed Artworks' : 'ผลงานที่สำเร็จ' }}
                                 </span>
                             </div>
                         </div>
@@ -120,6 +120,10 @@ export default {
         getName(lang, item) {
             if (!item) return '';
             if (typeof item === 'string') return item;
+            if (Array.isArray(item)) {
+                const obj = item.find(n => n.key === lang);
+                return obj ? obj.value : (item[0] ? item[0].value : '');
+            }
             const titleField = item.title || item.name || '';
             if (typeof titleField === 'string' && titleField) return titleField;
             if (Array.isArray(titleField)) {
@@ -127,6 +131,18 @@ export default {
                 return obj ? obj.value : (titleField[0] ? titleField[0].value : '');
             }
             return '';
+        },
+        getBatchDescription(batch) {
+            const description = this.getName(this.$i18n.locale, batch.description);
+            if (description) return description;
+
+            const fallbackLanguage = this.$i18n.locale === 'en' ? 'th' : 'en';
+            const fallback = this.getName(fallbackLanguage, batch.description);
+            if (fallback) return fallback;
+
+            return this.$i18n.locale === 'en'
+                ? 'No cohort description available'
+                : 'ยังไม่มีคำบรรยายรุ่น';
         },
         getBatchYear(batch) {
             const level = parseInt(batch.courseLevel) || 1;

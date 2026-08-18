@@ -45,8 +45,18 @@ instance.interceptors.response.use(
     (error) => {
       if (error.response && error.response.status === 401) {
           // Clear local storage and redirect to login on unauthorized
+          const currentPath = window.location.pathname + window.location.search;
+          if (currentPath.startsWith('/payment')) {
+            localStorage.setItem('pendingCheckout', JSON.stringify({
+              redirect: currentPath,
+              reopenCart: true
+            }));
+          }
           localStorage.removeItem('objs');
-          window.location.href = '/#/pages/login';
+          if (window.location.pathname !== '/login') {
+            const redirect = encodeURIComponent(currentPath);
+            window.location.href = `/login?redirect=${redirect}`;
+          }
       }
       return Promise.reject(error);
     }
@@ -90,6 +100,8 @@ export default {
         switch (method) {
             case 'exp':
                 return instance.post("/api/v1/artwork/explore", data);
+            case 'view':
+                return instance.get(`/api/v1/artwork/view/${data}`);
             case 'get':
                 return instance.get("/api/v1/artwork");
             case 'post':
@@ -100,6 +112,10 @@ export default {
                 return instance.delete("/api/v1/artwork", { data: data });
             case 'get-by-id':
                 return instance.post("/api/v1/artwork/explore", { _id: data });
+            case 'post-term-list':
+                return instance.get("/api/v1/artwork/post-term", { params: data || {} });
+            case 'post-term-decision':
+                return instance.post("/api/v1/artwork/post-term/decision", data);
             case 'category':
                 return instance[data.method]("/api/v1/artwork/category", data.data);
             case 'presentation':

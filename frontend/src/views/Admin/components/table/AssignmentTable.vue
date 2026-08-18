@@ -6,7 +6,7 @@
                 <CCard class="assignment-table-card mb-4">
                     <div>
                         <CDataTable :items="filteredItems" :fields="fields" class="custom-table mb-0" hover :border="false"
-                            :striped="false" :items-per-page="10" :active-page="activePage" @page-change="pageChange"
+                            :striped="false" :items-per-page="itemsPerPage" :active-page="activePage" @page-change="pageChange"
                             @row-clicked="selectItem">
 
                             <!-- Preview Image Column -->
@@ -26,8 +26,9 @@
 
                             <!-- Submitted Date Column -->
                             <template #submitted_date="{ item }">
-                                <td class="align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                    {{ item.submitted_date }}
+                                <td class="align-middle text-muted text-sm" @click="selectItem(item)" style="cursor: pointer;">
+                                    <div>{{ formatDate(item.submitted_date_raw || item.submitted_date) }}</div>
+                                    <div class="small mt-1">{{ formatTime(item.submitted_date_raw || item.submitted_date) }}</div>
                                 </td>
                             </template>
 
@@ -50,25 +51,91 @@
                                     </div>
                                 </td>
                             </template>
+                            <template #storage="{ item }">
+                                <td class="align-middle">
+                                    <div class="storage-cell">
+                                        <div class="storage-main-row">
+                                            <span class="storage-name">{{ storageName(item.storage) }}</span>
+                                            <span v-if="isUniversityStorage(item.storage) && !item.storageDetail" class="storage-warning" v-c-tooltip="$i18n.locale === 'en' ? 'Exact location required' : 'กรุณาระบุตำแหน่งจัดเก็บจริง'">!</span>
+                                            <button v-if="isUniversityStorage(item.storage)" type="button" class="storage-edit-btn" @click.stop="openLocationEditor(item)" v-c-tooltip="$i18n.locale === 'en' ? 'Edit exact location' : 'แก้ไขตำแหน่งจัดเก็บจริง'">
+                                                <CIcon name="cil-pencil" size="sm" />
+                                            </button>
+                                        </div>
+                                        <small v-if="item.storageDetail" class="storage-detail">{{ item.storageDetail }}</small>
+                                    </div>
+                                </td>
+                            </template>
+                            <template #actions="{ item }">
+                                <td class="align-middle text-right" @click.stop>
+                                    <div v-if="isPending(item.status)" class="d-inline-flex align-items-center">
+                                        <button 
+                                            class="action-btn icon-view" 
+                                            v-c-tooltip="$i18n.locale === 'en' ? 'View details' : 'ดูรายละเอียด'" 
+                                            @click.stop="selectItem(item)"
+                                        >
+                                            <CIcon name="cilMagnifyingGlass" size="lg" />
+                                        </button>
+                                        <button 
+                                            class="action-btn icon-edit ml-2" 
+                                            v-c-tooltip="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'" 
+                                            @click.stop="openLocationEditor(item)"
+                                        >
+                                            <CIcon name="cil-pencil" size="lg" />
+                                        </button>
+                                        <button 
+                                            class="action-btn icon-success mx-2" 
+                                            v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" 
+                                            :disabled="isUpdating" 
+                                            @click.stop="updateStatusForItem(item, 'Approved')"
+                                        >
+                                            <CIcon name="cil-check" size="lg" />
+                                        </button>
+                                        <button 
+                                            class="action-btn icon-danger mr-2" 
+                                            v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" 
+                                            :disabled="isUpdating" 
+                                            @click.stop="updateStatusForItem(item, 'Rejected')"
+                                        >
+                                            <CIcon name="cil-x" size="lg" />
+                                        </button>
+                                        <button 
+                                            class="action-btn icon-trash" 
+                                            v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" 
+                                            @click.stop="$emit('delete', item)"
+                                        >
+                                            <CIcon name="cil-trash" size="lg" />
+                                        </button>
+                                    </div>
+                                    <div v-else class="d-inline-flex align-items-center">
+                                        <button 
+                                            class="action-btn icon-view" 
+                                            v-c-tooltip="$i18n.locale === 'en' ? 'View details' : 'ดูรายละเอียด'" 
+                                            @click.stop="selectItem(item)"
+                                        >
+                                            <CIcon name="cilMagnifyingGlass" size="lg" />
+                                        </button>
+                                        <button 
+                                            v-if="item.status === 'Approved' || item.status === 'Passed'"
+                                            class="action-btn icon-edit ml-2" 
+                                            v-c-tooltip="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'" 
+                                            @click.stop="openLocationEditor(item)"
+                                        >
+                                            <CIcon name="cil-pencil" size="lg" />
+                                        </button>
+                                        <button 
+                                            class="action-btn icon-trash ml-2" 
+                                            v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" 
+                                            @click.stop="$emit('delete', item)"
+                                        >
+                                            <CIcon name="cil-trash" size="lg" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </template>
                         </CDataTable>
                     </div>
 
-                    <CCardFooter
-                        class="d-flex justify-content-between align-items-center bg-white border-0 py-4 pt-1 rounded-bottom pagination-footer">
-                        <div class="text-muted text-sm" v-if="filteredItems.length > 0">
-                            {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, filteredItems.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredItems.length }} {{ $i18n.locale === 'en' ? 'submissions' : 'รายการ' }}
-                        </div>
-                        <div class="text-muted text-sm" v-else>
-                            {{ $i18n.locale === 'en' ? 'Showing 0 submissions' : 'แสดง 0 รายการ' }}
-                        </div>
-                        <CPagination
-                            :active-page.sync="activePage"
-                            :pages="Math.max(1, Math.ceil(filteredItems.length / 10))"
-                            size="sm"
-                            align="end"
-                            class="mb-0 pill-pagination"
-                        />
-                    </CCardFooter>
+                    <TablePaginationFooter :total="filteredItems.length" :active-page.sync="activePage" :items-per-page.sync="itemsPerPage" noun-en="submissions" noun-th="รายการ" />
                 </CCard>
             </div>
         </div>
@@ -80,17 +147,49 @@
             :isUpdating="isUpdating"
             @update-status="handleAction"
         />
+        <CModal class="admin-modal" :show.sync="locationModalShow" :title="$i18n.locale === 'en' ? 'Exact artwork location' : 'ระบุตำแหน่งจัดเก็บงานศิลปะ'" centered>
+            <div class="form-group location-select-group">
+                <label>{{ $i18n.locale === 'en' ? 'Building, room, shelf or cabinet' : 'อาคาร ห้อง ชั้นวาง หรือตู้จัดเก็บ' }}</label>
+                <Multiselect
+                    v-model="locationDetail"
+                    :options="availableLocationOptions"
+                    :searchable="true"
+                    :taggable="true"
+                    :allow-empty="true"
+                    :close-on-select="true"
+                    :show-labels="false"
+                    :placeholder="$i18n.locale === 'en' ? 'Search or enter a new location' : 'ค้นหา หรือพิมพ์ตำแหน่งใหม่'"
+                    :tag-placeholder="$i18n.locale === 'en' ? 'Press Enter to add this location' : 'กด Enter เพื่อเพิ่มตำแหน่งนี้'"
+                    @tag="addLocationOption"
+                >
+                    <template #noResult><span>{{ $i18n.locale === 'en' ? 'No location found. Press Enter to add it.' : 'ไม่พบตำแหน่ง กด Enter เพื่อเพิ่มรายการใหม่' }}</span></template>
+                    <template #noOptions><span>{{ $i18n.locale === 'en' ? 'Type to add the first location.' : 'พิมพ์เพื่อเพิ่มตำแหน่งแรก' }}</span></template>
+                </Multiselect>
+                <small class="form-text text-muted">{{ $i18n.locale === 'en' ? 'Saved locations can be searched and reused next time.' : 'ตำแหน่งที่บันทึกแล้วจะค้นหาและเลือกใช้ซ้ำได้ครั้งถัดไป' }}</small>
+            </div>
+            <template #footer>
+                <CButton color="secondary" variant="outline" @click="locationModalShow = false">{{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}</CButton>
+                <CButton color="primary" :disabled="!locationDetail || !locationDetail.trim()" @click="saveLocation">{{ $i18n.locale === 'en' ? 'Save' : 'บันทึก' }}</CButton>
+            </template>
+        </CModal>
     </div>
 </template>
 
 <script>
 import moment from 'moment'
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin'
 import SubmissionReviewModal from '../modal/submission/SubmissionReviewModal.vue'
+import TablePaginationFooter from './TablePaginationFooter.vue'
+import Multiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.min.css'
 
 export default {
     name: 'AssignmentTable',
+    mixins: [statusBadgeMixin],
     components: {
-        SubmissionReviewModal
+        SubmissionReviewModal,
+        TablePaginationFooter,
+        Multiselect
     },
     props: {
         items: {
@@ -107,6 +206,10 @@ export default {
                 startDate: null,
                 endDate: null
             })
+        },
+        locationOptions: {
+            type: Array,
+            default: () => []
         }
     },
     data() {
@@ -114,7 +217,12 @@ export default {
             selectedItem: null,
             isUpdating: null, // Stores 'Approved' or 'Rejected' during update
             activePage: 1,
-            modalShow: false
+            itemsPerPage: 10,
+            modalShow: false,
+            locationModalShow: false,
+            locationItem: null,
+            locationDetail: '',
+            newlyAddedLocations: []
         }
     },
     watch: {
@@ -126,13 +234,21 @@ export default {
         }
     },
     computed: {
+        availableLocationOptions() {
+            return [...new Set([...this.locationOptions, ...this.newlyAddedLocations]
+                .map(location => (location || '').trim())
+                .filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, this.$i18n.locale));
+        },
         fields() {
             return [
                 { key: 'preview', label: this.$i18n.locale === 'en' ? 'Preview' : 'รูปตัวอย่าง', _classes: 'font-weight-bold' },
                 { key: 'student_name', label: this.$i18n.locale === 'en' ? 'Student Name' : 'ชื่อนักเรียน', _classes: 'font-weight-bold' },
                 { key: 'submitted_date', label: this.$i18n.locale === 'en' ? 'Submitted Date' : 'วันที่ส่ง' },
                 { key: 'status', label: this.$i18n.locale === 'en' ? 'Status' : 'สถานะ' },
-                { key: 'deadline', label: this.$i18n.locale === 'en' ? 'Deadline' : 'กำหนดส่ง' }
+                { key: 'storage', label: this.$i18n.locale === 'en' ? 'Storage' : 'สถานที่จัดเก็บ' },
+                { key: 'deadline', label: this.$i18n.locale === 'en' ? 'Deadline' : 'กำหนดส่ง' },
+                { key: 'actions', label: this.$i18n.locale === 'en' ? 'Actions' : 'การจัดการ', _classes: 'font-weight-bold text-right' }
             ];
         },
         filteredItems() {
@@ -170,9 +286,47 @@ export default {
         }
     },
     methods: {
+        storageName(storage) {
+            if (!storage) return '-';
+            return this.getName(this.$i18n.locale, storage) || this.getName('en', storage) || '-';
+        },
+        isUniversityStorage(storage) {
+            if (!storage) return false;
+            const name = `${this.getName('en', storage)} ${this.getName('th', storage)}`.toLowerCase();
+            return name.includes('university') || name.includes('mfu') || name.includes('มหาวิทยาลัย');
+        },
+        openLocationEditor(item) {
+            this.locationItem = item;
+            this.locationDetail = item.storageDetail || '';
+            this.locationModalShow = true;
+        },
+        addLocationOption(location) {
+            const normalizedLocation = (location || '').trim();
+            if (!normalizedLocation) return;
+            if (!this.availableLocationOptions.includes(normalizedLocation)) {
+                this.newlyAddedLocations.push(normalizedLocation);
+            }
+            this.locationDetail = normalizedLocation;
+        },
+        saveLocation() {
+            if (!this.locationItem || !this.locationDetail || !this.locationDetail.trim()) return;
+            const normalizedLocation = this.locationDetail.trim();
+            if (!this.availableLocationOptions.includes(normalizedLocation)) {
+                this.newlyAddedLocations.push(normalizedLocation);
+            }
+            this.$emit('update-location', { artworkId: this.locationItem.id, storageDetail: normalizedLocation });
+            this.locationModalShow = false;
+        },
         selectItem(item) {
             this.selectedItem = item;
             this.modalShow = true;
+        },
+        updateStatusForItem(item, statusName) {
+            if (item && statusName === 'Approved') {
+                item.status = 'Approved';
+            }
+            this.selectedItem = item;
+            this.handleAction(statusName);
         },
         closePanel() {
             this.modalShow = false;
@@ -186,18 +340,21 @@ export default {
             
             this.isUpdating = statusName;
             try {
+                if (this.selectedItem && statusName === 'Approved') {
+                    this.selectedItem.status = 'Approved';
+                }
                 await this.$emit('update-status', { 
                     artworkId: this.selectedItem.id, 
                     statusName: statusName 
                 });
-                // The update happens in parent, we wait a bit or let parent signal completion
-                // For UX, we'll keep loading for a short duration or until selectedItem changes
             } finally {
-                // We'll reset this after parent updates
-                setTimeout(() => {
-                    this.isUpdating = null;
-                }, 1000);
+                this.isUpdating = null;
             }
+        },
+        isPending(status) {
+            if (!status) return true;
+            const str = String(status).toLowerCase();
+            return str === 'pending' || str === 'รอดำเนินการ' || str === 'in progress';
         },
         getStatusBadge(status) {
             if (status === 'Passed' || status === 'Approved') return { class: 'badge-passed', icon: 'cil-check-circle' };
@@ -230,6 +387,20 @@ export default {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+.storage-cell { display:flex; flex-direction:column; align-items:flex-start; gap:5px; min-width:150px; }
+.storage-main-row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; max-width:100%; }
+.storage-name { min-width:0; color:#172b4d; font-weight:600; line-height:1.35; }
+.storage-detail { display:block; color:#64748b; line-height:1.35; }
+.storage-warning { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#fff; background:#dc2626; font-weight:800; }
+.storage-edit-btn { flex:0 0 30px; width:30px; height:30px; border:1px solid #dfd6d1; border-radius:8px; color:#8f2419; background:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s ease; }
+.storage-edit-btn:hover { background:#f9efec; border-color:#8f2419; box-shadow:0 4px 10px rgba(143,36,25,0.12); }
+.location-select-group { margin-bottom: 0; }
+.location-select-group ::v-deep .multiselect__tags { min-height: 44px; padding: 11px 40px 8px 14px; border: 1px solid #d8dee8; border-radius: 8px; }
+.location-select-group ::v-deep .multiselect__input,
+.location-select-group ::v-deep .multiselect__single { margin-bottom: 0; font-size: 14px; }
+.location-select-group ::v-deep .multiselect__option--highlight,
+.location-select-group ::v-deep .multiselect__option--highlight::after { background: #8f2419; }
+.location-select-group ::v-deep .multiselect__tag { background: #8f2419; }
 
 .detail-image {
     max-height: 250px;

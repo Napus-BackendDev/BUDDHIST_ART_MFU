@@ -86,7 +86,9 @@
                   class="btn-sm px-3 font-weight-bold" 
                   @click.stop="handleOpenSubmission(assign)"
                 >
-                  {{ $i18n.locale === 'en' ? 'Submit' : 'ส่งงาน' }}
+                  {{ hasSubmitted(assign)
+                    ? ($i18n.locale === 'en' ? 'Submit Again' : 'ส่งงานอีกครั้ง')
+                    : ($i18n.locale === 'en' ? 'Submit' : 'ส่งงาน') }}
                 </CButton>
 
                 <!-- If Not Open Yet: Show nothing or keep layout -->
@@ -110,11 +112,15 @@
           <div v-if="expandedAssignmentId === assign._id" class="expanded-artwork-panel shadow-premium-sm">
             <div class="p-4 bg-white rounded-bottom-xl border-top-light">
               <div v-if="assign.artworks && assign.artworks.length > 0">
-                <h6 class="text-muted-xs text-uppercase mb-3 letter-spacing-lg">
-                  {{ $i18n.locale === 'en' ? 'Submitted Artworks' : 'ผลงานที่ส่งเข้าร่วม' }} ({{ assign.artworks.length }})
-                </h6>
-                <div class="artwork-rows-container">
-                    <div v-for="artwork in assign.artworks" :key="artwork._id" class="artwork-horizontal-item shadow-premium-sm rounded-lg overflow-hidden border bg-white mb-3 d-flex align-items-center p-2">
+                <section v-for="group in getArtworkGroups(assign)" :key="group.key" class="artwork-owner-group" :class="{ 'other-owner-group': group.key === 'others' }">
+                  <h6 class="artwork-group-title mb-3">
+                    <span class="artwork-group-icon">
+                      <CIcon :name="group.key === 'mine' ? 'cil-user' : 'cil-people'" size="sm" />
+                    </span>
+                    {{ group.label }} ({{ group.items.length }})
+                  </h6>
+                  <div class="artwork-rows-container">
+                    <div v-for="artwork in group.items" :key="artwork._id" class="artwork-horizontal-item shadow-premium-sm rounded-lg overflow-hidden border bg-white mb-3 d-flex align-items-center p-2">
                       <div class="artwork-row-thumb-wrap mr-3" @click="handleViewArtworkModal(artwork)">
                         <img :src="artwork.image" class="artwork-img-row" />
                         <div class="thumb-overlay-minimal">
@@ -136,7 +142,7 @@
                         <div class="d-flex align-items-center ml-md-3 gap-3" style="gap: 12px;">
                           <!-- Resubmit Button for Rejected -->
                           <CButton 
-                            v-if="getApprovalStatusClass(artwork) === 'status-closed' && !isClosed(assign) && !isNotStarted(assign)"
+                            v-if="isOwnArtwork(artwork) && getApprovalStatusClass(artwork) === 'status-closed' && !isClosed(assign) && !isNotStarted(assign)"
                             color="info" 
                             size="sm"
                             variant="outline"
@@ -162,6 +168,7 @@
                       </div>
                     </div>
                   </div>
+                </section>
               </div>
               <div v-else class="text-center py-5 text-muted bg-light-soft rounded-lg">
                 <CIcon name="cil-image-broken" size="xl" class="mb-2 opacity-3" />
@@ -253,6 +260,29 @@ export default {
         }
     },
     methods: {
+        ownerId(artwork) {
+            return artwork && artwork.owner ? (artwork.owner._id || artwork.owner) : null;
+        },
+        isOwnArtwork(artwork) {
+            return String(this.ownerId(artwork) || '') === String(this.userId || '');
+        },
+        getArtworkGroups(assign) {
+            const artworks = Array.isArray(assign.artworks) ? assign.artworks : [];
+            const mine = artworks.filter(artwork => this.isOwnArtwork(artwork));
+            const others = artworks.filter(artwork => !this.isOwnArtwork(artwork));
+            return [
+                {
+                    key: 'mine',
+                    label: this.$i18n.locale === 'en' ? 'My submitted artworks' : 'ผลงานที่ส่งเข้าร่วม',
+                    items: mine
+                },
+                {
+                    key: 'others',
+                    label: this.$i18n.locale === 'en' ? 'Other participants’ artworks' : 'ผลงานของผู้เข้าร่วมคนอื่น',
+                    items: others
+                }
+            ].filter(group => group.items.length > 0);
+        },
         fetchSubmission() {
             const submissionId = this.id || this.$route.params.id;
             if (submissionId) {
@@ -392,7 +422,7 @@ export default {
             const currentUserId = this.userId;
             return item.artworks.some(art => {
                 const ownerId = art.owner?._id || art.owner;
-                return ownerId === currentUserId;
+                return String(ownerId || '') === String(currentUserId || '');
             });
         },
         getAssignmentStatusClass(item) {
@@ -610,6 +640,36 @@ export default {
 .approval-tag.status-upcoming { background: #fef3c7; color: #92400e; }
 
 /* Expanded Panel & Horizontal List */
+.artwork-owner-group + .artwork-owner-group {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #e8e2de;
+}
+
+.artwork-group-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #622820;
+    font-size: .82rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+}
+
+.artwork-group-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #8f2419;
+    background: #f9efec;
+}
+
+.other-owner-group .artwork-group-title { color: #64748b; }
+.other-owner-group .artwork-group-icon { color: #64748b; background: #f1f5f9; }
+
 .expanded-artwork-panel {
     position: relative;
     z-index: 5;

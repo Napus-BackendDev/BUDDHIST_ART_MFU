@@ -41,9 +41,10 @@ module.exports = function () {
         }
       });
 
-      setTimeout(() => {
+      const readinessTimer = setTimeout(() => {
         isReady = true;
       }, 10000);
+      if (readinessTimer.unref) readinessTimer.unref();
     }
   });
 

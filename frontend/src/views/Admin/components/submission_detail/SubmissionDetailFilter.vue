@@ -44,7 +44,7 @@
               @click="setQuickRange(range)"
               :class="['range-btn', { 'active': value.quickRange === range }]"
             >
-              {{ range }}
+              {{ getQuickRangeLabel(range) }}
             </CButton>
           </CButtonGroup>
         </CCol>
@@ -113,6 +113,24 @@ export default {
     }
   },
   methods: {
+    getQuickRangeLabel(range) {
+      if (range === 'All Time') {
+        return this.$i18n.locale === 'en' ? 'All Time' : 'ทั้งหมด';
+      }
+      if (range === 'Today') {
+        return this.$i18n.locale === 'en' ? 'Today' : 'วันนี้';
+      }
+      if (range === 'This Week') {
+        return this.$i18n.locale === 'en' ? 'This Week' : 'สัปดาห์นี้';
+      }
+      if (range === 'Last 30 Days' || range === 'This Month' || range === 'Month') {
+        return this.$i18n.locale === 'en' ? 'Month' : 'เดือน';
+      }
+      if (range === 'This Year') {
+        return this.$i18n.locale === 'en' ? 'This Year' : 'ปีนี้';
+      }
+      return range;
+    },
     updateFilter(key, val) {
       const newFilters = { ...this.value, [key]: val }
       this.$emit('input', newFilters)

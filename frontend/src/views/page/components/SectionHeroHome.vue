@@ -1,39 +1,42 @@
 <template>
-    <div class="home-hero bg-white py-5 d-flex align-items-center">
-        <CContainer class="my-4">
+    <div class="home-hero py-5 d-flex align-items-center position-relative overflow-hidden">
+        <HeroGravityVisual variant="home" light />
+
+        <CContainer class="my-4" style="position: relative; z-index: 2;">
             <CRow class="align-items-center">
-                <!-- Left: Text Content -->
-                <CCol lg="6" class="hero-text-col mb-5 mb-lg-0">
+                <!-- Left-aligned Text Content (Image Removed) -->
+                <CCol lg="8" class="hero-text-col mb-5 mb-lg-0">
                     <div class="reveal-animation">
                         <span class="badge text-uppercase font-weight-bold px-3 py-2 mb-3 badge-short-course">
-                            {{ $i18n.locale === 'en' ? 'Short Course Program' : 'หลักสูตรระยะสั้นพุทธศิลปกรรม' }}
+                            {{ $i18n.locale === 'en' ? 'Short Course Program in Buddhist Art, Mae Fah Luang University' : 'หลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง' }}
                         </span>
                         <h1 class="hero-title text-uppercase mb-3">
-                            Buddhist <span class="text-highlight">Art MFU</span>
+                            <span class="hero-title-line">
+                                Buddhist <span class="text-highlight">Art Space</span>
+                            </span>
+                            <span class="hero-title-line hero-title-university">
+                                Mae Fah Luang University
+                            </span>
                         </h1>
                         <div class="title-separator mb-4"></div>
-                        <p class="hero-subtitle mb-4">
-                            {{ $i18n.locale === 'en' ? 'Buddhist Art Center, Mae Fah Luang University' : 'ศูนย์พุทธศิลป์ มหาวิทยาลัยแม่ฟ้าหลวง' }} <br>
-                            <span class="sub-description mt-2 d-block">
-                                {{ $i18n.locale === 'en' ? 'A center for learning and preserving Lanna and Lanna contemporary Buddhist art' : 'หลักสูตรระยะสั้นที่จะเปิดโลกจินตนาการและการสร้างสรรค์ทางพุทธศิลปกรรมร่วมสมัยและล้านนา' }}
-                            </span>
+                        <p class="hero-subtitle mb-4" v-if="$i18n.locale === 'th'">
+                            พื้นที่ดิจิทัลสำหรับรวบรวม และเผยแพร่ผลงานพุทธศิลปกรรมของหลักสูตรระยะสั้น<br class="d-none d-md-inline" />
+                            สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง เพื่อเชื่อมโยงการเรียนรู้<br class="d-none d-md-inline" />
+                            การสร้างสรรค์ และคุณค่าทางศิลปวัฒนธรรมสู่สาธารณะ
+                        </p>
+                        <p class="hero-subtitle mb-4" v-else>
+                            A digital platform for collecting and sharing Buddhist artworks created through<br class="d-none d-md-inline" />
+                            Mae Fah Luang University’s Short Course Program in Buddhist Art, connecting<br class="d-none d-md-inline" />
+                            learning, creativity, and cultural value with the public.
                         </p>
                         <div class="d-flex align-items-center btn-group-hero">
                             <CButton color="danger" class="px-5 py-3 font-weight-bold shadow-lg mr-3 btn-main" @click="$router.push('/artworks')">
-                                {{ $i18n.locale === 'en' ? 'Expo Art' : 'ชมนิทรรศการ Expo Art' }}
+                                {{ $i18n.locale === 'en' ? 'Artworks' : 'ผลงานศิลปะ' }}
                             </CButton>
                             <CButton color="dark" variant="outline" class="px-4 py-3 font-weight-bold btn-outline-custom" @click="$router.push('/news')">
                                 {{ $i18n.locale === 'en' ? 'News & Activities' : 'ข่าวสารและกิจกรรม' }}
                             </CButton>
                         </div>
-                    </div>
-                </CCol>
-                
-                <!-- Right: Image -->
-                <CCol lg="6" class="hero-img-col d-flex justify-content-center">
-                    <div class="hero-img-wrapper position-relative">
-                        <div class="hero-img-bg-deco"></div>
-                        <img :src="require('@/assets/images/art_student_hero.png')" alt="Art Students" class="img-fluid hero-main-img">
                     </div>
                 </CCol>
             </CRow>
@@ -42,18 +45,22 @@
 </template>
 
 <script>
+import HeroGravityVisual from './HeroGravityVisual.vue'
 export default {
-    name: 'SectionHeroHome'
+    name: 'SectionHeroHome',
+    components: { HeroGravityVisual }
 }
 </script>
 
 <style scoped>
 .home-hero {
     position: relative;
-    min-height: 580px;
+    min-height: 600px;
+    padding: 7rem 0 !important;
     overflow: hidden;
     color: #2c3e50;
-    background-color: #fafafa !important;
+    background-color: #FFFFFF !important;
+    border-bottom: 1px solid rgba(97, 39, 33, 0.06);
 }
 
 .badge-short-course {
@@ -77,6 +84,16 @@ export default {
     color: #612721;
 }
 
+.hero-title-line {
+    display: block;
+    white-space: nowrap;
+}
+
+.hero-title-university {
+    font-size: 0.72em;
+    margin-top: 0.15em;
+}
+
 .title-separator {
     width: 80px;
     height: 5px;
@@ -87,10 +104,12 @@ export default {
 
 .hero-subtitle {
     font-family: 'Sarabun', sans-serif;
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.22rem;
+    font-weight: 600;
     color: #4a5568;
-    line-height: 1.5;
+    line-height: 1.75;
+    word-break: keep-all;
+    max-width: 820px;
     animation: fadeInUp 1s ease-out 0.3s both;
 }
 
@@ -198,6 +217,9 @@ export default {
     .hero-title {
         font-size: 2.8rem;
     }
+    .hero-title-university {
+        font-size: 0.7em;
+    }
     .hero-subtitle {
         font-size: 1.15rem;
     }
@@ -208,8 +230,23 @@ export default {
 }
 
 @media (max-width: 575.98px) {
+    .badge-short-course {
+        display: inline-flex;
+        max-width: 100%;
+        white-space: normal;
+        line-height: 1.35;
+    }
     .hero-title {
-        font-size: 2.2rem;
+        font-size: clamp(1.55rem, 7.4vw, 2.2rem);
+        letter-spacing: 0;
+    }
+    .hero-title-line {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    .hero-title-university {
+        font-size: 0.62em;
+        margin-top: 0.3em;
     }
     .btn-group-hero {
         flex-direction: column;
@@ -220,6 +257,61 @@ export default {
         margin-right: 0 !important;
         margin-bottom: 1rem;
         width: 100%;
+    }
+}
+
+/* Smooth Gravity Wave Lines */
+.gravity-waves {
+    position: absolute;
+    top: 0;
+    right: -5%;
+    width: 55%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.wave-path {
+    stroke-linecap: round;
+    transform-origin: center;
+}
+
+.wave-1 {
+    animation: waveMotion1 16s infinite ease-in-out alternate;
+}
+
+.wave-2 {
+    animation: waveMotion2 20s infinite ease-in-out alternate;
+}
+
+.wave-3 {
+    animation: waveMotion3 24s infinite ease-in-out alternate;
+}
+
+@keyframes waveMotion1 {
+    0% {
+        transform: scaleY(0.9) translateY(0) rotate(-2deg);
+    }
+    100% {
+        transform: scaleY(1.1) translateY(20px) rotate(2deg);
+    }
+}
+
+@keyframes waveMotion2 {
+    0% {
+        transform: scaleY(1.15) translateY(-10px) rotate(1deg);
+    }
+    100% {
+        transform: scaleY(0.85) translateY(10px) rotate(-1deg);
+    }
+}
+
+@keyframes waveMotion3 {
+    0% {
+        transform: scaleY(0.8) translateY(15px) rotate(-1deg);
+    }
+    100% {
+        transform: scaleY(1.2) translateY(-15px) rotate(1deg);
     }
 }
 </style>

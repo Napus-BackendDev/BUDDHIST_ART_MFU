@@ -16,7 +16,9 @@
               <div class="avatar-upload-wrapper mb-4 mx-auto" @click="triggerUpload" style="cursor: pointer;" title="Click to change photo">
                 <div class="avatar-preview shadow-lg position-relative overflow-hidden">
                   <img v-if="form.image" :src="form.image" class="w-100 h-100" style="object-fit: cover;" />
-                  <span v-else class="avatar-initials">{{ initials }}</span>
+                  <div v-else class="d-flex align-items-center justify-content-center h-100 w-100 bg-light text-secondary">
+                    <CIcon name="cil-user" size="2xl" />
+                  </div>
                   <div class="avatar-overlay d-flex align-items-center justify-content-center position-absolute w-100 h-100" style="top:0; left:0; background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.3s;">
                       <CIcon name="cil-camera" size="xl" class="text-white" />
                   </div>
@@ -24,7 +26,7 @@
                 <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept="image/*" />
               </div>
               <h4 class="font-weight-bold mb-3 text-dark">{{ fullName }}</h4>
-              <CBadge color="primary" class="badge-premium px-3 py-2">{{ $i18n.locale === 'en' ? 'Customer' : 'ลูกค้า' }}</CBadge>
+              <CBadge color="primary" class="badge-premium px-3 py-2">{{ $i18n.locale === 'en' ? 'Customer' : 'ผู้สะสมผลงานศิลปะ' }}</CBadge>
               <div class="text-left mt-4 border-top pt-4">
                   <div class="contact-info-item mb-3 d-flex align-items-center premium-hover" v-if="form.personalEmail">
                       <div class="icon-box-sm mr-3 shadow-sm min-w-36">
@@ -109,11 +111,11 @@
                         <table class="table table-hover mb-0">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase">{{ $i18n.locale === 'en' ? 'Artwork' : 'ผลงานพุทธศิลป์' }}</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase">{{ $i18n.locale === 'en' ? 'Artwork' : 'ผลงานศิลปะ' }}</th>
                                     <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Date' : 'วันที่' }}</th>
                                     <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Amount' : 'ยอดสุทธิ' }}</th>
                                     <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Status' : 'สถานะ' }}</th>
-                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Action' : 'การกระทำ' }}</th>
+                                    <th class="border-0 px-4 py-3 small text-muted text-uppercase text-center">{{ $i18n.locale === 'en' ? 'Action' : 'สถานะดำเนินการ' }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -247,7 +249,7 @@ export default {
           statusName: (() => {
             const statusLabel = this.getName('en', order.status);
             const s = statusLabel ? statusLabel.toLowerCase() : '';
-            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'เสร็จสิ้น';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'ยืนยันข้อมูล';
             if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return this.$i18n.locale === 'en' ? 'Rejected' : 'ยกเลิก';
             
             if (!order.image) {

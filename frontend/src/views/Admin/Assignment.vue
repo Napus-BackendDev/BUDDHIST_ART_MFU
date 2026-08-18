@@ -10,7 +10,7 @@
 
         <HeaderHero 
             :title="assignmentTitle" 
-            :description="$i18n.locale === 'en' ? 'Manage and review all student submissions, provide feedback, and grade their work in real-time.' : 'จัดการและตรวจสอบการส่งงานของนักศึกษาทั้งหมด ให้ข้อเสนอแนะ และให้คะแนนแบบเรียลไทม์'" 
+            :description="$i18n.locale === 'en' ? 'Manage and review all learner submissions, provide feedback, and grade their work in real-time.' : 'จัดการและตรวจสอบการส่งงานของผู้เรียนทั้งหมด ให้ข้อเสนอแนะ และให้คะแนนแบบเรียลไทม์'"
             icon="cil-task" 
             :showCreateButton="false" 
             :showExportButton="true" 
@@ -19,10 +19,10 @@
         />
         <AssignmentWidget v-model="filters.status" :stats="stats" />
         <AssignmentFilter v-model="filters" />
-        <AssignmentTable :filters="filters" :items="mappedArtworks" @update-status="handleStatusUpdate" />
+        <AssignmentTable :filters="filters" :items="mappedArtworks" :location-options="storageLocationOptions" @update-status="handleStatusUpdate" @update-location="handleLocationUpdate" @delete="handleDeleteArtwork" />
 
         <!-- Rejection Reason Modal -->
-        <CModal :title="$i18n.locale === 'en' ? 'Reject Submission' : 'ปฏิเสธงานส่งของนักศึกษา'" :show.sync="showRejectModal" color="danger" size="lg">
+        <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Reject Submission' : 'ปฏิเสธงานส่งของนักศึกษา'" :show.sync="showRejectModal" color="danger" size="lg">
             <div class="p-3">
                 <p class="text-muted mb-3">
                     {{ $i18n.locale === 'en' ? 'Please provide a reason for rejecting this submission. This message will be sent to the student via email.' : 'กรุณาระบุเหตุผลในการปฏิเสธงานส่งนี้ ข้อความนี้จะถูกส่งไปยังอีเมลของนักศึกษาเพื่อแจ้งเตือน' }}
@@ -111,6 +111,17 @@ export default {
         assignmentTitle() {
             return this.assignment ? this.getName(this.$i18n.locale, this.assignment) : (this.$i18n.locale === 'en' ? 'Assignment Detail' : 'รายละเอียดงาน');
         },
+        storageLocationOptions() {
+            if (!this.submission || !Array.isArray(this.submission.assignments)) return [];
+            const locations = this.submission.assignments.reduce((result, assignment) => {
+                (assignment.artworks || []).forEach(artwork => {
+                    const location = (artwork.storageDetail || '').trim();
+                    if (location) result.push(location);
+                });
+                return result;
+            }, []);
+            return [...new Set(locations)].sort((a, b) => a.localeCompare(b, this.$i18n.locale));
+        },
         mappedArtworks() {
             if (!this.assignment || !this.assignment.artworks) return [];
             return this.assignment.artworks.map(aw => {
@@ -144,6 +155,7 @@ export default {
                     student_name: studentName,
                     student_id: studentId,
                     submitted_date: aw.create ? moment(aw.create.at).format('DD/MM/YYYY HH:mm') : 'N/A',
+                    submitted_date_raw: aw.create ? aw.create.at : null,
                     on_time: aw.create && this.assignment.create ? moment(aw.create.at).isBefore(moment(this.assignment.create.endAt)) : true,
                     status: statusName,
                     deadline: this.assignment.create ? moment(this.assignment.create.endAt).format('DD/MM/YYYY HH:mm') : 'N/A',
@@ -162,12 +174,65 @@ export default {
                     artist_name: aw.artist ? this.getName(this.$i18n.locale, aw.artist) : studentName,
                     remark_en: this.getName('en', { title: aw.remark }),
                     remark_th: this.getName('th', { title: aw.remark }),
-                    remark: aw.remark // Keep original for reference if needed
+                    remark: aw.remark,
+                    storage: aw.storage,
+                    storageDetail: aw.storageDetail || ''
                 };
             });
         }
     },
     methods: {
+        async handleDeleteArtwork(item) {
+            const message = this.$i18n.locale === 'en'
+                ? `Delete “${item.title_en || item.title_th || 'this artwork'}”? This action cannot be undone.`
+                : `ยืนยันลบผลงาน “${item.title_th || item.title_en || 'รายการนี้'}” หรือไม่? การลบไม่สามารถย้อนกลับได้`;
+            if (!window.confirm(message) || !this.submission || !this.assignment) return;
+
+            try {
+                const updatedSubmission = JSON.parse(JSON.stringify(this.submission));
+                const assignment = updatedSubmission.assignments.find(a => a._id === this.assignment._id);
+                if (!assignment) return;
+                assignment.artworks = (assignment.artworks || []).filter(artwork => artwork._id !== item.id);
+
+                if (updatedSubmission.artist) updatedSubmission.artist = updatedSubmission.artist.map(artist => artist._id || artist);
+                updatedSubmission.assignments.forEach(entry => {
+                    if (entry.artist) entry.artist = entry.artist.map(artist => artist._id || artist);
+                    (entry.artworks || []).forEach(artwork => {
+                        if (artwork.owner && typeof artwork.owner === 'object') artwork.owner = artwork.owner._id;
+                        if (artwork.status && typeof artwork.status === 'object') artwork.status = artwork.status._id;
+                        if (artwork.category && typeof artwork.category === 'object') artwork.category = artwork.category._id;
+                        if (artwork.storage && typeof artwork.storage === 'object') artwork.storage = artwork.storage._id;
+                    });
+                });
+
+                await this.$store.dispatch('submission/update', updatedSubmission);
+                await this.fetchSubmission();
+                alert(this.$i18n.locale === 'en' ? 'Artwork deleted successfully.' : 'ลบผลงานเรียบร้อยแล้ว');
+            } catch (error) {
+                console.error('Error deleting submitted artwork:', error);
+                alert(this.$i18n.locale === 'en' ? 'Unable to delete the artwork.' : 'ไม่สามารถลบผลงานได้');
+            }
+        },
+        async handleLocationUpdate({ artworkId, storageDetail }) {
+            if (!this.submission || !this.assignment) return;
+            const updatedSubmission = JSON.parse(JSON.stringify(this.submission));
+            const assignment = updatedSubmission.assignments.find(a => a._id === this.assignment._id);
+            const artwork = assignment && assignment.artworks.find(aw => aw._id === artworkId);
+            if (!artwork) return;
+            artwork.storageDetail = storageDetail.trim();
+            if (updatedSubmission.artist) updatedSubmission.artist = updatedSubmission.artist.map(a => a._id || a);
+            updatedSubmission.assignments.forEach(a => {
+                if (a.artist) a.artist = a.artist.map(item => item._id || item);
+                (a.artworks || []).forEach(aw => {
+                    if (aw.owner && typeof aw.owner === 'object') aw.owner = aw.owner._id;
+                    if (aw.status && typeof aw.status === 'object') aw.status = aw.status._id;
+                    if (aw.category && typeof aw.category === 'object') aw.category = aw.category._id;
+                    if (aw.storage && typeof aw.storage === 'object') aw.storage = aw.storage._id;
+                });
+            });
+            await this.$store.dispatch('submission/update', updatedSubmission);
+            await this.fetchSubmission();
+        },
         fetchSubmission() {
             this.$store.dispatch('submission/get', { _id: this.$route.params.submissionId });
         },

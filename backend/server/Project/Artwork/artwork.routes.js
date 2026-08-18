@@ -6,8 +6,12 @@ const auth = require('../../../middleware/authMiddleware');
 
 const artworkService = require("./service/artwork");
 const categoryService = require("./service/category");
+const postTermSaleService = require("./service/postTermSale");
 
 router.get("", artworkService.onQuerys);
+router.get("/post-term", auth, postTermSaleService.onList);
+router.post("/post-term/decision", auth, postTermSaleService.onDecision);
+router.get("/view/:id", artworkService.onUpdateView);
 router.post("/explore", artworkService.onQuery);
 router.post("", auth, artworkService.onCreate);
 router.put("/upload", auth, uploadImage("artwork", "image"), artworkService.onUpload);

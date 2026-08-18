@@ -4,7 +4,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="create-submission-modal"
+        class="create-submission-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -135,13 +135,13 @@
             <!-- Student Selection Section -->
             <div class="student-selection-wrapper mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <label class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Enroll Students' : 'เลือกนักศึกษาลงทะเบียน' }}</label>
+                    <label class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Enroll Learners' : 'เลือกผู้เรียนลงทะเบียน' }}</label>
                     <div class="d-flex align-items-center">
                         <div class="select-all-toggle mr-3" @click="toggleSelectAllNew">
-                            <span class="text-purple small font-weight-bold pointer">{{ allNewSelected ? ($i18n.locale === 'en' ? 'Deselect New' : 'ยกเลิกเลือกนศ.ใหม่') : ($i18n.locale === 'en' ? 'Select All New Students' : 'เลือกนักศึกษาใหม่ทั้งหมด') }}</span>
+                            <span class="text-purple small font-weight-bold pointer">{{ allNewSelected ? ($i18n.locale === 'en' ? 'Deselect New' : 'ยกเลิกเลือกผู้เรียนใหม่') : ($i18n.locale === 'en' ? 'Select All New Learners' : 'เลือกผู้เรียนใหม่ทั้งหมด') }}</span>
                         </div>
                         <div class="select-all-toggle" @click="toggleSelectAllStudents">
-                            <span class="text-purple small font-weight-bold pointer">{{ allStudentsSelected ? ($i18n.locale === 'en' ? 'Deselect All' : 'ยกเลิกเลือกทั้งหมด') : ($i18n.locale === 'en' ? 'Select all students' : 'เลือกนักศึกษาทั้งหมด') }}</span>
+                            <span class="text-purple small font-weight-bold pointer">{{ allStudentsSelected ? ($i18n.locale === 'en' ? 'Deselect All' : 'ยกเลิกเลือกทั้งหมด') : ($i18n.locale === 'en' ? 'Select all learners' : 'เลือกผู้เรียนทั้งหมด') }}</span>
                         </div>
                     </div>
                 </div>
@@ -159,7 +159,7 @@
                 <div class="student-list-container">
                     <!-- New Students Section -->
                     <div v-if="newStudents.length > 0" class="student-group-divider mb-3">
-                        <span class="divider-text">{{ $i18n.locale === 'en' ? 'New Students' : 'นักศึกษาใหม่' }} ({{ newStudents.length }})</span>
+                        <span class="divider-text">{{ $i18n.locale === 'en' ? 'New Learners' : 'ผู้เรียนใหม่' }} ({{ newStudents.length }})</span>
                     </div>
                     <div 
                         v-for="student in newStudents" 
@@ -184,7 +184,7 @@
 
                     <!-- Old Students Section -->
                     <div v-if="oldStudents.length > 0" class="student-group-divider mb-3 mt-4">
-                        <span class="divider-text">{{ $i18n.locale === 'en' ? 'Returning Students' : 'นักศึกษาปัจจุบัน' }} ({{ oldStudents.length }})</span>
+                        <span class="divider-text">{{ $i18n.locale === 'en' ? 'Returning Learners' : 'ผู้เรียนเก่า' }} ({{ oldStudents.length }})</span>
                     </div>
                     <div 
                         v-for="student in oldStudents" 
@@ -292,17 +292,20 @@
                     variant="ghost" 
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
+                    :disabled="saving"
                 >
                     {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
-                <CButton 
+                <LoadingButton 
                     color="primary" 
                     @click="handleSave"
                     class="btn-create-submission"
                     :disabled="!isFormValid"
+                    :loading="saving"
+                    :loading-text="$i18n.locale === 'en' ? 'Creating...' : 'กำลังสร้าง...'"
                 >
                     {{ $i18n.locale === 'en' ? 'Create Submission Portal' : 'สร้างช่องทางส่งงาน' }}
-                </CButton>
+                </LoadingButton>
             </div>
         </template>
 </CModal>
@@ -315,6 +318,10 @@ export default {
     name: 'SubmissionCreateModal',
     props: {
         show: {
+            type: Boolean,
+            default: false
+        },
+        saving: {
             type: Boolean,
             default: false
         }
@@ -460,7 +467,7 @@ export default {
                 );
                 const newIds = newArtists.map(s => s._id);
                 this.selectedStudents = [...new Set([...this.selectedStudents, ...newIds])];
-                this.$toast?.success(this.$i18n.locale === 'en' ? `Enrolled all ${newIds.length} new students.` : `เลือกนักศึกษาใหม่ทั้งหมด ${newIds.length} คนเรียบร้อยแล้ว`);
+                this.$toast?.success(this.$i18n.locale === 'en' ? `Enrolled all ${newIds.length} new learners.` : `เลือกผู้เรียนใหม่ทั้งหมด ${newIds.length} คนเรียบร้อยแล้ว`);
             }
         },
         toggleSelectAllStudents() {
@@ -474,7 +481,7 @@ export default {
                 );
                 const allIds = allArtists.map(s => s._id);
                 this.selectedStudents = allIds;
-                this.$toast?.success(this.$i18n.locale === 'en' ? `Enrolled all ${allIds.length} students.` : `เลือกนักศึกษาทั้งหมด ${allIds.length} คนเรียบร้อยแล้ว`);
+                this.$toast?.success(this.$i18n.locale === 'en' ? `Enrolled all ${allIds.length} learners.` : `เลือกผู้เรียนทั้งหมด ${allIds.length} คนเรียบร้อยแล้ว`);
             }
         },
         getInitials(name) {

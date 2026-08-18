@@ -6,7 +6,7 @@
             <div class="d-flex align-items-center">
                 <div>
                     <h3 class="font-weight-bold m-0" style="color: #2c3e50;">{{ $i18n.locale === 'en' ? 'Certifications' : 'ใบรับรอง' }}</h3>
-                    <p class="text-muted mt-1 mb-0 font-weight-bold">{{ $i18n.locale === 'en' ? 'Manage and view all student certificates' : 'จัดการและดูใบรับรองนักศึกษาทั้งหมด' }}</p>
+                    <p class="text-muted mt-1 mb-0 font-weight-bold">{{ $i18n.locale === 'en' ? 'Manage and view all learner certificates' : 'จัดการและดูใบรับรองผู้เรียนทั้งหมด' }}</p>
                 </div>
             </div>
 

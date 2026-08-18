@@ -4,7 +4,7 @@
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
-        class="edit-assignment-modal"
+        class="edit-assignment-modal admin-modal"
     >
         <template #header>
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
@@ -77,17 +77,20 @@
                     variant="ghost" 
                     @click="$emit('update:show', false)"
                     class="btn-cancel mr-3"
+                    :disabled="saving"
                 >
                     {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
                 </CButton>
-                <CButton 
+                <LoadingButton 
                     color="warning" 
                     @click="handleUpdate"
                     class="btn-update-assignment"
                     :disabled="!isFormValid"
+                    :loading="saving"
+                    :loading-text="$i18n.locale === 'en' ? 'Updating...' : 'กำลังอัปเดต...'"
                 >
                     {{ $i18n.locale === 'en' ? 'Update Assignment' : 'อัปเดตงาน' }}
-                </CButton>
+                </LoadingButton>
             </div>
         </template>
 </CModal>
@@ -108,6 +111,10 @@ export default {
         enrolledStudents: {
             type: Array,
             default: () => []
+        },
+        saving: {
+            type: Boolean,
+            default: false
         }
     },
     data() {

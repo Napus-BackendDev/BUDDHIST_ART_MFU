@@ -1,27 +1,5 @@
 import Service from "@/service/api";
 
-const MOCK_STATS = {
-    summary: {
-        artworks: 142,
-        users: 58,
-        orders: 27
-    },
-    charts: {
-        status: [
-            { _id: 'อนุมัติ', count: 89 },
-            { _id: 'รออนุมัติ', count: 35 },
-            { _id: 'ปฏิเสธ', count: 18 }
-        ],
-        category: [
-            { _id: 'จิตรกรรม', count: 54 },
-            { _id: 'ประติมากรรม', count: 31 },
-            { _id: 'ลายเส้น', count: 27 },
-            { _id: 'ศิลปะดิจิทัล', count: 18 },
-            { _id: 'อื่นๆ', count: 12 }
-        ]
-    }
-};
-
 const DashboardModule = {
     namespaced: true,
     state: {
