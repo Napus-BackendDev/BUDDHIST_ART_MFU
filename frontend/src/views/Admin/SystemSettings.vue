@@ -11,51 +11,63 @@
       @create="openCreate(activeTab === 'categories' ? 'category' : 'group')" 
     />
 
-    <!-- KPI Summary Cards -->
+    <!-- KPI Widget Bar (Consistent with UserWidget / OrderWidget) -->
     <CRow class="mb-4">
-      <!-- Total Groups -->
-      <CCol sm="12" md="4" class="mb-3 mb-md-0">
-        <CCard class="summary-widget-card" @click="activeTab = 'groups'" :class="{ 'active-summary': activeTab === 'groups' }">
+      <!-- Total Settings -->
+      <CCol sm="6" lg="3" @click="activeTab = 'groups'" style="cursor: pointer;">
+        <CCard class="widget-card">
           <CCardBody class="d-flex justify-content-between align-items-center p-4">
             <div>
-              <div class="widget-subtitle">{{ locale === 'en' ? 'Workflow Groups' : 'กลุ่มการทำงาน' }}</div>
-              <div class="widget-number text-burgundy">{{ groups.length }}</div>
-              <div class="widget-unit text-muted">{{ locale === 'en' ? 'groups registered' : 'กลุ่มในระบบ' }}</div>
+              <div class="widget-title">{{ locale === 'en' ? 'Total Settings' : 'การตั้งค่าทั้งหมด' }}</div>
+              <div class="widget-value text-primary">{{ groups.length + statuses.length + categories.length }}</div>
             </div>
-            <div class="icon-circle bg-burgundy-light text-burgundy">
-              <CIcon name="cil-layers" size="xl" />
+            <div class="icon-wrapper bg-blue-light text-blue">
+              <CIcon name="cil-settings" size="xl" />
             </div>
           </CCardBody>
         </CCard>
       </CCol>
 
-      <!-- Total Statuses -->
-      <CCol sm="12" md="4" class="mb-3 mb-md-0">
-        <CCard class="summary-widget-card" @click="activeTab = 'groups'" :class="{ 'active-summary': activeTab === 'groups' }">
+      <!-- Groups -->
+      <CCol sm="6" lg="3" @click="activeTab = 'groups'" style="cursor: pointer;">
+        <CCard :class="['widget-card', { 'active-widget': activeTab === 'groups' }]">
           <CCardBody class="d-flex justify-content-between align-items-center p-4">
             <div>
-              <div class="widget-subtitle">{{ locale === 'en' ? 'System Statuses' : 'สถานะทั้งหมด' }}</div>
-              <div class="widget-number text-gold">{{ statuses.length }}</div>
-              <div class="widget-unit text-muted">{{ locale === 'en' ? 'active statuses' : 'สถานะที่พร้อมใช้งาน' }}</div>
+              <div class="widget-title">{{ locale === 'en' ? 'Groups' : 'กลุ่มการทำงาน' }}</div>
+              <div class="widget-value text-info">{{ groups.length }}</div>
             </div>
-            <div class="icon-circle bg-gold-light text-gold">
+            <div class="icon-wrapper bg-info-soft text-info">
+              <CIcon name="cilShieldAlt" size="xl" />
+            </div>
+          </CCardBody>
+        </CCard>
+      </CCol>
+
+      <!-- Statuses -->
+      <CCol sm="6" lg="3" @click="activeTab = 'groups'" style="cursor: pointer;">
+        <CCard :class="['widget-card', { 'active-widget': activeTab === 'groups' }]">
+          <CCardBody class="d-flex justify-content-between align-items-center p-4">
+            <div>
+              <div class="widget-title">{{ locale === 'en' ? 'Statuses' : 'สถานะระบบ' }}</div>
+              <div class="widget-value text-success">{{ statuses.length }}</div>
+            </div>
+            <div class="icon-wrapper bg-green-light text-green">
               <CIcon name="cil-task" size="xl" />
             </div>
           </CCardBody>
         </CCard>
       </CCol>
 
-      <!-- Total Artwork Categories -->
-      <CCol sm="12" md="4">
-        <CCard class="summary-widget-card" @click="activeTab = 'categories'" :class="{ 'active-summary': activeTab === 'categories' }">
+      <!-- Categories -->
+      <CCol sm="6" lg="3" @click="activeTab = 'categories'" style="cursor: pointer;">
+        <CCard :class="['widget-card', { 'active-widget': activeTab === 'categories' }]">
           <CCardBody class="d-flex justify-content-between align-items-center p-4">
             <div>
-              <div class="widget-subtitle">{{ locale === 'en' ? 'Artwork Categories' : 'หมวดหมู่ผลงาน' }}</div>
-              <div class="widget-number text-blue">{{ categories.length }}</div>
-              <div class="widget-unit text-muted">{{ locale === 'en' ? 'catalog categories' : 'หมวดหมู่ในแคตตาล็อก' }}</div>
+              <div class="widget-title">{{ locale === 'en' ? 'Categories' : 'หมวดหมู่ผลงาน' }}</div>
+              <div class="widget-value text-warning">{{ categories.length }}</div>
             </div>
-            <div class="icon-circle bg-blue-light text-blue">
-              <CIcon name="cil-paint" size="xl" />
+            <div class="icon-wrapper bg-yellow-light text-warning">
+              <CIcon name="cil-brush" size="xl" />
             </div>
           </CCardBody>
         </CCard>
@@ -698,66 +710,69 @@ export default {
   color: #172b4d;
 }
 
-/* Summary KPI Widget Cards */
-.summary-widget-card {
+/* KPI Widget Card Style (Identical to UserWidget / OrderWidget / ArtworkWidget) */
+.widget-card {
   border-radius: 12px;
   border: 1px solid #eef0f3;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
   transition: all 0.3s ease;
+  height: 100%;
+  margin-bottom: 0;
   cursor: pointer;
+  user-select: none;
   background: #ffffff;
 }
 
-.summary-widget-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-  border-color: #d8dee8;
+.widget-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
 }
 
-.active-summary {
-  border-color: #8c1515 !important;
-  background-color: #fffaf9 !important;
-  box-shadow: 0 6px 16px rgba(140, 21, 21, 0.08) !important;
+.active-widget {
+  border-color: #321fdb !important;
+  background-color: #f0f4ff !important;
+  box-shadow: 0 6px 16px rgba(50, 31, 219, 0.1) !important;
 }
 
-.widget-subtitle {
+.widget-title {
   color: #6b778c;
   font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.widget-value {
+  color: #172b4d;
+  font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 0.35rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  line-height: 1;
 }
 
-.widget-number {
-  font-size: 1.85rem;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.widget-unit {
-  font-size: 0.78rem;
-  font-weight: 500;
-  margin-top: 4px;
-}
-
-.icon-circle {
+.icon-wrapper {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.text-burgundy { color: #8c1515 !important; }
-.bg-burgundy-light { background-color: #fff1f0; }
+/* Standard Widget Color Tokens */
+.bg-blue-light { background-color: #f0f4ff; }
+.text-blue { color: #321fdb; }
 
-.text-gold { color: #d97706 !important; }
-.bg-gold-light { background-color: #fff8eb; }
+.bg-info-soft { background-color: #e0faff; }
+.text-info { color: #00b8d9 !important; }
 
-.text-blue { color: #3b82f6 !important; }
-.bg-blue-light { background-color: #eff6ff; }
+.bg-green-light { background-color: #ebfcf1; }
+.text-green { color: #10b981; }
+
+.bg-yellow-light { background-color: #fffbeb; }
+.text-warning { color: #d97706 !important; }
+
+.text-primary { color: #321fdb !important; }
+.text-success { color: #10b981 !important; }
 
 /* Main Shell & Tab Header */
 .settings-shell {
