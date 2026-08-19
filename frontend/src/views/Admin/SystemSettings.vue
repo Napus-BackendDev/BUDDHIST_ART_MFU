@@ -6,30 +6,13 @@
       :description="locale === 'en' ? 'Manage system groups, workflow statuses, and artwork categories from one unified dashboard.' : 'จัดการกลุ่ม สถานะการทำงาน และหมวดหมู่ผลงานศิลปะจากหน้าเดียว'" 
       icon="cil-settings" 
       themeColor="red" 
-      :showCreateButton="true" 
-      :createButtonText="activeTab === 'categories' ? (locale === 'en' ? 'Add Category' : 'เพิ่มหมวดหมู่') : (locale === 'en' ? 'Add Group' : 'เพิ่มกลุ่ม')" 
-      @create="openCreate(activeTab === 'categories' ? 'category' : 'group')" 
+      :showCreateButton="false" 
     />
 
-    <!-- KPI Widget Bar (Consistent with UserWidget / OrderWidget) -->
+    <!-- KPI Widget Bar (Groups, Statuses, Categories) -->
     <CRow class="mb-4">
-      <!-- Total Settings -->
-      <CCol sm="6" lg="3" @click="activeTab = 'groups'" style="cursor: pointer;">
-        <CCard class="widget-card">
-          <CCardBody class="d-flex justify-content-between align-items-center p-4">
-            <div>
-              <div class="widget-title">{{ locale === 'en' ? 'Total Settings' : 'การตั้งค่าทั้งหมด' }}</div>
-              <div class="widget-value text-primary">{{ groups.length + statuses.length + categories.length }}</div>
-            </div>
-            <div class="icon-wrapper bg-blue-light text-blue">
-              <CIcon name="cil-settings" size="xl" />
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
       <!-- Groups -->
-      <CCol sm="6" lg="3" @click="activeTab = 'groups'" style="cursor: pointer;">
+      <CCol sm="12" md="4" class="mb-3 mb-md-0" @click="activeTab = 'groups'" style="cursor: pointer;">
         <CCard :class="['widget-card', { 'active-widget': activeTab === 'groups' }]">
           <CCardBody class="d-flex justify-content-between align-items-center p-4">
             <div>
@@ -37,14 +20,14 @@
               <div class="widget-value text-info">{{ groups.length }}</div>
             </div>
             <div class="icon-wrapper bg-info-soft text-info">
-              <CIcon name="cilShieldAlt" size="xl" />
+              <CIcon name="cil-layers" size="xl" />
             </div>
           </CCardBody>
         </CCard>
       </CCol>
 
       <!-- Statuses -->
-      <CCol sm="6" lg="3" @click="activeTab = 'groups'" style="cursor: pointer;">
+      <CCol sm="12" md="4" class="mb-3 mb-md-0" @click="activeTab = 'groups'" style="cursor: pointer;">
         <CCard :class="['widget-card', { 'active-widget': activeTab === 'groups' }]">
           <CCardBody class="d-flex justify-content-between align-items-center p-4">
             <div>
@@ -59,7 +42,7 @@
       </CCol>
 
       <!-- Categories -->
-      <CCol sm="6" lg="3" @click="activeTab = 'categories'" style="cursor: pointer;">
+      <CCol sm="12" md="4" @click="activeTab = 'categories'" style="cursor: pointer;">
         <CCard :class="['widget-card', { 'active-widget': activeTab === 'categories' }]">
           <CCardBody class="d-flex justify-content-between align-items-center p-4">
             <div>
