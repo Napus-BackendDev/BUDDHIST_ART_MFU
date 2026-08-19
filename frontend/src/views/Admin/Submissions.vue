@@ -1,9 +1,16 @@
 <template>
     <div class="submissions-dashboard">
-        <HeaderHero :title="$i18n.locale === 'en' ? 'Submission Management' : 'จัดการการส่งงาน'" :description="$i18n.locale === 'en' ? 'Track and manage all artwork submissions, student assignments, and digital portfolios.' : 'ติดตามและจัดการการส่งผลงานศิลปะ งานที่ได้รับมอบหมาย และพอร์ตโฟลิโอดิจิทัลทั้งหมด'" icon="cil-list" :showCreateButton="activeSection === 'submissions'" :showExportButton="activeSection === 'submissions'" :createButtonText="$i18n.locale === 'en' ? 'Add Submission' : 'เพิ่มการส่งงาน'" themeColor="green" @create="addSubmission" @export="handleExport" />
-        <div class="submission-section-tabs mb-3" role="tablist">
-            <button type="button" class="section-tab" :class="{ active: activeSection === 'submissions' }" @click="activeSection = 'submissions'">{{ $i18n.locale === 'en' ? 'Submissions' : 'รายการ Submission' }}</button>
-            <button type="button" class="section-tab" :class="{ active: activeSection === 'post-term' }" @click="activeSection = 'post-term'">{{ $i18n.locale === 'en' ? 'Post-term sale management' : 'จัดการการขายหลังครบ 1 ปี' }}</button>
+        <HeaderHero :title="$i18n.locale === 'en' ? 'Submission Management' : 'จัดการการส่งงาน'" :description="$i18n.locale === 'en' ? 'Track and manage all artwork submissions, student assignments, and digital portfolios.' : 'ติดตามและจัดการการส่งผลงานศิลปะ งานที่ได้รับมอบหมาย และพอร์ตโฟลิโอดิจิทัลทั้งหมด'" icon="cil-list" :showCreateButton="activeSection === 'submissions'" :showExportButton="activeSection === 'submissions'" :createButtonText="$i18n.locale === 'en' ? 'Add Submission' : 'เพิ่มการส่งงาน'" themeColor="red" @create="addSubmission" @export="handleExport" />
+        <div class="submission-section-tabs mb-4" role="tablist">
+            <button type="button" class="section-tab" :class="{ active: activeSection === 'submissions' }" @click="activeSection = 'submissions'">
+                <CIcon name="cil-list" class="mr-2" />
+                <span>{{ $i18n.locale === 'en' ? 'Submissions' : 'รายการ Submission' }}</span>
+                <span class="tab-badge">{{ submissions.length }}</span>
+            </button>
+            <button type="button" class="section-tab" :class="{ active: activeSection === 'post-term' }" @click="activeSection = 'post-term'">
+                <CIcon name="cil-clock" class="mr-2" />
+                <span>{{ $i18n.locale === 'en' ? 'Post-term sale management' : 'จัดการการขายหลังครบ 1 ปี' }}</span>
+            </button>
         </div>
         <div v-if="activeSection === 'post-term'"><PostTermSaleQueue /></div>
         <div v-else>
@@ -420,9 +427,53 @@ export default {
 </script>
 
 <style scoped>
-.submission-section-tabs { display:flex; gap:.5rem; border-bottom:1px solid #e2e8f0; }
-.section-tab { border:0; background:transparent; color:#64748b; padding:.7rem 1rem; font-weight:700; border-bottom:3px solid transparent; cursor:pointer; }
-.section-tab.active { color:#321fdb; border-bottom-color:#321fdb; }
+.submission-section-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #eef0f3;
+    background: #ffffff;
+    padding: 12px 16px 0;
+    border-radius: 14px 14px 0 0;
+    border: 1px solid #eef0f3;
+    border-bottom: 1px solid #f0f1f5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+.section-tab {
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+.section-tab:hover {
+    color: #8c1515;
+    background: rgba(255, 255, 255, 0.8);
+}
+.section-tab.active {
+    color: #8c1515;
+    border-bottom-color: #8c1515;
+    background: #ffffff;
+}
+.tab-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    border-radius: 50px;
+    background: #f1f5f9;
+    color: #475569;
+}
+.section-tab.active .tab-badge {
+    background: #fff1f0;
+    color: #8c1515;
+}
 </style>
 
 <style scoped>
