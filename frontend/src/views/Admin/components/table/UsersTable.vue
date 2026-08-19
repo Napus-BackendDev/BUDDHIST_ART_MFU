@@ -13,9 +13,6 @@
                 :active-page="activePage"
                 @page-change="pageChange"
             >
-
-
-
                 <!-- User Name / Student ID Column -->
                 <template #name_student_id="{ item }">
                     <td class="py-3">
@@ -52,28 +49,27 @@
                 <template #tel_role="{ item }">
                     <td class="py-3">
                         <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ (item.contact && item.contact.telephone) || '-' }}</div>
-                        <div class="small text-muted font-weight-bold">{{ getRoleName(item.role) }}</div>
+                        <div class="small text-muted font-weight-bold">{{ getRoleBadge(item.role).label }}</div>
                     </td>
                 </template>
 
-                <!-- Status Column -->
+                <!-- Status / Role Badge Column -->
                 <template #status="{ item }">
                     <td class="py-3">
-                        <div v-if="getRoleNameEn(item.role) === 'Customer'" class="status-badge status-customer">
-                            <CIcon name="cil-user" size="sm" class="status-icon" />
-                            {{ $i18n.locale === 'en' ? 'Customer' : 'ลูกค้า' }}
-                        </div>
-                        <div v-else-if="getRoleNameEn(item.role) === 'Admin' || getStatusNameEn(item.status) === 'Admin'" class="status-badge status-admin">
-                            <CIcon name="cilShieldAlt" size="sm" class="status-icon" />
-                            {{ $i18n.locale === 'en' ? 'Admin' : 'ผู้ดูแลระบบ' }}
-                        </div>
-                        <div v-else :class="['status-badge', getStatusBadge(getStatusNameEn(item.status)).class]">
-                            <CIcon :name="getStatusBadge(getStatusNameEn(item.status)).icon" size="sm" class="status-icon" />
-                            {{ getStatusName(item.status) }}
+                        <div :class="['status-badge', getRoleBadge(item.role).class]">
+                            <CIcon :name="getRoleBadge(item.role).icon" size="sm" class="status-icon" />
+                            {{ getRoleBadge(item.role).label }}
                         </div>
                     </td>
                 </template>
-
+                <template #role="{ item }">
+                    <td class="py-3">
+                        <div :class="['status-badge', getRoleBadge(item.role).class]">
+                            <CIcon :name="getRoleBadge(item.role).icon" size="sm" class="status-icon" />
+                            {{ getRoleBadge(item.role).label }}
+                        </div>
+                    </td>
+                </template>
 
                 <!-- Registered Column -->
                 <template #createdAt="{ item }">
@@ -118,8 +114,6 @@
                 class="mb-0 pill-pagination"
             />
         </CCardFooter>
-
-        <!-- Modals removed - events are now handled by parent -->
     </CCard>
 </template>
 
@@ -172,7 +166,7 @@ export default {
             if (!this.users) return [];
             const list = this.users.filter(user => {
                 const name = (this.getName(this.$i18n.locale, user) || this.getName('en', user) || this.getName('th', user) || '').toLowerCase();
-                const email = ((user.contact && user.contact.studentEmail) || '').toLowerCase();
+                const email = ((user.contact && user.contact.studentEmail) || (user.contact && user.contact.personalEmail) || '').toLowerCase();
                 const studentId = (user.studentId || '').toLowerCase();
                 const search = this.filters.search.toLowerCase();
 
@@ -240,43 +234,80 @@ export default {
                 this.$emit('delete', item);
             }
         },
-        getRoleName(role) {
-            if (!role) return 'User';
-            if (typeof role === 'string') return role;
-            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
-                const lang = this.$i18n.locale || 'en';
-                const titleLang = role.title.find(t => t.key === lang) || role.title.find(t => t.key === 'en');
-                return titleLang ? titleLang.value : (role.title[0] ? role.title[0].value : 'Unknown');
-            }
-            return 'User';
-        },
         getRoleNameEn(role) {
-            if (!role) return 'User';
-            if (typeof role === 'string') return role;
-            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
-                const titleLang = role.title.find(t => t.key === 'en');
-                return titleLang ? titleLang.value : (role.title[0] ? role.title[0].value : 'Unknown');
+            if (!role) return 'Customer';
+            if (typeof role === 'string') {
+                const r = role.toLowerCase();
+                if (r.includes('admin') || r.includes('ผู้ดูแลระบบ')) return 'Admin';
+                if (r.includes('artist') || r.includes('ศิลปิน')) return 'Artist';
+                if (r.includes('customer') || r.includes('ลูกค้า') || r.includes('user')) return 'Customer';
+                return role;
             }
-            return 'User';
+            if (typeof role === 'object') {
+                if (role.code) {
+                    const c = String(role.code).toUpperCase();
+                    if (c === 'ADMIN') return 'Admin';
+                    if (c === 'ARTIST') return 'Artist';
+                    if (c === 'CUSTOMER' || c === 'USER') return 'Customer';
+                }
+                if (role.name) {
+                    const n = String(role.name).toLowerCase();
+                    if (n.includes('admin') || n.includes('ผู้ดูแลระบบ')) return 'Admin';
+                    if (n.includes('artist') || n.includes('ศิลปิน')) return 'Artist';
+                    if (n.includes('customer') || n.includes('user') || n.includes('ลูกค้า')) return 'Customer';
+                }
+                if (Array.isArray(role.title)) {
+                    const en = role.title.find(t => t.key === 'en')?.value || '';
+                    const th = role.title.find(t => t.key === 'th')?.value || '';
+                    const combined = (en + ' ' + th).toLowerCase();
+                    if (combined.includes('admin') || combined.includes('ผู้ดูแลระบบ')) return 'Admin';
+                    if (combined.includes('artist') || combined.includes('ศิลปิน')) return 'Artist';
+                    if (combined.includes('customer') || combined.includes('user') || combined.includes('ลูกค้า')) return 'Customer';
+                    return en || (role.title[0] ? role.title[0].value : 'Customer');
+                }
+            }
+            return 'Customer';
+        },
+        getRoleBadge(role) {
+            const roleEn = this.getRoleNameEn(role);
+            if (roleEn === 'Admin') {
+                return {
+                    class: 'status-admin',
+                    icon: 'cilShieldAlt',
+                    label: this.$i18n.locale === 'en' ? 'Admin' : 'ผู้ดูแลระบบ'
+                };
+            }
+            if (roleEn === 'Artist') {
+                return {
+                    class: 'status-artist',
+                    icon: 'cil-brush',
+                    label: this.$i18n.locale === 'en' ? 'Artist' : 'ศิลปิน'
+                };
+            }
+            return {
+                class: 'status-customer',
+                icon: 'cil-user',
+                label: this.$i18n.locale === 'en' ? 'Customer' : 'ลูกค้า'
+            };
         },
         getStatusName(status) {
-            if (!status) return 'Admin';
+            if (!status) return 'Active';
             if (typeof status === 'string') return status;
             if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
                 const lang = this.$i18n.locale || 'en';
                 const titleLang = status.title.find(t => t.key === lang) || status.title.find(t => t.key === 'en');
                 return titleLang ? titleLang.value : (status.title[0] ? status.title[0].value : 'Unknown');
             }
-            return 'Admin';
+            return 'Active';
         },
         getStatusNameEn(status) {
-            if (!status) return 'Admin';
+            if (!status) return 'Active';
             if (typeof status === 'string') return status;
             if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
                 const titleLang = status.title.find(t => t.key === 'en');
                 return titleLang ? titleLang.value : (status.title[0] ? status.title[0].value : 'Unknown');
             }
-            return 'Admin';
+            return 'Active';
         },
         pageChange(val) {
             this.activePage = val;
@@ -315,25 +346,33 @@ export default {
 .status-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.25rem 0.75rem;
+    padding: 0.35rem 0.85rem;
     border-radius: 50px;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
 }
 
 .status-icon {
     margin-right: 0.4rem;
 }
 
-.status-customer {
-    background-color: #f1f5f9;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-}
-
 .status-admin {
     background-color: #e0f2fe;
     color: #0369a1;
     border: 1px solid #bae6fd;
+}
+
+.status-artist {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.status-customer {
+    background-color: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
 }
 </style>
