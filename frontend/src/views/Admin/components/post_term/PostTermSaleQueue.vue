@@ -33,7 +33,7 @@
           <template #artwork="{ item }">
             <td class="align-middle">
               <div class="d-flex align-items-center">
-                <img v-if="item.image" :src="item.image" :alt="titleOf(item)" class="queue-thumb mr-3" />
+                <img v-if="item.image" :src="getImageUrl(item.image)" :alt="titleOf(item)" class="queue-thumb mr-3" />
                 <div v-else class="queue-thumb queue-thumb-empty mr-3"><CIcon name="cil-image" /></div>
                 <div><div class="font-weight-bold text-dark">{{ titleOf(item) }}</div><div class="small text-muted">{{ item.artworkCode || '-' }}</div></div>
               </div>
@@ -120,6 +120,12 @@ export default {
   mounted() { window.addEventListener('admin:data-changed', this.handleRealtimeChange) },
   beforeDestroy() { window.removeEventListener('admin:data-changed', this.handleRealtimeChange) },
   methods: {
+    getImageUrl(image) {
+      if (!image) return '';
+      if (image.startsWith('http://') || image.startsWith('https://')) return image;
+      const baseUrl = process.env.VUE_APP_API_URL || window.location.origin;
+      return `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`;
+    },
     async fetchItems() { this.loading = true; try { const response = await Service.artwork('post-term-list', {}); this.items = response.data.data || [] } catch (error) { this.$store.commit('dialog/showToast', { title: 'โหลดข้อมูลไม่สำเร็จ', message: 'กรุณาลองใหม่อีกครั้ง', variant: 'danger' }) } finally { this.loading = false } },
     handleRealtimeChange(event) { const change = event && event.detail; if (!change || change.resource === 'artwork' || change.resource === 'all') this.fetchItems() },
     titleOf(item) { return this.getName(this.$i18n.locale, item) || this.getName('en', item) || '-' },
