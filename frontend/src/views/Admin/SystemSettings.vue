@@ -9,53 +9,6 @@
       :showCreateButton="false" 
     />
 
-    <!-- KPI Widget Bar (Groups, Statuses, Categories) -->
-    <CRow class="mb-4">
-      <!-- Groups -->
-      <CCol sm="12" md="4" class="mb-3 mb-md-0" @click="activeTab = 'groups'" style="cursor: pointer;">
-        <CCard :class="['widget-card', { 'active-widget': activeTab === 'groups' }]">
-          <CCardBody class="d-flex justify-content-between align-items-center p-4">
-            <div>
-              <div class="widget-title">{{ locale === 'en' ? 'Groups' : 'กลุ่มการทำงาน' }}</div>
-              <div class="widget-value text-info">{{ groups.length }}</div>
-            </div>
-            <div class="icon-wrapper bg-info-soft text-info">
-              <CIcon name="cil-layers" size="xl" />
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
-      <!-- Statuses -->
-      <CCol sm="12" md="4" class="mb-3 mb-md-0" @click="activeTab = 'groups'" style="cursor: pointer;">
-        <CCard :class="['widget-card', { 'active-widget': activeTab === 'groups' }]">
-          <CCardBody class="d-flex justify-content-between align-items-center p-4">
-            <div>
-              <div class="widget-title">{{ locale === 'en' ? 'Statuses' : 'สถานะระบบ' }}</div>
-              <div class="widget-value text-success">{{ statuses.length }}</div>
-            </div>
-            <div class="icon-wrapper bg-green-light text-green">
-              <CIcon name="cil-task" size="xl" />
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
-      <!-- Categories -->
-      <CCol sm="12" md="4" @click="activeTab = 'categories'" style="cursor: pointer;">
-        <CCard :class="['widget-card', { 'active-widget': activeTab === 'categories' }]">
-          <CCardBody class="d-flex justify-content-between align-items-center p-4">
-            <div>
-              <div class="widget-title">{{ locale === 'en' ? 'Categories' : 'หมวดหมู่ผลงาน' }}</div>
-              <div class="widget-value text-warning">{{ categories.length }}</div>
-            </div>
-            <div class="icon-wrapper bg-yellow-light text-warning">
-              <CIcon name="cil-brush" size="xl" />
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
 
     <!-- Main Workspace Container -->
     <CCard class="settings-shell border-0 mb-4">
