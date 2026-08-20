@@ -105,10 +105,42 @@ export default {
             name: this.$t('sidebar.submissions'),
             to: '/admin/submissions',
             icon: 'cil-cloud-upload',
-            badge: this.pendingSubmissionCount > 0 ? {
-              color: 'success',
-              text: String(this.pendingSubmissionCount)
+          {
+            _name: 'CSidebarNavTitle',
+            _children: [this.$t('sidebar.operations')]
+          },
+          {
+            _name: 'CSidebarNavItem',
+            name: this.$t('sidebar.orders'),
+            to: '/admin/orders',
+            icon: 'cil-cart',
+            badge: this.pendingPaymentCount > 0 ? {
+              color: 'info',
+              text: String(this.pendingPaymentCount)
             } : null
+          },
+          {
+            _name: 'CSidebarNavItem',
+            name: this.$t('sidebar.artworks'),
+            to: '/admin/artworks',
+            icon: 'cil-paint',
+            badge: this.pendingArtworkCount > 0 ? {
+              color: 'warning',
+              text: String(this.pendingArtworkCount)
+            } : null
+          },
+          {
+            _name: 'CSidebarNavItem',
+            name: this.$t('sidebar.news'),
+            to: '/admin/news',
+            icon: 'cil-newspaper'
+          },
+          {
+            _name: 'CSidebarNavItem',
+            name: this.$t('sidebar.submissions'),
+            to: '/admin/submissions',
+            icon: 'cil-cloud-upload',
+            badge: this.submissionAlertBadge
           },
           {
             _name: 'CSidebarNavTitle',
@@ -119,6 +151,12 @@ export default {
             name: this.$t('sidebar.users'),
             to: '/admin/users-management',
             icon: 'cil-people'
+          },
+          {
+            _name: 'CSidebarNavItem',
+            name: this.$t('sidebar.settings'),
+            to: '/admin/settings',
+            icon: 'cil-settings'
           },
           {
             _name: 'CSidebarNavDivider',
@@ -139,6 +177,16 @@ export default {
           }
         ]
       }]
+    },
+    submissionAlertBadge() {
+      const totalAlerts = this.pendingSubmissionCount + this.postTermDueCount;
+      if (totalAlerts > 0) {
+        return {
+          color: 'danger',
+          text: `! ${totalAlerts}`
+        };
+      }
+      return null;
     },
     pendingPaymentCount() {
       const orders = this.$store.getters['order/orders'] || [];
@@ -164,6 +212,7 @@ export default {
       const artworks = this.$store.getters['artwork/artworks'] || [];
       return artworks.filter(item => {
         const approval = item.status && item.status.approval;
+        if (approval && typeof approval === 'object' && approval.code === 'PENDING') return true;
         let statusName = 'Pending';
         if (approval) {
           if (typeof approval === 'object') {
@@ -203,6 +252,10 @@ export default {
             if (assign.artworks && Array.isArray(assign.artworks)) {
               assign.artworks.forEach(aw => {
                 const status = aw.status;
+                if (status && typeof status === 'object' && status.code === 'PENDING') {
+                  count++;
+                  return;
+                }
                 let statusName = 'Pending';
                 if (status) {
                   if (typeof status === 'object') {
@@ -239,21 +292,48 @@ export default {
       return count;
     }
   },
+  data: function () {
+    return {
+      postTermDueCount: 0
+    };
+  },
   created() {
     this.$store.dispatch('order/get').catch(err => console.error('Error loading orders in sidebar:', err));
     this.$store.dispatch('artwork/get').catch(err => console.error('Error loading artworks in sidebar:', err));
     this.$store.dispatch('submission/get').catch(err => console.error('Error loading submissions in sidebar:', err));
     this.$store.dispatch('setting/status/get').catch(err => console.error('Error loading statuses in sidebar:', err));
+    this.fetchPostTermAlerts();
+    window.addEventListener('admin:data-changed', this.fetchPostTermAlerts);
+  },
+  beforeDestroy() {
+    window.removeEventListener('admin:data-changed', this.fetchPostTermAlerts);
   },
   methods: {
+    async fetchPostTermAlerts() {
+      try {
+        const res = await this.$service.artwork('post-term-list', {});
+        const items = res.data.data || [];
+        const now = new Date();
+        this.postTermDueCount = items.filter(item => {
+          const sale = item.postTermSale || {};
+          if (sale.needsReview) return true;
+          if (sale.decision === 'pending') return true;
+          const end = sale.initialSaleEndsAt ? new Date(sale.initialSaleEndsAt) : null;
+          if (end) {
+            const diffDays = (end - now) / (1000 * 60 * 60 * 24);
+            return diffDays <= 30;
+          }
+          return false;
+        }).length;
+      } catch (err) {
+        // silent
+      }
+    },
     logout() {
       localStorage.removeItem('objs');
       this.$store.commit('auth/showSignInModal', false);
       window.location.href = '/';
     }
-  },
-  data: function () {
-    return {}
   }
 }
 </script>

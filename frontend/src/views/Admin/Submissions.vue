@@ -10,6 +10,10 @@
             <button type="button" class="section-tab" :class="{ active: activeSection === 'post-term' }" @click="activeSection = 'post-term'">
                 <CIcon name="cil-clock" class="mr-2" />
                 <span>{{ $i18n.locale === 'en' ? 'Post-term sale management' : 'จัดการการขายหลังครบ 1 ปี' }}</span>
+                <span v-if="postTermDueCount > 0" class="tab-badge-alert" v-c-tooltip="$i18n.locale === 'en' ? 'Artworks requiring attention' : 'มีผลงานที่ต้องบันทึกความประสงค์'">
+                    <CIcon name="cil-warning" size="sm" class="mr-1" />
+                    ! {{ postTermDueCount }}
+                </span>
             </button>
         </div>
         <div v-if="activeSection === 'post-term'"><PostTermSaleQueue /></div>
@@ -26,6 +30,7 @@
 </template>
 
 <script>
+import Service from '@/service/api';
 import SubmissionTable from './components/table/SubmissionTable.vue'
 import HeaderHero from './components/HeaderHero.vue'
 import SubmissionWidget from './components/widget/SubmissionWidget.vue'
@@ -61,6 +66,7 @@ export default {
             categories: [],
             referenceReady: false,
             saving: false,
+            postTermDueCount: 0,
             filters: {
                 search: '',
                 startDate: null,
@@ -74,12 +80,13 @@ export default {
     },
     async created() {
         this.fetchSubmissions();
-        // Reference data must be loaded before an import can resolve owners/categories/statuses.
+        this.fetchPostTermAlerts();
+        window.addEventListener('admin:data-changed', this.fetchPostTermAlerts);
         try {
             await Promise.all([
-                this.$store.dispatch('user/get', {}),          // artist studentId -> _id lookup
-                this.fetchCategories(),                        // Category name -> _id resolution
-                this.$store.dispatch('setting/status/get')     // Setting_Status resolution
+                this.$store.dispatch('user/get', {}),
+                this.fetchCategories(),
+                this.$store.dispatch('setting/status/get')
             ]);
         } catch (err) {
             console.error('Error loading reference data:', err);
@@ -87,7 +94,30 @@ export default {
             this.referenceReady = true;
         }
     },
+    beforeDestroy() {
+        window.removeEventListener('admin:data-changed', this.fetchPostTermAlerts);
+    },
     methods: {
+        async fetchPostTermAlerts() {
+            try {
+                const res = await Service.artwork('post-term-list', {});
+                const items = res.data.data || [];
+                const now = new Date();
+                this.postTermDueCount = items.filter(item => {
+                    const sale = item.postTermSale || {};
+                    if (sale.needsReview) return true;
+                    if (sale.decision === 'pending') return true;
+                    const end = sale.initialSaleEndsAt ? new Date(sale.initialSaleEndsAt) : null;
+                    if (end) {
+                        const diffDays = (end - now) / (1000 * 60 * 60 * 24);
+                        return diffDays <= 30;
+                    }
+                    return false;
+                }).length;
+            } catch (err) {
+                // silent
+            }
+        },
         fetchSubmissions() {
             this.$store.dispatch('submission/get', {});
         },
@@ -100,8 +130,6 @@ export default {
             }
         },
         findCategoryId(categoryName) {
-            // Resolve by name; fall back to null (the artwork.category ref is nullable) rather than
-            // a hardcoded id that may not exist in the target DB.
             if (!categoryName) return null;
             const cat = this.categories.find(c => {
                 const nameEn = this.getName('en', c).toLowerCase();
@@ -124,7 +152,6 @@ export default {
             return defaultId;
         },
         buildBilingual(thVal, enVal) {
-            // Build a [{key,value}] i18n array, dropping empty-value entries
             const arr = [];
             if (thVal) arr.push({ key: 'th', value: thVal });
             if (enVal) arr.push({ key: 'en', value: enVal });
@@ -473,6 +500,25 @@ export default {
 .section-tab.active .tab-badge {
     background: #fff1f0;
     color: #8c1515;
+}
+.tab-badge-alert {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    padding: 3px 9px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    border-radius: 50px;
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
+    animation: pulse-soft 2s infinite;
+}
+
+@keyframes pulse-soft {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
 }
 </style>
 

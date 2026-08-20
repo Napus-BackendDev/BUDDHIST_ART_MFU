@@ -147,6 +147,23 @@
             </td>
           </template>
 
+          <!-- Batch / Round Column -->
+          <template #batch_round="{ item }">
+            <td class="align-middle py-3">
+              <div class="d-flex align-items-center mb-1 flex-wrap">
+                <span class="batch-badge">
+                  <CIcon name="cil-school" size="sm" class="mr-1" />
+                  {{ getBatchLabel(item) }}
+                </span>
+                <span v-if="item.academicYear" class="year-pill ml-1">ปี {{ item.academicYear }}</span>
+              </div>
+              <div class="round-title small font-weight-bold text-truncate" style="max-width: 170px;" :title="getRoundLabel(item)">
+                <CIcon name="cil-layers" size="sm" class="mr-1 text-muted" />
+                {{ getRoundLabel(item) }}
+              </div>
+            </td>
+          </template>
+
           <!-- Deadline & Countdown -->
           <template #deadline="{ item }">
             <td class="align-middle py-3">
@@ -375,7 +392,9 @@ export default {
     filteredItems() {
       const q = this.search.trim().toLowerCase();
       return this.items.filter(item => {
-        const haystack = `${this.titleOf(item)} ${this.artistOf(item)} ${item.artworkCode || ''}`.toLowerCase();
+        const batch = this.getBatchLabel(item);
+        const round = this.getRoundLabel(item);
+        const haystack = `${this.titleOf(item)} ${this.artistOf(item)} ${item.artworkCode || ''} ${item.academicYear || ''} ${batch} ${round}`.toLowerCase();
         if (q && !haystack.includes(q)) return false;
         const sale = item.postTermSale || {};
         const expired = sale.initialSaleEndsAt && moment(sale.initialSaleEndsAt).isSameOrBefore(moment());
@@ -415,6 +434,7 @@ export default {
         { key: 'select', label: '', _classes: 'text-center' },
         { key: 'artwork', label: this.$i18n.locale === 'en' ? 'ARTWORK' : 'ผลงานศิลปะ' },
         { key: 'artist', label: this.$i18n.locale === 'en' ? 'ARTIST' : 'ศิลปิน' },
+        { key: 'batch_round', label: this.$i18n.locale === 'en' ? 'BATCH / ROUND' : 'รุ่น / รอบส่งงาน' },
         { key: 'deadline', label: this.$i18n.locale === 'en' ? 'TERM DEADLINE' : 'วันครบกำหนด' },
         { key: 'decision', label: this.$i18n.locale === 'en' ? 'STATUS / DECISION' : 'สถานะความประสงค์' },
         { key: 'action', label: this.$i18n.locale === 'en' ? 'ACTION' : 'การจัดการ', _classes: 'text-right' }
@@ -480,6 +500,22 @@ export default {
     },
     saleName(item) {
       return this.getName('en', item.status && item.status.sale);
+    },
+    getBatchLabel(item) {
+      if (!item.courseLevel || item.courseLevel === '00') return this.$i18n.locale === 'en' ? 'General' : 'ทั่วไป';
+      const lvl = parseInt(item.courseLevel, 10);
+      if (!isNaN(lvl)) {
+        return this.$i18n.locale === 'en' ? `Batch ${lvl}` : `รุ่นที่ ${lvl}`;
+      }
+      return item.courseLevel;
+    },
+    getRoundLabel(item) {
+      if (item.submissionTitle) return item.submissionTitle;
+      const lvl = parseInt(item.courseLevel, 10);
+      if (lvl === 4) return this.$i18n.locale === 'en' ? 'Round 1: Degree Thesis' : 'รอบที่ 1: ศิลปนิพนธ์';
+      if (lvl === 3) return this.$i18n.locale === 'en' ? 'Round 2: Creative Studio' : 'รอบที่ 2: สร้างสรรค์พุทธศิลป์';
+      if (lvl === 2) return this.$i18n.locale === 'en' ? 'Round 1: Midterm Studio' : 'รอบที่ 1: ปฏิบัติการพุทธศิลป์';
+      return this.$i18n.locale === 'en' ? 'Regular Submission' : 'รอบปกติ: ประจำภาคเรียน';
     },
     formatDate(value) {
       if (!value) return this.$i18n.locale === 'en' ? 'Needs Review' : 'ต้องตรวจสอบ';
@@ -848,6 +884,36 @@ export default {
   font-size: 0.78rem;
   font-weight: 700;
   color: #8c1515;
+}
+
+/* Batch & Round Badges */
+.batch-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.year-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8c1515;
+  background: #fff1f0;
+  border: 1px solid #fee2e2;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.round-title {
+  color: #475569;
+  display: flex;
+  align-items: center;
+  font-size: 0.78rem;
 }
 
 /* Countdown Badges */
