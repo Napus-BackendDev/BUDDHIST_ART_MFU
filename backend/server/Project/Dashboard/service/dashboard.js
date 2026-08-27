@@ -106,6 +106,7 @@ exports.onGetStats = async function (request, response) {
             pendingArtworks = artworks.filter(art => {
                 if (!art.status) return false;
                 const statusObj = art.status.approval || art.status;
+                if (statusObj.code === 'PENDING') return true;
                 if (!statusObj || !statusObj.title) return false;
                 
                 const title = statusObj.title;

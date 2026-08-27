@@ -2,7 +2,7 @@
     <div class="artworks-dashboard">
         <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานศิลปะ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" themeColor="yellow" @create="onAddArtwork" @export="handleExport" />
         <ArtworkWidget v-model="filters.status" :items="artworks" />
-        <ArtworkFilter v-model="filters" />
+        <ArtworkFilter v-model="filters" :categories="categories" />
         <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
         <ArtworkCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSaveArtwork"/>
         <ArtworkCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @download-template="downloadTemplate"/>
@@ -187,7 +187,7 @@ export default {
                             if (foundSale) saleStatusId = foundSale._id;
                         }
 
-                        let approvalStatusId = "69677d4de5f76f7a8c42dbf6"; // Default: Pending
+                        let approvalStatusId = allStatuses.find(s => s.code === 'PENDING')?._id || "69677d4de5f76f7a8c42dbf6"; // Default: Pending
                         if (approvalStatusName) {
                             const foundApproval = allStatuses.find(s => 
                                 this.getName('en', s).toLowerCase().includes(approvalStatusName.toLowerCase()) ||
@@ -399,7 +399,8 @@ export default {
             try {
                 this.loadingItems.push(artwork._id);
                 const statuses = this.$store.getters['setting/status/item'] || [];
-                const targetStatus = statuses.find(s => this.getName('en', s) === statusName);
+                const statusCode = { Approved: 'APPROVED', Rejected: 'REJECTED', Pending: 'PENDING' }[statusName];
+                const targetStatus = statuses.find(s => statusCode && s.code === statusCode) || statuses.find(s => this.getName('en', s) === statusName);
                 
                 if (!targetStatus) {
                     throw new Error(this.$i18n.locale === 'en' ? `Status "${statusName}" not found. Please contact administrator.` : `ไม่พบสถานะ "${statusName}" กรุณาติดต่อผู้ดูแลระบบ`);

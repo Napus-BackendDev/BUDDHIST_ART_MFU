@@ -13,6 +13,8 @@ const {
     generateSubmissionCode
 } = require('../../Artwork/service/artworkCode');
 const { buildPostTermSale } = require('../../Artwork/service/postTermSale');
+const { STATUS_CODES } = require('../../Settings/statusCodes');
+const { processWorkbook, ExcelImportError } = require('./excelImport');
 
 /**
  * HELPER FUNCTIONS (Internal)
@@ -218,10 +220,12 @@ const checkAndTransitionSubmissions = async (submissions) => {
     if (docs.length === 0) return false;
 
     // Fetch NewStudent and OldStudent statuses
-    const statusDocs = await Status.find({ "title.value": { $in: ["NewStudent", "OldStudent"] } });
+    const statusDocs = await Status.find({ $or: [{ code: { $in: [STATUS_CODES.NEW_STUDENT, STATUS_CODES.OLD_STUDENT] } }, { "title.value": { $in: ["NewStudent", "OldStudent"] } }] });
     const statuses = statusDocs.reduce((acc, s) => {
         const titleEn = s.title.find(t => t.key === 'en')?.value;
         if (titleEn) acc[titleEn] = s;
+        if (s.code === STATUS_CODES.NEW_STUDENT) acc.NewStudent = s;
+        if (s.code === STATUS_CODES.OLD_STUDENT) acc.OldStudent = s;
         return acc;
     }, {});
 
@@ -334,11 +338,17 @@ exports.onUpdate = async (request, response) => {
 
         // Fetch all relevant statuses in parallel
         const statusValues = ["Approved", "Rejected", "Available", "Exhibition", "NewStudent", "OldStudent"];
-        const statusDocs = await Status.find({ "title.value": { $in: statusValues } });
+        const statusDocs = await Status.find({ $or: [{ code: { $in: Object.values(STATUS_CODES) } }, { "title.value": { $in: statusValues } }] });
 
         const statuses = statusDocs.reduce((acc, s) => {
             const titleEn = s.title.find(t => t.key === 'en')?.value;
             if (titleEn) acc[titleEn] = s;
+            if (s.code === STATUS_CODES.APPROVED) acc.Approved = s;
+            if (s.code === STATUS_CODES.REJECTED) acc.Rejected = s;
+            if (s.code === STATUS_CODES.AVAILABLE) acc.Available = s;
+            if (s.code === STATUS_CODES.EXHIBITION) acc.Exhibition = s;
+            if (s.code === STATUS_CODES.NEW_STUDENT) acc.NewStudent = s;
+            if (s.code === STATUS_CODES.OLD_STUDENT) acc.OldStudent = s;
             return acc;
         }, {});
 
@@ -381,6 +391,39 @@ exports.onDelete = async (request, response) => {
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
+    }
+};
+
+exports.onImportExcel = async (request, response) => {
+    try {
+        if (!request.file?.buffer) {
+            return response.status(400).json({ code: '40011', message: 'Workbook file is required.' });
+        }
+        const dryRun = String(request.body?.dryRun || '').toLowerCase() === 'true';
+        const result = await processWorkbook(request.file.buffer, request, { dryRun });
+        if (!dryRun && result.documents.length) {
+            for (const document of result.documents) await ensureSubmissionCode(document);
+            await checkAndTransitionSubmissions(result.documents);
+        }
+        return response.status(200).json({
+            code: 20000,
+            data: {
+                dryRun,
+                summary: result.summary,
+                warnings: result.warnings,
+                submissionIds: result.documents.map(document => String(document._id))
+            }
+        });
+    } catch (error) {
+        if (error instanceof ExcelImportError) {
+            return response.status(error.statusCode).json({
+                code: '40012',
+                message: error.message,
+                details: error.details
+            });
+        }
+        console.error('Excel Import Error:', error);
+        return response.status(500).json({ code: '50012', message: 'Excel import failed.' });
     }
 };
 

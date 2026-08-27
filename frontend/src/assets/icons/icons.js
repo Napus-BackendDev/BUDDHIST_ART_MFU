@@ -2037,7 +2037,14 @@ export const iconsSet = Object.assign({}, { logo }, {
   cilZoomIn,
   cilZoomOut,
   cilMagnifyingGlass,
-  cilSearch: cilMagnifyingGlass
+  cilSearch: cilMagnifyingGlass,
+  // Compatibility aliases for legacy kebab-case references in the application.
+  cilEye: cilMagnifyingGlass,
+  cilIdCard: cilContact,
+  cilImage: cilImage1,
+  cilQuestionMark: cilInfo,
+  cilUserPlus: cilUserFollow,
+  cilUserX: cilUserUnfollow
 }, {
   cifAe,
   cifAg,

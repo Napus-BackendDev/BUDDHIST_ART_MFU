@@ -70,6 +70,7 @@ import UserCreateChoiceModal from './components/modal/user/UserCreateChoiceModal
 import UserCreateModal from './components/modal/user/UserCreateModal.vue';
 import UserViewModal from './components/modal/user/UserViewModal.vue';
 import UserEditModal from './components/modal/user/UserEditModal.vue';
+import { normalizeArtistContact, normalizeStudentId, isArtistRole } from '@/utils/officialEmail';
 
 export default {
     name: 'UsersManagement',
@@ -236,12 +237,16 @@ export default {
                     const mappedData = jsonData.map(row => {
                         // Resolve Role from file if provided, else use default student role
                         let roleId = studentRole ? studentRole._id : null;
+                        let roleNameEn = studentRole ? studentRole.nameEn : '';
                         if (row['Role']) {
                             const foundRole = this.roles.find(r => 
                                 r.nameEn.toLowerCase() === String(row['Role']).toLowerCase() ||
                                 r.name.toLowerCase() === String(row['Role']).toLowerCase()
                             );
-                            if (foundRole) roleId = foundRole._id;
+                            if (foundRole) {
+                                roleId = foundRole._id;
+                                roleNameEn = foundRole.nameEn;
+                            }
                         }
 
                         // Resolve Status from file if provided, else use default active status
@@ -254,27 +259,50 @@ export default {
                             if (foundStatus) statusId = foundStatus._id;
                         }
 
+                        const studentId = normalizeStudentId(row['StudentID']);
+                        const incomingContact = {
+                            studentEmail: row['Official Email'] || '',
+                            personalEmail: row['Personal Email'] || '',
+                            telephone: row['Telephone'] ? String(row['Telephone']) : ''
+                        };
+                        const artist = isArtistRole(roleNameEn);
+                        // Official Email is optional only for Artist rows. Keep
+                        // the historical required-email behavior for other roles.
+                        if (!studentId || (!artist && !String(incomingContact.studentEmail).trim())) {
+                            return null;
+                        }
+                        const contact = artist
+                            ? normalizeArtistContact(studentId, incomingContact)
+                            : incomingContact;
+
                         return {
-                            studentId: row['StudentID'] ? String(row['StudentID']) : '',
+                            studentId,
                             name: [
                                 { key: 'th', value: row['UsernameThai'] || '' },
                                 { key: 'en', value: row['UsernameEng'] || '' }
                             ],
-                            contact: {
-                                studentEmail: row['Official Email'] || '',
-                                personalEmail: row['Personal Email'] || '',
-                                telephone: row['Telephone'] ? String(row['Telephone']) : ''
-                            },
-                            password: String(row['Temporary Password'] || '123456'),
+                            contact,
+                            password: String(row['Temporary Password'] || '12345678'),
                             role: roleId,
                             status: statusId
                         };
-                    }).filter(u => u.studentId && u.contact.studentEmail);
+                    }).filter(Boolean);
 
                     if (mappedData.length === 0) {
                         alert(this.$i18n.locale === 'en' 
-                            ? "No valid user data found. Please ensure you use the correct column headers:\nStudentID, UsernameThai, UsernameEng, Official Email, Personal Email, Telephone, Temporary Password"
-                            : "ไม่พบข้อมูลผู้ใช้งานที่ถูกต้อง กรุณาตรวจสอบให้แน่ใจว่าใช้หัวตารางต่อไปนี้:\nStudentID, UsernameThai, UsernameEng, Official Email, Personal Email, Telephone, Temporary Password");
+                            ? "No valid user data found. Please ensure each row has a StudentID. Artist rows generate Official Email automatically; other roles still require Official Email."
+                            : "ไม่พบข้อมูลผู้ใช้งานที่ถูกต้อง กรุณาตรวจสอบ StudentID ทุกแถว (Artist สร้าง Official Email อัตโนมัติ ส่วนบทบาทอื่นยังต้องระบุ Official Email)");
+                        return;
+                    }
+
+                    const invalidPasswordRows = mappedData
+                        .map((user, index) => ({ user, row: index + 2 }))
+                        .filter(({ user }) => user.password.length < 8);
+                    if (invalidPasswordRows.length) {
+                        const rows = invalidPasswordRows.map(({ row }) => row).join(', ');
+                        alert(this.$i18n.locale === 'en'
+                            ? `Temporary Password must contain at least 8 characters (rows: ${rows}).`
+                            : `รหัสผ่านชั่วคราวต้องมีอย่างน้อย 8 ตัวอักษร (แถว: ${rows})`);
                         return;
                     }
 

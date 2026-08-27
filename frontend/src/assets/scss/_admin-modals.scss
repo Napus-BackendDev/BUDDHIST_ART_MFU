@@ -193,6 +193,24 @@ body .admin-modal > .modal textarea:focus {
   outline: none;
 }
 
+/* Inline student search fields have their own compact wrapper styling.
+   Keep the modal's generic input rules from making the field overflow it. */
+body .admin-modal > .modal .search-box-blue .search-input-blue,
+body .admin-modal > .modal .search-box-orange .search-input-orange,
+body .admin-modal > .modal .search-box-purple .search-input-purple {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  min-height: 0 !important;
+  max-width: none;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 body .admin-modal > .modal .custom-select-btn,
 body .admin-modal > .modal .custom-select-button {
   min-height: 52px;

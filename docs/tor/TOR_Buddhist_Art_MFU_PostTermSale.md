@@ -213,6 +213,10 @@ UI ต้องใช้งานได้ทั้ง desktop/mobile มี foc
 *ภาพที่ 1  Admin — รายการ Submission และการค้นหา/กรองงาน
 แหล่งภาพ: capture จากระบบจริงในสภาพแวดล้อมทดสอบ (viewport 1,440 × 900 px)*
 
+![ภาพเพิ่มเติม Admin — จัดการการขายหลังครบ 1 ปี (เวอร์ชันปัจจุบัน)](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_post_term_queue.jpg)
+
+*ภาพเพิ่มเติม: Admin — จัดการการขายหลังครบ 1 ปี (เวอร์ชันปัจจุบัน)*
+
 ![ภาพที่ 2 Admin — รายการจัดการผลงานศิลปะ](https://gitlab.mfu.ac.th/napus/buddhist_art_mfu/-/raw/main/docs/tor/optimized/admin_02_artworks.jpg)
 
 *ภาพที่ 2  Admin — รายการจัดการผลงานศิลปะ

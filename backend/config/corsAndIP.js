@@ -9,7 +9,7 @@ const envOrigins = (process.env.CLIENT_URL || '')
     .map((s) => s.trim())
     .filter(Boolean);
 const allowedDomains = ['https://example.com', 'https://anotherdomain.com', ...envOrigins];
-const allowedIPs = ['192.168.1.1', '203.0.113.5','127.0.0.1'];
+const allowedIPs = ['192.168.1.1', '203.0.113.5', '127.0.0.1', '::1'];
 
 // การตั้งค่า CORS
 const corsOptions = {

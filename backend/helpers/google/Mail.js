@@ -16,6 +16,10 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.sendMail = async function (to, subject, text, html, attachments = []) {
+    if (process.env.EMAIL_ENABLED !== "true") {
+        console.log(`[Email] Sending disabled; skipped message to ${to}.`);
+        return { success: false, disabled: true };
+    }
     try {
         const mailOptions = {
             from: process.env.SMTP_USER,

@@ -217,4 +217,10 @@ export default {
     position: relative;
     overflow: visible !important;
 }
+
+@media (max-width: 575.98px) {
+    .news-dashboard {
+        padding-bottom: 1rem;
+    }
+}
 </style>

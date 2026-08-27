@@ -4,6 +4,7 @@ import verification from  "@/store/modules/Setting/verification/index";
 import authen from  "@/store/modules/Setting/authen/index";
 import roles from "@/store/modules/Setting/roles";
 import storage from "@/store/modules/Setting/storage/index";
+import groups from "@/store/modules/Setting/groups";
 
 
 const module = {
@@ -14,7 +15,8 @@ const module = {
         verification,
         authen,
         roles,
-        storage
+        storage,
+        groups
     },
     state: {
         lang : localStorage.getItem('lang') || 'th',

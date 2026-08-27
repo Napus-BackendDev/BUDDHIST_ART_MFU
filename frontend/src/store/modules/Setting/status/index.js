@@ -27,9 +27,11 @@ const module = {
                     console.log('--- Setting Status Get Response ---');
                     console.log(response.data.data);
                     commit("item", response.data.data)
+                    return response.data.data
                 }).catch((err) => {
                     console.error('--- Setting Status Get Error ---');
                     console.error(err);
+                    throw err;
             });
         },
         post({commit}, data) {

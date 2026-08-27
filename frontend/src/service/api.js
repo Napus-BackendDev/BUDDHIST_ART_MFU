@@ -198,6 +198,11 @@ export default {
                 return instance.post("/api/v1/submission/upload", data, {
                     headers: { 'Content-Type': undefined }
                 });
+            case 'import-excel':
+                return instance.post("/api/v1/submission/import-excel", data, {
+                    headers: { 'Content-Type': undefined },
+                    timeout: 180000
+                });
             default:
                 break;
         }
@@ -217,8 +222,22 @@ export default {
                 return instance.delete(path, { data: data });
             case 'exp':
                 return instance.post(`${path}/explore`, data);
+            case 'impact':
+                return instance.get(`${path}/${data.id}/impact`);
             default:
                 break;
+        }
+    },
+
+    categorySettings(method, data) {
+        const path = '/api/v1/artwork/category';
+        switch (method) {
+            case 'get': return instance.get(path);
+            case 'post': return instance.post(path, data);
+            case 'put': return instance.put(path, data);
+            case 'delete': return instance.delete(path, { data });
+            case 'impact': return instance.get(`${path}/${data.id}/impact`);
+            default: return undefined;
         }
     },
 
@@ -267,6 +286,8 @@ export default {
         switch (method) {
             case 'sign-in':
                 return instance.post("/api/v1/user/auth/sign-in", data);
+            case 'dev-admin':
+                return instance.post("/api/v1/user/auth/dev-admin");
             case '2fa':
                 return instance.post("/api/v1/user/auth/2fa", data);
             case '2fa-send':

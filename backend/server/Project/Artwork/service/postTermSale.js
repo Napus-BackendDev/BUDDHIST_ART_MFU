@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const ArtworkModel = require('../models/artwork.model');
 const StatusModel = require('../../Settings/models/status.model');
 const ResMessage = require('../../Settings/service/message');
+const { queryForCode, STATUS_CODES } = require('../../Settings/statusCodes');
 
 const MODES = Object.freeze({ INITIAL: 'initial_term', STANDARD: 'standard_sale', DISPLAY: 'display_only' });
 const DECISIONS = Object.freeze({ PENDING: 'pending', CONTINUE: 'continue_sale', DISPLAY: 'display_only' });
@@ -57,7 +58,10 @@ const isAdminUser = request => String(request?.user?.role || '').toLowerCase() =
 const requestUserId = request => request?.user?.userId || request?.user?._id || request?.user?.id || null;
 const sameId = (a, b) => !!a && !!b && idString(a) === idString(b);
 
-const getStatus = async name => StatusModel.findOne({ 'title.value': name, 'title.key': 'en' }).lean();
+const getStatus = async name => {
+    const code = STATUS_CODES[String(name).toUpperCase().replace(/ /g, '_')] || String(name).toUpperCase().replace(/ /g, '_');
+    return StatusModel.findOne(queryForCode(code)).lean();
+};
 
 const statusId = (status, field) => idString(status?.status?.[field] || status?.[field]);
 

@@ -34,7 +34,7 @@
                 <!-- Time Range -->
                 <CCol lg="4" md="12" class="mb-3 mb-lg-0">
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
-                    <div class="d-flex align-items-center">
+                    <div class="date-range-group d-flex align-items-center">
                         <div class="date-input-wrapper">
                             <CInput 
                                 :type="formattedStartDate ? 'date' : 'text'"
@@ -48,7 +48,7 @@
                             />
                             <CIcon name="cil-calendar" class="date-icon-right" />
                         </div>
-                        <span class="mx-2 text-muted">&ndash;</span>
+                        <span class="date-range-separator mx-2 text-muted" aria-hidden="true">&ndash;</span>
                         <div class="date-input-wrapper">
                             <CInput 
                                 :type="formattedEndDate ? 'date' : 'text'"
@@ -187,7 +187,7 @@ export default {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 0 12px;
-    height: 42px;
+    min-height: 44px;
     transition: all 0.2s ease;
 }
 
@@ -225,7 +225,7 @@ export default {
     background: #f8f9fa;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    height: 42px;
+    min-height: 44px;
     transition: all 0.2s ease;
     overflow: hidden;
 }
@@ -257,7 +257,7 @@ export default {
     font-size: 0.85rem;
     font-weight: 500;
     color: #3b4d6b;
-    height: 42px;
+    height: 44px;
     text-align: center;
     cursor: pointer;
     padding-left: 36px;
@@ -281,7 +281,8 @@ export default {
     border: 1px solid #e2e8f0;
     border-radius: 8px !important;
     padding: 3px;
-    height: 42px;
+    min-height: 44px;
+    height: auto;
 }
 
 .range-btn {
@@ -292,7 +293,7 @@ export default {
     transition: all 0.2s ease !important;
     flex: 1;
     white-space: nowrap;
-    height: 100% !important;
+    min-height: 36px;
     box-shadow: none !important;
 }
 
@@ -305,5 +306,46 @@ export default {
     background: #ffffff !important;
     color: #321fdb !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+@media (max-width: 991.98px) {
+    .quick-range-group {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        width: 100%;
+    }
+
+    .range-btn {
+        width: 100%;
+        min-height: 44px;
+        margin: 0 !important;
+        border-radius: 6px !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .admin-filter-card ::v-deep .card-body {
+        padding: 1rem !important;
+    }
+
+    .quick-range-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .date-range-group {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 8px;
+    }
+
+    .date-input-wrapper {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .date-range-separator {
+        display: none;
+    }
 }
 </style>

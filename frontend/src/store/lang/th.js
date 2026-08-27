@@ -40,6 +40,7 @@ const en = {
         submissions: "ผลงานที่ส่ง",
         dataCenter: "ศูนย์ข้อมูล",
         users: "จัดการผู้ใช้งาน",
+        settings: "ตั้งค่าระบบ",
         returnToWebsite: "กลับไปหน้าหลัก",
         signOut: "ออกจากระบบ"
     }

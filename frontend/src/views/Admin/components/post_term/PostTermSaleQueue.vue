@@ -19,7 +19,19 @@
             </button>
           </div>
 
-          <div class="d-flex align-items-center">
+          <div class="d-flex align-items-center flex-wrap justify-content-end">
+            <button
+              type="button"
+              class="btn-select-all mr-2"
+              :disabled="loading || !selectableFilteredItems.length"
+              :aria-pressed="allFilteredSelected ? 'true' : 'false'"
+              @click="toggleSelectAll"
+            >
+              <CIcon :name="allFilteredSelected ? 'cil-check-circle' : 'cil-check-alt'" class="mr-1" />
+              {{ allFilteredSelected
+                ? ($i18n.locale === 'en' ? 'Deselect all' : 'ยกเลิกเลือกทั้งหมด')
+                : ($i18n.locale === 'en' ? 'Select all' : 'เลือกทั้งหมด') }}
+            </button>
             <button 
               v-if="selectedIds.length" 
               type="button" 
@@ -410,6 +422,12 @@ export default {
       const start = (this.activePage - 1) * this.itemsPerPage;
       return this.filteredItems.slice(start, start + this.itemsPerPage);
     },
+    selectableFilteredItems() {
+      return this.filteredItems.filter(item => !(item.postTermSale && item.postTermSale.needsReview));
+    },
+    allFilteredSelected() {
+      return this.selectableFilteredItems.length > 0 && this.selectableFilteredItems.every(item => this.selectedIds.includes(item._id));
+    },
     tabs() {
       const count = key => key === 'all' ? this.items.length : this.items.filter(item => {
         const sale = item.postTermSale || {};
@@ -603,6 +621,15 @@ export default {
       if (index === -1) this.selectedIds.push(item._id);
       else this.selectedIds.splice(index, 1);
     },
+    toggleSelectAll() {
+      const ids = this.selectableFilteredItems.map(item => item._id);
+      if (!ids.length) return;
+      if (this.allFilteredSelected) {
+        this.selectedIds = this.selectedIds.filter(id => !ids.includes(id));
+      } else {
+        this.selectedIds = [...new Set([...this.selectedIds, ...ids])];
+      }
+    },
     zoomImg(item) {
       this.zoomedImage = this.getImageUrl(item.image);
       this.zoomedTitle = this.titleOf(item);
@@ -727,6 +754,31 @@ export default {
 }
 
 /* Buttons */
+.btn-select-all {
+  background: #ffffff;
+  color: #8c1515;
+  border: 1px solid #e7c4c0;
+  border-radius: 50px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-select-all:hover:not(:disabled),
+.btn-select-all[aria-pressed="true"] {
+  background: #fff5f3;
+  border-color: #8c1515;
+}
+
+.btn-select-all:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .btn-bulk-decision {
   background: #10b981;
   color: #ffffff;

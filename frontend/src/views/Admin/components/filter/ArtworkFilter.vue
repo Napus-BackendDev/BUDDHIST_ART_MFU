@@ -28,10 +28,8 @@
                         </template>
                         <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
                         <CDropdownItem @click="updateFilter('category', 'All Categories')">{{ $i18n.locale === 'en' ? 'All Categories' : 'หมวดหมู่ทั้งหมด' }}</CDropdownItem>
-                        <CDropdownItem @click="updateFilter('category', 'Painting')">{{ $i18n.locale === 'en' ? 'Painting' : 'จิตรกรรม' }}</CDropdownItem>
-                        <CDropdownItem @click="updateFilter('category', 'Sculpture')">{{ $i18n.locale === 'en' ? 'Sculpture' : 'ประติมากรรม' }}</CDropdownItem>
-                        <CDropdownItem @click="updateFilter('category', 'Digital Art')">{{ $i18n.locale === 'en' ? 'Digital Art' : 'ดิจิทัลอาร์ต' }}</CDropdownItem>
-                        <CDropdownItem @click="updateFilter('category', 'Photography')">{{ $i18n.locale === 'en' ? 'Photography' : 'ภาพถ่าย' }}</CDropdownItem>
+                        <CDropdownItem v-for="category in categories" :key="category._id" @click="updateFilter('category', category._id)">{{ getCategoryLabel(category._id) }}</CDropdownItem>
+                        <CDropdownItem v-if="!categories.length" disabled>{{ $i18n.locale === 'en' ? 'No categories available' : 'ไม่พบหมวดหมู่' }}</CDropdownItem>
                         </CDropdownMenu>
                     </CDropdown>
                 </CCol>
@@ -116,6 +114,10 @@ export default {
         value: {
             type: Object,
             required: true
+        },
+        categories: {
+            type: Array,
+            default: () => []
         }
     },
     computed: {
@@ -131,19 +133,14 @@ export default {
             if (category === 'All Categories') {
                 return this.$i18n.locale === 'en' ? 'All Categories' : 'หมวดหมู่ทั้งหมด';
             }
-            if (category === 'Painting') {
-                return this.$i18n.locale === 'en' ? 'Painting' : 'จิตรกรรม';
-            }
-            if (category === 'Sculpture') {
-                return this.$i18n.locale === 'en' ? 'Sculpture' : 'ประติมากรรม';
-            }
-            if (category === 'Digital Art') {
-                return this.$i18n.locale === 'en' ? 'Digital Art' : 'ดิจิทัลอาร์ต';
-            }
-            if (category === 'Photography') {
-                return this.$i18n.locale === 'en' ? 'Photography' : 'ภาพถ่าย';
-            }
-            return category;
+            const selected = this.categories.find(item => String(item._id) === String(category));
+            return selected ? (this.getName(this.$i18n.locale, selected) || this.getName('en', selected)) : category;
+        },
+        getName(lang, item) {
+            const title = item && (item.title || item.name);
+            if (typeof title === 'string') return title;
+            if (!Array.isArray(title)) return '';
+            return (title.find(value => value.key === lang) || title[0] || {}).value || '';
         },
         getStatusLabel(status) {
             if (status === 'All Status') {

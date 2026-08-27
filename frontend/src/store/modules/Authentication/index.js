@@ -159,6 +159,31 @@ const LoginModule = {
         onLogin({ dispatch }, data) {
             return dispatch('singIn', data);
         },
+        onDevAdminLogin() {
+            store.commit("dialog/loading", true);
+            return Service.authen("dev-admin")
+                .then((response) => {
+                    store.commit("dialog/loading", false);
+                    const user = response.data.data;
+                    const token = response.data.token || user.token;
+                    localStorage.setItem('objs', JSON.stringify({
+                        xAccessToken: token,
+                        accounts: user._id,
+                        role: 'Admin'
+                    }));
+                    store.commit('xAccessToken', token);
+                    store.commit('auth/showSignInModal', false);
+                    store.commit('auth/userId', user._id);
+                    store.commit('auth/role', 'Admin');
+                    return router.push('/admin').catch(err => {
+                        if (err.name !== 'NavigationDuplicated') throw err;
+                    });
+                })
+                .catch((err) => {
+                    store.commit("dialog/loading", false);
+                    throw err;
+                });
+        },
         onGoogleLogin({ commit }, data) {
             store.commit("dialog/loading", true)
             return Service.authen("google-auth", data)

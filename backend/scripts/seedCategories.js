@@ -100,6 +100,9 @@ async function seedCategories() {
             }
         ];
 
+        const categoryCodes = ['PAINTING', 'SCULPTURE', 'MIXED_MEDIA', 'DRAWING', 'DIGITAL_ART', 'INSTALLATION_ART', 'OTHERS'];
+        categories.forEach((category, index) => { category.code = categoryCodes[index]; });
+
         // 3. Create Categories
         console.log('Seeding Categories...');
         await Category.insertMany(categories);

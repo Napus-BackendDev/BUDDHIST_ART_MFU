@@ -3,6 +3,7 @@ const Submission = require('../Project/Submission/models/submission.model');
 const User = require('../Project/User/models/user.model');
 const Status = require('../Project/Settings/models/status.model');
 const Role = require('../Project/Settings/models/role.model');
+const { STATUS_CODES } = require('../Project/Settings/statusCodes');
 
 module.exports = function() {
     // Run every minute
@@ -30,9 +31,15 @@ module.exports = function() {
 
             // Find NewStudent, OldStudent statuses and Artist role
             const statusDocs = await Status.find({
-                'title.value': { $in: ['NewStudent', 'OldStudent'] }
+                $or: [
+                    { code: { $in: [STATUS_CODES.NEW_STUDENT, STATUS_CODES.OLD_STUDENT] } },
+                    { 'title.value': { $in: ['NewStudent', 'OldStudent'] } }
+                ]
             });
-            const getStatusId = (name) => statusDocs.find(s => s.title.some(t => t.value === name))?._id;
+            const getStatusId = (name) => {
+                const code = String(name).toUpperCase().replace(/ /g, '_');
+                return statusDocs.find(s => s.code === code)?._id || statusDocs.find(s => s.title.some(t => t.value === name))?._id;
+            };
             const newStudentStatusId = getStatusId('NewStudent');
             const oldStudentStatusId = getStatusId('OldStudent');
 

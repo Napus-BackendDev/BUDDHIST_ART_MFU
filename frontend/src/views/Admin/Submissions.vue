@@ -190,7 +190,7 @@ export default {
                 return;
             }
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
@@ -242,13 +242,15 @@ export default {
                         if (!subTitleTh && !subTitleEn) return; // rows without a submission title are skipped
 
                         const courseLevel = String(getValue('CourseLevel') || '1').trim() || '1';
-                        const subKey = (subTitleEn || subTitleTh) + '|' + courseLevel;
+                        const academicYear = String(getValue('AcademicYear') || (new Date().getFullYear() + 543)).trim();
+                        const subKey = (subTitleEn || subTitleTh) + '|' + courseLevel + '|' + academicYear;
 
                         let sub = subMap.get(subKey);
                         if (!sub) {
                             sub = {
                                 title: this.buildBilingual(subTitleTh, subTitleEn),
                                 courseLevel,
+                                academicYear,
                                 artist: [],
                                 assignments: [],
                                 _artistSet: new Set(),
@@ -347,17 +349,31 @@ export default {
                         : `ตรวจพบการส่งงาน ${submissions.length} รายการ จาก ${results.length} แถว${skippedMsg} ดำเนินการนำเข้าข้อมูลทั้งหมดหรือไม่?`;
 
                     if (confirm(confirmMsg)) {
-                        this.$store.dispatch('submission/create', submissions)
-                            .then(() => {
-                                this.fetchSubmissions();
-                                const successMsg = this.$i18n.locale === 'en' ? "Bulk import completed successfully!" : "นำเข้าข้อมูลเรียบร้อยแล้ว!";
-                                alert(successMsg + skippedMsg);
-                                this.showChoiceModal = false;
-                            })
-                            .catch(err => {
-                                console.error("Import error:", err);
-                                alert(this.$i18n.locale === 'en' ? "Failed to import submissions. Please check data format." : "ไม่สามารถนำเข้าข้อมูลได้ กรุณาตรวจสอบรูปแบบข้อมูล");
-                            });
+                        try {
+                            const isEmbeddedImageWorkbook = file.name.toLowerCase().endsWith('.xlsx');
+                            let importSummary = null;
+                            if (isEmbeddedImageWorkbook) {
+                                const formData = new FormData();
+                                formData.append('workbook', file);
+                                const response = await this.$store.dispatch('submission/importExcel', formData);
+                                importSummary = response.data?.data?.summary || null;
+                            } else {
+                                await this.$store.dispatch('submission/create', submissions);
+                            }
+                            this.fetchSubmissions();
+                            const imageMessage = importSummary
+                                ? (this.$i18n.locale === 'en'
+                                    ? ` Images saved: ${importSummary.imagesSaved}/${importSummary.artworkCount}. Missing image rows: ${(importSummary.missingImageRows || []).join(', ') || 'none'}.`
+                                    : ` บันทึกรูปแล้ว ${importSummary.imagesSaved}/${importSummary.artworkCount} รูป แถวที่ไม่มีรูป: ${(importSummary.missingImageRows || []).join(', ') || 'ไม่มี'}`)
+                                : '';
+                            const successMsg = this.$i18n.locale === 'en' ? "Bulk import completed successfully!" : "นำเข้าข้อมูลเรียบร้อยแล้ว!";
+                            alert(successMsg + imageMessage + skippedMsg);
+                            this.showChoiceModal = false;
+                        } catch (err) {
+                            console.error("Import error:", err);
+                            const backendMessage = err.response?.data?.message;
+                            alert(backendMessage || (this.$i18n.locale === 'en' ? "Failed to import submissions. Please check data format." : "ไม่สามารถนำเข้าข้อมูลได้ กรุณาตรวจสอบรูปแบบข้อมูล"));
+                        }
                     }
                 } catch (error) {
                     console.error("File processing error:", error);
@@ -368,7 +384,7 @@ export default {
         },
         downloadTemplate() {
             const data = [[
-                "SubmissionTitleThai", "SubmissionTitleEng", "CourseLevel", "SubmissionStartDate", "SubmissionEndDate", "AssignmentTitleThai", "AssignmentTitleEng", "AssignmentStartDate", "AssignmentEndDate", "ArtistStudentID", "ArtworkTitleThai", "ArtworkTitleEng", "ArtworkDescriptionThai", "ArtworkDescriptionEng", "Technique", "Size", "Price", "Category"
+                "SubmissionTitleThai", "SubmissionTitleEng", "CourseLevel", "AcademicYear", "SubmissionStartDate", "SubmissionEndDate", "AssignmentTitleThai", "AssignmentTitleEng", "AssignmentStartDate", "AssignmentEndDate", "ArtistStudentID", "ArtworkTitleThai", "ArtworkTitleEng", "ArtworkDescriptionThai", "ArtworkDescriptionEng", "Technique", "Size", "Price", "Category", "EmbeddedImage"
             ]];
             const worksheet = XLSX.utils.aoa_to_sheet(data);
             const workbook = XLSX.utils.book_new();
@@ -376,10 +392,10 @@ export default {
 
             // Auto-width columns
             worksheet['!cols'] = [
-                {wch: 28}, {wch: 28}, {wch: 12}, {wch: 18}, {wch: 18},
+                {wch: 28}, {wch: 28}, {wch: 12}, {wch: 14}, {wch: 18}, {wch: 18},
                 {wch: 24}, {wch: 24}, {wch: 18}, {wch: 18},
                 {wch: 16},
-                {wch: 24}, {wch: 24}, {wch: 30}, {wch: 30}, {wch: 18}, {wch: 14}, {wch: 10}, {wch: 16}
+                {wch: 24}, {wch: 24}, {wch: 30}, {wch: 30}, {wch: 18}, {wch: 14}, {wch: 10}, {wch: 16}, {wch: 18}
             ];
 
             XLSX.writeFile(workbook, "Submission_Import_Template.xlsx");

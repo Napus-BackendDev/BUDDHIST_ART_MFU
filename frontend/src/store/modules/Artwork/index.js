@@ -51,6 +51,18 @@ const ArtworkModule = {
             return Service.artwork('category', payload, {})
                 .then(response => response.data.data);
         },
+        categoryCreate({ commit }, payload) {
+            return Service.categorySettings('post', payload).then(response => response.data.data);
+        },
+        categoryUpdate({ commit }, payload) {
+            return Service.categorySettings('put', payload).then(response => response.data.data);
+        },
+        categoryDelete({ commit }, payload) {
+            return Service.categorySettings('delete', payload).then(response => response.data.data);
+        },
+        categoryImpact({ commit }, payload) {
+            return Service.categorySettings('impact', payload).then(response => response.data.data);
+        },
         presentation({ commit }, payload) {
             return Service.artwork('presentation', payload, {})
                 .then(response => response.data.data);

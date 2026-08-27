@@ -10,15 +10,15 @@
             <div class="modal-header-custom w-100 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="icon-square bg-orange-light text-orange mr-3">
-                        <CIcon name="cil-pencil" size="lg" />
+                        <CIcon name="cil-pencil" size="lg" aria-hidden="true" />
                     </div>
                     <div>
                         <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Edit User Account' : 'แก้ไขบัญชีผู้ใช้' }}</h5>
                         <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Modify user profile, system roles, and account status.' : 'ปรับเปลี่ยนโปรไฟล์ผู้ใช้, บทบาทในระบบ และสถานะบัญชี' }}</p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
-                    <CIcon name="cil-x" size="sm" />
+                <button class="close-btn" type="button" @click="$emit('update:show', false)" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิดหน้าต่าง'">
+                    <CIcon name="cil-x" size="sm" aria-hidden="true" />
                 </button>
             </div>
         </template>
@@ -34,6 +34,9 @@
                             placeholder="e.g. 66xxxxxxxx" 
                             class="custom-input mb-0"
                         />
+                        <small v-if="isArtist" class="form-hint">
+                            {{ $i18n.locale === 'en' ? 'Official Email is generated automatically from the Student ID.' : 'ระบบจะสร้างอีเมลทางการจากรหัสนักศึกษาให้อัตโนมัติ' }}
+                        </small>
                     </div>
                 </CCol>
                 <CCol md="6">
@@ -47,7 +50,7 @@
                                 </CButton>
                             </template>
                             <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
-                                <CDropdownItem v-for="r in roles" :key="r._id" @click="handleRoleSelect(r)">
+                                <CDropdownItem v-for="r in roleOptions" :key="r._id" @click="handleRoleSelect(r)">
                                     {{ r.name }}
                                 </CDropdownItem>
                             </CDropdownMenu>
@@ -57,7 +60,7 @@
             </CRow>
 
             <!-- Status Row -->
-            <CRow v-if="form.roleNameEn === 'Artist'">
+            <CRow v-if="isArtist">
                 <CCol md="12">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Account Status' : 'สถานะบัญชี' }}</label>
@@ -113,12 +116,25 @@
                 <CCol md="6" v-if="form.roleNameEn !== 'Customer'">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Official Email' : 'อีเมลทางการ' }}</label>
-                        <CInput 
+                        <CInput
+                            v-if="!isArtist"
                             v-model="form.email" 
                             type="email" 
                             placeholder="official@edu.com" 
                             class="custom-input mb-0"
                         />
+                        <CInput
+                            v-else
+                            :value="officialEmail"
+                            type="email"
+                            readonly
+                            :placeholder="$i18n.locale === 'en' ? 'Enter Student ID above' : 'กรอกรหัสนักศึกษาด้านบน'"
+                            class="custom-input mb-0 official-email-readonly"
+                            :aria-describedby="'official-email-help-edit'"
+                        />
+                        <small v-if="isArtist" id="official-email-help-edit" class="form-hint">
+                            {{ $i18n.locale === 'en' ? 'Format: StudentID@lamduan.mfu.ac.th' : 'รูปแบบ: รหัสนักศึกษา@lamduan.mfu.ac.th' }}
+                        </small>
                     </div>
                 </CCol>
                 <CCol :md="form.roleNameEn === 'Customer' ? '12' : '6'">
@@ -174,6 +190,9 @@
 </template>
 
 <script>
+import { buildOfficialEmail, isArtistRole } from '@/utils/officialEmail';
+import { dedupeRoles } from '@/utils/roles';
+
 export default {
     name: 'UserEditModal',
     props: {
@@ -211,10 +230,22 @@ export default {
         }
     },
     computed: {
+        roleOptions() {
+            return dedupeRoles(this.roles);
+        },
+        isArtist() {
+            return this.form ? isArtistRole(this.form.roleNameEn) : false;
+        },
+        officialEmail() {
+            if (!this.form) return '';
+            return this.isArtist
+                ? buildOfficialEmail(this.form.studentId)
+                : this.form.email;
+        },
         isFormValid() {
             if (!this.form) return false;
-            const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.form.email;
-            if (this.form.roleNameEn === 'Artist') {
+            const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.officialEmail;
+            if (this.isArtist) {
                 return baseValid && this.form.statusId;
             }
             return baseValid;
@@ -236,7 +267,7 @@ export default {
             this.$set(this.form, 'roleName', role.name);
             this.$set(this.form, 'roleNameEn', role.nameEn);
             // If the role is not Artist, clear the status fields
-            if (role.nameEn !== 'Artist') {
+            if (!isArtistRole(role.nameEn)) {
                 this.$set(this.form, 'statusId', '');
                 this.$set(this.form, 'statusName', '');
                 this.$set(this.form, 'statusNameEn', '');
@@ -332,7 +363,7 @@ export default {
                     { key: 'en', value: this.form.nameEn }
                 ],
                 contact: {
-                    studentEmail: this.form.email,
+                    studentEmail: this.officialEmail,
                     personalEmail: this.form.personalEmail,
                     telephone: this.form.telephone
                 }
@@ -368,6 +399,19 @@ export default {
     color: #64748b;
     margin-bottom: 0.75rem;
     letter-spacing: 0.05em;
+}
+
+.form-hint {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    margin-top: 0.4rem;
+}
+
+.official-email-readonly ::v-deep .form-control {
+    background-color: #fff7ed;
+    color: #475569;
+    cursor: copy;
 }
 
 .custom-input ::v-deep .form-control {

@@ -44,6 +44,9 @@ const SubmissionModule = {
         upload({ commit }, data) {
             return Service.submission('upload', data, {});
         },
+        importExcel({ commit }, data) {
+            return Service.submission('import-excel', data, {});
+        },
         async submitWork({ dispatch, state, rootGetters }, payload) {
             const { submissionId, assignmentId, artwork } = payload;
 

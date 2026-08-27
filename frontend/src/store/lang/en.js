@@ -40,6 +40,7 @@ const en = {
         submissions: "Submissions",
         dataCenter: "Data Center",
         users: "User Management",
+        settings: "System Settings",
         returnToWebsite: "Back to Website",
         signOut: "Sign Out"
     }

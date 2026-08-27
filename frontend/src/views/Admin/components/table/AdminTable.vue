@@ -274,8 +274,8 @@ export default {
                     artistTh.includes(search);
 
                 // Category Filter
-                const categoryName = item.category ? this.getName('en', item.category) : 'N/A';
-                const categoryMatch = this.filters.category === 'All Categories' || categoryName === this.filters.category;
+                const categoryId = item.category && (item.category._id || item.category);
+                const categoryMatch = this.filters.category === 'All Categories' || String(categoryId) === String(this.filters.category);
 
                 // Status Filter
                 const rawStatusEn = item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending';

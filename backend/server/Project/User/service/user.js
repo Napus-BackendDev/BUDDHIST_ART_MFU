@@ -1,8 +1,20 @@
 const mongo = require('mongodb');
 const User = require('../controller/user');
 const UserModel = require('../models/user.model');
+const RoleModel = require('../../Settings/models/role.model');
+const StatusModel = require('../../Settings/models/status.model');
 const ResMessage = require("../../Settings/service/message");
 const { hashPassword, verifyPassword, isPasswordHash } = require('./password');
+const {
+    normalizeStudentId,
+    isArtistRole,
+    normalizeArtistContact
+} = require('./officialEmail');
+
+const defaultPopulate = [
+    { path: 'role' },
+    { path: 'status' }
+];
 
 const withoutPassword = (doc) => {
     if (!doc) return doc;
@@ -56,6 +68,18 @@ exports.onQuerys = async function (request, response) {
 const cfg = require('../../../../config/config');
 const jwt = require('jsonwebtoken');
 
+const createSessionUser = (user, roleName) => {
+    const userData = withoutPassword(user);
+    delete userData.password;
+    userData.role = roleName;
+    userData.token = jwt.sign(
+        { userId: user._id, role: roleName },
+        cfg.jwtSecret,
+        { expiresIn: cfg.tokenExpired / 1000 }
+    );
+    return userData;
+};
+
 exports.onSignIn = async function (request, response) {
     try {
         const { username, password } = request.body;
@@ -86,20 +110,7 @@ exports.onSignIn = async function (request, response) {
                 roleName = user.role;
             }
 
-            // Safely convert Mongoose document to a plain JavaScript object
-            const userData = withoutPassword(user);
-            // Never expose the stored password in the sign-in response
-            delete userData.password;
-            
-            // Overwrite role with the English string name for frontend routing logic
-            userData.role = roleName;
-            
-            // Generate real JWT using global config
-            userData.token = jwt.sign(
-                { userId: user._id, role: roleName },
-                cfg.jwtSecret,
-                { expiresIn: cfg.tokenExpired / 1000 } // Convert ms to seconds
-            );
+            const userData = createSessionUser(user, roleName);
             
             return ResMessage.sendResponse(response, 0, 20000, userData);
         } else {
@@ -112,14 +123,133 @@ exports.onSignIn = async function (request, response) {
     }
 };
 
+exports.onDevAdminSignIn = async function (request, response) {
+    const remoteAddress = String(request.socket && request.socket.remoteAddress || '');
+    const isLoopback = remoteAddress === '::1'
+        || remoteAddress === '127.0.0.1'
+        || remoteAddress === '::ffff:127.0.0.1';
+    const enabled = process.env.NODE_ENV === 'development'
+        && process.env.ALLOW_DEV_ADMIN_LOGIN === 'true'
+        && isLoopback;
+
+    if (!enabled) {
+        return response.status(404).json({ message: 'Not found' });
+    }
+
+    try {
+        const adminRole = await RoleModel.findOne({
+            title: { $elemMatch: { key: 'en', value: /^admin$/i } }
+        }).lean();
+        if (!adminRole) {
+            return response.status(503).json({ message: 'Local Admin role is not configured' });
+        }
+
+        const user = await UserModel.findOne({ role: adminRole._id }).lean();
+        if (!user) {
+            return response.status(503).json({ message: 'Local Admin user is not configured' });
+        }
+
+        return ResMessage.sendResponse(response, 0, 20000, createSessionUser(user, 'Admin'));
+    } catch (err) {
+        console.error('Local Admin Login Error:', err);
+        return response.status(500).json({ message: 'Server error during local Admin login' });
+    }
+};
+
 exports.onCreate = async function (request, response) {
     try {
-        const input = Array.isArray(request.body) ? request.body : [request.body];
+        const isBulkImport = Array.isArray(request.body);
+        const input = isBulkImport ? request.body : [request.body];
+        const roleIds = input
+            .map(item => item && item.role)
+            .filter(role => role && mongo.ObjectId.isValid(role))
+            .map(role => String(role));
+        const roles = roleIds.length
+            ? await RoleModel.find({ _id: { $in: [...new Set(roleIds)] } }).lean()
+            : [];
+        const roleNameById = new Map(roles.map(role => {
+            const title = role.title && Array.isArray(role.title)
+                ? (role.title.find(item => item.key === 'en') || role.title[0])
+                : null;
+            return [String(role._id), title && title.value ? String(title.value).trim().toLowerCase() : ''];
+        }));
         const data = await Promise.all(input.map(async item => ({
             ...item,
+            studentId: normalizeStudentId(item && item.studentId),
             ...(item.password ? { password: await hashPassword(item.password) } : {})
         })));
-        const doc = await User.onCreate(Array.isArray(request.body) ? data : data[0]);
+
+        // Bulk user imports are intentionally idempotent. A repeated import should
+        // not fail on unique studentId/email indexes or create duplicate accounts.
+        // Existing accounts keep their password; their learner status is refreshed
+        // to NewStudent for the imported cohort.
+        let doc;
+        if (!isBulkImport) {
+            const item = data[0];
+            if (isArtistRole(item.role, roleNameById)) {
+                item.contact = normalizeArtistContact(item.studentId, item.contact);
+            }
+            doc = await User.onCreate(item);
+        } else {
+            const newStudentStatus = await StatusModel.findOne({
+                $or: [
+                    { code: 'NEW_STUDENT' },
+                    { 'title.value': { $in: ['NewStudent', 'ผู้เรียนใหม่'] } }
+                ]
+            }).select('_id').lean();
+            const imported = [];
+
+            for (const item of data) {
+                const studentId = normalizeStudentId(item.studentId);
+                const studentEmail = String(item.contact && item.contact.studentEmail || '').trim();
+                const matchers = [];
+                if (studentId) matchers.push({ studentId });
+                if (studentEmail) matchers.push({ 'contact.studentEmail': studentEmail });
+
+                const existing = matchers.length
+                    ? await UserModel.findOne({ $or: matchers }).populate('role')
+                    : null;
+
+                if (existing) {
+                    // Existing accounts keep their role on repeat import. Apply
+                    // Artist contact rules only when that stored role is Artist;
+                    // this prevents a default Artist row from changing Admin or
+                    // Customer contact data by accident.
+                    const artistImport = existing.role
+                        ? isArtistRole(existing.role, roleNameById)
+                        : isArtistRole(item.role, roleNameById);
+                    const update = {
+                        name: item.name,
+                        contact: {
+                            ...(existing.contact && typeof existing.contact.toObject === 'function'
+                                ? existing.contact.toObject()
+                                : (existing.contact || {})),
+                            ...(item.contact || {})
+                        },
+                        status: newStudentStatus ? newStudentStatus._id : item.status
+                    };
+                    if (artistImport) {
+                        update.contact = normalizeArtistContact(studentId, item.contact, existing.contact);
+                    }
+                    // Do not overwrite a user's existing password or role on repeat import.
+                    if (!existing.role && item.role) update.role = item.role;
+                    const updated = await UserModel.findByIdAndUpdate(
+                        existing._id,
+                        { $set: update },
+                        { new: true }
+                    );
+                    imported.push(updated);
+                } else {
+                    const createData = { ...item };
+                    if (isArtistRole(item.role, roleNameById)) {
+                        createData.contact = normalizeArtistContact(studentId, item.contact);
+                    }
+                    if (newStudentStatus) createData.status = newStudentStatus._id;
+                    imported.push(await UserModel.create(createData));
+                }
+            }
+            doc = await UserModel.populate(imported, defaultPopulate);
+        }
         const safeDoc = Array.isArray(doc) ? doc.map(withoutPassword) : withoutPassword(doc);
         return ResMessage.sendResponse(response, 0, 20000, safeDoc);
     } catch (err) {
@@ -150,6 +280,25 @@ exports.onUpdate = async function (request, response) {
         const data = { ...request.body };
         delete data._id;
         if (data.password) data.password = await hashPassword(data.password);
+        data.studentId = normalizeStudentId(data.studentId);
+        const existing = await UserModel.findById(query._id).populate('role').lean();
+        const roles = data.role && mongo.ObjectId.isValid(data.role)
+            ? await RoleModel.find({ _id: data.role }).lean()
+            : [];
+        const roleNameById = new Map(roles.map(role => {
+            const title = role.title && Array.isArray(role.title)
+                ? (role.title.find(item => item.key === 'en') || role.title[0])
+                : null;
+            return [String(role._id), title && title.value ? String(title.value).trim().toLowerCase() : ''];
+        }));
+        // If a role is supplied, use the effective (new) role. When omitted,
+        // preserve the stored role. This keeps the automatic email policy scoped
+        // to Artist accounts even when an Artist is changed to another role.
+        const hasIncomingRole = data.role !== undefined && data.role !== null && data.role !== '';
+        const effectiveRole = hasIncomingRole ? data.role : (existing && existing.role);
+        if (isArtistRole(effectiveRole, roleNameById)) {
+            data.contact = normalizeArtistContact(data.studentId || (existing && existing.studentId), data.contact, existing && existing.contact);
+        }
         const doc = await User.onUpdate(query, data);
         return ResMessage.sendResponse(response, 0, 20000, withoutPassword(doc));
     } catch (err) {

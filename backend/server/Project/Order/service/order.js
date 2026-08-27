@@ -14,6 +14,7 @@ const ArtworkModel = require('../../Artwork/models/artwork.model');
 const UserModel = require('../../User/models/user.model');
 const { generateOrderCode } = require('../../Artwork/service/artworkCode');
 const { isPostTermPurchasable, getEffectiveMode, constants } = require('../../Artwork/service/postTermSale');
+const { STATUS_CODES, LEGACY_NAMES, hasCode, queryForCode } = require('../../Settings/statusCodes');
 
 // Keep fire-and-forget invoice/mail work observable so shutdown and tests can
 // drain it before closing MongoDB. The customer response remains non-blocking.
@@ -38,6 +39,7 @@ exports.waitForPostCreateTasks = async function () {
 };
 
 const STATUS_NAMES = ['Reserved', 'Pending', 'Approved', 'Rejected', 'Cancelled', 'Available', 'Exhibition', 'Sold Out'];
+const CODE_TO_STATUS_NAME = { RESERVED: 'Reserved', PENDING: 'Pending', APPROVED: 'Approved', REJECTED: 'Rejected', CANCELLED: 'Cancelled', AVAILABLE: 'Available', EXHIBITION: 'Exhibition', SOLD_OUT: 'Sold Out' };
 
 const titleValue = (value) => {
     if (!value) return '';
@@ -54,10 +56,12 @@ const idString = (value) => value && (value._id || value).toString();
 const isValidObjectId = (value) => mongo.ObjectId.isValid(value);
 
 const loadStatuses = async () => {
-    const docs = await StatusModel.find({ 'title.value': { $in: STATUS_NAMES } }).lean();
+    const docs = await StatusModel.find({ $or: [{ code: { $in: Object.values(STATUS_CODES) } }, { 'title.value': { $in: STATUS_NAMES } }] }).lean();
     return docs.reduce((result, doc) => {
         const name = titleValue(doc.title);
+        const code = doc.code || Object.keys(LEGACY_NAMES).find(key => (LEGACY_NAMES[key] || []).includes(name));
         if (name) result[name] = doc;
+        if (code) result[code] = doc;
         return result;
     }, {});
 };
@@ -458,8 +462,8 @@ exports.onUpload = async function (request, response) {
         query._id = new mongo.ObjectId(request.body._id);
         const currentOrder = await Order.onQuery(query);
         if (!currentOrder) return ResMessage.sendResponse(response, 0, 40400);
-        const currentStatus = titleValue(currentOrder.status?.title || currentOrder.status);
-        if (currentStatus !== 'Reserved') {
+        const currentStatus = currentOrder.status;
+        if (!hasCode(currentStatus, STATUS_CODES.RESERVED)) {
             return sendBusinessError(response, 40900, 'ORDER_NOT_AWAITING_PAYMENT');
         }
         // Compare-and-set the payment upload against the Reserved/no-slip state.
@@ -469,7 +473,8 @@ exports.onUpload = async function (request, response) {
         const imagePath = Order.getImageUrl(request, request.file.destination, request.file.filename);
 
         // Find "Pending" status in settings to update order status
-        const pendingStatus = await Status.onQuery({
+        const pendingStatusByCode = await StatusModel.findOne(queryForCode(STATUS_CODES.PENDING)).lean();
+        const pendingStatus = pendingStatusByCode || await Status.onQuery({
             $or: [
                 { "title.value": { $regex: /^Pending$/i } },
                 { "title.value": { $regex: /^รอตรวจสอบ$/i } }
@@ -581,7 +586,7 @@ exports.onUpdate = async function (request, response) {
             if (!allowedFields.has(key)) delete updateData[key];
         });
 
-        const currentStatusName = titleValue(beforeDoc.status?.title || beforeDoc.status);
+        const currentStatusName = CODE_TO_STATUS_NAME[beforeDoc.status?.code] || titleValue(beforeDoc.status?.title || beforeDoc.status);
         let nextStatusName = currentStatusName;
         if (Object.prototype.hasOwnProperty.call(updateData, 'status')) {
             const nextStatusId = idString(updateData.status);
@@ -589,7 +594,7 @@ exports.onUpdate = async function (request, response) {
                 return sendBusinessError(response, 40000, 'ORDER_STATUS_REQUIRED');
             }
             const nextStatus = await StatusModel.findById(nextStatusId).lean();
-            nextStatusName = titleValue(nextStatus?.title);
+            nextStatusName = CODE_TO_STATUS_NAME[nextStatus?.code] || titleValue(nextStatus?.title);
             if (!nextStatusName || !allowedTransitions[currentStatusName]?.has(nextStatusName)) {
                 return sendBusinessError(response, 40900, 'ORDER_STATE_TRANSITION_NOT_ALLOWED');
             }
@@ -602,14 +607,14 @@ exports.onUpdate = async function (request, response) {
 
         // If order status is "Rejected", set artwork status back to "Available"
         if (doc && statusChanged && doc.status && doc.status.title) {
-            const isRejected = doc.status.title.some(t => t.value === 'Rejected' || t.value === 'ไม่นุมัติ');
-            const isApproved = doc.status.title.some(t => t.value === 'Approved' || t.value === 'อนุมัติ');
+            const isRejected = hasCode(doc.status, STATUS_CODES.REJECTED) || doc.status.title.some(t => t.value === 'Rejected' || t.value === 'ไม่นุมัติ');
+            const isApproved = hasCode(doc.status, STATUS_CODES.APPROVED) || doc.status.title.some(t => t.value === 'Approved' || t.value === 'อนุมัติ');
 
             if (isApproved) {
                 // Update artwork status to Sold Out and Approved
                 if (doc.artwork && doc.artwork.length > 0) {
-                    const soldOutStatus = await Status.onQuery({ "title.value": "Sold Out", "title.key": "en" });
-                    const approvedStatus = await Status.onQuery({ "title.value": "Approved", "title.key": "en" });
+                    const soldOutStatus = await StatusModel.findOne(queryForCode(STATUS_CODES.SOLD_OUT)).lean();
+                    const approvedStatus = await StatusModel.findOne(queryForCode(STATUS_CODES.APPROVED)).lean();
                     if (soldOutStatus && approvedStatus) {
                         for (let art of doc.artwork) {
                              await Artwork.onUpdate(
@@ -741,14 +746,8 @@ exports.onUpdate = async function (request, response) {
                 }
 
                 if (doc.artwork && doc.artwork.length > 0) {
-                    const availableStatus = await Status.onQuery({
-                        "title.value": "Available",
-                        "title.key": "en"
-                    });
-                    const approvedStatus = await Status.onQuery({
-                        "title.value": "Approved",
-                        "title.key": "en"
-                    });
+                    const availableStatus = await StatusModel.findOne(queryForCode(STATUS_CODES.AVAILABLE)).lean();
+                    const approvedStatus = await StatusModel.findOne(queryForCode(STATUS_CODES.APPROVED)).lean();
 
                     if (availableStatus && approvedStatus) {
                         for (let art of doc.artwork) {

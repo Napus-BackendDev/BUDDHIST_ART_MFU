@@ -38,6 +38,7 @@ async function seedAll() {
         // 2. Create Groups
         console.log('Seeding Groups...');
         const saleGroup = await Group.create({
+            code: 'SALE_STATUS',
             title: [
                 { key: 'en', value: 'Sale Status' },
                 { key: 'th', value: 'สถานะการขาย' }
@@ -49,6 +50,7 @@ async function seedAll() {
         });
 
         const showGroup = await Group.create({
+            code: 'SHOW_STATUS',
             title: [
                 { key: 'en', value: 'Show Status' },
                 { key: 'th', value: 'สถานะการแสดงผล' }
@@ -60,6 +62,7 @@ async function seedAll() {
         });
 
         const studentGroup = await Group.create({
+            code: 'STUDENT_GROUP',
             title: [
                 { key: 'en', value: 'Student Group' },
                 { key: 'th', value: 'กลุ่มนักศึกษา' }
@@ -79,14 +82,17 @@ async function seedAll() {
         const saleStatuses = [
             {
                 _id: mongoose.Types.ObjectId("69678075e5f76f7a8c42dc12"),
+                code: 'AVAILABLE',
                 title: [{ key: 'en', value: 'Available' }, { key: 'th', value: 'พร้อมขาย' }],
                 group: saleGroup._id
             },
             {
+                code: 'EXHIBITION',
                 title: [{ key: 'en', value: 'Exhibition' }, { key: 'th', value: 'กำลังร่วมแสดงงาน' }],
                 group: saleGroup._id
             },
             {
+                code: 'SOLD_OUT',
                 title: [{ key: 'en', value: 'Sold Out' }, { key: 'th', value: 'ขายแล้ว' }],
                 group: saleGroup._id
             }
@@ -96,18 +102,22 @@ async function seedAll() {
         const showStatuses = [
             {
                 _id: mongoose.Types.ObjectId("69677d4de5f76f7a8c42dbf6"),
+                code: 'PENDING',
                 title: [{ key: 'en', value: 'Pending' }, { key: 'th', value: 'รอตรวจสอบ' }],
                 group: showGroup._id
             },
             {
+                code: 'APPROVED',
                 title: [{ key: 'en', value: 'Approved' }, { key: 'th', value: 'อนุมัติ' }],
                 group: showGroup._id
             },
             {
+                code: 'REJECTED',
                 title: [{ key: 'en', value: 'Rejected' }, { key: 'th', value: 'ไม่นุมัติ' }],
                 group: showGroup._id
             },
             {
+                code: 'RESERVED',
                 title: [{ key: 'en', value: 'Reserved' }, { key: 'th', value: 'รอชำระเงิน' }],
                 group: showGroup._id
             }
@@ -116,10 +126,12 @@ async function seedAll() {
         // Student Statuses
         const studentStatuses = [
             {
+                code: 'NEW_STUDENT',
                 title: [{ key: 'en', value: 'NewStudent' }, { key: 'th', value: 'ผู้เรียนใหม่' }],
                 group: studentGroup._id
             },
             {
+                code: 'OLD_STUDENT',
                 title: [{ key: 'en', value: 'OldStudent' }, { key: 'th', value: 'ผู้เรียนเก่า' }],
                 group: studentGroup._id
             }
@@ -169,6 +181,7 @@ async function seedAll() {
         console.log('Seeding Categories...');
         const categories = [
             {
+                code: 'PAINTING',
                 title: [
                     { key: 'en', value: 'Painting' },
                     { key: 'th', value: 'จิตรกรรม' }
@@ -179,6 +192,7 @@ async function seedAll() {
                 ]
             },
             {
+                code: 'SCULPTURE',
                 title: [
                     { key: 'en', value: 'Sculpture' },
                     { key: 'th', value: 'ประติมากรรม' }
@@ -189,6 +203,7 @@ async function seedAll() {
                 ]
             },
             {
+                code: 'MIXED_MEDIA',
                 title: [
                     { key: 'en', value: 'Mixed Media' },
                     { key: 'th', value: 'สื่อผสม' }
@@ -199,6 +214,7 @@ async function seedAll() {
                 ]
             },
             {
+                code: 'DRAWING',
                 title: [
                     { key: 'en', value: 'Drawing' },
                     { key: 'th', value: 'การวาดเส้น' }
@@ -209,6 +225,7 @@ async function seedAll() {
                 ]
             },
             {
+                code: 'DIGITAL_ART',
                 title: [
                     { key: 'en', value: 'Digital Art' },
                     { key: 'th', value: 'ศิลปะดิจิทัล' }
@@ -219,6 +236,7 @@ async function seedAll() {
                 ]
             },
             {
+                code: 'INSTALLATION_ART',
                 title: [
                     { key: 'en', value: 'Installation Art' },
                     { key: 'th', value: 'ศิลปะการติดตั้ง' }
@@ -230,6 +248,7 @@ async function seedAll() {
             },
             {
                 _id: mongoose.Types.ObjectId("69b917247aa08919285fb7ee"),
+                code: 'OTHERS',
                 title: [
                     { key: 'en', value: 'Others' },
                     { key: 'th', value: 'อื่นๆ' }

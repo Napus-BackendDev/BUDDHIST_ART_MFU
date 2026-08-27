@@ -24,12 +24,22 @@ describe('User Sign-In Security', () => {
       title: [{ key: 'en', value: 'Customer' }, { key: 'th', value: 'ลูกค้า' }]
     });
 
+    const adminRole = await Role.create({
+      title: [{ key: 'en', value: 'Admin' }, { key: 'th', value: 'ผู้ดูแลระบบ' }]
+    });
+
     await User.create({
       studentId: '640000001',
       name: [{ key: 'en', value: 'Login User' }],
       role: customerRole._id,
       password: 'secret123',
       contact: { studentEmail: 'login@example.com' }
+    });
+
+    await User.create({
+      studentId: 'ADMIN-TEST',
+      name: [{ key: 'en', value: 'Local Admin' }],
+      role: adminRole._id
     });
   });
 
@@ -67,5 +77,33 @@ describe('User Sign-In Security', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.data).toBeUndefined();
+  });
+
+  it('allows local Admin login only when the development flag is enabled', async () => {
+    const previousNodeEnv = process.env.NODE_ENV;
+    const previousFlag = process.env.ALLOW_DEV_ADMIN_LOGIN;
+    process.env.NODE_ENV = 'development';
+    process.env.ALLOW_DEV_ADMIN_LOGIN = 'true';
+
+    const res = await request(app).post('/api/v1/user/auth/dev-admin');
+
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+    if (previousFlag === undefined) delete process.env.ALLOW_DEV_ADMIN_LOGIN;
+    else process.env.ALLOW_DEV_ADMIN_LOGIN = previousFlag;
+    expect(res.status).toBe(200);
+    expect(res.body.data.role).toBe('Admin');
+    expect(res.body.data.token).toBeDefined();
+  });
+
+  it('hides local Admin login when the development flag is disabled', async () => {
+    const previousFlag = process.env.ALLOW_DEV_ADMIN_LOGIN;
+    delete process.env.ALLOW_DEV_ADMIN_LOGIN;
+
+    const res = await request(app).post('/api/v1/user/auth/dev-admin');
+
+    if (previousFlag === undefined) delete process.env.ALLOW_DEV_ADMIN_LOGIN;
+    else process.env.ALLOW_DEV_ADMIN_LOGIN = previousFlag;
+    expect(res.status).toBe(404);
   });
 });

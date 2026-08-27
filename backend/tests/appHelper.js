@@ -5,6 +5,15 @@ const Message = require('../server/Project/Settings/models/message.model');
 let mongod = null;
 let appInstance = null;
 
+// Some test files import config before getApp() is called. Refresh the modules
+// that capture cfg.mongoURI so the express app always connects to MongoMemoryServer,
+// never the developer's local database.
+const refreshDatabaseConfig = () => {
+  ['../config/config', '../helpers/initialize', '../config/express'].forEach((modulePath) => {
+    try { delete require.cache[require.resolve(modulePath)]; } catch (error) { /* not loaded yet */ }
+  });
+};
+
 // The response envelope (ResMessage.sendResponse -> onMessage_Response) resolves its
 // code/message by looking up the Setting_Messages collection. Production seeds these;
 // the in-memory test DB starts empty, so without this seed every success/fail body is
@@ -27,6 +36,7 @@ const getApp = async () => {
     process.env.MONGODB = uri;
   }
 
+  refreshDatabaseConfig();
   // Load express configuration, which will require config and initialize with process.env.MONGODB
   const expressConfig = require('../config/express');
 

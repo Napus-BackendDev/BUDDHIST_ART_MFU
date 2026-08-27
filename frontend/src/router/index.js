@@ -31,6 +31,7 @@ const OrdersAdmin = () => import('@/views/Admin/Orders')
 // const CreateCertification = () => import('@/views/Admin/CreateCertification')
 const UsersManagement = () => import('@/views/Admin/UsersManagement')
 const NewsAdmin = () => import('@/views/Admin/News')
+const SystemSettings = () => import('@/views/Admin/SystemSettings')
 
 // View Artist
 const ArtistProfile = () => import('@/views/Artist/Profile.vue')
@@ -188,6 +189,11 @@ const router = new Router({
                     path: 'news',
                     name: 'NewsAdmin',
                     component: NewsAdmin
+                },
+                {
+                    path: 'settings',
+                    name: 'SystemSettings',
+                    component: SystemSettings
                 }
             ]
         },

@@ -4,6 +4,7 @@ const Artwork = require('../Project/Artwork/models/artwork.model');
 const Order = require('../Project/Order/models/order.model');
 const Status = require('../Project/Settings/models/status.model');
 const { getEffectiveMode, constants } = require('../Project/Artwork/service/postTermSale');
+const { STATUS_CODES } = require('../Project/Settings/statusCodes');
 
 module.exports = function() {
     // Run every minute
@@ -11,10 +12,16 @@ module.exports = function() {
         try {
             // 1. Find the necessary status IDs
             const allStatuses = await Status.find({
-                'title.value': { $in: ['Reserved', 'Approved', 'Available', 'Exhibition', 'Rejected', 'Cancelled', 'Pending'] }
+                $or: [
+                    { code: { $in: Object.values(STATUS_CODES) } },
+                    { 'title.value': { $in: ['Reserved', 'Approved', 'Available', 'Exhibition', 'Rejected', 'Cancelled', 'Pending'] } }
+                ]
             });
 
-            const getStatusId = (name) => allStatuses.find(s => s.title.some(t => t.value === name))?._id;
+            const getStatusId = (name) => {
+                const code = String(name).toUpperCase().replace(/ /g, '_');
+                return allStatuses.find(s => s.code === code)?._id || allStatuses.find(s => s.title.some(t => t.value === name))?._id;
+            };
 
             const orderReservedStatus = getStatusId('Reserved');
             const orderCancelledStatus = getStatusId('Cancelled');

@@ -176,9 +176,9 @@ export default {
         },
         filteredItems() {
             const list = (this.items || []).filter(item => {
-                const customer = (item.contact ? item.contact.name : '').toLowerCase();
-                const orderId = (item._id || '').toLowerCase();
-                const searchKeyword = this.filters.search.toLowerCase();
+                const customer = String(item.contact && item.contact.name || '').toLowerCase();
+                const orderId = String(item.orderNumber || item._id || '').toLowerCase();
+                const searchKeyword = String(this.filters.search || '').toLowerCase();
 
                 // Search Filter: check order ID, customer name, and any associated artwork or artist name
                 const artworkNamesMatch = item.artwork ? item.artwork.some(art => 
@@ -201,11 +201,10 @@ export default {
 
                 // Date Filter
                 let dateMatch = true;
-                if (this.filters.startDate && this.filters.endDate) {
+                if (this.filters.startDate || this.filters.endDate) {
                     const itemDate = moment(item.createdAt);
-                    const start = moment(this.filters.startDate).startOf('day');
-                    const end = moment(this.filters.endDate).endOf('day');
-                    dateMatch = itemDate.isBetween(start, end, null, '[]');
+                    if (this.filters.startDate) dateMatch = itemDate.isSameOrAfter(moment(this.filters.startDate).startOf('day'));
+                    if (dateMatch && this.filters.endDate) dateMatch = itemDate.isSameOrBefore(moment(this.filters.endDate).endOf('day'));
                 }
 
                 return searchMatch && statusMatch && dateMatch;
@@ -223,13 +222,13 @@ export default {
                 const enStatus = item.status.title.find(t => t.key === 'en');
                 status = enStatus ? enStatus.value : '';
             }
-            switch (status) {
-                case 'Completed':
-                case 'Success':
-                case 'Approved':
+            switch (String(status).toLowerCase()) {
+                case 'completed':
+                case 'success':
+                case 'approved':
                     return 'Completed';
-                case 'Cancelled':
-                case 'Rejected':
+                case 'cancelled':
+                case 'rejected':
                     return 'Cancelled';
                 default:
                     return 'Pending';

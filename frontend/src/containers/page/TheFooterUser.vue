@@ -102,32 +102,24 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Partner / Supporter Logos (Round Social-Icon Style) -->
+                            <div class="partner-logos-wrapper mt-2">
+                                <div class="partner-logos">
+                                    <div 
+                                        v-for="partner in partners" 
+                                        :key="partner.id" 
+                                        class="partner-logo-btn" 
+                                        :title="getAltText(partner)"
+                                        :aria-label="getAltText(partner)"
+                                    >
+                                        <img :src="partner.img" :alt="getAltText(partner)" class="partner-logo-img" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </CCol>
                 </CRow>
-
-                <!-- Bottom Section: Spacious & Elegant Supporters Section (อยู่ใต้ คอลัมน์ติดต่อเรา) -->
-                <div class="footer-supporters-section mt-5 pt-4 border-top border-secondary-light">
-                    <!-- Section Header Centered with breathing room -->
-                    <div class="text-center mb-4 pb-1">
-                        <span class="supporters-eyebrow">{{ $i18n.locale === 'en' ? 'Partnerships & Collaboration' : 'ความร่วมมือทางวิชาการและศิลปวัฒนธรรม' }}</span>
-                        <h4 class="supporters-title text-white font-weight-bold mb-0">{{ $i18n.locale === 'en' ? 'Our Supporters' : 'หน่วยงานผู้สนับสนุน' }}</h4>
-                        <div class="supporters-accent-bar mx-auto mt-2"></div>
-                    </div>
-
-                    <!-- 4 Spacious Partner Cards Grid -->
-                    <CRow class="justify-content-center">
-                        <CCol cols="6" md="6" lg="3" v-for="partner in partners" :key="partner.id" class="mb-3 px-2 px-lg-3">
-                            <div class="footer-supporter-card text-center p-3 h-100" :title="getAltText(partner)">
-                                <div class="footer-supporter-icon-box mx-auto mb-2">
-                                    <img :src="partner.img" :alt="getAltText(partner)" class="footer-supporter-img" />
-                                </div>
-                                <span class="footer-supporter-badge mb-1 d-inline-block">{{ partner.sub }}</span>
-                                <div class="footer-supporter-name" v-html="$i18n.locale === 'en' ? partner.nameEn : partner.nameTh"></div>
-                            </div>
-                        </CCol>
-                    </CRow>
-                </div>
             </CContainer>
         </div>
 
@@ -320,97 +312,46 @@ export default {
     transform: translateY(-3px);
 }
 
-/* Redesigned Spacious Supporters Section */
-.footer-supporters-section {
-    position: relative;
-}
-
-.supporters-eyebrow {
-    display: block;
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #f0c24d;
-    margin-bottom: 4px;
-}
-
-.supporters-title {
-    font-family: 'Cinzel', 'Sarabun', serif;
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: 0.5px;
-}
-
-.supporters-accent-bar {
-    width: 36px;
-    height: 2px;
-    background: #f0c24d;
-    border-radius: 2px;
-    opacity: 0.8;
-}
-
-.footer-supporter-card {
+/* Partner / Supporter Logos (Circular Social-Icon Style) */
+.partner-logos-wrapper {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1.25rem 1rem !important;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    text-decoration: none;
-    cursor: default;
 }
 
-.footer-supporter-card:hover {
-    background: rgba(255, 255, 255, 0.09);
-    border-color: rgba(240, 194, 77, 0.5);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+.partner-logos {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-.footer-supporter-icon-box {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    border-radius: 50%;
+.partner-logo-btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
     background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-    transition: transform 0.3s ease;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
 }
 
-.footer-supporter-card:hover .footer-supporter-icon-box {
-    transform: scale(1.06);
+.partner-logo-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 14px rgba(240, 194, 77, 0.5);
+    border-color: #f0c24d;
 }
 
-.footer-supporter-img {
+.partner-logo-img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-}
-
-.footer-supporter-badge {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #f0c24d;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-top: 4px;
-}
-
-.footer-supporter-name {
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
-    line-height: 1.4;
-    text-align: center;
 }
 
 .border-secondary {
@@ -424,17 +365,6 @@ export default {
 @media (max-width: 991.98px) {
     .footer-heading {
         margin-top: 20px;
-    }
-    .footer-supporter-card {
-        padding: 1rem 0.75rem !important;
-    }
-    .footer-supporter-icon-box {
-        width: 50px;
-        height: 50px;
-        min-width: 50px;
-    }
-    .footer-supporter-name {
-        font-size: 0.76rem;
     }
 }
 </style>

@@ -2,7 +2,7 @@
     <CRow>
         <CCol md="12">
             <CCard class="news-table-card mb-4">
-                <div>
+                <div class="news-table-scroll" role="region" :aria-label="$i18n.locale === 'en' ? 'News table' : 'ตารางข่าวสาร'" tabindex="0">
                     <CDataTable :items="paginatedItems" :fields="fields" class="custom-table mb-0" hover :border="false"
                         :striped="false">
                         <template #thumbnail="{ item }">
@@ -231,6 +231,8 @@ export default {
 <style scoped>
 /* Reuse styles from AdminTable */
 .news-table-card { border-radius: 12px; border: 1px solid #eef0f3; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-top: 1rem; }
+.news-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.news-table-scroll ::v-deep table { min-width: 720px; }
 .thumbnail-wrapper { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; background-color: #f8f9fa; border: 1px solid #eef0f3; cursor: pointer; position: relative; }
 .thumbnail-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
 .zoom-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white; opacity: 0; transition: opacity 0.2s; }
@@ -267,5 +269,17 @@ export default {
     text-overflow: ellipsis;
     word-break: break-word;
     max-width: 600px;
+}
+
+@media (max-width: 575.98px) {
+    .news-table-card {
+        border-radius: 10px;
+    }
+
+    .news-table-scroll ::v-deep th,
+    .news-table-scroll ::v-deep td {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
 }
 </style>

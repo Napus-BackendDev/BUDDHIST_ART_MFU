@@ -17,7 +17,7 @@
           v-if="showExportButton"
           color="info" 
           variant="outline"
-          class="px-4 py-2 mr-2 shadow-sm rounded-pill font-weight-bold d-flex align-items-center btn-export"
+          class="hero-action hero-action-export px-4 py-2 shadow-sm rounded-pill font-weight-bold d-flex align-items-center justify-content-center btn-export"
           :loading="exportLoading || actionLoading === 'export'"
           :loading-text="$i18n.locale === 'en' ? 'Exporting...' : 'กำลังส่งออก...'"
           @click="handleExport"
@@ -28,7 +28,7 @@
         <CButton 
           v-if="showCreateButton"
           color="primary" 
-          class="px-4 py-2 shadow-sm rounded-pill font-weight-bold d-flex align-items-center"
+          class="hero-action px-4 py-2 shadow-sm rounded-pill font-weight-bold d-flex align-items-center justify-content-center"
           @click="$emit('create')"
         >
           <CIcon name="cil-plus" class="mr-2" />
@@ -152,6 +152,16 @@ export default {
 .hero-content {
   position: relative;
   z-index: 2;
+  gap: 1rem;
+}
+
+.hero-body,
+.hero-text-group {
+  min-width: 0;
+}
+
+.hero-icon-wrapper {
+  flex: 0 0 auto;
 }
 
 .hero-icon-wrapper {
@@ -191,6 +201,16 @@ export default {
   border-width: 1.5px;
 }
 
+.header-actions {
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.hero-action {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .hero-content {
     flex-direction: column;
@@ -199,6 +219,39 @@ export default {
   .header-actions {
     width: 100%;
     margin-top: 1rem;
+  }
+
+  .hero-action {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .header-hero {
+    padding: 1.25rem 1rem;
+  }
+
+  .hero-body {
+    align-items: flex-start !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .hero-title {
+    font-size: 1.25rem;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-subtitle {
+    font-size: 0.8125rem;
+  }
+
+  .header-actions {
+    flex-direction: column;
+  }
+
+  .hero-action {
+    width: 100%;
   }
 }
 </style>

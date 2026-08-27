@@ -3,10 +3,12 @@ const router = express.Router();
 const uploadImage = require('../../../middleware/uploadMiddleware');
 
 const auth = require('../../../middleware/authMiddleware');
+const admin = require('../../../middleware/adminMiddleware');
 
 const artworkService = require("./service/artwork");
 const categoryService = require("./service/category");
 const postTermSaleService = require("./service/postTermSale");
+const adminSettings = require('../Settings/service/adminSettings');
 
 router.get("", artworkService.onQuerys);
 router.get("/post-term", auth, postTermSaleService.onList);
@@ -19,8 +21,9 @@ router.put("", auth, artworkService.onUpdate);
 router.delete("", auth, artworkService.onDelete);
 
 router.get("/category", categoryService.onQuerys);
-router.post("/category", categoryService.onCreate);
-router.put("/category", categoryService.onUpdate);
-router.delete("/category", categoryService.onDelete);
+router.get('/category/:id/impact', admin, (req, res) => { req.params.resource = 'category'; return adminSettings.impact(req, res); });
+router.post("/category", admin, adminSettings.categoryCreate);
+router.put("/category", admin, adminSettings.categoryUpdate);
+router.delete("/category", admin, (req, res) => { req.params.resource = 'category'; return adminSettings.delete(req, res); });
 
 module.exports = router;

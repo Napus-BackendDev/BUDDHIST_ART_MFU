@@ -105,41 +105,6 @@ export default {
             name: this.$t('sidebar.submissions'),
             to: '/admin/submissions',
             icon: 'cil-cloud-upload',
-          {
-            _name: 'CSidebarNavTitle',
-            _children: [this.$t('sidebar.operations')]
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.orders'),
-            to: '/admin/orders',
-            icon: 'cil-cart',
-            badge: this.pendingPaymentCount > 0 ? {
-              color: 'info',
-              text: String(this.pendingPaymentCount)
-            } : null
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.artworks'),
-            to: '/admin/artworks',
-            icon: 'cil-paint',
-            badge: this.pendingArtworkCount > 0 ? {
-              color: 'warning',
-              text: String(this.pendingArtworkCount)
-            } : null
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.news'),
-            to: '/admin/news',
-            icon: 'cil-newspaper'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.submissions'),
-            to: '/admin/submissions',
-            icon: 'cil-cloud-upload',
             badge: this.submissionAlertBadge
           },
           {

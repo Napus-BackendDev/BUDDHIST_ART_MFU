@@ -1,7 +1,7 @@
 <template>
-   <CRow class="mb-4">
+   <CRow class="news-widget-row mb-4">
         <!-- Total News -->
-        <CCol sm="6" lg="4">
+        <CCol cols="12" md="4" class="news-widget-col">
             <CCard class="widget-card h-100">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
@@ -16,7 +16,7 @@
         </CCol>
 
         <!-- Total Views -->
-        <CCol sm="6" lg="4">
+        <CCol cols="12" md="4" class="news-widget-col">
             <CCard class="widget-card h-100">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
@@ -31,7 +31,7 @@
         </CCol>
 
         <!-- Categories -->
-        <CCol sm="6" lg="4">
+        <CCol cols="12" md="4" class="news-widget-col">
             <CCard class="widget-card h-100">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
@@ -136,4 +136,24 @@ export default {
 .text-green { color: #10b981; }
 .bg-orange-light { background-color: #fff6e8; }
 .text-orange { color: #f59e0b; }
+
+.news-widget-col {
+    margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+    .news-widget-col {
+        margin-bottom: 0;
+    }
+
+    .widget-card ::v-deep .card-body {
+        padding: 1.25rem !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .news-widget-row {
+        margin-bottom: 0.5rem !important;
+    }
+}
 </style>
