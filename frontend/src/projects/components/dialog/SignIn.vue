@@ -29,12 +29,6 @@
               <div class="d-flex justify-content-center mt-4">
                 <div ref="googleSignInButton" class="google-signin-button" aria-label="Sign in with Google"></div>
               </div>
-              <div v-if="isLocalDevelopment" class="local-admin-login mt-4 pt-4">
-                <p class="text-muted small mb-3">Local development only</p>
-                <CButton color="danger" variant="outline" block @click="loginAsLocalAdmin">
-                  เข้าสู่ระบบ Admin (Local)
-                </CButton>
-              </div>
               <p v-if="googleError" class="text-danger small mt-3 mb-0">{{ googleError }}</p>
             </div>
           </template>
@@ -60,16 +54,6 @@
           this.initializeGoogleSignIn();
         },
         methods: {
-          async loginAsLocalAdmin() {
-            this.googleError = '';
-            try {
-              await this.$store.dispatch('auth/onDevAdminLogin');
-            } catch (err) {
-              this.googleError = this.$i18n.locale === 'en'
-                ? 'Local Admin login is unavailable.'
-                : 'ไม่สามารถเข้าสู่ระบบ Admin สำหรับ Local ได้';
-            }
-          },
           async loadGoogleIdentity() {
             if (window.google && window.google.accounts && window.google.accounts.id) return;
 
@@ -153,9 +137,6 @@
           }
         },
         computed: {
-            isLocalDevelopment() {
-              return process.env.NODE_ENV === 'development';
-            },
             isAuthe: {
               get() {
                 return this.$store.getters['auth/showSignInModal'];
@@ -197,10 +178,6 @@
 .google-signin-button > div,
 .google-signin-button [role="button"] {
   min-height: 44px;
-}
-
-.local-admin-login {
-  border-top: 1px solid #e4e7ea;
 }
 
 .shadow-premium {
