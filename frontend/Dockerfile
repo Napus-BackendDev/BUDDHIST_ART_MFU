@@ -8,7 +8,9 @@ WORKDIR /app
 COPY package*.json ./
 
 # ติดตั้ง dependencies พร้อมแก้ peer dependency conflicts
-RUN npm install --legacy-peer-deps
+# Browser-driver postinstall scripts are only needed for end-to-end tests and
+# can hang a production image build. The Vue production build does not use them.
+RUN npm install --legacy-peer-deps --ignore-scripts
 
 COPY . .
 

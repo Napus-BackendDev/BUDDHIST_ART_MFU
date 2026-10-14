@@ -51,8 +51,15 @@ Desktop.ini
 *.swo
 *~
 
-# Local dev tooling / artifacts (not part of the app)
+# AI / Workspace Agent Instructions
 .agents/
+!.agents/
+!.agents/skills/
+!.agents/skills/**
+!.agents/rules/
+!.agents/rules/**
+.agents/skills.zip
+.agents/**/.DS_Store
 screenshots/
 backend/tmp/
 backend/coverage/

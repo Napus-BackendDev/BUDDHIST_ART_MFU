@@ -1,8 +1,11 @@
-# BUDDHIST_ART_MFU
+# BUDDHIST_ART_MFU (BAS)
 
-Admin/user portal for the Mae Fah Luang University Buddhist Art program.
-- **Frontend** (`/frontend`): Vue 2 + Vuex + Vue Router + CoreUI Pro. Options API.
-- **Backend** (`/backend`): Express + Mongoose 5 + node-cron on MongoDB. CommonJS.
+Admin and User portal for the Mae Fah Luang University Buddhist Art program.
+- **Frontend** (`/frontend`): Vue 2.6 + Vuex + Vue Router + CoreUI Pro. Options API. Port `8080`.
+- **Backend** (`/backend`): Node.js + Express + Mongoose 5 + node-cron on MongoDB. CommonJS. Port `8081`.
+- **Image Storage**: MFU Drive WebDAV (`https://mfudrive.mfu.ac.th/s/8AHrLgmZx9k6QPf`).
+
+Authoritative Agent Policy & Guidelines: See [AGENTS.md](AGENTS.md) and [GEMINI.md](GEMINI.md).
 
 ## Commands
 | Task | Dir | Command |
@@ -16,7 +19,7 @@ Admin/user portal for the Mae Fah Luang University Buddhist Art program.
 
 <!-- Backend uses pnpm; frontend uses npm (CoreUI template). Do not mix package managers. -->
 
-## Domain contract (can't be inferred from code)
+## Domain Contract (Can't be inferred from code)
 The core workflow is the student status transition. When a submission's deadline
 passes — or when artists are enrolled — every user ID in the submission's `artist`
 array must flip `User.status` from **NewStudent** to **OldStudent**.
@@ -24,25 +27,23 @@ array must flip `User.status` from **NewStudent** to **OldStudent**.
 - The transition is enforced in three places, keep them in sync: query hooks
   (`onQuery`/`onQuerys`), `onUpdate`, and the cron job in `backend/server/crons/`.
 
-## System map — read on demand (don't guess)
-Detailed reference docs live in `.claude/docs/` (not auto-loaded, so zero token cost until you open them). Open the relevant one before working on that area:
-- [`.claude/docs/ARCHITECTURE.md`](.claude/docs/ARCHITECTURE.md) — what the system is, the 4 user types (Admin/Artist/Buyer/Public), how frontend↔backend talk, auth lifecycle, module maps, deploy.
-- [`.claude/docs/BACKEND.md`](.claude/docs/BACKEND.md) — Express modular pattern (`routes→service→controller→model`), `base.service.js` CRUD factory, every domain, crons, mail, PDF/cert, "where to change X" index.
-- [`.claude/docs/FRONTEND.md`](.claude/docs/FRONTEND.md) — Vue/Vuex/Router, 3 portals + storefront, view→store→API flow, `api.js` wrappers, mixins, dead code.
-- [`.claude/docs/DATA_MODEL.md`](.claude/docs/DATA_MODEL.md) — every Mongoose model + relationships, the `[{key,value}]` i18n pattern, `Setting_*`-by-ID, the status-transition contract in detail.
-- [`.claude/docs/API.md`](.claude/docs/API.md) — full REST endpoint inventory by module (method, path, auth).
+## System Documentation
+Reference docs located in the repository:
+- [`AGENTS.md`](AGENTS.md) — Universal AI Agent policy, pre-flight checklist, and communication format.
+- [`Design.md`](Design.md) — System design, module structure, and database contracts.
+- [`system_specification.md`](system_specification.md) — Functional specifications and workflows.
+- [`docs/tor/TOR_Buddhist_Art_MFU_PostTermSale.md`](docs/tor/TOR_Buddhist_Art_MFU_PostTermSale.md) — Official TOR requirements.
+- [`log.md`](log.md) — Chronological activity and development log.
 
-Heads-up (verified during the audit): passwords are **plaintext**; auth checks signature only (**no role/ownership checks**, IDOR); frontend has **no route guards** (backend is the only gate); several list/stat endpoints are public; socket.io is scaffolding only. Treat these as current-state facts, not targets.
+## Specialist Subagents & Skills (`.agents/skills/`)
+- **dev** — Buddhist Art MFU full-stack developer (Vue 2 + Express + MongoDB + MFU Drive).
+- **orchestrator** — Lead development coordinator enforcing Ponytail simplicity.
+- **ponytail** — Complexity & over-engineering hunter (stdlib first, YAGNI, shortest diff).
+- **bas-docker-deploy** — Beta release to `bas.beta.mfu.ac.th` (192.168.11.90:8082).
+- **ui-ux-pro-max** & **impeccable** — WCAG AA accessibility, CoreUI Pro preservation, micro-interactions.
+- **code-review** — Automated diff review against standards and specs.
 
-## Specialist subagents (`.claude/agents/`)
-Delegate to these instead of doing everything in the main thread; each is scoped and reads the docs above on demand:
-- **backend-engineer** — Express/Mongoose changes (endpoints, models, crons, the status transition).
-- **frontend-engineer** — Vue 2 / Vuex / CoreUI features and fixes.
-- **test-engineer** — Jest/supertest + Vue Test Utils; owns comprehensive/regression coverage.
-- **security-auditor** (read-only) — vulnerability sweeps (IDOR, secrets, injection). Use proactively.
-- **code-reviewer** (read-only) — reviews the current diff for bugs + lazy-senior-dev discipline. Use proactively.
-
-## How to work here (lazy senior dev — saves tokens)
+## How to Work Here (Ponytail Discipline)
 Before writing any code, walk this ladder and STOP at the first hit:
 1. Does this need to exist? → No: skip it (YAGNI).
 2. Already in this codebase? → Reuse the helper, don't rewrite.
@@ -52,15 +53,4 @@ Before writing any code, walk this ladder and STOP at the first hit:
 6. Fits in one line? → One line.
 7. Only then: write the minimum that works.
 
-Non-negotiable even when lazy: input validation at trust boundaries, error handling,
-security, and accessibility. "Lazy" means less code, never less safety.
-
 Fix bugs at the root: patch the shared function all callers use, not each call site.
-
-## Response & context rules (saves tokens)
-- Be terse. Give the answer first; explain only what was asked. No filler preamble or recap.
-- Search wide with the **Explore** subagent instead of reading whole files into context.
-- Match existing style. Do NOT introduce TypeScript, new frameworks, or new deps without asking.
-- Prefer editing an existing file over creating a new one.
-
-<!-- Prompt patterns for the human: see .claude/PROMPTING.md (not auto-loaded, zero token cost). -->
