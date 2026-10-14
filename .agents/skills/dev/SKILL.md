@@ -78,5 +78,5 @@ When implementing or modifying frontend components, views, or layouts:
    - Ensure 0 errors before reporting completion.
 
 4. **Documentation & Logging**:
-   - Append concise entries to `log.md`.
+   - Append concise entries to `CHANGELOG.md` (Single Source of Truth).
    - Include only verification that was actually executed.

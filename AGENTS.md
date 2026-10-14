@@ -173,3 +173,11 @@ auto_push: false
 - `code-review`: ตรวจสอบ Diff และ Code Quality
 - `research`: สืบค้นข้อมูลเชิงลึกและสรุปองค์ความรู้
 - `find-skills`: ค้นหาและติดตั้ง Skills ใหม่
+
+---
+
+## 12. นโยบายบันทึกประวัติการเปลี่ยนแปลง (Change Log Policy)
+
+- **Single Source of Truth**: กำหนดให้ใช้ [`CHANGELOG.md`](CHANGELOG.md) เพียงไฟล์เดียวสำหรับการบันทึกประวัติการเปลี่ยนแปลง, การ Release, บั๊กฟิกซ์, และคู่มือส่งต่องาน (Handover Guide)
+- **รูปแบบมาตรฐาน**: ใช้รูปแบบ Keep a Changelog + Semantic Versioning (`[MAJOR.MINOR.PATCH] - YYYY-MM-DD`) แยกหมวดหมู่ `Added`, `Changed`, `Fixed`, `Removed`, `Security`
+- **การติดตามใน Git**: `CHANGELOG.md` ต้องถูกติดตามใน Git เสมอเพื่อให้นักพัฒนาคนอื่นและ AI Agents ตัวอื่นสามารถอ่านและส่งต่องานได้ทันที

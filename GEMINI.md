@@ -31,3 +31,6 @@ For the authoritative operating schema, pre-flight checklist, and communication 
 
 6. **Workspace Skills**:
    - Project skills reside in `.agents/skills/` (`dev`, `orchestrator`, `ponytail`, `bas-docker-deploy`, `ui-ux-pro-max`, `impeccable`, `code-review`).
+
+7. **Changelog & Documentation**:
+   - Always record significant changes and releases in `CHANGELOG.md` (the repository's Single Source of Truth). Do not create fragmented logs.

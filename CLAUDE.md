@@ -33,7 +33,7 @@ Reference docs located in the repository:
 - [`Design.md`](Design.md) — System design, module structure, and database contracts.
 - [`system_specification.md`](system_specification.md) — Functional specifications and workflows.
 - [`docs/tor/TOR_Buddhist_Art_MFU_PostTermSale.md`](docs/tor/TOR_Buddhist_Art_MFU_PostTermSale.md) — Official TOR requirements.
-- [`log.md`](log.md) — Chronological activity and development log.
+- [`CHANGELOG.md`](CHANGELOG.md) — System changelog, release history, and developer handover guide.
 
 ## Specialist Subagents & Skills (`.agents/skills/`)
 - **dev** — Buddhist Art MFU full-stack developer (Vue 2 + Express + MongoDB + MFU Drive).
