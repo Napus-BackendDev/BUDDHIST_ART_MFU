@@ -4,14 +4,10 @@ FROM node:20
 # กำหนด working directory
 WORKDIR /usr/src/app
 
-# คัดลอกไฟล์ package.json และ lock file
-COPY package*.json ./
-
-# ติดตั้ง pnpm
-RUN npm install -g pnpm
-
-# ติดตั้ง dependencies ทั้งหมด (รวม devDependencies ด้วย เพื่อให้ sass ทำงานได้)
-RUN pnpm install
+# The committed lockfile varies across pnpm versions.
+# Install from package.json with npm --legacy-peer-deps for reliable container build.
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
 # คัดลอก source code ทั้งหมด
 COPY . .
