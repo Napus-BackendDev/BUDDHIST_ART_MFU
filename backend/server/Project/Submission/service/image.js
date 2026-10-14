@@ -7,8 +7,8 @@ const Submission = require('../models/submission.model');
 
 const cache = new Map();
 const pending = new Map();
-const MAX_BYTES = 10 * 1024 * 1024;
-const CACHE_BYTES = 64 * 1024 * 1024;
+const MAX_BYTES = 50 * 1024 * 1024;
+const CACHE_BYTES = 256 * 1024 * 1024;
 const TTL = 60 * 60 * 1000;
 let cachedBytes = 0;
 
@@ -25,20 +25,24 @@ function allowedUrl(value) {
 async function download(value) {
     let url = allowedUrl(value);
     for (let i = 0; i < 5; i++) {
+        const headers = { 'User-Agent': 'BuddhistArtMFU/1.0' };
+        if (url.hostname === 'mfudrive.mfu.ac.th' && process.env.MFU_DRIVE_USERNAME) {
+            headers['Authorization'] = 'Basic ' + Buffer.from(`${process.env.MFU_DRIVE_USERNAME}:${process.env.MFU_DRIVE_PASSWORD || ''}`).toString('base64');
+        }
         const response = await axios.get(url.href, {
-            responseType: 'arraybuffer', timeout: 15000, maxContentLength: MAX_BYTES,
-            maxRedirects: 0, validateStatus: () => true
+            responseType: 'arraybuffer', timeout: 45000, maxContentLength: MAX_BYTES,
+            maxRedirects: 0, validateStatus: () => true, headers
         });
         if ([301, 302, 303, 307, 308].includes(response.status) && response.headers.location) {
             url = allowedUrl(new URL(response.headers.location, url).href);
             continue;
         }
         if (response.status !== 200 || !/^image\/(jpeg|png|webp|gif)\b/i.test(response.headers['content-type'] || '')) {
-            throw new Error('Image provider did not return an image');
+            throw new Error(`Image provider returned HTTP ${response.status} with content-type: ${response.headers['content-type']}`);
         }
         const input = Buffer.from(response.data);
         if (input.length > MAX_BYTES) throw new Error('Image exceeds size limit');
-        return sharp(input, { limitInputPixels: 40000000 }).rotate()
+        return sharp(input, { limitInputPixels: 150000000 }).rotate()
             .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
             .jpeg({ quality: 85 }).toBuffer();
     }
@@ -91,7 +95,8 @@ exports.onImage = async (req, res) => {
         res.set('Cache-Control', 'public, max-age=3600');
         res.set('X-Content-Type-Options', 'nosniff');
         return res.type('jpeg').send(buffer);
-    } catch (_) {
-        return res.status(502).json({ message: 'Image is unavailable. Check the source link or upload an image file.' });
+    } catch (error) {
+        console.error(`Error loading image for artwork ${id}:`, error.message);
+        return res.status(502).json({ message: 'Image is unavailable. Check the source link or upload an image file.', error: error.message });
     }
 };
