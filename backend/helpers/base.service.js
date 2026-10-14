@@ -1,4 +1,6 @@
 // services/base.service.js
+const mfuDrive = require('./mfuDrive');
+
 module.exports = function createBaseService(objSchema, defaultPopulate = []) {
 
     return {
@@ -15,7 +17,9 @@ module.exports = function createBaseService(objSchema, defaultPopulate = []) {
             
             if (webPath && !webPath.endsWith('/')) webPath += '/';
             
-            return `${baseUrl}/${webPath}${filename}`;
+            const relativePath = `${webPath}${filename}`;
+            if (mfuDrive.isEnabled()) return mfuDrive.publicFileUrl(relativePath);
+            return `${baseUrl}/${relativePath}`;
         },
 
         // ====================================

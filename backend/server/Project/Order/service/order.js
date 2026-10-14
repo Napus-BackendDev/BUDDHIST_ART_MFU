@@ -15,6 +15,7 @@ const UserModel = require('../../User/models/user.model');
 const { generateOrderCode } = require('../../Artwork/service/artworkCode');
 const { isPostTermPurchasable, getEffectiveMode, constants } = require('../../Artwork/service/postTermSale');
 const { STATUS_CODES, LEGACY_NAMES, hasCode, queryForCode } = require('../../Settings/statusCodes');
+const mfuDrive = require('../../../../helpers/mfuDrive');
 
 // Keep fire-and-forget invoice/mail work observable so shutdown and tests can
 // drain it before closing MongoDB. The customer response remains non-blocking.
@@ -649,7 +650,8 @@ exports.onUpdate = async function (request, response) {
                         const buyerId = fullDoc.user ? (fullDoc.user._id || fullDoc.user) : "Guest";
 
                         const attachments = [];
-                        const artworkImagePath = resolveStoredPublicFile(artwork.image, root);
+                        const artworkImage = await resolveStoredPublicFileAsync(artwork.image, root);
+                        const artworkImagePath = artworkImage?.filePath || '';
                         const artworkImageCid = artworkImagePath
                             ? `artwork-${String(orderIdentifier).replace(/[^a-zA-Z0-9_-]/g, '_')}@buddhist-art-mfu`
                             : '';
@@ -712,7 +714,11 @@ exports.onUpdate = async function (request, response) {
                             });
                         }
 
-                        await sendMail(buyerEmail, 'การชำระเงินได้รับการอนุมัติและเอกสารผลงาน - พุทธศิลปกรรม มฟล.', '', html, attachments);
+                        try {
+                            await sendMail(buyerEmail, 'การชำระเงินได้รับการอนุมัติและเอกสารผลงาน - พุทธศิลปกรรม มฟล.', '', html, attachments);
+                        } finally {
+                            await artworkImage?.cleanup?.();
+                        }
                     }
                     await Order.onUpdate(
                         { _id: doc._id },
@@ -978,7 +984,8 @@ async function generateAndSaveCertificateFile(doc) {
 
     for (const art of doc.artwork) {
         // 1. Resolve Artwork Image Path
-        const artworkLocalPath = resolveStoredPublicFile(art.image, root);
+        const artworkImage = await resolveStoredPublicFileAsync(art.image, root);
+        const artworkLocalPath = artworkImage?.filePath || '';
 
         if (!artworkLocalPath || !fs.existsSync(artworkLocalPath)) {
             console.warn(`[SKIP] Artwork image NOT FOUND at: ${artworkLocalPath}`);
@@ -1007,16 +1014,20 @@ async function generateAndSaveCertificateFile(doc) {
             artworkCode: art.artworkCode
         };
 
-        // 3. Generate the same Certificate of Authenticity layout used in the email.
-        const certBytes = await PdfService.generateCertificateOfAuthenticity({
-            artworkPath: artworkLocalPath,
-            info
-        });
+        try {
+            // 3. Generate the same Certificate of Authenticity layout used in the email.
+            const certBytes = await PdfService.generateCertificateOfAuthenticity({
+                artworkPath: artworkLocalPath,
+                info
+            });
 
-        // 4. Add to Merged PDF
-        const certDoc = await PDFDocument.load(certBytes);
-        const copiedPages = await mergedPdf.copyPages(certDoc, certDoc.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
+            // 4. Add to Merged PDF
+            const certDoc = await PDFDocument.load(certBytes);
+            const copiedPages = await mergedPdf.copyPages(certDoc, certDoc.getPageIndices());
+            copiedPages.forEach((page) => mergedPdf.addPage(page));
+        } finally {
+            await artworkImage?.cleanup?.();
+        }
     }
 
     if (mergedPdf.getPageCount() === 0) {
@@ -1054,6 +1065,18 @@ function sanitize(text) {
 function resolveStoredPublicFile(image, root) {
     if (!image) return "";
 
+    const driveRelativePath = mfuDrive.relativePathFromStoredUrl(image);
+    if (driveRelativePath) {
+        const driveLocalPath = path.resolve(root, driveRelativePath);
+        const driveRoot = path.resolve(root);
+        const driveRootPrefix = `${driveRoot}${path.sep}`;
+        if (driveLocalPath.startsWith(driveRootPrefix)
+            && fs.existsSync(driveLocalPath)
+            && fs.statSync(driveLocalPath).isFile()) {
+            return driveLocalPath;
+        }
+    }
+
     let cleanUrl;
     try {
         cleanUrl = decodeURIComponent(String(image).replace(/^https?:\/\/[^/]+/, ""));
@@ -1081,5 +1104,22 @@ function resolveStoredPublicFile(image, root) {
         return fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile() ? resolvedPath : "";
     } catch (error) {
         return "";
+    }
+}
+
+async function resolveStoredPublicFileAsync(image, root) {
+    const localPath = resolveStoredPublicFile(image, root);
+    if (localPath) return { filePath: localPath, cleanup: async () => undefined };
+
+    if (!mfuDrive.isEnabled()) return null;
+    const relativePath = mfuDrive.relativePathFromStoredUrl(image);
+    if (!relativePath) return null;
+
+    try {
+        const materialized = await mfuDrive.materializeToTemp(relativePath);
+        return { filePath: materialized.filePath, cleanup: materialized.cleanup };
+    } catch (error) {
+        console.warn(`[MFU Drive] Could not materialize ${relativePath}: ${error.message}`);
+        return null;
     }
 }

@@ -13,9 +13,12 @@
     "serve:prod": "node -r dotenv/config server.js dotenv_config_path=.env.production",
     "seed:settings": "node scripts/seedSettings.js",
     "seed:all": "node scripts/seedSettings.js",
+    "admin:ensure": "node scripts/ensureAdminUser.js",
     "migrate:setting-codes": "node scripts/migrateSettingCodes.js",
     "ensure:setting-defaults": "node scripts/ensureSettingDefaults.js",
     "migrate:artist-emails": "node -r dotenv/config scripts/migrateArtistOfficialEmails.js dotenv_config_path=.env.development",
+    "migrate:images-to-mfu-drive": "node -r dotenv/config scripts/migrateLocalImagesToMfuDrive.js dotenv_config_path=.env.development",
+    "migrate:images-to-mfu-drive:prod": "node -r dotenv/config scripts/migrateLocalImagesToMfuDrive.js dotenv_config_path=.env.production",
     "migrate:local-to-production": "node scripts/migrateLocalToProduction.js",
     "seed:mock-orders": "node scripts/seedMockOrders.js",
     "migrate:post-term": "node scripts/migratePostTermSale.js"

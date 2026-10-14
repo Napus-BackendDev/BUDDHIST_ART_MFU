@@ -52,6 +52,7 @@ import AssignmentFilter from './components/filter/AssignmentFilter.vue'
 import HeaderHero from './components/HeaderHero.vue'
 import moment from 'moment'
 import * as XLSX from 'xlsx'
+import { submissionImageUrl } from '@/utils/submissionArtworkImport'
 
 export default {
     name: 'Assignment',
@@ -151,7 +152,7 @@ export default {
 
                 return {
                     id: aw._id,
-                    preview: aw.image,
+                    preview: submissionImageUrl(aw._id, aw.image),
                     student_name: studentName,
                     student_id: studentId,
                     submitted_date: aw.create ? moment(aw.create.at).format('DD/MM/YYYY HH:mm') : 'N/A',

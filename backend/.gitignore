@@ -1,6 +1,7 @@
 /.idea/
 /node_modules/
-package-lock.json
+# Backend uses the tracked pnpm-lock.yaml; ignore the alternate npm lockfile.
+/package-lock.json
 
 .env
 .env.dev

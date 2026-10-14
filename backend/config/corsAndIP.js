@@ -9,7 +9,6 @@ const envOrigins = (process.env.CLIENT_URL || '')
     .map((s) => s.trim())
     .filter(Boolean);
 const allowedDomains = ['https://example.com', 'https://anotherdomain.com', ...envOrigins];
-const allowedIPs = ['192.168.1.1', '203.0.113.5', '127.0.0.1', '::1'];
 
 // การตั้งค่า CORS
 const corsOptions = {
@@ -27,6 +26,7 @@ const corsOptions = {
     },
     methods: ["POST", "GET", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: "X-Requested-With, Content-Type, Accept, Authorization, X-Access-Token, lang, Origin",
+    exposedHeaders: ['Retry-After', 'RateLimit', 'RateLimit-Policy'],
     credentials: true,
     optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
 };
@@ -34,8 +34,11 @@ const corsOptions = {
 // ฟังก์ชัน middleware สำหรับการตรวจสอบ IP ที่อนุญาต
 const ipCheckMiddleware = (req, res, next) => {
 
-    const userIP = req.ip.replace('::ffff:', '') || req.connection.remoteAddress;
-    if (allowedIPs.includes(userIP)) {
+    // Public APIs are accessible by default; private deployments can opt in.
+    const allowedIPs = (process.env.API_ALLOWED_IPS || '').split(',').map(s => s.trim()).filter(Boolean);
+    const normalize = ip => String(ip || '').replace(/^::ffff:/, '');
+    const userIP = normalize(req.ip || req.socket.remoteAddress);
+    if (!allowedIPs.length || allowedIPs.map(normalize).includes(userIP)) {
         next();
     } else {
         res.status(403).send('Access Denied');

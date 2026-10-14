@@ -25,7 +25,7 @@
                             @keydown.enter="zoomImg(item)"
                             @keydown.space.prevent="zoomImg(item)"
                         >
-                            <img :src="item.image || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName($i18n.locale, item).charAt(0)}`"
+                            <img :src="artworkImageUrl(item) || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName($i18n.locale, item).charAt(0)}`"
                                 :alt="getName($i18n.locale, item)" class="thumbnail-img">
                              <div class="zoom-overlay">
                                 <CIcon name="cil-search" />
@@ -189,6 +189,7 @@
 
 <script>
 import moment from 'moment';
+import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 import * as XLSX from 'xlsx';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import TablePaginationFooter from './TablePaginationFooter.vue';
@@ -299,6 +300,7 @@ export default {
         }
     },
     methods: {
+        artworkImageUrl,
         approvalStatus(item) {
             return item.status && item.status.approval ? this.getName('en', item.status.approval) : 'Pending';
         },
@@ -313,7 +315,7 @@ export default {
         zoomImg(item) {
             if (!item || !item.image) return;
             this.zoomTriggerElement = document.activeElement;
-            this.zoomImageUrl = item.image;
+            this.zoomImageUrl = artworkImageUrl(item);
             this.zoomArtwork = item;
             this.showZoomModal = true;
         },

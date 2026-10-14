@@ -34,7 +34,7 @@
                     <CCol lg="6" class="mb-4 mb-lg-0 visual-column">
                         <div class="gallery-frame-container shadow-premium position-relative mb-4">
                             <div class="artwork-canvas-stage position-relative">
-                                <img :src="artwork.image" :alt="getName($i18n.locale, artwork)" class="main-artwork-img">
+                                <img :src="artworkImageUrl(artwork)" :alt="getName($i18n.locale, artwork)" class="main-artwork-img">
                                 
                                 <!-- Zoom Button with premium styling -->
                                 <button v-if="!showZoomModal" class="btn-zoom-float shadow-lg" @click="zoomImg" title="Zoom Image">
@@ -285,7 +285,7 @@
             <!-- Image Zoom Lightbox (Same style as NewsDetail.vue) -->
             <div v-if="showZoomModal" class="lightbox-overlay" @click="showZoomModal = false">
                 <div class="lightbox-content" @click.stop>
-                    <img :src="artwork.image" :alt="getName($i18n.locale, artwork)" class="img-fluid zoom-img-main shadow-lg">
+                    <img :src="artworkImageUrl(artwork)" :alt="getName($i18n.locale, artwork)" class="img-fluid zoom-img-main shadow-lg">
                     <div class="lightbox-caption text-center py-3">
                         <h4 class="mb-1 text-white font-weight-bold">{{ getName($i18n.locale, artwork) }}</h4>
                         <p class="text-white-50 mb-0">{{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Artist' : 'ศิลปิน') }}</p>
@@ -338,6 +338,7 @@
 
 <script>
 import moment from 'moment';
+import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 import ArtworkCard from '@/components/CardArtwork.vue';
 
 export default {
@@ -453,6 +454,7 @@ export default {
         }
     },
     methods: {
+        artworkImageUrl,
         getStatusLabel(art) {
             if (!art || !art.status || !art.status.approval) return 'Pending';
             return this.getName('en', art.status.approval);

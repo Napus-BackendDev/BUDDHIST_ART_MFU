@@ -8,12 +8,11 @@ const compression = require("compression");
 const morgan = require("morgan");
 const sass = require("sass-middleware");
 const expressValidator = require('express-validator');
-const rateLimit = require('express-rate-limit');
 const path = require("path");
 const cors = require('cors');
 
 const { corsOptions, ipCheckMiddleware } = require('../config/corsAndIP');
-const { limiter, blockMiddleware } = require('../config/rateLimit');
+const { createApiLimiter } = require('../config/rateLimit');
 
 // Import logger
 const loggerMiddleware = require('../config/logger');
@@ -24,13 +23,12 @@ module.exports = function (app) {
     app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
     app.use(compression());
+    const protectionEnabled = process.env.DISABLE_IP_BLOCKING === 'false' ||
+        (process.env.NODE_ENV === 'production' && process.env.DISABLE_IP_BLOCKING !== 'true');
+    if (protectionEnabled) {
+        app.use('/api/v1', ipCheckMiddleware, createApiLimiter());
+    }
     if (process.env.NODE_ENV === 'production') {
-
-        app.use(blockMiddleware); // ตรวจสอบ IP ก่อน
-        app.use(limiter); // ใช้ rate limiter หลังจากตรวจสอบ IP
-        // การตรวจสอบ IP ที่อนุญาต
-        app.use(ipCheckMiddleware);
-
         app.use(morgan('combined')); // ใช้ log format ที่เหมาะสม
     } else {
         app.use(morgan('dev')); // ใช้ log format สำหรับ development

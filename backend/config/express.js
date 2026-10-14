@@ -6,11 +6,13 @@ const swagger = require('../swagger/swagger');
 const routes = require('../server/routes/app.routes');
 const cors = require('cors');
 const { corsOptions } = require('./corsAndIP');
+const { configureTrustProxy } = require('./rateLimit');
 
 let isReady = false;
 
 module.exports = function () {
   const app = express();
+  configureTrustProxy(app);
 
   // Swagger setup
   swagger(app);

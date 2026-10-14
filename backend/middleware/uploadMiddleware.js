@@ -2,6 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const mongoose = require("mongoose");
+const mfuDrive = require("../helpers/mfuDrive");
 
 module.exports = function uploadImage(folderType, fieldName = "image", isMultiple = false, maxFiles = 10) {
   const storage = multer.diskStorage({
@@ -151,8 +152,33 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
   };
 
   const upload = multer({ storage, fileFilter, limits });
-
-  return isMultiple
+  const multerHandler = isMultiple
     ? upload.array(fieldName, maxFiles)
     : upload.single(fieldName);
+
+  // Keep the existing local file as a short-lived/cache copy for PDF and email
+  // workflows, then mirror every uploaded image to the shared MFU Drive.
+  return (req, res, next) => {
+    multerHandler(req, res, async (err) => {
+      if (err) return next(err);
+      if (!mfuDrive.isEnabled()) return next();
+
+      try {
+        const files = [];
+        if (req.file) files.push(req.file);
+        if (Array.isArray(req.files)) files.push(...req.files);
+
+        for (const file of files) {
+          const relativePath = mfuDrive.relativePathFromPublicFolder(file.destination, file.filename);
+          const uploaded = await mfuDrive.uploadLocalFile(relativePath, file.path, file.mimetype);
+          file.mfuDrivePath = uploaded.relativePath;
+          file.mfuDriveUrl = uploaded.url;
+        }
+        return next();
+      } catch (driveError) {
+        driveError.status = driveError.status || 502;
+        return next(driveError);
+      }
+    });
+  };
 };

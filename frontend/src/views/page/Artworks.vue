@@ -215,6 +215,13 @@
                             <CSpinner color="danger" variant="grow" style="width: 3.5rem; height: 3.5rem;" />
                             <p class="mt-3 text-muted font-weight-light">{{ $i18n.locale === 'en' ? 'Loading artworks...' : 'กำลังโหลดผลงาน...' }}</p>
                         </div>
+                        <div v-else-if="loadError" class="text-center py-5 bg-white rounded-xl border" role="alert">
+                            <h4>{{ $i18n.locale === 'en' ? 'Unable to load artworks' : 'โหลดข้อมูลผลงานไม่สำเร็จ' }}</h4>
+                            <p>{{ loadError }}</p>
+                            <button type="button" class="btn-reset-all px-4 py-2" :disabled="retryAt > retryNow" @click="fetchInitialData">
+                                {{ retryAt > retryNow ? ($i18n.locale === 'en' ? 'Please wait before retrying' : 'กรุณารอก่อนลองใหม่') : ($i18n.locale === 'en' ? 'Try again' : 'ลองใหม่') }}
+                            </button>
+                        </div>
                         <div v-else>
                             <div v-if="paginatedArtworks.length > 0">
                                 <ArtworkCard :artworks="paginatedArtworks" :cols="3" />
@@ -298,6 +305,7 @@
 <script>
 import ArtworkCard from '@/components/CardArtwork.vue'
 import SectionHeaderArtworks from './components/SectionHeaderArtworks.vue'
+import { retryAtFromHeaders } from '@/utils/rateLimit'
 
 export default {
     name: 'Artworks',
@@ -308,6 +316,10 @@ export default {
     data() {
         return {
             loading: false,
+            loadError: '',
+            retryAt: 0,
+            retryNow: 0,
+            retryTimer: null,
             showBackToTop: false,
             activePriceBracket: null,
             tempMinPrice: 0,
@@ -346,12 +358,13 @@ export default {
     },
     mounted() {
         this.polling = setInterval(() => {
-            this.$store.dispatch('artwork/get');
+            this.refreshArtworks();
         }, 5000);
         window.addEventListener('scroll', this.handleScroll);
         window.addEventListener('resize', this.onWindowResize);
     },
     beforeDestroy() {
+        clearTimeout(this.retryTimer);
         if (this.polling) {
             clearInterval(this.polling);
         }
@@ -610,7 +623,9 @@ export default {
     },
     methods: {
         async fetchInitialData() {
+            if (this.loading || Date.now() < this.retryAt) return;
             this.loading = true;
+            this.loadError = '';
             try {
                 await this.$store.dispatch('artwork/get');
                 const [cats, submissions] = await Promise.all([
@@ -626,8 +641,31 @@ export default {
                 if (this.$route.query.search) {
                     this.filters.searchQuery = this.$route.query.search;
                 }
+            } catch (error) {
+                this.handleLoadError(error);
             } finally {
                 this.loading = false;
+            }
+        },
+        handleLoadError(error) {
+            const response = error.response || {};
+            this.loadError = this.$i18n.locale === 'en'
+                ? 'The server could not load the data. Please try again later.'
+                : 'ระบบไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่ภายหลัง';
+            if (response.status === 429) {
+                this.retryAt = retryAtFromHeaders(response.headers);
+                this.loadError = this.$i18n.locale === 'en' ? 'Too many requests. Please wait before retrying.' : 'มีคำขอถี่เกินกำหนด กรุณารอก่อนลองใหม่';
+                clearTimeout(this.retryTimer);
+                this.retryNow = Date.now();
+                this.retryTimer = setTimeout(() => { this.retryNow = Date.now(); }, Math.max(0, this.retryAt - Date.now()));
+            }
+        },
+        async refreshArtworks() {
+            if (this.loading || this.loadError || Date.now() < this.retryAt || document.hidden) return;
+            try {
+                await this.$store.dispatch('artwork/get');
+            } catch (error) {
+                this.handleLoadError(error);
             }
         },
         goToPage(page) {

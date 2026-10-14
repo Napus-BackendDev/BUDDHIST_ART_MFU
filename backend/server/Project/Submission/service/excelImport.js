@@ -5,6 +5,7 @@ const sharp = require('sharp');
 const fs = require('fs').promises;
 const path = require('path');
 const JSZip = require(require.resolve('jszip', { paths: [path.dirname(require.resolve('exceljs'))] }));
+const mfuDrive = require('../../../../helpers/mfuDrive');
 
 const Submission = require('../models/submission.model');
 const User = require('../../User/models/user.model');
@@ -383,9 +384,17 @@ async function saveImage(request, context, image) {
     const absolutePath = path.join(directory, filename);
     await fs.writeFile(absolutePath, image.buffer);
     const webPath = [...relativeParts, filename].join('/');
+    let url = `${request.protocol}://${request.get('host')}/${webPath}`;
+    if (mfuDrive.isEnabled()) {
+        const contentType = image.format === 'jpg' || image.format === 'jpeg'
+            ? 'image/jpeg'
+            : `image/${image.format}`;
+        const uploaded = await mfuDrive.uploadLocalFile(webPath, absolutePath, contentType);
+        url = uploaded.url;
+    }
     return {
         absolutePath,
-        url: `${request.protocol}://${request.get('host')}/${webPath}`
+        url
     };
 }
 

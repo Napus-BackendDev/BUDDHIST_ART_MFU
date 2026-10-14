@@ -12,7 +12,8 @@
                             <!-- Preview Image Column -->
                             <template #preview="{ item }">
                                 <td class="text-center align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                    <img :src="item.preview" alt="Artwork Preview" class="preview-img" />
+                                    <img v-if="item.preview" :src="item.preview" alt="Artwork Preview" class="preview-img" />
+                                    <span v-else class="text-muted">{{ $i18n.locale === 'en' ? 'No image' : 'ยังไม่มีรูปภาพ' }}</span>
                                 </td>
                             </template>
 

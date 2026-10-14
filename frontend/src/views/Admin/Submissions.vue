@@ -23,8 +23,8 @@
             <SubmissionTable ref="submissionTable" :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
         </div>
         <SubmissionCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSave" />
-        <SubmissionCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @artwork-import="showArtworkImportModal = true" @download-template="downloadTemplate" />
-        <ArtworkImportModal :show.sync="showArtworkImportModal" :submissions="submissions" @imported="handleArtworkImported" />
+        <SubmissionCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @artwork-import="openArtworkImport()" @download-template="downloadTemplate" @download-artwork-template="$refs.artworkImport.downloadTemplate()" />
+        <ArtworkImportModal ref="artworkImport" :show.sync="showArtworkImportModal" :submissions="submissions" :initial-file="artworkImportFile" @imported="handleArtworkImported" />
         <SubmissionEditModal :show.sync="showEditModal" :submissionData="selectedSubmission" :saving="saving" @update="handleUpdate" />
     </div>
 </template>
@@ -61,6 +61,7 @@ export default {
             showChoiceModal: false,
             showEditModal: false,
             showArtworkImportModal: false,
+            artworkImportFile: null,
             activeSection: 'submissions',
             selectedSubmission: null,
             categories: [],
@@ -168,6 +169,10 @@ export default {
             this.fetchSubmissions();
             alert(`นำเข้าผลงานสำเร็จ ${count} รายการ`);
         },
+        openArtworkImport(file = null) {
+            this.artworkImportFile = file;
+            this.showArtworkImportModal = true;
+        },
         handleExport() {
             if (this.$refs.submissionTable) {
                 this.$refs.submissionTable.exportExcel();
@@ -197,6 +202,11 @@ export default {
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     const results = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (results.length && Object.keys(results[0]).some(key => key.trim() === 'รหัสประจำตัว')) {
+                        this.openArtworkImport(file);
+                        return;
+                    }
 
                     if (results.length === 0) {
                         alert(this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง");

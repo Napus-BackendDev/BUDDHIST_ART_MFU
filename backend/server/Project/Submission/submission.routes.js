@@ -6,6 +6,9 @@ const uploadExcel = require('../../../middleware/excelUploadMiddleware');
 const auth = require('../../../middleware/authMiddleware');
 const admin = require('../../../middleware/adminMiddleware');
 const submissionService = require("./service/submission");
+const { onImage } = require('./service/image');
+
+router.get('/image/:artworkId', onImage);
 
 router.post("/import-excel", admin, (req, res, next) => {
     uploadExcel(req, res, err => {

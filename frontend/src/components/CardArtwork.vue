@@ -13,7 +13,7 @@
                             </div>
                         </div>
                         
-                        <div class="card-img-bg" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + (art.image || 'https://via.placeholder.com/800x800?text=No+Image') + String.fromCharCode(34) + ')' }"></div>
+                        <div class="card-img-bg" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + (artworkImageUrl(art) || 'https://via.placeholder.com/800x800?text=No+Image') + String.fromCharCode(34) + ')' }"></div>
 
                         <!-- Status Overlays (Private Only) -->
                         <div v-if="!isPublic && isPending(art)" class="status-overlay pending-overlay">
@@ -174,6 +174,7 @@
 </template>
 
 <script>
+import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 export default {
     name: 'CardArtwork',
     props: {
@@ -202,6 +203,7 @@ export default {
         }
     },
     methods: {
+        artworkImageUrl,
         getDetail(art) {
             const titleEn = this.getName('en', art);
             if (titleEn) {

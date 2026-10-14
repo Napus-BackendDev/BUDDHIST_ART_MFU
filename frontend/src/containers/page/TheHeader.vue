@@ -490,6 +490,7 @@ export default {
     font-weight: 700;
     font-size: 0.95rem;
     margin-top: 4px;
+    line-height: 1.35;
 }
 
 .brand-logo-img {
@@ -655,9 +656,11 @@ export default {
     .brand-subtitle {
         display: -webkit-box;
         overflow: hidden;
-        margin-top: 2px;
+        margin-top: 1px;
+        padding-top: 3px;
+        padding-bottom: 2px;
         font-size: 0.68rem;
-        line-height: 1.15;
+        line-height: 1.35;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
     }

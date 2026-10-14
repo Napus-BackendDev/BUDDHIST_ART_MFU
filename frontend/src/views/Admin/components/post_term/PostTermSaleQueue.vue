@@ -129,7 +129,7 @@
                 >
                   <img 
                     v-if="item.image" 
-                    :src="getImageUrl(item.image)" 
+                    :src="getImageUrl(item)"
                     :alt="titleOf(item)" 
                     class="thumbnail-img" 
                   />
@@ -252,7 +252,7 @@
         <div class="artwork-preview-box d-flex align-items-center mb-4 p-3 rounded-lg">
           <img 
             v-if="selectedItem.image" 
-            :src="getImageUrl(selectedItem.image)" 
+            :src="getImageUrl(selectedItem)"
             :alt="titleOf(selectedItem)" 
             class="preview-thumb mr-3" 
           />
@@ -365,6 +365,7 @@
 <script>
 import moment from 'moment';
 import Service from '@/service/api';
+import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
@@ -476,7 +477,8 @@ export default {
     window.removeEventListener('admin:data-changed', this.handleRealtimeChange);
   },
   methods: {
-    getImageUrl(image) {
+    getImageUrl(item) {
+      const image = artworkImageUrl(item);
       if (!image) return '';
       if (image.startsWith('http://') || image.startsWith('https://')) return image;
       const baseUrl = process.env.VUE_APP_API_URL || window.location.origin;
@@ -631,7 +633,7 @@ export default {
       }
     },
     zoomImg(item) {
-      this.zoomedImage = this.getImageUrl(item.image);
+      this.zoomedImage = this.getImageUrl(item);
       this.zoomedTitle = this.titleOf(item);
       this.showZoomModal = true;
     },

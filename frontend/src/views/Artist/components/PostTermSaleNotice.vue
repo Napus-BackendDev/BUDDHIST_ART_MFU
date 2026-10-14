@@ -3,7 +3,7 @@
     <CCardBody class="p-4">
       <div class="d-flex align-items-start mb-3"><div class="notice-icon mr-3"><CIcon name="cil-clock" /></div><div><h4 id="post-term-title" class="font-weight-bold mb-1">การขายหลังครบ 1 ปี</h4><p class="text-muted mb-0">ผลงานที่ใกล้หรือพ้นกำหนด เลือกวางขายต่อแบบปกติหรือแสดงเฉย ๆ ได้</p></div></div>
       <div v-for="item in actionItems" :key="item._id" class="notice-row d-flex flex-wrap align-items-center justify-content-between py-3">
-        <div class="d-flex align-items-center"><img v-if="item.image" :src="item.image" :alt="titleOf(item)" class="notice-thumb mr-3" /><div><div class="font-weight-bold">{{ titleOf(item) }}</div><small class="text-muted">ครบกำหนด {{ formatDate(item.postTermSale.initialSaleEndsAt) }}</small></div></div>
+        <div class="d-flex align-items-center"><img v-if="item.image" :src="artworkImageUrl(item)" :alt="titleOf(item)" class="notice-thumb mr-3" /><div><div class="font-weight-bold">{{ titleOf(item) }}</div><small class="text-muted">ครบกำหนด {{ formatDate(item.postTermSale.initialSaleEndsAt) }}</small></div></div>
         <div class="notice-actions mt-2 mt-md-0"><CButton color="primary" size="sm" class="mr-2" @click="openDecision(item, 'continue_sale')">วางขายต่อแบบปกติ</CButton><CButton color="light" size="sm" @click="openDecision(item, 'display_only')">แสดงเฉย ๆ</CButton></div>
       </div>
     </CCardBody>
@@ -17,6 +17,7 @@
 
 <script>
 import Service from '@/service/api'
+import { artworkImageUrl } from '@/utils/submissionArtworkImport'
 
 export default {
   name: 'PostTermSaleNotice',
@@ -32,6 +33,7 @@ export default {
   },
   created() { this.fetchItems() },
   methods: {
+    artworkImageUrl,
     async fetchItems() { this.loading = true; try { const response = await Service.artwork('post-term-list', {}); this.items = response.data.data || [] } catch (error) { this.items = [] } finally { this.loading = false } },
     titleOf(item) { const field = item && item.title; if (Array.isArray(field)) return field.find(value => value.key === this.$i18n.locale)?.value || field[0]?.value || '-'; return field || '-' },
     formatDate(value) {

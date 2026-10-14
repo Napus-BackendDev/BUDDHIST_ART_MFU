@@ -1,7 +1,9 @@
 import axios from 'axios';
 import store from '@/store/store'
+import { retryAtFromHeaders } from '@/utils/rateLimit';
 
 const instance = axios.create();
+let readRetryAt = 0;
 
 // instance.defaults.baseURL = 'https://api.example.com';
 // instance.defaults.baseURL = 'https://api.competency.mfu.ac.th';
@@ -15,6 +17,12 @@ instance.defaults.headers = {
 // Add request interceptor
 instance.interceptors.request.use(
     (config) => {
+      if (['get', 'head'].includes(String(config.method || 'get').toLowerCase()) && Date.now() < readRetryAt) {
+        const retryAfter = Math.ceil((readRetryAt - Date.now()) / 1000);
+        const error = new Error('Read requests are paused until Retry-After expires.');
+        error.response = { status: 429, headers: { 'retry-after': String(retryAfter) } };
+        return Promise.reject(error);
+      }
       const token = store.state.xAccessToken;
       if (token) {
         config.headers["X-Access-Token"] = token;
@@ -43,6 +51,10 @@ instance.interceptors.response.use(
       return response;
     },
     (error) => {
+      if (error.response && error.response.status === 429 && error.config &&
+          ['get', 'head'].includes(String(error.config.method || 'get').toLowerCase())) {
+        readRetryAt = Math.max(readRetryAt, retryAtFromHeaders(error.response.headers));
+      }
       if (error.response && error.response.status === 401) {
           // Clear local storage and redirect to login on unauthorized
           const currentPath = window.location.pathname + window.location.search;

@@ -25,6 +25,8 @@ const objsSchema = new Schema({
             endAt: { type: Date, default: Date.now },
         },
         artworks: [{
+            // Stable form response identity; titles can repeat for the same artist.
+            importKey: { type: String, default: null },
             artworkCode: { type: String, default: null },
             title: [{
                 key: { type: String, default: null },

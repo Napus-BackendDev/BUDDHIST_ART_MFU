@@ -66,7 +66,7 @@
                     <div class="choice-card clickable" @click="$emit('artwork-import'); $emit('update:show', false)">
                         <div class="choice-icon bg-purple-light text-purple"><CIcon name="cil-image" size="xl" /></div>
                         <h6 class="choice-label">{{ $i18n.locale === 'en' ? 'Import Artwork' : 'นำเข้าผลงานเข้า Submission' }}</h6>
-                        <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Add artwork rows from Excel and attach image files to an existing submission.' : 'นำเข้าข้อมูลผลงานจาก Excel และแนบรูปภาพเข้า Submission ที่มีอยู่' }}</p>
+                        <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Import the cohort 6 form, image links and optional image files into an existing submission.' : 'นำเข้าแบบฟอร์มรุ่นที่ 6 พร้อมลิงก์ภาพหรือแนบรูปเข้า Submission ที่มีอยู่' }}</p>
                         <div class="choice-footer text-purple"><span>{{ $i18n.locale === 'en' ? 'Import artwork' : 'นำเข้าผลงาน' }}</span><CIcon name="cil-arrow-right" class="ml-2" /></div>
                     </div>
                 </CCol>
@@ -78,8 +78,10 @@
                 <span class="text-muted small">
                     {{ $i18n.locale === 'en' ? 'Need a template?' : 'ต้องการเทมเพลตหรือไม่?' }}
                     <a href="javascript:void(0)" class="font-weight-bold text-blue" @click="$emit('download-template')">
-                        {{ $i18n.locale === 'en' ? 'Download Excel Template' : 'ดาวน์โหลดเทมเพลต Excel' }}
+                        {{ $i18n.locale === 'en' ? 'Submission template' : 'เทมเพลตสร้าง Submission' }}
                     </a>
+                    <span class="mx-2">|</span>
+                    <a href="javascript:void(0)" class="font-weight-bold text-blue" @click="$emit('download-artwork-template')">{{ $i18n.locale === 'en' ? 'Cohort 6 artwork template' : 'แบบฟอร์มผลงาน รุ่นที่ 6' }}</a>
                 </span>
             </div>
         </template>

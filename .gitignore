@@ -1,10 +1,18 @@
 # Dependencies
 node_modules/
-**/node_modules/
+.cache/
+.npm/
+.pnpm-store/
+__pycache__/
+*.py[cod]
 
-# Build output (Vercel/Render build these themselves)
-frontend/dist/
-backend/dist/
+# Generated build and test output
+/frontend/dist/
+/backend/dist/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
 
 # Environment files (set secrets in Render/Vercel dashboards instead)
 .env
@@ -17,20 +25,30 @@ _srv.log
 _srv.err.log
 _fe.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Large local-only artifacts
 Buddhist_Art_MFU_User_Manual.pdf
 backend/mock_certificate*
-backend/generate_mock_cert*
+/backend/public.zip
 
 # User-uploaded content (runtime data, not source)
-backend/public/system/
-backend/public/account/
+/backend/public/account/
+/backend/public/system/*
+# The certificate signature is a required source asset, not an uploaded file.
+!/backend/public/system/Signature/
+/public/output/
 
 # Editor / OS
 .idea/
 .DS_Store
 Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
 
 # Local dev tooling / artifacts (not part of the app)
 .agents/
@@ -40,3 +58,10 @@ backend/coverage/
 frontend/coverage/
 .claude/
 .codex/
+/.codex-worktree-security/
+/memory.md
+/output/
+/outputs/
+/tmp/
+# Accidental local command-output file.
+/h -u origin main

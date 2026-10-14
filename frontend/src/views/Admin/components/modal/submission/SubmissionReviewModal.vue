@@ -203,11 +203,12 @@
                     <div class="image-upload-block">
                         <div class="file-upload-container">
                             <div class="preview-container">
-                                <img 
-                                    :src="artwork.preview || artwork.image || `https://via.placeholder.com/600/e2e8f0/808080?text=Artwork`" 
+                                <img v-if="artwork.preview || artwork.image"
+                                    :src="artwork.preview || artwork.image"
                                     class="upload-preview" 
                                     :alt="artwork.title_en || artwork.title_th || 'Artwork'"
                                 />
+                                <p v-else class="text-muted p-3">{{ $i18n.locale === 'en' ? 'No image uploaded' : 'ยังไม่มีรูปภาพผลงาน' }}</p>
                             </div>
                         </div>
                     </div>
