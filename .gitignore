@@ -32,6 +32,7 @@ pnpm-debug.log*
 # Large local-only artifacts
 Buddhist_Art_MFU_User_Manual.pdf
 backend/mock_certificate*
+backend/generate_mock_cert*
 /backend/public.zip
 
 # User-uploaded content (runtime data, not source)
@@ -63,5 +64,7 @@ frontend/coverage/
 /output/
 /outputs/
 /tmp/
-# Accidental local command-output file.
-/h -u origin main
+information.md
+log.md
+deploy/
+docker-compose.production.yml

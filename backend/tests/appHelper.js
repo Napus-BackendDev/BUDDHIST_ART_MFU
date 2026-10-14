@@ -35,6 +35,7 @@ const getApp = async () => {
     const uri = mongod.getUri();
     process.env.MONGODB = uri;
   }
+  process.env.JWT_SECRET = process.env.JWT_SECRET || 'testSecret';
 
   refreshDatabaseConfig();
   // Load express configuration, which will require config and initialize with process.env.MONGODB
