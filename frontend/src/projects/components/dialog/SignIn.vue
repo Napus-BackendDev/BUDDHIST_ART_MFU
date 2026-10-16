@@ -72,10 +72,8 @@
             await window.__googleIdentityScriptPromise;
           },
           async initializeGoogleSignIn() {
-            if (this.googleInitialized) return;
-
             try {
-              const clientId = process.env.VUE_APP_CLIENTID;
+              const clientId = process.env.VUE_APP_CLIENTID || '225788483142-8pkg8on8nh60ao83ve33ff3lflv2ccvo.apps.googleusercontent.com';
               if (!clientId) throw new Error('Google Client ID is not configured');
 
               await this.loadGoogleIdentity();
@@ -83,16 +81,28 @@
                 throw new Error('Google Identity Services is unavailable');
               }
 
+              if (!this.googleInitialized) {
                 window.google.accounts.id.initialize({
-                client_id: clientId,
-                callback: this.onGoogleCredential,
-                auto_select: false,
-                cancel_on_tap_outside: true,
+                  client_id: clientId,
+                  callback: this.onGoogleCredential,
+                  auto_select: false,
+                  cancel_on_tap_outside: true,
                   context: 'signin'
                 });
                 this.googleInitialized = true;
+              }
 
-              if (this.$refs.googleSignInButton) {
+              this.renderGoogleSignInButton();
+            } catch (err) {
+              console.error('Google Identity initialization error:', err);
+              this.googleError = this.$i18n.locale === 'en'
+                ? 'Google Sign-In is unavailable. Please refresh and try again.'
+                : 'ไม่สามารถเปิด Google Sign-In ได้ กรุณารีเฟรชและลองใหม่';
+            }
+          },
+          renderGoogleSignInButton() {
+            this.$nextTick(() => {
+              if (this.$refs.googleSignInButton && window.google && window.google.accounts && window.google.accounts.id) {
                 this.$refs.googleSignInButton.innerHTML = '';
                 window.google.accounts.id.renderButton(this.$refs.googleSignInButton, {
                   type: 'standard',
@@ -105,12 +115,7 @@
                   locale: this.$i18n.locale === 'th' ? 'th' : 'en'
                 });
               }
-            } catch (err) {
-              console.error('Google Identity initialization error:', err);
-              this.googleError = this.$i18n.locale === 'en'
-                ? 'Google Sign-In is unavailable. Please refresh and try again.'
-                : 'ไม่สามารถเปิด Google Sign-In ได้ กรุณารีเฟรชและลองใหม่';
-            }
+            });
           },
           async onGoogleCredential(response) {
             if (!response || !response.credential) {
@@ -125,15 +130,23 @@
               await this.$store.dispatch('auth/onGoogleLogin', { token: response.credential });
             } catch (err) {
               console.error('Google sign-in error:', err);
+              this.googleError = this.$i18n.locale === 'en'
+                ? 'Authentication failed. Please try again.'
+                : 'การยืนยันตัวตนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
             }
           }
         },
         watch: {
           '$i18n.locale'() {
-            this.initializeGoogleSignIn();
+            this.renderGoogleSignInButton();
           },
           isAuthe(value) {
-            if (value) this.$nextTick(() => this.initializeGoogleSignIn());
+            if (value) {
+              this.googleError = '';
+              this.$nextTick(() => {
+                this.initializeGoogleSignIn();
+              });
+            }
           }
         },
         computed: {

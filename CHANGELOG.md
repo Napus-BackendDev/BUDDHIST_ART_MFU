@@ -5,8 +5,8 @@
 
 | รายการ | รายละเอียด |
 | :--- | :--- |
-| เวอร์ชันเอกสาร | 1.2.0 |
-| วันที่จัดทำ | 14 ตุลาคม 2569 |
+| เวอร์ชันเอกสาร | 1.2.1 |
+| วันที่จัดทำ | 16 ตุลาคม 2569 |
 | สถานะ | Approved |
 | จัดทำโดย | Software Architect / AI Engineering Lead |
 
@@ -41,6 +41,28 @@
 ---
 
 ## 2. ประวัติการเปลี่ยนแปลง (Change History)
+
+### [1.2.1] - 2026-10-16
+
+#### Fixed (สิ่งที่แก้ไข)
+- **Google Identity Services Button Rendering**:
+  - แก้ไข `frontend/src/projects/components/dialog/SignIn.vue` แยกฟังก์ชัน `initializeGoogleSignIn` และ `renderGoogleSignInButton` ออกจากกันอย่างชัดเจน เพื่อให้ปุ่ม Sign in with Google ทำการ render ทุกครั้งที่ Dialog เปิดขึ้นมา (`isAuthe = true`) หรือมีการเปลี่ยนภาษา UI
+  - เพิ่ม Fallback ให้ `VUE_APP_CLIENTID` ไม่เป็น `undefined` ป้องกันข้อผิดพลาด `Google Client ID is not configured` เมื่อ build ในสภาพแวดล้อม container
+- **Frontend Production Environment Configuration**:
+  - สร้างและติดตามไฟล์ `frontend/.env.production` พร้อมค่า `VUE_APP_CLIENTID=225788483142-8pkg8on8nh60ao83ve33ff3lflv2ccvo.apps.googleusercontent.com`
+  - ปรับปรุง `frontend/vue.config.js` ให้ค้นหา Client ID จากหลายแหล่ง (`.env.production`, `.env`, `backend/.env`) และมีค่าเริ่มต้นทางการเสมอ
+- **Backend Google OAuth Case-Insensitive & Student ID Linkage**:
+  - ปรับปรุง `backend/helpers/google/oAuth2.js` ให้ค้นหาอีเมลแบบ Case-Insensitive ป้องกันปัญหาชื่ออีเมลตัวพิมพ์ใหญ่ในฐานข้อมูลไม่ตรงกับ Token
+  - รองรับการเชื่อมโยงบัญชีนักศึกษา มฟล. จากอีเมลโดเมน `@lamduan.mfu.ac.th` เข้ากับ `studentId` เดิมในระบบโดยอัตโนมัติ
+  - เพิ่มการตรวจสอบความปลอดภัย ลบรหัสผ่าน (`password`) ออกจาก Response payload ก่อนส่งกลับ
+- **Automated Deploy Pipeline**:
+  - ปรับปรุง `scripts/deploy-docker-server.sh` ให้อนุญาตการส่งต่อ `frontend/.env.production` ไปยังโฟลเดอร์ release ของเซิร์ฟเวอร์ Beta
+
+#### Added (สิ่งที่เพิ่มใหม่)
+- **Automated Google Auth Tests**:
+  - เพิ่มชุดทดสอบ `backend/tests/googleAuth.test.js` ครอบคลุม 6 สถานการณ์ (Missing token, Invalid/Expired token, Audience mismatch, Case-insensitive lookup, Student ID linkage, Auto-registration) ผ่านการทดสอบทั้งหมด (100% Pass)
+
+---
 
 ### [1.2.0] - 2026-10-14
 

@@ -45,9 +45,9 @@ exports.onQuery = async function (request, response, next) {
             });
             payload = ticket.getPayload();
         } catch (verifyError) {
-            // Local development can run without outbound access to Google's cert endpoint.
+            // Local development and test environments can validate decoded token if ALLOW_UNVERIFIED_GOOGLE_DEV is enabled.
             // Never enable this fallback in production: signature verification remains mandatory there.
-            const allowDevFallback = process.env.NODE_ENV === 'development' && process.env.ALLOW_UNVERIFIED_GOOGLE_DEV === 'true';
+            const allowDevFallback = (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && process.env.ALLOW_UNVERIFIED_GOOGLE_DEV === 'true';
             if (!allowDevFallback) throw verifyError;
 
             const decoded = jwt.decode(token);
@@ -67,17 +67,42 @@ exports.onQuery = async function (request, response, next) {
             return response.status(400).json({ message: "Google account does not have an email" });
         }
 
-        // 2. Find user in database by studentEmail OR personalEmail
-        let user = await User.findOne({ 
-            $or: [
-                { "contact.studentEmail": email },
-                { "contact.personalEmail": email }
-            ]
-        }).populate('role');
+        const trimmedEmail = email.trim();
+        const escapedEmail = trimmedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const emailRegex = new RegExp(`^${escapedEmail}$`, 'i');
+        const isMfuEmail = trimmedEmail.toLowerCase().endsWith('@lamduan.mfu.ac.th');
+        const mfuStudentId = isMfuEmail ? trimmedEmail.split('@')[0] : null;
+
+        // 2. Find user in database by studentEmail, personalEmail, or studentId
+        const queryConditions = [
+            { "contact.studentEmail": { $regex: emailRegex } },
+            { "contact.personalEmail": { $regex: emailRegex } }
+        ];
+        if (mfuStudentId) {
+            queryConditions.push({ studentId: mfuStudentId });
+        }
+
+        let user = await User.findOne({ $or: queryConditions }).populate('role');
+
+        if (user) {
+            let needsSave = false;
+            if (isMfuEmail && !user.contact?.studentEmail) {
+                user.contact = user.contact || {};
+                user.contact.studentEmail = trimmedEmail;
+                needsSave = true;
+            }
+            if (picture && !user.image) {
+                user.image = picture;
+                needsSave = true;
+            }
+            if (needsSave) {
+                await user.save();
+            }
+        }
 
         // 3. If user NOT found, Register them as a new Customer
         if (!user) {
-            console.log(`Registering new user: ${email}`);
+            console.log(`Registering new user: ${trimmedEmail}`);
             
             // Find "Customer" Role
             const customerRole = await Role.findOne({ "title.value": "Customer" });
@@ -89,23 +114,21 @@ exports.onQuery = async function (request, response, next) {
             // Find "NewStudent" Status (Optional default)
             const newStatus = await Status.findOne({ "title.value": "NewStudent" });
 
-            // Extract studentId from email if it's an MFU email, otherwise use a timestamp
-            const isMfuEmail = email.endsWith('@lamduan.mfu.ac.th');
-            const studentId = isMfuEmail ? email.split('@')[0] : `G-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`;
+            const studentId = mfuStudentId || `G-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`;
 
             // Create new user
             console.log("Creating user with data:", JSON.stringify({ studentId, role: customerRole._id }, null, 2));
             user = await User.create({
                 studentId: studentId,
-                image: picture,
+                image: picture || null,
                 name: [
-                    { key: 'en', value: name || given_name },
-                    { key: 'th', value: name || given_name }
+                    { key: 'en', value: name || given_name || 'User' },
+                    { key: 'th', value: name || given_name || 'User' }
                 ],
                 role: customerRole._id,
                 status: newStatus ? newStatus._id : null,
                 contact: {
-                    ...(isMfuEmail ? { studentEmail: email } : { personalEmail: email })
+                    ...(isMfuEmail ? { studentEmail: trimmedEmail } : { personalEmail: trimmedEmail })
                 }
             });
             console.log("User created successfully:", user._id);
@@ -116,11 +139,20 @@ exports.onQuery = async function (request, response, next) {
 
         // 4. Prepare Role Name for JWT and Frontend
         let roleName = 'Customer';
-        if (user.role && user.role.title) {
+        if (user.role && Array.isArray(user.role.title)) {
             const roleObj = user.role.title.find(t => t.key === 'en');
-            if (roleObj) roleName = roleObj.value;
-        } else if (user.role && typeof user.role === 'string') {
-            roleName = user.role;
+            if (roleObj && roleObj.value) roleName = roleObj.value;
+        } else if (user.role && user.role._id) {
+            if (Array.isArray(user.role.title)) {
+                const roleObj = user.role.title.find(t => t.key === 'en');
+                if (roleObj && roleObj.value) roleName = roleObj.value;
+            }
+        } else if (user.role) {
+            const roleDoc = await Role.findById(user.role);
+            if (roleDoc && Array.isArray(roleDoc.title)) {
+                const roleObj = roleDoc.title.find(t => t.key === 'en');
+                if (roleObj && roleObj.value) roleName = roleObj.value;
+            }
         }
 
         // 5. Generate a SECURE JWT
@@ -128,7 +160,7 @@ exports.onQuery = async function (request, response, next) {
             { 
                 userId: user._id, 
                 role: roleName,
-                email: email 
+                email: trimmedEmail 
             },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
@@ -137,6 +169,7 @@ exports.onQuery = async function (request, response, next) {
         const userData = JSON.parse(JSON.stringify(user));
         userData.role = roleName;
         userData.token = systemToken; // Real JWT!
+        delete userData.password;
         
         return ResMessage.sendResponse(response, 0, 20000, userData);
 
