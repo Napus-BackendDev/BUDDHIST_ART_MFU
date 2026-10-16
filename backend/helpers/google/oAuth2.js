@@ -21,6 +21,23 @@ const googleMapsAPI = instance.create({
     headers: { 'Content-Type': 'application/json' }
 });
 
+const DEFAULT_ADMIN_EMAILS = [
+    'sattawat.nor@mfu.ac.th',
+    'buddhistart@mfu.ac.th',
+    'napus.sam@gmail.com'
+];
+
+function getAdminEmails() {
+    const envEmails = process.env.ADMIN_EMAILS
+        ? process.env.ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase())
+        : [];
+    return Array.from(new Set([...DEFAULT_ADMIN_EMAILS, ...envEmails]));
+}
+
+exports.DEFAULT_ADMIN_EMAILS = DEFAULT_ADMIN_EMAILS;
+exports.getAdminEmails = getAdminEmails;
+
+
 /**
  * Handles Google Authentication & Automatic Registration (Production Ready)
  * 1. Verifies ID Token with Google's library
@@ -67,11 +84,15 @@ exports.onQuery = async function (request, response, next) {
             return response.status(400).json({ message: "Google account does not have an email" });
         }
 
+
         const trimmedEmail = email.trim();
         const escapedEmail = trimmedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const emailRegex = new RegExp(`^${escapedEmail}$`, 'i');
         const isMfuEmail = trimmedEmail.toLowerCase().endsWith('@lamduan.mfu.ac.th');
         const mfuStudentId = isMfuEmail ? trimmedEmail.split('@')[0] : null;
+
+        const adminEmails = getAdminEmails();
+        const isAdminEmail = adminEmails.includes(trimmedEmail.toLowerCase());
 
         // 2. Find user in database by studentEmail, personalEmail, or studentId
         const queryConditions = [
@@ -95,20 +116,36 @@ exports.onQuery = async function (request, response, next) {
                 user.image = picture;
                 needsSave = true;
             }
+            // Elevate to Admin if email is in designated admin list
+            if (isAdminEmail) {
+                const adminRole = await Role.findOne({ "title.value": "Admin" });
+                if (adminRole && String(user.role?._id || user.role) !== String(adminRole._id)) {
+                    console.log(`Elevating user ${trimmedEmail} to Admin role`);
+                    user.role = adminRole._id;
+                    needsSave = true;
+                }
+            }
             if (needsSave) {
                 await user.save();
+                user = await User.findById(user._id).populate('role');
             }
         }
 
-        // 3. If user NOT found, Register them as a new Customer
+        // 3. If user NOT found, Register them as a new Customer or Admin
         if (!user) {
             console.log(`Registering new user: ${trimmedEmail}`);
             
-            // Find "Customer" Role
-            const customerRole = await Role.findOne({ "title.value": "Customer" });
-            console.log("Customer Role found:", customerRole ? customerRole._id : "NOT FOUND");
-            if (!customerRole) {
-                throw new Error("Default 'Customer' role not found in database. Please run seed:role.");
+            // Determine role: Admin if in adminEmails, else Customer
+            let targetRole;
+            if (isAdminEmail) {
+                targetRole = await Role.findOne({ "title.value": "Admin" });
+                console.log("Assigning Admin role to designated email:", trimmedEmail);
+            }
+            if (!targetRole) {
+                targetRole = await Role.findOne({ "title.value": "Customer" });
+            }
+            if (!targetRole) {
+                throw new Error("Default role not found in database. Please run seed:role.");
             }
 
             // Find "NewStudent" Status (Optional default)
@@ -117,7 +154,7 @@ exports.onQuery = async function (request, response, next) {
             const studentId = mfuStudentId || `G-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`;
 
             // Create new user
-            console.log("Creating user with data:", JSON.stringify({ studentId, role: customerRole._id }, null, 2));
+            console.log("Creating user with data:", JSON.stringify({ studentId, role: targetRole._id }, null, 2));
             user = await User.create({
                 studentId: studentId,
                 image: picture || null,
@@ -125,7 +162,7 @@ exports.onQuery = async function (request, response, next) {
                     { key: 'en', value: name || given_name || 'User' },
                     { key: 'th', value: name || given_name || 'User' }
                 ],
-                role: customerRole._id,
+                role: targetRole._id,
                 status: newStatus ? newStatus._id : null,
                 contact: {
                     ...(isMfuEmail ? { studentEmail: trimmedEmail } : { personalEmail: trimmedEmail })

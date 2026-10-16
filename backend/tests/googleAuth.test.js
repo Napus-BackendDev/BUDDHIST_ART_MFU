@@ -16,6 +16,7 @@ describe('Google OAuth Authentication', () => {
   let app;
   let customerRoleId;
   let artistRoleId;
+  let adminRoleId;
   const testClientId = '225788483142-8pkg8on8nh60ao83ve33ff3lflv2ccvo.apps.googleusercontent.com';
 
   beforeAll(async () => {
@@ -24,6 +25,11 @@ describe('Google OAuth Authentication', () => {
     process.env.GOOGLE_CLIENT_ID = testClientId;
     process.env.ALLOW_UNVERIFIED_GOOGLE_DEV = 'true';
     app = await getApp();
+
+    const adminRole = await Role.create({
+      title: [{ key: 'en', value: 'Admin' }, { key: 'th', value: 'ผู้ดูแลระบบ' }]
+    });
+    adminRoleId = adminRole._id;
 
     const customerRole = await Role.create({
       title: [{ key: 'en', value: 'Customer' }, { key: 'th', value: 'ลูกค้า' }]
@@ -38,6 +44,7 @@ describe('Google OAuth Authentication', () => {
     await Status.create({
       title: [{ key: 'en', value: 'NewStudent' }, { key: 'th', value: 'นักศึกษาใหม่' }]
     });
+
 
     // Create existing user with uppercase letters in email to test case-insensitive match
     await User.create({
@@ -169,4 +176,61 @@ describe('Google OAuth Authentication', () => {
     expect(created).toBeDefined();
     expect(created.image).toBe('https://example.com/somchai.jpg');
   });
+
+  it('automatically registers designated admin email (buddhistart@mfu.ac.th) with Admin role', async () => {
+    const token = createMockGoogleToken({
+      email: 'buddhistart@mfu.ac.th',
+      name: 'Buddhist Art Admin'
+    });
+
+    const res = await request(app)
+      .post('/api/v1/google/auth')
+      .send({ token });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeDefined();
+    expect(res.body.data.role).toBe('Admin');
+    expect(res.body.data.token).toBeDefined();
+
+    const verified = jwt.verify(res.body.data.token, process.env.JWT_SECRET);
+    expect(verified.role).toBe('Admin');
+    expect(verified.email).toBe('buddhistart@mfu.ac.th');
+
+    const created = await User.findOne({ 'contact.personalEmail': 'buddhistart@mfu.ac.th' }).populate('role');
+    expect(created).toBeDefined();
+    expect(created.role.title.find(t => t.key === 'en').value).toBe('Admin');
+  });
+
+  it('elevates existing Customer (sattawat.nor@mfu.ac.th) to Admin role upon login', async () => {
+    // Create sattawat.nor as Customer first
+    await User.create({
+      studentId: 'CUST-SATTAWAT',
+      name: [{ key: 'th', value: 'สัตวรรษ' }, { key: 'en', value: 'Sattawat' }],
+      role: customerRoleId,
+      contact: {
+        personalEmail: 'sattawat.nor@mfu.ac.th'
+      }
+    });
+
+    const token = createMockGoogleToken({
+      email: 'sattawat.nor@mfu.ac.th',
+      name: 'Sattawat Nor'
+    });
+
+    const res = await request(app)
+      .post('/api/v1/google/auth')
+      .send({ token });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeDefined();
+    expect(res.body.data.role).toBe('Admin');
+    expect(res.body.data.token).toBeDefined();
+
+    const verified = jwt.verify(res.body.data.token, process.env.JWT_SECRET);
+    expect(verified.role).toBe('Admin');
+
+    const updated = await User.findOne({ 'contact.personalEmail': 'sattawat.nor@mfu.ac.th' }).populate('role');
+    expect(updated.role.title.find(t => t.key === 'en').value).toBe('Admin');
+  });
 });
+

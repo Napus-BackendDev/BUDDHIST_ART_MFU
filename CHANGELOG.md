@@ -5,7 +5,7 @@
 
 | รายการ | รายละเอียด |
 | :--- | :--- |
-| เวอร์ชันเอกสาร | 1.2.2 |
+| เวอร์ชันเอกสาร | 1.2.3 |
 | วันที่จัดทำ | 16 ตุลาคม 2569 |
 | สถานะ | Approved |
 | จัดทำโดย | Software Architect / AI Engineering Lead |
@@ -42,7 +42,21 @@
 
 ## 2. ประวัติการเปลี่ยนแปลง (Change History)
 
+### [1.2.3] - 2026-10-16
+
+#### Added (สิ่งที่เพิ่ม)
+- **Designated Admin Auto-Role Assignment**:
+  - กำหนดบัญชีอีเมลผู้ดูแลระบบหลัก (`sattawat.nor@mfu.ac.th`, `buddhistart@mfu.ac.th`) ให้ได้รับสิทธิ์ `Admin` (`ผู้ดูแลระบบ`) โดยอัตโนมัติเมื่อเข้าสู่ระบบผ่าน Google OAuth2
+  - รองรับการตั้งค่ารายการอีเมลแอดมินเพิ่มเติมผ่านตัวแปรสภาพแวดล้อม `ADMIN_EMAILS` ใน `.env` และ `.env.production`
+  - เพิ่ม Automated Test ใน [`backend/tests/googleAuth.test.js`](backend/tests/googleAuth.test.js) ตรวจสอบการลงทะเบียนใหม่และเลื่อนสิทธิ์บัญชีเดิมเป็น Admin ได้อย่างถูกต้อง
+
+#### Changed (สิ่งที่ปรับปรุง)
+- **User Role Elevation in MongoDB Atlas**:
+  - อัปเดตสิทธิ์ของบัญชี `sattawat.nor@mfu.ac.th` ใน MongoDB Atlas ให้เป็น `Admin` ทันที
+  - สร้างและเตรียมสิทธิ์บัญชี `buddhistart@mfu.ac.th` ไว้ล่วงหน้าด้วยสิทธิ์ `Admin` ใน MongoDB Atlas
+
 ### [1.2.2] - 2026-10-16
+
 
 #### Changed (สิ่งที่ปรับปรุง)
 - **Frontend Nginx Gzip Compression**:
