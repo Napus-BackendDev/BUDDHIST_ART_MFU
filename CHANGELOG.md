@@ -5,7 +5,7 @@
 
 | รายการ | รายละเอียด |
 | :--- | :--- |
-| เวอร์ชันเอกสาร | 1.2.1 |
+| เวอร์ชันเอกสาร | 1.2.2 |
 | วันที่จัดทำ | 16 ตุลาคม 2569 |
 | สถานะ | Approved |
 | จัดทำโดย | Software Architect / AI Engineering Lead |
@@ -41,6 +41,19 @@
 ---
 
 ## 2. ประวัติการเปลี่ยนแปลง (Change History)
+
+### [1.2.2] - 2026-10-16
+
+#### Changed (สิ่งที่ปรับปรุง)
+- **Frontend Nginx Gzip Compression**:
+  - เปิดใช้งาน `gzip on;` พร้อม `gzip_vary`, `gzip_proxied any;`, `gzip_comp_level 6`, และ `gzip_min_length 1024` ใน [`frontend/nginx.conf`](frontend/nginx.conf) ครอบคลุมชนิดไฟล์ js, css, json, xml, svg
+  - ลดขนาดดาวน์โหลดของ `chunk-vendors.js` จาก 6.36 MB เหลือเพียง ~2.04 MB (ลดลง 68%) และ CSS จาก 674 KB เหลือ ~70 KB (ลดลงเกือบ 90%)
+- **Vuex API Request Deduplication**:
+  - ปรับปรุง [`frontend/src/store/modules/Artwork/index.js`](frontend/src/store/modules/Artwork/index.js) เพิ่ม in-flight Promise caching ใน action `get` เพื่อตัดการเรียกซ้ำซ้อนของ Component บนหน้าแรกที่ยิง `/api/v1/artwork` พร้อมกัน 3 ครั้ง ลดเน็ตเวิร์กทราฟฟิกไปกว่า 950 KB
+- **Image Lazy Loading & Optimization**:
+  - เพิ่ม `loading="lazy"` และ `decoding="async"` ให้กับรูปภาพใน [`frontend/src/containers/page/TheFooterUser.vue`](frontend/src/containers/page/TheFooterUser.vue) และ [`frontend/src/views/page/components/SectionAboutHome.vue`](frontend/src/views/page/components/SectionAboutHome.vue) เพื่อให้เบราว์เซอร์จัดลำดับความสำคัญของคอนเทนต์ด้านบนก่อน
+
+---
 
 ### [1.2.1] - 2026-10-16
 
