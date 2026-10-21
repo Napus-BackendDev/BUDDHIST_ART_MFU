@@ -4,11 +4,11 @@
       <CRow class="align-items-end">
         <!-- Search Field -->
         <CCol lg="3" md="12" class="mb-3 mb-lg-0">
-          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search Students' : 'ค้นหานักศึกษา' }}</label>
+          <label for="assignment-student-search" class="filter-label">{{ $i18n.locale === 'en' ? 'Search Students' : 'ค้นหานักศึกษา' }}</label>
           <div class="search-field-wrapper">
             <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
             <CInput 
-              :value="value.search" 
+              id="assignment-student-search" :value="value.search"
               @input="updateFilter('search', $event)"
               class="m-0 border-0 custom-input-plain"
               :placeholder="$i18n.locale === 'en' ? 'Name or ID...' : 'ชื่อ หรือรหัส...'" 
@@ -26,12 +26,12 @@
                 <CIcon name="cil-filter" class="filter-icon-small" />
               </CButton>
             </template>
-            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+            <div class="w-100 shadow-sm border-0 mt-1">
             <CDropdownItem @click="updateFilter('status', 'All Statuses')">{{ $i18n.locale === 'en' ? 'All Statuses' : 'สถานะทั้งหมด' }}</CDropdownItem>
             <CDropdownItem @click="updateFilter('status', 'Passed')">{{ $i18n.locale === 'en' ? 'Passed' : 'ผ่าน' }}</CDropdownItem>
             <CDropdownItem @click="updateFilter('status', 'Pending')">{{ $i18n.locale === 'en' ? 'Pending' : 'รอตรวจ' }}</CDropdownItem>
             <CDropdownItem @click="updateFilter('status', 'Fail')">{{ $i18n.locale === 'en' ? 'Fail' : 'ไม่ผ่าน' }}</CDropdownItem>
-            </CDropdownMenu>
+            </div>
           </CDropdown>
         </CCol>
 
@@ -45,11 +45,11 @@
                 <CIcon name="cil-clock" class="filter-icon-small" />
               </CButton>
             </template>
-            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+            <div class="w-100 shadow-sm border-0 mt-1">
             <CDropdownItem @click="updateFilter('deadline', 'Any Deadline')">{{ $i18n.locale === 'en' ? 'Any Deadline' : 'ไม่จำกัดเวลา' }}</CDropdownItem>
             <CDropdownItem @click="updateFilter('deadline', 'On Time')">{{ $i18n.locale === 'en' ? 'On Time' : 'ตรงเวลา' }}</CDropdownItem>
             <CDropdownItem @click="updateFilter('deadline', 'Late')">{{ $i18n.locale === 'en' ? 'Late' : 'สาย' }}</CDropdownItem>
-            </CDropdownMenu>
+            </div>
           </CDropdown>
         </CCol>
 
@@ -75,9 +75,9 @@
             <div class="date-input-wrapper">
               <CInput 
                 :type="formattedStartDate ? 'date' : 'text'"
-                placeholder="วัน/เดือน/ปี"
+                :placeholder="$i18n.locale === 'en' ? 'dd/mm/yyyy' : 'วัน/เดือน/ปี'"
                 lang="en-GB"
-                :value="formattedStartDate" 
+                :aria-label="$i18n.locale === 'en' ? 'Start date' : 'วันที่เริ่มต้น'" :value="formattedStartDate"
                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
                 @blur="!$event.target.value && ($event.target.type = 'text')"
                 @input="onDateInput('startDate', $event)"
@@ -89,9 +89,9 @@
             <div class="date-input-wrapper">
               <CInput 
                 :type="formattedEndDate ? 'date' : 'text'"
-                placeholder="วัน/เดือน/ปี"
+                :placeholder="$i18n.locale === 'en' ? 'dd/mm/yyyy' : 'วัน/เดือน/ปี'"
                 lang="en-GB"
-                :value="formattedEndDate" 
+                :aria-label="$i18n.locale === 'en' ? 'End date' : 'วันที่สิ้นสุด'" :value="formattedEndDate"
                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
                 @blur="!$event.target.value && ($event.target.type = 'text')"
                 @input="onDateInput('endDate', $event)"

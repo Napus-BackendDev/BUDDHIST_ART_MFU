@@ -82,17 +82,24 @@ async function cachedImage(source) {
     return task;
 }
 
+// Reuse the same host, redirect, size and image decoding checks for certificates.
+exports.getImageBuffer = cachedImage;
+
 exports.onImage = async (req, res) => {
     const id = req.params.artworkId;
     if (!/^[a-f\d]{24}$/i.test(id || '') || !mongoose.Types.ObjectId.isValid(id)) return res.sendStatus(400);
     try {
-        // Like the existing public Submission query, this only reads stored artwork data.
+        const access = require('../../../../middleware/submissionAccessMiddleware');
+        const { STATUS_CODES, hasCode } = require('../../Settings/statusCodes');
         const document = await Submission.findOne({ 'assignments.artworks._id': id })
-            .select('assignments.artworks._id assignments.artworks.image').lean();
+            .select('artist assignments.artworks._id assignments.artworks.image assignments.artworks.status')
+            .populate('assignments.artworks.status').lean();
         const artwork = document?.assignments?.flatMap(a => a.artworks || []).find(a => String(a._id) === id);
         if (!artwork?.image) return res.sendStatus(404);
+        const published = hasCode(artwork.status, STATUS_CODES.APPROVED);
+        if (!published && !access.isAdmin(req) && !access.isMember(req, document)) return res.sendStatus(404);
         const buffer = await cachedImage(artwork.image);
-        res.set('Cache-Control', 'public, max-age=3600');
+        res.set('Cache-Control', published ? 'public, max-age=3600' : 'private, no-store');
         res.set('X-Content-Type-Options', 'nosniff');
         return res.type('jpeg').send(buffer);
     } catch (error) {

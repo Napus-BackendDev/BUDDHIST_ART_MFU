@@ -7,7 +7,7 @@
         <p>{{ content.message }}</p>
         <p>
           {{ $i18n.locale === 'en' ? 'For questions, contact' : 'หากมีคำถาม กรุณาติดต่อ' }}
-          <a href="mailto:buddhistart@mfu.ac.th">buddhistart@mfu.ac.th</a>
+          <a href="mailto:buddhist.art@mfu.ac.th">buddhist.art@mfu.ac.th</a>
         </p>
       </article>
     </CContainer>

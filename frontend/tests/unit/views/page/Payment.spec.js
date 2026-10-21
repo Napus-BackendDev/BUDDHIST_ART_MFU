@@ -1,4 +1,5 @@
 import Payment from '@/views/page/Payment.vue';
+import { shallowMount } from '@vue/test-utils';
 
 const form = {
   name: 'Buyer',
@@ -16,8 +17,8 @@ const makeVm = (dispatch) => ({
   currentStep: 2,
   cartItems: [{ _id: 'art-1', price: 500 }],
   cartTotal: 500,
-  shippingCost: 25,
-  total: 525,
+  shippingCost: 0,
+  total: 500,
   subtotal: 500,
   $i18n: { locale: 'en' },
   $router: { push: jest.fn() },
@@ -31,6 +32,72 @@ const makeVm = (dispatch) => ({
 });
 
 describe('Payment checkout guards', () => {
+  it('invoice failure is inline and follows the selected language', async () => {
+    const vm={isDownloading:false,paymentError:'',order:{_id:'qa-order'},$i18n:{locale:'en'},$store:{dispatch:jest.fn().mockRejectedValue(new Error('OFFLINE'))}};
+    await Payment.methods.downloadBilling.call(vm);
+    expect(global.alert).not.toHaveBeenCalled();
+    expect(vm.paymentError).toBe('invoice');
+    expect(Payment.computed.paymentErrorMessage.call(vm)).toContain('Could not download invoice');
+    vm.$i18n.locale='th';
+    expect(Payment.computed.paymentErrorMessage.call(vm)).toContain('ไม่สามารถดาวน์โหลดใบแจ้งหนี้');
+    expect(vm.isDownloading).toBe(false);
+  });
+
+  it('invoice retry ignores duplicate clicks and releases its download URL', async () => {
+    let finish;
+    const vm={isDownloading:false,paymentError:'invoice',order:{_id:'qa-order'},$store:{dispatch:jest.fn(()=>new Promise(resolve=>{finish=resolve}))}};
+    const oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;
+    URL.createObjectURL=jest.fn(()=> 'blob:qa-invoice');URL.revokeObjectURL=jest.fn();
+    const click=jest.spyOn(HTMLAnchorElement.prototype,'click').mockImplementation(()=>{});
+    try {
+      const first=Payment.methods.downloadBilling.call(vm);
+      await Payment.methods.downloadBilling.call(vm);
+      expect(vm.$store.dispatch).toHaveBeenCalledTimes(1);
+      finish({data:'qa-pdf'});await first;
+      expect(vm.paymentError).toBe('');
+      expect(click).toHaveBeenCalledTimes(1);
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:qa-invoice');
+    } finally {click.mockRestore();URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;}
+  });
+
+  it.each(['en','th'])('%s empty checkout directs the buyer to order history instead of an empty order form', locale => {
+    const wrapper=shallowMount({...Payment,created(){},mounted(){}},{
+      computed:{cartItems:()=>[],lastOrder:()=>null,reservationEnded:()=>false,hasReservedItems:()=>false},
+      mocks:{$i18n:{locale},$store:{getters:{}}},
+      stubs:{CContainer:{template:'<div><slot/></div>'},CIcon:true}
+    });
+    expect(wrapper.find({name:'CardShipping'}).exists()).toBe(false);
+    expect(wrapper.text()).toContain(locale==='en'?'Your cart is empty':'ตะกร้าสินค้าว่างเปล่า');
+    expect(wrapper.text()).toContain(locale==='en'?'View orders':'ดูคำสั่งซื้อ');
+    wrapper.destroy();
+  });
+
+  it('returns to the completed receipt after navigating back with an empty cart', () => {
+    const vm={...makeVm(jest.fn()),lastOrder:{_id:'order-1'},cartItems:[],currentStep:1,$route:{query:{}},fetchInitialData:jest.fn()};
+    Payment.created.call(vm);
+    expect(vm.currentStep).toBe(3);
+  });
+
+  it('keeps receipt artwork metadata separate from saved amount line items', () => {
+    const artwork = { _id:'art-1', title:[{key:'en',value:'QA artwork'}], image:'/qa.png', price:500 };
+    const order = Payment.computed.order.call({lastOrder:{items:[artwork],amounts:{subtotal:500,items:[{artwork:'art-1',price:500}]}},createdOrder:null});
+    expect(order.items).toEqual([artwork]);
+    expect(order.total).toBe(500);
+  });
+
+  it.each(['en','th'])('%s receipt uses the original order date and does not claim an unpaid total was paid', locale => {
+    const lastOrder = {createdAt:'2026-10-17T15:32:15.685Z',date:'10/18/2026',items:[],amounts:{subtotal:0},status:{code:'RESERVED'}};
+    const wrapper = shallowMount({...Payment,created(){},mounted(){}},{
+      data:()=>({currentStep:3}),
+      computed:{lastOrder:()=>lastOrder,cartItems:()=>[],reservationEnded:()=>false,hasReservedItems:()=>false},
+      mocks:{$i18n:{locale},$store:{getters:{}}},
+      stubs:{CContainer:{template:'<div><slot/></div>'},CCard:{template:'<div><slot/></div>'},CCardHeader:{template:'<div><slot/></div>'},CCardBody:{template:'<div><slot/></div>'},CIcon:true}
+    });
+    expect(wrapper.text()).toContain(locale==='en'?'17 Oct 2026':'17 ต.ค. 2569');
+    expect(wrapper.text()).not.toContain('Total Paid');
+    wrapper.destroy();
+  });
+
   beforeEach(() => {
     global.alert = jest.fn();
   });
@@ -62,10 +129,13 @@ describe('Payment checkout guards', () => {
   it('keeps the payment step and cart when slip upload fails', async () => {
     const dispatch = jest.fn((type) => {
       if (type === 'order/upload') return Promise.reject(new Error('UPLOAD_FAILED'));
+      if (type === 'order/get') return Promise.resolve([{ _id: 'order-1', status: { code: 'RESERVED' } }]);
       return Promise.resolve();
     });
     const vm = makeVm(dispatch);
     vm.createdOrder = { _id: 'order-1' };
+    vm.refreshCheckoutOrder = () => Payment.methods.refreshCheckoutOrder.call(vm);
+    Object.defineProperty(vm, 'reservationEnded', { get: () => Payment.computed.reservationEnded.call(vm) });
 
     await Payment.methods.handleSubmitPayment.call(vm, {
       paymentMethod: 'transfer',
@@ -74,6 +144,64 @@ describe('Payment checkout guards', () => {
 
     expect(vm.currentStep).toBe(2);
     expect(dispatch).not.toHaveBeenCalledWith('cart/clearCart');
-    expect(global.alert).toHaveBeenCalled();
+    expect(global.alert).not.toHaveBeenCalled();
+    expect(vm.paymentError).toBe('submit');
+    expect(dispatch).toHaveBeenCalledWith('order/upload', expect.objectContaining({ _id: 'order-1' }));
+  });
+
+  it('does not finish an order cancelled while checkout was open', async () => {
+    const dispatch = jest.fn(type => type === 'order/get'
+      ? Promise.resolve([{ _id: 'order-1', status: { code: 'CANCELLED' } }]) : Promise.resolve());
+    const vm = makeVm(dispatch);
+    vm.createdOrder = { _id: 'order-1', status: { code: 'RESERVED' } };
+    vm.refreshCheckoutOrder = () => Payment.methods.refreshCheckoutOrder.call(vm);
+    Object.defineProperty(vm, 'reservationEnded', { get: () => Payment.computed.reservationEnded.call(vm) });
+    await Payment.methods.handleSubmitPayment.call(vm, { paymentMethod: 'transfer', paymentProofFile: null });
+    expect(vm.createdOrder.status.code).toBe('CANCELLED');
+    expect(vm.currentStep).toBe(2);
+    expect(dispatch).not.toHaveBeenCalledWith('cart/clearCart');
+  });
+
+  it('keeps the cart when the latest order status cannot be verified', async () => {
+    const vm = makeVm(jest.fn(() => Promise.reject(new Error('OFFLINE'))));
+    vm.createdOrder = { _id: 'order-1' };
+    vm.refreshCheckoutOrder = () => Payment.methods.refreshCheckoutOrder.call(vm);
+    await Payment.methods.handleSubmitPayment.call(vm, { paymentProofFile: null });
+    expect(vm.currentStep).toBe(2);
+    expect(vm.$store.dispatch).not.toHaveBeenCalledWith('cart/clearCart');
+  });
+
+  it.each(['CANCELLED', 'REJECTED', 'APPROVED'])('blocks terminal order status %s', code => {
+    const vm = makeVm(jest.fn()); vm.createdOrder = { status: { code } };
+    expect(Payment.computed.reservationEnded.call(vm)).toBe(true);
+  });
+
+  it('blocks an unpaid reservation past its deadline before the cron runs', () => {
+    const vm = makeVm(jest.fn()); vm.createdOrder = { status: { code: 'RESERVED' }, createdAt: new Date(Date.now() - 25 * 3600000).toISOString() };
+    expect(Payment.computed.reservationEnded.call(vm)).toBe(true);
+  });
+
+  it('finishes a current unpaid reservation without a slip when explicitly confirmed', async () => {
+    const vm = makeVm(jest.fn(type => type === 'order/get'
+      ? Promise.resolve([{ _id: 'order-1', status: { code: 'RESERVED' }, createdAt: new Date().toISOString() }]) : Promise.resolve()));
+    vm.createdOrder = { _id: 'order-1' };
+    vm.refreshCheckoutOrder = () => Payment.methods.refreshCheckoutOrder.call(vm);
+    Object.defineProperty(vm, 'reservationEnded', { get: () => Payment.computed.reservationEnded.call(vm) });
+    await Payment.methods.handleSubmitPayment.call(vm, { paymentMethod: 'transfer', paymentProofFile: null });
+    expect(vm.currentStep).toBe(3);
+    expect(vm.$store.dispatch).toHaveBeenCalledWith('cart/clearCart');
+  });
+
+  it('never renders the success receipt or bank form for an ended reservation', () => {
+    const wrapper = shallowMount({ ...Payment, created() {}, mounted() {} }, {
+      data: () => ({ currentStep: 2 }),
+      computed: { reservationEnded: () => true, hasReservedItems: () => true },
+      mocks: { $i18n: { locale: 'en' }, $store: { getters: {} } },
+      stubs: { CContainer: { template: '<div><slot/></div>' }, CLink: { template: '<a><slot/></a>' }, CIcon: true }
+    });
+    expect(wrapper.text()).toContain('Reservation Ended');
+    expect(wrapper.text()).not.toContain('Order Confirmed!');
+    expect(wrapper.find({ name: 'CardShipping' }).exists()).toBe(false);
+    wrapper.destroy();
   });
 });

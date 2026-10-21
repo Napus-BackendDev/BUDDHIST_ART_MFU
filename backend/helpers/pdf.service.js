@@ -244,7 +244,9 @@ class PdfService {
             page = await browser.newPage();
 
             let imageSrc = '';
-            if (data?.artworkPath && fs.existsSync(data.artworkPath)) {
+            if (Buffer.isBuffer(data?.artworkBuffer)) {
+                imageSrc = `data:image/jpeg;base64,${data.artworkBuffer.toString('base64')}`;
+            } else if (data?.artworkPath && fs.existsSync(data.artworkPath)) {
                 const artworkData = fs.readFileSync(data.artworkPath);
                 const extension = path.extname(data.artworkPath).toLowerCase();
                 const mimeType = extension === '.png' ? 'image/png' : 'image/jpeg';

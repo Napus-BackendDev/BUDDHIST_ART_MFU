@@ -2,15 +2,16 @@
     <CCard class="database-table-card mb-4">
         <div>
             <!-- Main Data Table -->
-            <CDataTable 
-                :items="filteredUsers" 
-                :fields="fields" 
-                class="custom-table mb-0" 
-                hover 
+            <CDataTable
+                :items="filteredUsers"
+                :fields="fields"
+                class="custom-table mb-0"
+                hover
                 :border="false"
                 :striped="false"
                 :items-per-page="10"
                 :active-page="activePage"
+                :no-items-view="{ noItems: $i18n.locale === 'en' ? 'No users found' : 'ไม่พบผู้ใช้งาน' }"
                 @page-change="pageChange"
             >
                 <!-- User Name / Student ID Column -->
@@ -53,12 +54,12 @@
                     </td>
                 </template>
 
-                <!-- Status / Role Badge Column -->
+                <!-- Learner status is separate from the account role. -->
                 <template #status="{ item }">
                     <td class="py-3">
-                        <div :class="['status-badge', getRoleBadge(item.role).class]">
-                            <CIcon :name="getRoleBadge(item.role).icon" size="sm" class="status-icon" />
-                            {{ getRoleBadge(item.role).label }}
+                        <div :class="['status-badge', getStatusBadge(getStatusNameEn(item.status)).class]">
+                            <CIcon :name="getStatusBadge(getStatusNameEn(item.status)).icon" size="sm" class="status-icon" />
+                            {{ getStatusName(item.status) }}
                         </div>
                     </td>
                 </template>
@@ -83,13 +84,13 @@
                 <template #actions="{ item }">
                     <td class="text-right py-3 pr-4">
                         <div class="d-inline-flex align-items-center action-wrapper">
-                            <button class="action-btn icon-view" v-c-tooltip="$i18n.locale === 'en' ? 'View' : 'ดู'" @click="handleView(item)">
+                            <button type="button" class="action-btn icon-view" :aria-label="($i18n.locale === 'en' ? 'View user: ' : 'ดูผู้ใช้: ') + (getName($i18n.locale, item) || getName('en', item) || item.studentId)" v-c-tooltip="$i18n.locale === 'en' ? 'View' : 'ดู'" @click="handleView(item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit mx-2" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="handleEdit(item)">
+                            <button type="button" class="action-btn icon-edit mx-2" :aria-label="($i18n.locale === 'en' ? 'Edit user: ' : 'แก้ไขผู้ใช้: ') + (getName($i18n.locale, item) || getName('en', item) || item.studentId)" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="handleEdit(item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="handleDelete(item)">
+                            <button type="button" class="action-btn icon-danger" :aria-label="($i18n.locale === 'en' ? 'Delete user: ' : 'ลบผู้ใช้: ') + (getName($i18n.locale, item) || getName('en', item) || item.studentId)" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="handleDelete(item)">
                                 <CIcon name="cil-trash" size="lg" />
                             </button>
                         </div>
@@ -170,24 +171,32 @@ export default {
                 const studentId = (user.studentId || '').toLowerCase();
                 const search = this.filters.search.toLowerCase();
 
-                const searchMatch = !this.filters.search || 
+                const searchMatch = !this.filters.search ||
                     name.includes(search) ||
                     studentId.includes(search) ||
                     email.includes(search);
-                
+
                 // Get role details for matching
                 const userRoleId = (typeof user.role === 'object' && user.role) ? user.role._id : user.role;
                 const userRoleNameEn = this.getRoleNameEn(user.role);
-                const roleMatch = this.filters.role === 'All Roles' || 
-                    userRoleId === this.filters.role || 
-                    userRoleNameEn === this.filters.role;
+                const selectedRole = (this.filters.role || '').toLowerCase();
+                const roleMatch = !this.filters.role ||
+                    this.filters.role === 'All Roles' ||
+                    (userRoleId && String(userRoleId) === this.filters.role) ||
+                    (userRoleNameEn && userRoleNameEn.toLowerCase() === selectedRole);
 
                 // Get status details for matching
                 const userStatusId = (typeof user.status === 'object' && user.status) ? user.status._id : user.status;
                 const userStatusNameEn = this.getStatusNameEn(user.status);
-                const statusMatch = this.filters.status === 'All Status' || 
-                    userStatusId === this.filters.status || 
-                    userStatusNameEn === this.filters.status;
+                const userStatusCode = (typeof user.status === 'object' && user.status && user.status.code) ? user.status.code : '';
+                const selectedStatus = (this.filters.status || '').toLowerCase();
+                const statusMatch = !this.filters.status ||
+                    this.filters.status === 'All Status' ||
+                    (userStatusId && String(userStatusId) === this.filters.status) ||
+                    (userStatusNameEn && userStatusNameEn.toLowerCase() === selectedStatus) ||
+                    (userStatusCode && userStatusCode.toLowerCase() === selectedStatus) ||
+                    (selectedStatus === 'newstudent' && (userStatusNameEn.toLowerCase().includes('new') || userStatusCode.toLowerCase().includes('new'))) ||
+                    (selectedStatus === 'oldstudent' && (userStatusNameEn.toLowerCase().includes('old') || userStatusCode.toLowerCase().includes('old')));
 
                 return searchMatch && roleMatch && statusMatch;
             });
@@ -227,8 +236,8 @@ export default {
         },
         handleDelete(item) {
             const userName = this.getName(this.$i18n.locale, item) || this.getName('en', item) || this.getName('th', item);
-            const confirmMsg = this.$i18n.locale === 'en' 
-                ? `Are you sure you want to delete user ${userName}?` 
+            const confirmMsg = this.$i18n.locale === 'en'
+                ? `Are you sure you want to delete user ${userName}?`
                 : `คุณแน่ใจหรือไม่ที่จะลบผู้ใช้งาน ${userName}?`;
             if (confirm(confirmMsg)) {
                 this.$emit('delete', item);

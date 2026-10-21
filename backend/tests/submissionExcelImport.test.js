@@ -1,7 +1,7 @@
 const ExcelJS = require('exceljs');
 const sharp = require('sharp');
 
-const { parseWorkbook, ExcelImportError } = require('../server/Project/Submission/service/excelImport');
+const { parseWorkbook, resolveRows, ExcelImportError } = require('../server/Project/Submission/service/excelImport');
 
 const headers = [
     'SubmissionTitleThai', 'SubmissionTitleEng', 'CourseLevel', 'AcademicYear',
@@ -32,6 +32,34 @@ async function workbookBuffer({ includeImage = true, customHeaders = headers } =
 }
 
 describe('Submission embedded-image Excel parser', () => {
+    test('keeps artwork rows and their images after blank worksheet rows', async () => {
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(await workbookBuffer());
+        const worksheet = workbook.worksheets[0];
+        worksheet.getRow(4).values = worksheet.getRow(2).values.slice();
+        worksheet.getRow(4).getCell(11).value = 'QA-SECOND-ARTIST';
+        worksheet.getRow(4).getCell(12).value = 'Second artwork';
+        worksheet.addImage(worksheet.getImages()[0].imageId, 'T4:T4');
+
+        const parsed = await parseWorkbook(Buffer.from(await workbook.xlsx.writeBuffer()));
+        expect(parsed.rows.map(row => row.rowNumber)).toEqual([2, 4]);
+        expect(parsed.rows[1]).toMatchObject({ studentId: 'QA-SECOND-ARTIST', artworkTitleTh: 'Second artwork' });
+        expect(parsed.rows.every(row => row.image && row.image.rowNumber === row.rowNumber)).toBe(true);
+        expect(parsed.imageCount).toBe(2);
+    });
+
+    test('rejects a sparse workbook whose last row exceeds the worksheet limit', async () => {
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(await workbookBuffer({ includeImage: false }));
+        workbook.worksheets[0].getRow(1001).values = workbook.worksheets[0].getRow(2).values.slice();
+        await expect(parseWorkbook(Buffer.from(await workbook.xlsx.writeBuffer())))
+            .rejects.toThrow('Workbook contains more than 1000 rows.');
+    });
+
+    test('rejects reversed workbook dates before querying users or committing import', async () => {
+        await expect(resolveRows({ rows:[{ rowNumber:2, submissionStartDate:new Date('2026-10-20'), submissionEndDate:new Date('2026-10-16') }] }))
+            .rejects.toThrow('End dates must not precede start dates.');
+    });
     test('maps the original embedded image to its worksheet row', async () => {
         const parsed = await parseWorkbook(await workbookBuffer());
         expect(parsed.rows).toHaveLength(1);

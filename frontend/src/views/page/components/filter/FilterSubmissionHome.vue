@@ -14,7 +14,7 @@
                         <CIcon name="cil-chevron-bottom" size="sm" class="text-muted ml-auto" />
                     </button>
                 </template>
-                <CDropdownMenu class="w-100 border-0 shadow-lg mt-2 py-2" style="border-radius: 12px; z-index: 1050;">
+                <div class="w-100 border-0 shadow-lg mt-2 py-2" style="border-radius: 12px; z-index: 1050;">
                     <CDropdownItem 
                         v-for="cat in categories" 
                         :key="cat" 
@@ -24,7 +24,7 @@
                     >
                         {{ cat }}
                     </CDropdownItem>
-                </CDropdownMenu>
+                </div>
             </CDropdown>
         </div>
     </div>

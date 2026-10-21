@@ -32,7 +32,7 @@
 
 - ตำแหน่ง: `backend/server/Project/Order/order.routes.js:8-15`, `backend/server/Project/User/user.routes.js:8,14-15`
 - หลักฐาน: ผู้มี token เรียกดู Order ทั้งหมด, invoice/certificate ตาม ID, update/delete Order หรือ User ได้ โดย service ไม่จำกัด `user === req.user.userId`
-- ผลกระทบ: ผู้ใช้หนึ่งรายอาจอ่านหรือแก้ข้อมูล คำสั่งซื้อ ที่อยู่ สลิป ใบแจ้งหนี้ และข้อมูลผู้ใช้รายอื่น
+- ผลกระทบ: ผู้ใช้หนึ่งรายอาจอ่านหรือแก้ข้อมูล คำสั่งซื้อ ที่อยู่ หลักฐานการโอนเงิน ใบแจ้งหนี้ และข้อมูลผู้ใช้รายอื่น
 - แนวแก้: Admin ดูทั้งหมด; Customer ดู/แก้เฉพาะ record ตนเอง; Artist ดูเฉพาะผลงานตนเอง ตรวจ ownership ฝั่ง backend ทุกครั้ง
 
 ### SEC-04 — Category API เปลี่ยนข้อมูลได้โดยไม่ล็อกอิน

@@ -80,7 +80,7 @@ export default {
 
 .catalog-heading h2 {
     color: #612721;
-    font-family: 'Cinzel', 'Sarabun', serif;
+    font-family: var(--app-font-family);
     font-size: 2.2rem;
     line-height: 1.25;
 }
@@ -116,7 +116,7 @@ export default {
 .catalog-title {
     position: relative;
     z-index: 2;
-    font-family: 'Sarabun', 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 1.3rem;
     font-weight: 700;
     line-height: 1.35;

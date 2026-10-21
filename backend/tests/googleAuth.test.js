@@ -6,6 +6,13 @@ jest.mock('node-cron', () => ({
   schedule: jest.fn(() => ({ start: jest.fn(), stop: jest.fn() }))
 }));
 
+const mockVerifyIdToken = jest.fn();
+jest.mock('google-auth-library', () => ({
+  OAuth2Client: jest.fn(() => ({
+    verifyIdToken: mockVerifyIdToken
+  }))
+}));
+
 const { getApp, closeDatabase } = require('./appHelper');
 const User = require('../server/Project/User/models/user.model');
 const Role = require('../server/Project/Settings/models/role.model');
@@ -67,6 +74,18 @@ describe('Google OAuth Authentication', () => {
   afterAll(async () => {
     delete process.env.ALLOW_UNVERIFIED_GOOGLE_DEV;
     await closeDatabase();
+  });
+
+  beforeEach(() => {
+    mockVerifyIdToken.mockImplementation(async ({ idToken, audience }) => {
+      const decoded = jwt.decode(idToken);
+      const now = Math.floor(Date.now() / 1000);
+      const aud = Array.isArray(decoded?.aud) ? decoded.aud : [decoded?.aud];
+      if (!decoded || !aud.includes(audience) || !decoded.exp || decoded.exp <= now) {
+        throw new Error('Invalid or expired Google ID token');
+      }
+      return { getPayload: () => decoded };
+    });
   });
 
   function createMockGoogleToken(payload = {}) {

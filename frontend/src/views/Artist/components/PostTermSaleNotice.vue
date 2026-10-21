@@ -9,7 +9,7 @@
     </CCardBody>
     <CModal :show.sync="showModal" title="ยืนยันความประสงค์" closeOnBackdrop>
       <p>คุณเลือกให้ผลงาน <strong>{{ selectedItem ? titleOf(selectedItem) : '' }}</strong> เป็น <strong>{{ selectedDecision === 'continue_sale' ? 'ขายต่อแบบปกติ' : 'แสดงเฉย ๆ' }}</strong></p>
-      <label class="d-flex align-items-start mt-3"><CInput type="checkbox" v-model="confirmed" class="mr-2 mt-1" /><span>ฉันยืนยันความประสงค์นี้ และเข้าใจว่าการเลือก “ขายต่อแบบปกติ” จะไม่มีวันหมดอายุใหม่</span></label>
+      <label class="d-flex align-items-start mt-3"><CInput type="checkbox" v-model="confirmed" class="mr-2 mt-1" /><span>{{ selectedDecision === 'continue_sale' ? 'ฉันยืนยันความประสงค์นี้ และเข้าใจว่าการเลือก “ขายต่อแบบปกติ” จะไม่มีวันหมดอายุใหม่' : 'ฉันยืนยันให้แสดงผลงานเฉย ๆ โดยไม่เปิดจำหน่าย' }}</span></label>
       <template #footer><CButton color="light" @click="showModal = false">ยกเลิก</CButton><CButton color="primary" :disabled="!confirmed || saving" @click="saveDecision">{{ saving ? 'กำลังบันทึก...' : 'ยืนยันและบันทึก' }}</CButton></template>
     </CModal>
   </CCard>
@@ -26,8 +26,9 @@ export default {
     actionItems() {
       return this.items.filter(item => {
         const sale = item.postTermSale
-        if (!sale || !sale.initialSaleEndsAt) return false
-        return sale.decision === 'pending' || new Date(sale.initialSaleEndsAt).getTime() <= Date.now()
+        if (!sale || !sale.initialSaleEndsAt || sale.decision !== 'pending') return false
+        const deadline = new Date(sale.initialSaleEndsAt).getTime()
+        return Number.isFinite(deadline) && deadline <= Date.now() + 30 * 86400000
       })
     }
   },

@@ -1,11 +1,12 @@
 <template>
     <div class="artworks-dashboard">
         <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานศิลปะ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" themeColor="yellow" @create="onAddArtwork" @export="handleExport" />
+        <p v-if="importFeedback" class="alert alert-success" role="status">{{ importFeedback }}</p>
         <ArtworkWidget v-model="filters.status" :items="artworks" />
         <ArtworkFilter v-model="filters" :categories="categories" />
         <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
         <ArtworkCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSaveArtwork"/>
-        <ArtworkCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @download-template="downloadTemplate"/>
+        <ArtworkCreateChoiceModal :show.sync="showChoiceModal" :error="importError" :import-count="pendingImport.length" :importing="importing" @manual="handleChoiceManual" @import="handleChoiceImport" @confirm-import="confirmArtworkImport" @download-template="downloadTemplate"/>
         <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView"/>
         <ArtworkEditModal :show.sync="showEditModal" :artwork="selectedArtwork" :saving="saving" @save="handleUpdateArtwork"/>
 
@@ -43,6 +44,7 @@ import ArtworkViewModal from './components/modal/artwork/ArtworkViewModal.vue';
 import ArtworkEditModal from './components/modal/artwork/ArtworkEditModal.vue';
 import ArtworkCreateChoiceModal from './components/modal/artwork/ArtworkCreateChoiceModal.vue';
 import * as XLSX from 'xlsx';
+import { parseArtworkRows } from '@/utils/submissionArtworkImport';
 
 export default {
     name: 'Artworks',
@@ -60,6 +62,10 @@ export default {
         return {
             showCreateModal: false,
             showChoiceModal: false,
+            pendingImport: [],
+            importError: '',
+            importFeedback: '',
+            importing: false,
             showViewModal: false,
             showEditModal: false,
             selectedArtwork: null,
@@ -110,6 +116,9 @@ export default {
             }
         },
         onAddArtwork() {
+            this.pendingImport = [];
+            this.importError = '';
+            this.importFeedback = '';
             this.showChoiceModal = true;
         },
         handleChoiceManual() {
@@ -117,7 +126,11 @@ export default {
             this.showCreateModal = true;
         },
         handleChoiceImport(file) {
+            if (this.importing) return;
+            this.pendingImport = [];
+            this.importError = '';
             const reader = new FileReader();
+            reader.onerror = () => { this.importError = this.$i18n.locale === 'en' ? 'Error reading file.' : 'เกิดข้อผิดพลาดในการอ่านไฟล์'; };
             reader.onload = (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
@@ -127,14 +140,15 @@ export default {
                     const results = XLSX.utils.sheet_to_json(worksheet);
                     
                     if (results.length === 0) {
-                        alert(this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง");
+                        this.importError = this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง";
                         return;
                     }
 
-                    console.log('--- Raw Results from XLSX ---', results);
-                    console.log('--- Available Categories ---', this.categories);
-
+                    const parsedRows = this.prepareImportRows(results);
                     const mappedArtworks = results.map((row, index) => {
+                        const rowNumber = row.__rowNum__ == null ? index + 2 : row.__rowNum__ + 1;
+                        const parsed = parsedRows.find(item => item.rowNumber === rowNumber);
+                        if (!parsed) return null;
                         // Find values by loose key matching (ignore case and spaces)
                         const getValue = (targetKey) => {
                             const target = targetKey.toLowerCase().replace(/\s/g, '');
@@ -154,23 +168,15 @@ export default {
                         const sizeTh = getValue('SizeThai') || '';
                         const sizeEn = getValue('SizeEng') || '';
                         const priceStr = getValue('Price') || '0';
-                        const categoryName = getValue('Category') || getValue('Catogory') || '';
-                        const artistStudentId = getValue('ArtistID') || '';
-                        const remarkTh = getValue('RemarkThai') || getValue('RemarkTh') || getValue('หมายเหตุไทย') || getValue('หมายเหตุ') || '';
+                        const remarkTh = parsed.remarkTh || getValue('RemarkThai') || getValue('RemarkTh') || getValue('หมายเหตุไทย') || getValue('หมายเหตุ') || '';
                         const remarkEn = getValue('RemarkEng') || getValue('RemarkEn') || getValue('หมายเหตุอังกฤษ') || getValue('Remark') || '';
 
                         // Handle price with commas
                         const rawPrice = String(priceStr).replace(/,/g, '');
                         const parsedPrice = parseFloat(rawPrice) || 0;
                         
-                        const artistId = this.findArtistId(artistStudentId);
-                        const categoryId = this.findCategoryId(categoryName);
-
-                        console.log(`Row ${index + 1} Mapping:`, {
-                            title: titleTh || titleEn,
-                            artist: { studentId: artistStudentId, matchedId: artistId },
-                            category: { name: categoryName, matchedId: categoryId }
-                        });
+                        const artistId = parsed.artistId;
+                        const categoryId = parsed.categoryId || '';
 
                         const saleStatusName = getValue('SaleStatus') || '';
                         const approvalStatusName = getValue('ShowStatuses') || '';
@@ -225,35 +231,54 @@ export default {
                                 { key: 'en', value: remarkEn }
                             ]
                         };
-                    }).filter(a => a.title[0].value || a.title[1].value);
+                    }).filter(a => a && (a.title[0].value || a.title[1].value));
 
                     if (mappedArtworks.length === 0) {
-                        alert(this.$i18n.locale === 'en' ? "No valid artwork data found. Please check column headers." : "ไม่พบข้อมูลผลงานที่ถูกต้อง กรุณาตรวจสอบหัวตาราง");
+                        this.importError = this.$i18n.locale === 'en' ? "No valid artwork data found. Please check column headers." : "ไม่พบข้อมูลผลงานที่ถูกต้อง กรุณาตรวจสอบหัวตาราง";
                         return;
                     }
 
-                    const confirmMsg = this.$i18n.locale === 'en'
-                        ? `Detected ${mappedArtworks.length} artworks. Proceed with bulk import?`
-                        : `ตรวจพบผลงานจำนวน ${mappedArtworks.length} ชิ้น ดำเนินการนำเข้าข้อมูลทั้งหมดหรือไม่?`;
-
-                    if (confirm(confirmMsg)) {
-                        this.$store.dispatch('artwork/create', mappedArtworks)
-                            .then(() => {
-                                this.fetchArtworks();
-                                alert(this.$i18n.locale === 'en' ? "Bulk import completed successfully!" : "นำเข้าข้อมูลเรียบร้อยแล้ว!");
-                                this.showChoiceModal = false;
-                            })
-                            .catch(err => {
-                                console.error("Import error:", err);
-                                alert(this.$i18n.locale === 'en' ? "Failed to import artworks. Please check data format." : "ไม่สามารถนำเข้าข้อมูลได้ กรุณาตรวจสอบรูปแบบข้อมูล");
-                            });
-                    }
+                    this.pendingImport = mappedArtworks;
                 } catch (error) {
-                    console.error("File processing error:", error);
-                    alert(this.$i18n.locale === 'en' ? "Error reading file." : "เกิดข้อผิดพลาดในการอ่านไฟล์");
+                    this.importError = error.importValidation ? error.message : (this.$i18n.locale === 'en' ? "Error reading file." : "เกิดข้อผิดพลาดในการอ่านไฟล์");
                 }
             };
             reader.readAsArrayBuffer(file);
+        },
+        async confirmArtworkImport() {
+            if (this.importing || !this.pendingImport.length) return;
+            this.importing = true;
+            this.importError = '';
+            try {
+                await this.$store.dispatch('artwork/create', this.pendingImport);
+                this.pendingImport = [];
+                this.showChoiceModal = false;
+                this.importFeedback = this.$i18n.locale === 'en' ? 'Bulk import completed successfully!' : 'นำเข้าข้อมูลเรียบร้อยแล้ว!';
+                await this.fetchArtworks();
+            } catch (error) {
+                this.importError = this.$i18n.locale === 'en' ? 'Failed to import artworks. Please try again.' : 'ไม่สามารถนำเข้าข้อมูลได้ กรุณาลองใหม่';
+            } finally {
+                this.importing = false;
+            }
+        },
+        prepareImportRows(results) {
+            try {
+                const rows = parseArtworkRows(results, this.$store.getters['user/user'] || [], this.categories);
+                const messages = {
+                    'ไม่พบรหัสผู้เรียนที่ตรงกันเพียงคนเดียว': 'No unique matching learner ID',
+                    'ไม่มีชื่อผลงาน': 'Artwork title is missing',
+                    'ราคาไม่ถูกต้อง': 'Invalid price',
+                    'ไม่พบประเภทผลงานที่ตรงกันเพียงประเภทเดียว': 'No unique matching category',
+                    'ประทับเวลาไม่ถูกต้อง': 'Invalid timestamp'
+                };
+                const english = this.$i18n?.locale === 'en';
+                const issues = rows.filter(row => row.issues.length).map(row => `${english ? 'Row' : 'แถวที่'} ${row.rowNumber}: ${row.issues.map(issue => english ? messages[issue] || issue : issue).join(', ')}`);
+                if (issues.length) throw new Error(issues.join('\n'));
+                return rows;
+            } catch (error) {
+                error.importValidation = true;
+                throw error;
+            }
         },
         downloadTemplate() {
             const data = [[

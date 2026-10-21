@@ -1,6 +1,8 @@
 <template>
     <CModal
         :show="show"
+        :close-on-backdrop="!importing"
+        :on-key="handleModalKey"
         @update:show="$emit('update:show', $event)"
         size="lg"
         centered
@@ -17,17 +19,24 @@
                         <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Choose how you would like to add submissions.' : 'เลือกวิธีการเพิ่มการส่งงาน' }}</p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
+                <button type="button" :disabled="importing" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" class="close-btn" @click="$emit('update:show', false)">
                     <CIcon name="cil-x" size="sm" />
                 </button>
             </div>
         </template>
 
         <div class="px-3 py-4">
+            <p v-if="error" role="alert" class="alert alert-danger">{{ error }}</p>
+            <div v-if="importSummary" class="alert alert-info">
+                <p>{{ importSummary }}</p>
+                <button type="button" data-testid="confirm-import" class="btn btn-primary" :disabled="importing" @click="$emit('confirm-import')">
+                    {{ importing ? ($i18n.locale === 'en' ? 'Importing...' : 'กำลังนำเข้า...') : ($i18n.locale === 'en' ? 'Confirm Import' : 'ยืนยันนำเข้า') }}
+                </button>
+            </div>
             <CRow>
                 <!-- Manual Choice -->
                 <CCol md="4">
-                    <div class="choice-card clickable" @click="$emit('manual')">
+                    <button type="button" :disabled="importing" class="choice-card clickable" @click="$emit('manual')">
                         <div class="choice-icon bg-green-light text-green">
                             <CIcon name="cil-pencil" size="xl" />
                         </div>
@@ -37,12 +46,12 @@
                             <span>{{ $i18n.locale === 'en' ? 'Get Started' : 'เริ่มต้นใช้งาน' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
-                    </div>
+                    </button>
                 </CCol>
 
                 <!-- Import Choice -->
                 <CCol md="4">
-                    <div class="choice-card clickable" @click="triggerFileInput">
+                    <button type="button" :disabled="importing" class="choice-card clickable" @click="triggerFileInput">
                         <div class="choice-icon bg-blue-light text-blue">
                             <CIcon name="cil-cloud-upload" size="xl" />
                         </div>
@@ -52,6 +61,7 @@
                             <span>{{ $i18n.locale === 'en' ? 'Upload File' : 'อัปโหลดไฟล์' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
+                    </button>
                         <input
                             type="file"
                             ref="fileInput"
@@ -59,16 +69,15 @@
                             accept=".xlsx, .xls, .csv"
                             @change="handleFileChange"
                         >
-                    </div>
                 </CCol>
 
                 <CCol md="4">
-                    <div class="choice-card clickable" @click="$emit('artwork-import'); $emit('update:show', false)">
+                    <button type="button" :disabled="importing" class="choice-card clickable" @click="$emit('artwork-import'); $emit('update:show', false)">
                         <div class="choice-icon bg-purple-light text-purple"><CIcon name="cil-image" size="xl" /></div>
                         <h6 class="choice-label">{{ $i18n.locale === 'en' ? 'Import Artwork' : 'นำเข้าผลงานเข้า Submission' }}</h6>
-                        <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Import the cohort 6 form, image links and optional image files into an existing submission.' : 'นำเข้าแบบฟอร์มรุ่นที่ 6 พร้อมลิงก์ภาพหรือแนบรูปเข้า Submission ที่มีอยู่' }}</p>
+                        <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Import the cohort 6 form, image links into an existing submission.' : 'นำเข้าแบบฟอร์มรุ่นที่ 6 พร้อมลิงก์ภาพเข้า Submission ที่มีอยู่' }}</p>
                         <div class="choice-footer text-purple"><span>{{ $i18n.locale === 'en' ? 'Import artwork' : 'นำเข้าผลงาน' }}</span><CIcon name="cil-arrow-right" class="ml-2" /></div>
-                    </div>
+                    </button>
                 </CCol>
             </CRow>
         </div>
@@ -95,9 +104,15 @@ export default {
         show: {
             type: Boolean,
             default: false
-        }
+        },
+        error: { type: String, default: '' },
+        importSummary: { type: String, default: '' },
+        importing: { type: Boolean, default: false }
     },
     methods: {
+        handleModalKey(unused, code) {
+            return !this.importing && code === 27;
+        },
         triggerFileInput() {
             this.$refs.fileInput.click();
         },
@@ -105,7 +120,6 @@ export default {
             const file = event.target.files[0];
             if (file) {
                 this.$emit('import', file);
-                this.$emit('update:show', false);
                 // Clear the input so the same file can be selected again
                 event.target.value = '';
             }
@@ -115,6 +129,7 @@ export default {
 </script>
 
 <style scoped>
+.choice-card:focus-visible { outline: 3px solid #321fdb; outline-offset: 3px; }
 .modal-header-custom {
     padding: 0.5rem 0;
 }
@@ -136,6 +151,9 @@ export default {
 .text-purple { color: #8b5cf6; }
 
 .choice-card {
+    width: 100%;
+    font: inherit;
+    color: inherit;
     background: #ffffff;
     border: 1px solid #f1f5f9;
     border-radius: 20px;

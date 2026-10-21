@@ -1,4 +1,5 @@
 import Service from "@/service/api";
+import { shippingForSubtotal } from '@/utils/orderAmounts'
 
 const readPersistedItems = () => {
     if (typeof localStorage === 'undefined') return [];
@@ -40,7 +41,7 @@ const getters = {
     },
     cartShippingCost: (state, getters) => {
         const subtotal = getters.cartTotal;
-        return (subtotal > 1000 || subtotal === 0) ? 0 : 25;
+        return shippingForSubtotal(subtotal);
     },
     cartFinalTotal: (state, getters) => {
         return getters.cartTotal + getters.cartShippingCost;

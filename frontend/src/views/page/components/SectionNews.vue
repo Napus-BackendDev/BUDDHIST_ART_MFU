@@ -11,7 +11,12 @@
 
 
 
-            <CardNew :newsList="filteredNews.slice(0, 8)" :isHome="true" class="news-grid-row" />
+            <p v-if="loading" role="status">{{ $i18n.locale === 'en' ? 'Loading news...' : 'กำลังโหลดข่าวสาร...' }}</p>
+            <div v-else-if="loadError" role="alert" class="alert alert-danger">
+                <p>{{ $i18n.locale === 'en' ? 'Unable to load news. Please try again.' : 'โหลดข่าวสารไม่สำเร็จ กรุณาลองใหม่' }}</p>
+                <button type="button" class="btn btn-outline-danger" @click="loadNews">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+            </div>
+            <CardNew v-else :newsList="filteredNews.slice(0, 8)" :isHome="true" class="news-grid-row" />
         </CContainer>
     </div>
 </template>
@@ -27,18 +32,12 @@ export default {
     },
     data() {
         return {
-            loading: false
+            loading: false,
+            loadError: false
         }
     },
     async created() {
-        this.loading = true;
-        try {
-            await this.fetchNews({});
-        } catch (error) {
-            console.error('Error fetching news:', error);
-        } finally {
-            this.loading = false;
-        }
+        await this.loadNews();
     },
     computed: {
         ...mapGetters({
@@ -60,6 +59,18 @@ export default {
         }
     },
     methods: {
+        async loadNews() {
+            if (this.loading) return;
+            this.loading = true;
+            this.loadError = false;
+            try {
+                await this.fetchNews({});
+            } catch (error) {
+                this.loadError = true;
+            } finally {
+                this.loading = false;
+            }
+        },
         ...mapActions('news', {
             fetchNews: 'get'
         })

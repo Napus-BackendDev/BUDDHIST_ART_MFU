@@ -14,10 +14,11 @@
                                 <input 
                                     type="text" 
                                     v-model="filters.searchQuery"
-                                    :placeholder="$i18n.locale === 'en' ? 'Search...' : 'Search...'"
+                                    :aria-label="$i18n.locale === 'en' ? 'Search artworks' : 'ค้นหาผลงาน'"
+                                    :placeholder="$i18n.locale === 'en' ? 'Search...' : 'ค้นหาผลงาน...'"
                                     class="sidebar-search-input"
                                 />
-                                <button type="button" class="sidebar-search-btn" title="Search">
+                                <button type="button" class="sidebar-search-btn" :aria-label="$i18n.locale === 'en' ? 'Search artworks' : 'ค้นหาผลงาน'">
                                     <CIcon name="cil-magnifying-glass" />
                                 </button>
                             </div>
@@ -25,14 +26,14 @@
 
                         <!-- 2. FILTER BY PRICE -->
                         <div class="sidebar-filter-section mb-4" :class="{ 'is-collapsed': collapsedSections.priceSlider }">
-                            <div class="filter-section-header" @click="toggleSection('priceSlider')">
-                                <h4 class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'FILTER BY PRICE' : 'FILTER BY PRICE' }}</h4>
+                            <button type="button" class="filter-section-header" :aria-expanded="!collapsedSections.priceSlider" @click="toggleSection('priceSlider')">
+                                <span class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'FILTER BY PRICE' : 'กรองตามราคา' }}</span>
                                 <div class="filter-toggle-btn" :title="collapsedSections.priceSlider ? ($i18n.locale === 'en' ? 'Expand' : 'ขยาย') : ($i18n.locale === 'en' ? 'Collapse' : 'ย่อ')">
                                     <svg class="filter-collapse-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </div>
-                            </div>
+                            </button>
                             <div class="filter-heading-divider"></div>
 
                             <div v-show="!collapsedSections.priceSlider" class="filter-content-wrapper">
@@ -44,6 +45,7 @@
                                             :max="maxAvailablePrice" 
                                             step="100" 
                                             v-model.number="tempMinPrice"
+                                            :aria-label="$i18n.locale === 'en' ? 'Minimum price' : 'ราคาต่ำสุด'"
                                             class="slider min-slider"
                                         />
                                         <input 
@@ -52,6 +54,7 @@
                                             :max="maxAvailablePrice" 
                                             step="100" 
                                             v-model.number="tempMaxPrice"
+                                            :aria-label="$i18n.locale === 'en' ? 'Maximum price' : 'ราคาสูงสุด'"
                                             class="slider max-slider"
                                         />
                                         <div class="slider-track" :style="trackStyle"></div>
@@ -59,10 +62,10 @@
 
                                     <div class="price-action-row d-flex align-items-center justify-content-between mt-3 pt-1">
                                         <button type="button" class="btn-filter-action" @click="applyPriceFilter">
-                                            {{ $i18n.locale === 'en' ? 'FILTER' : 'FILTER' }}
+                                            {{ $i18n.locale === 'en' ? 'FILTER' : 'กรองราคา' }}
                                         </button>
                                         <div class="price-display-text">
-                                            <span class="price-label">{{ $i18n.locale === 'en' ? 'Price:' : 'Price:' }}</span>
+                                            <span class="price-label">{{ $i18n.locale === 'en' ? 'Price:' : 'ราคา:' }}</span>
                                             <strong>฿{{ formatPrice(tempMinPrice) }} — ฿{{ formatPrice(tempMaxPrice) }}</strong>
                                         </div>
                                     </div>
@@ -72,19 +75,19 @@
 
                         <!-- 3. FILTER BY RANGE -->
                         <div class="sidebar-filter-section mb-4" :class="{ 'is-collapsed': collapsedSections.priceRange }">
-                            <div class="filter-section-header" @click="toggleSection('priceRange')">
-                                <h4 class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'FILTER BY RANGE' : 'FILTER BY RANGE' }}</h4>
+                            <button type="button" class="filter-section-header" :aria-expanded="!collapsedSections.priceRange" @click="toggleSection('priceRange')">
+                                <span class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'FILTER BY RANGE' : 'ช่วงราคา' }}</span>
                                 <div class="filter-toggle-btn" :title="collapsedSections.priceRange ? ($i18n.locale === 'en' ? 'Expand' : 'ขยาย') : ($i18n.locale === 'en' ? 'Collapse' : 'ย่อ')">
                                     <svg class="filter-collapse-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </div>
-                            </div>
+                            </button>
                             <div class="filter-heading-divider"></div>
 
                             <div v-show="!collapsedSections.priceRange" class="filter-content-wrapper">
-                                <ul class="filter-list-items">
-                                    <li 
+                                <div class="filter-list-items">
+                                    <button type="button"
                                         v-for="bracket in priceBrackets" 
                                         :key="bracket.key"
                                         class="filter-list-item"
@@ -93,34 +96,34 @@
                                     >
                                         <span class="item-title">฿ {{ bracket.label }}</span>
                                         <span class="item-count">({{ bracket.count }})</span>
-                                    </li>
-                                </ul>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <!-- 4. ARTWORKS BY STYLE (Categories) -->
                         <div class="sidebar-filter-section mb-4" :class="{ 'is-collapsed': collapsedSections.style }">
-                            <div class="filter-section-header" @click="toggleSection('style')">
-                                <h4 class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'ARTWORKS BY STYLE' : 'ARTWORKS BY STYLE' }}</h4>
+                            <button type="button" class="filter-section-header" :aria-expanded="!collapsedSections.style" @click="toggleSection('style')">
+                                <span class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'ARTWORKS BY STYLE' : 'หมวดหมู่ผลงาน' }}</span>
                                 <div class="filter-toggle-btn" :title="collapsedSections.style ? ($i18n.locale === 'en' ? 'Expand' : 'ขยาย') : ($i18n.locale === 'en' ? 'Collapse' : 'ย่อ')">
                                     <svg class="filter-collapse-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </div>
-                            </div>
+                            </button>
                             <div class="filter-heading-divider"></div>
 
                             <div v-show="!collapsedSections.style" class="filter-content-wrapper">
-                                <ul class="filter-list-items">
-                                    <li 
+                                <div class="filter-list-items">
+                                    <button type="button"
                                         class="filter-list-item"
                                         :class="{ 'active': filters.category === 'All Categories' }"
                                         @click="filters.category = 'All Categories'"
                                     >
                                         <span class="item-title">{{ $i18n.locale === 'en' ? 'All Styles' : 'ทั้งหมด' }}</span>
                                         <span class="item-count">({{ approvedArtworks.length }})</span>
-                                    </li>
-                                    <li 
+                                    </button>
+                                    <button type="button"
                                         v-for="cat in categories" 
                                         v-if="getCategoryCount(getName($i18n.locale, cat)) > 0" 
                                         :key="cat._id"
@@ -130,34 +133,34 @@
                                     >
                                         <span class="item-title">{{ getName($i18n.locale, cat) }}</span>
                                         <span class="item-count">({{ getCategoryCount(getName($i18n.locale, cat)) }})</span>
-                                    </li>
-                                </ul>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <!-- 5. FILTER BY COHORT (รุ่น / รอบส่งผลงาน) -->
                         <div class="sidebar-filter-section mb-4" v-if="cohortOptions.length > 0" :class="{ 'is-collapsed': collapsedSections.cohort }">
-                            <div class="filter-section-header" @click="toggleSection('cohort')">
-                                <h4 class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'FILTER BY COHORT' : 'รุ่น / รอบส่งผลงาน' }}</h4>
+                            <button type="button" class="filter-section-header" :aria-expanded="!collapsedSections.cohort" @click="toggleSection('cohort')">
+                                <span class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'FILTER BY COHORT' : 'รุ่น / รอบส่งผลงาน' }}</span>
                                 <div class="filter-toggle-btn" :title="collapsedSections.cohort ? ($i18n.locale === 'en' ? 'Expand' : 'ขยาย') : ($i18n.locale === 'en' ? 'Collapse' : 'ย่อ')">
                                     <svg class="filter-collapse-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </div>
-                            </div>
+                            </button>
                             <div class="filter-heading-divider"></div>
 
                             <div v-show="!collapsedSections.cohort" class="filter-content-wrapper">
-                                <ul class="filter-list-items">
-                                    <li 
+                                <div class="filter-list-items">
+                                    <button type="button"
                                         class="filter-list-item"
                                         :class="{ 'active': filters.cohort === 'all' }"
                                         @click="filters.cohort = 'all'"
                                     >
                                         <span class="item-title">{{ $i18n.locale === 'en' ? 'All Cohorts' : 'ทุกรุ่น' }}</span>
                                         <span class="item-count">({{ approvedArtworks.length }})</span>
-                                    </li>
-                                    <li 
+                                    </button>
+                                    <button type="button"
                                         v-for="cohort in cohortOptions" 
                                         :key="cohort.key"
                                         class="filter-list-item"
@@ -166,8 +169,8 @@
                                     >
                                         <span class="item-title">{{ formatCohortLabel(cohort) }}</span>
                                         <span class="item-count">({{ cohort.artworkCount }})</span>
-                                    </li>
-                                </ul>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -189,7 +192,7 @@
                         <div class="results-meta mb-2 mb-sm-0">
                             <span class="results-count-text">
                                 {{ $i18n.locale === 'en' ? 'Showing ' : 'แสดง ' }}
-                                <strong class="text-dark">{{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, filteredArtworks.length) }}</strong>
+                                <strong class="text-dark">{{ filteredArtworks.length ? (currentPage - 1) * itemsPerPage + 1 : 0 }}-{{ Math.min(currentPage * itemsPerPage, filteredArtworks.length) }}</strong>
                                 {{ $i18n.locale === 'en' ? ' of ' : ' จากทั้งหมด ' }}
                                 <strong class="text-dark">{{ filteredArtworks.length }}</strong>
                                 {{ $i18n.locale === 'en' ? ' artworks' : ' ผลงาน' }}
@@ -201,7 +204,7 @@
                             <span class="sort-label mr-2 text-muted small text-uppercase font-weight-bold">
                                 {{ $i18n.locale === 'en' ? 'Sort by:' : 'เรียงลำดับ:' }}
                             </span>
-                            <select v-model="filters.sort" class="custom-sort-select">
+                            <select v-model="filters.sort" class="custom-sort-select" :aria-label="$i18n.locale === 'en' ? 'Sort artworks' : 'เรียงลำดับผลงาน'">
                                 <option v-for="option in sortOptions" :key="option.value" :value="option.value">
                                     {{ $i18n.locale === 'en' ? option.en : option.th }}
                                 </option>
@@ -217,7 +220,7 @@
                         </div>
                         <div v-else-if="loadError" class="text-center py-5 bg-white rounded-xl border" role="alert">
                             <h4>{{ $i18n.locale === 'en' ? 'Unable to load artworks' : 'โหลดข้อมูลผลงานไม่สำเร็จ' }}</h4>
-                            <p>{{ loadError }}</p>
+                            <p>{{ loadErrorMessage }}</p>
                             <button type="button" class="btn-reset-all px-4 py-2" :disabled="retryAt > retryNow" @click="fetchInitialData">
                                 {{ retryAt > retryNow ? ($i18n.locale === 'en' ? 'Please wait before retrying' : 'กรุณารอก่อนลองใหม่') : ($i18n.locale === 'en' ? 'Try again' : 'ลองใหม่') }}
                             </button>
@@ -449,6 +452,14 @@ export default {
         }
     },
     computed: {
+        loadErrorMessage() {
+            if (this.loadError === 'rateLimit') {
+                return this.$i18n.locale === 'en' ? 'Too many requests. Please wait before retrying.' : 'มีคำขอถี่เกินกำหนด กรุณารอก่อนลองใหม่';
+            }
+            return this.$i18n.locale === 'en'
+                ? 'The server could not load the data. Please try again later.'
+                : 'ระบบไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่ภายหลัง';
+        },
         allArtworks() {
             return this.$store.getters['artwork/artworks'] || [];
         },
@@ -542,13 +553,10 @@ export default {
 
             // Search Filter
             if (this.filters.searchQuery) {
-                const query = this.filters.searchQuery.toLowerCase();
+                const query = this.filters.searchQuery.trim().toLowerCase();
                 result = result.filter(art => {
-                    const title = this.getName(this.$i18n.locale, art).toLowerCase();
-                    const artist = art.artist ? this.getName(this.$i18n.locale, art.artist).toLowerCase() : '';
-                    const piece = art.artworkPiece ? art.artworkPiece.toLowerCase() : '';
-                    const code = art.artworkCode ? art.artworkCode.toLowerCase() : '';
-                    return title.includes(query) || artist.includes(query) || piece.includes(query) || code.includes(query);
+                    const labels = ['th', 'en'].flatMap(locale => [this.getName(locale, art), art.artist ? this.getName(locale, art.artist) : '']);
+                    return [...labels, art.artworkPiece, art.artworkCode].some(value => String(value || '').toLowerCase().includes(query));
                 });
             }
 
@@ -649,12 +657,10 @@ export default {
         },
         handleLoadError(error) {
             const response = error.response || {};
-            this.loadError = this.$i18n.locale === 'en'
-                ? 'The server could not load the data. Please try again later.'
-                : 'ระบบไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่ภายหลัง';
+            this.loadError = 'server';
             if (response.status === 429) {
                 this.retryAt = retryAtFromHeaders(response.headers);
-                this.loadError = this.$i18n.locale === 'en' ? 'Too many requests. Please wait before retrying.' : 'มีคำขอถี่เกินกำหนด กรุณารอก่อนลองใหม่';
+                this.loadError = 'rateLimit';
                 clearTimeout(this.retryTimer);
                 this.retryNow = Date.now();
                 this.retryTimer = setTimeout(() => { this.retryNow = Date.now(); }, Math.max(0, this.retryAt - Date.now()));
@@ -860,7 +866,7 @@ export default {
 <style scoped>
 .artworks-page {
     background-color: #FAF9F6 !important;
-    font-family: 'Outfit', 'Inter', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--app-font-family);
 }
 
 /* Sidebar Filter Container */
@@ -925,6 +931,10 @@ export default {
 
 /* 2. Headings, Collapsible Header & Divider */
 .filter-section-header {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1108,6 +1118,10 @@ export default {
 }
 
 .filter-list-item {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
     display: flex;
     align-items: center;
     justify-content: space-between;

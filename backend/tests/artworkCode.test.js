@@ -21,6 +21,7 @@ const Role = require('../server/Project/Settings/models/role.model');
 const Artwork = require('../server/Project/Artwork/models/artwork.model');
 const Submission = require('../server/Project/Submission/models/submission.model');
 const ArtworkCounter = require('../server/Project/Artwork/models/artworkCounter.model');
+const { generateArtworkCode } = require('../server/Project/Artwork/service/artworkCode');
 
 // Decompose code into prefix, student prefix, cohort, student suffix, sequence.
 const parseCode = (code) => {
@@ -36,7 +37,7 @@ describe('Artwork Code format — prefix + student first 2 + cohort + student la
   beforeAll(async () => {
     process.env.JWT_SECRET = 'testSecret';
     app = await getApp();
-    token = jwt.sign({ id: 'adminUser' }, 'testSecret');
+    token = jwt.sign({ userId: '000000000000000000000001', role: 'Admin' }, 'testSecret');
   });
 
   afterAll(async () => {
@@ -227,5 +228,43 @@ describe('Artwork Code format — prefix + student first 2 + cohort + student la
       .not.toBe(published[1].submissionArtworkId.toString());
     expect(published[0].image).toBe(sharedImage);
     expect(published[1].image).toBe(sharedImage);
+  });
+
+  it('allocates different codes concurrently when full student IDs share the displayed prefix and suffix', async () => {
+    const codes = await Promise.all(['650000016', '651111016'].map(studentId => generateArtworkCode({ studentId, courseLevel: '6' })));
+    expect(new Set(codes).size).toBe(2);
+    expect(codes.every(code => /^BA-65-06-016-\d{2}$/.test(code))).toBe(true);
+  });
+
+  it('continues after legacy counters, imported codes and embedded submission reservations', async () => {
+    await ArtworkCounter.create({ scope: 'ARTWORK:650000016:06', sequence: 3 });
+    await Artwork.create({ artworkCode: 'BA-65-06-016-05' });
+    await Submission.create({ assignments: [{ artworks: [{ artworkCode: 'BA-65-06-016-06' }] }] });
+    expect(await generateArtworkCode({ studentId: '651111016', courseLevel: '6' })).toBe('BA-65-06-016-07');
+  });
+
+  it('retries approval publication with a conflicting stored code without touching the existing artwork', async () => {
+    const approved = await Status.create({ title: [{ key: 'en', value: 'Approved' }] });
+    const artist = await User.create({ studentId: '650000016', contact: { personalEmail: 'qa@example.test' } });
+    const existing = await Artwork.create({ artworkCode: 'BA-65-06-016-01', title: [{ key: 'en', value: 'Existing' }] });
+    const submission = await Submission.create({ courseLevel: '6', artist: [artist._id], assignments: [{ artist: [artist._id],
+      artworks: [{ owner: artist._id, status: approved._id, artworkCode: 'BA-65-06-016-01', title: [{ key: 'en', value: 'Retry QA' }] }] }] });
+    const workId = submission.assignments[0].artworks[0]._id;
+    let publishedAtNotification = false;
+    sendMail.mockImplementation(async () => {
+      publishedAtNotification = Boolean(await Artwork.findOne({ submissionArtworkId: workId }));
+      return { success: true };
+    });
+    const result = await request(app).put('/api/v1/submission').set('Authorization', `Bearer ${token}`).send({ _id: submission._id });
+    expect(result.body.code).toBe(20000);
+    const published = await Artwork.findOne({ submissionArtworkId: workId });
+    expect(published).not.toBeNull();
+    expect(published.artworkCode).not.toBe(existing.artworkCode);
+    expect((await Artwork.findById(existing._id)).title[0].value).toBe('Existing');
+    expect(sendMail).toHaveBeenCalled();
+    expect(publishedAtNotification).toBe(true);
+    await request(app).put('/api/v1/submission').set('Authorization', `Bearer ${token}`).send({ _id: submission._id });
+    expect(await Artwork.countDocuments({ submissionArtworkId: workId })).toBe(1);
+    expect(sendMail).toHaveBeenCalledTimes(1);
   });
 });

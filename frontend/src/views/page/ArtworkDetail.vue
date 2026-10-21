@@ -4,6 +4,10 @@
         <div class="top-nav-accent"></div>
         
         <CContainer class="pt-4 mt-2">
+            <div v-if="loadError && !loading" ref="artworkLoadNotice" role="alert" tabindex="-1" class="alert alert-danger">
+                <p>{{ $i18n.locale === 'en' ? 'Unable to load artwork information. Please try again.' : 'โหลดข้อมูลผลงานไม่สำเร็จ กรุณาลองใหม่' }}</p>
+                <button type="button" class="btn btn-outline-danger" :disabled="fetchingId !== null" @click="fetchArtwork(false)">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+            </div>
             <!-- Loading State -->
             <div v-if="loading" class="loading-state-premium">
                 <div class="premium-spinner-wrapper">
@@ -37,7 +41,7 @@
                                 <img :src="artworkImageUrl(artwork)" :alt="getName($i18n.locale, artwork)" class="main-artwork-img">
                                 
                                 <!-- Zoom Button with premium styling -->
-                                <button v-if="!showZoomModal" class="btn-zoom-float shadow-lg" @click="zoomImg" title="Zoom Image">
+                                <button v-if="!showZoomModal" ref="zoomTrigger" class="btn-zoom-float shadow-lg" @click="zoomImg" :title="$i18n.locale === 'en' ? 'Zoom image' : 'ขยายภาพ'" :aria-label="$i18n.locale === 'en' ? 'Zoom image' : 'ขยายภาพ'">
                                     <CIcon name="cilMagnifyingGlass" />
                                 </button>
                             </div>
@@ -61,13 +65,14 @@
                                     <div class="artist-info-meta">
                                         <span class="label">{{ $i18n.locale === 'en' ? 'Master Creator' : 'ศิลปินผู้สร้างสรรค์' }}</span>
                                         <h4 class="artist-name mb-0">
-                                            {{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Unknown Artist' : 'ศิลปินนิรนาม') }}
+                                            <router-link v-if="artistProfileRoute" :to="artistProfileRoute" @click.native.stop>{{ getName($i18n.locale, artwork.artist) }}</router-link>
+                                            <span v-else>{{ $i18n.locale === 'en' ? 'Unknown Artist' : 'ศิลปินนิรนาม' }}</span>
                                         </h4>
                                     </div>
                                 </div>
 
                                 <!-- Artist Bio Description -->
-                                <div class="artist-bio-wrapper pt-3">
+                                <div v-if="artistBio" class="artist-bio-wrapper pt-3">
                                     <p class="artist-bio-text mb-0">
                                         {{ artistBio }}
                                     </p>
@@ -95,22 +100,6 @@
                                     <p class="description-body">
                                         {{ getName($i18n.locale, artwork, 'description') || ($i18n.locale === 'en' ? 'No description provided for this artwork.' : 'ไม่มีรายละเอียดสำหรับผลงานชิ้นนี้') }}
                                     </p>
-                                </div>
-
-                                <!-- Remark / หมายเหตุ Section -->
-                                <div v-if="getName($i18n.locale, artwork, 'remark')" class="curator-remark mb-4">
-                                    <div class="remark-header d-flex align-items-center mb-2">
-                                        <div class="header-remark-mark"></div>
-                                        <h6 class="mb-0 text-uppercase font-weight-bold tracking-wider">
-                                            {{ $i18n.locale === 'en' ? 'Remark / Note' : 'หมายเหตุ' }}
-                                        </h6>
-                                    </div>
-                                    <div class="remark-body-box p-3 rounded-xl">
-                                        <p class="remark-text mb-0">
-                                            <CIcon name="cil-info" class="mr-2 text-warning" size="sm" />
-                                            {{ getName($i18n.locale, artwork, 'remark') }}
-                                        </p>
-                                    </div>
                                 </div>
 
                                 <!-- Status Tag if not approved -->
@@ -222,6 +211,19 @@
                                             <CIcon name="cilShare" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Share Artwork' : 'แชร์ผลงานนี้' }}
                                         </CButton>
                                     </div>
+                                    <div v-if="shareUrl" class="artwork-share-panel mt-3">
+                                        <label for="artwork-share-url">{{ $i18n.locale === 'en' ? 'Artwork link' : 'ลิงก์ผลงาน' }}</label>
+                                        <input id="artwork-share-url" class="form-control" type="url" :value="shareUrl" readonly>
+                                        <button type="button" class="btn btn-outline-dark mt-2" :disabled="isCopying" @click="copyArtworkLink">
+                                            {{ $i18n.locale === 'en' ? 'Copy link' : 'คัดลอกลิงก์' }}
+                                        </button>
+                                        <p class="small mt-2 mb-0" role="status" aria-live="polite">
+                                            <template v-if="shareStatus === 'copied'">{{ $i18n.locale === 'en' ? 'Link copied.' : 'คัดลอกลิงก์แล้ว' }}</template>
+                                            <template v-else-if="shareStatus === 'shared'">{{ $i18n.locale === 'en' ? 'Sharing completed.' : 'แชร์เรียบร้อยแล้ว' }}</template>
+                                            <template v-else-if="shareStatus === 'manual'">{{ $i18n.locale === 'en' ? 'Automatic copying is unavailable. Select and copy the link above.' : 'คัดลอกอัตโนมัติไม่ได้ กรุณาเลือกและคัดลอกลิงก์ด้านบน' }}</template>
+                                            <template v-else>{{ $i18n.locale === 'en' ? 'You can also copy this link to share.' : 'สามารถคัดลอกลิงก์นี้เพื่อนำไปแชร์ได้' }}</template>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -244,7 +246,8 @@
                                     <div class="artist-info-meta">
                                         <span class="label">{{ $i18n.locale === 'en' ? 'Master Creator' : 'ศิลปินผู้สร้างสรรค์' }}</span>
                                         <h4 class="artist-name mb-0">
-                                            {{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Unknown Artist' : 'ศิลปินนิรนาม') }}
+                                            <router-link v-if="artistProfileRoute" :to="artistProfileRoute" @click.native.stop>{{ getName($i18n.locale, artwork.artist) }}</router-link>
+                                            <span v-else>{{ $i18n.locale === 'en' ? 'Unknown Artist' : 'ศิลปินนิรนาม' }}</span>
                                         </h4>
                                     </div>
                                 </div>
@@ -273,7 +276,7 @@
             </template>
 
             <!-- Not Found State -->
-            <div v-else class="not-found-premium text-center py-5">
+            <div v-else-if="!loadError" class="not-found-premium text-center py-5">
                 <CIcon name="cil-mood-bad" size="4xl" class="text-muted mb-4" />
                 <h2>{{ $i18n.locale === 'en' ? 'Artwork Missing' : 'ไม่พบผลงานศิลปะ' }}</h2>
                 <p class="text-muted">{{ $i18n.locale === 'en' ? "The piece you're seeking is currently not in our catalog." : 'ไม่พบผลงานศิลปะที่คุณกำลังค้นหาในขณะนี้' }}</p>
@@ -283,14 +286,14 @@
             </div>
 
             <!-- Image Zoom Lightbox (Same style as NewsDetail.vue) -->
-            <div v-if="showZoomModal" class="lightbox-overlay" @click="showZoomModal = false">
+            <div v-if="showZoomModal" class="lightbox-overlay" role="dialog" aria-modal="true" :aria-label="$i18n.locale === 'en' ? 'Artwork image' : 'ภาพขยายผลงาน'" @click.self="closeZoom" @keydown.esc.stop.prevent="closeZoom" @keydown.tab.prevent="$refs.zoomClose.focus()">
                 <div class="lightbox-content" @click.stop>
                     <img :src="artworkImageUrl(artwork)" :alt="getName($i18n.locale, artwork)" class="img-fluid zoom-img-main shadow-lg">
                     <div class="lightbox-caption text-center py-3">
                         <h4 class="mb-1 text-white font-weight-bold">{{ getName($i18n.locale, artwork) }}</h4>
                         <p class="text-white-50 mb-0">{{ artwork.artist ? getName($i18n.locale, artwork.artist) : ($i18n.locale === 'en' ? 'Artist' : 'ศิลปิน') }}</p>
                     </div>
-                    <button class="lightbox-close-btn" @click="showZoomModal = false">
+                    <button ref="zoomClose" class="lightbox-close-btn" :aria-label="$i18n.locale === 'en' ? 'Close image' : 'ปิดภาพขยาย'" @click="closeZoom">
                         <CIcon name="cilX" size="xl" />
                     </button>
                 </div>
@@ -300,7 +303,6 @@
             <CModal
                 :show.sync="showAddedModal"
                 centered
-                size="md"
                 class="cart-alert-modal"
                 :closeOnBackdrop="true"
             >
@@ -338,6 +340,7 @@
 
 <script>
 import moment from 'moment';
+import { isArtworkPurchasable } from '@/utils/artworkPurchase';
 import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 import ArtworkCard from '@/components/CardArtwork.vue';
 
@@ -349,15 +352,29 @@ export default {
     data() {
         return {
             loading: true,
+            loadError: false,
+            catalogueLoadError: false,
+            fetchSequence: 0,
+            fetchingId: null,
             isPreview: false,
             showZoomModal: false,
             showAddedModal: false,
+            shareUrl: '',
+            shareStatus: '',
+            isCopying: false,
             artwork: {},
             polling: null,
             isAddingToCart: false
         }
     },
     computed: {
+        artistProfileRoute() {
+            const artist = this.artwork && this.artwork.artist;
+            if (!artist) return null;
+            const name = typeof artist === 'object' ? this.getName('en', artist) : '';
+            const id = name ? name.replace(/\s+/g, '-').toLowerCase() : (typeof artist === 'object' ? artist._id : artist);
+            return id ? { name: 'ArtistPublicProfile', params: { id } } : null;
+        },
         isSoldOut() {
             if (!this.artwork || !this.artwork.status || !this.artwork.status.sale) return false;
             return this.getName('en', this.artwork.status.sale) === 'Sold Out';
@@ -368,10 +385,7 @@ export default {
         },
         isPurchasable() {
             if (this.isPreview) return false;
-            if (!this.artwork || !this.artwork.status || !this.artwork.status.sale) return false;
-            if (this.isPostTermDisplayOnly) return false;
-            const status = this.getName('en', this.artwork.status.sale);
-            return status === 'Available';
+            return isArtworkPurchasable(this.artwork, this.getName);
         },
         isPostTermDisplayOnly() {
             const lifecycle = this.artwork && this.artwork.postTermSale;
@@ -437,18 +451,14 @@ export default {
                     }
                 }
             }
-            // Mockup authentic Buddhist Art creator bio
-            const artistName = this.artwork && this.artwork.artist ? this.getName(this.$i18n.locale, this.artwork.artist) : '';
-            if (this.$i18n.locale === 'en') {
-                return `${artistName ? artistName + ' is a c' : 'C'}ontemporary Buddhist artist and creative alumnus of the Short Course Program in Buddhist Art, Mae Fah Luang University. Dedicated to conveying cultural spirituality through harmonious blend of traditional Lanna craftsmanship and contemporary art perspectives.`;
-            } else {
-                return `${artistName ? artistName + ' ' : ''}ศิลปินผู้สร้างสรรค์ผลงานพุทธศิลปกรรมร่วมสมัย ศิษย์เก่าหลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง ผู้มีความมุ่งมั่นในการถ่ายทอดคุณค่าทางจิตวิญญาณและภูมิปัญญาล้านนา ผ่านการผสมผสานเทคนิคศิลปะร่วมสมัยอย่างประณีต`;
-            }
+            return '';
         }
     },
     watch: {
         '$route.params.id': {
             handler() {
+                this.shareUrl = '';
+                this.shareStatus = '';
                 this.fetchArtwork();
             }
         }
@@ -461,29 +471,43 @@ export default {
         },
         async fetchArtwork(silent = false) {
             const id = this.$route.params.id;
-            if (id === 'preview') {
-                const previewData = sessionStorage.getItem('artwork_preview');
-                if (previewData) {
-                    this.artwork = JSON.parse(previewData);
-                    this.isPreview = true;
-                    this.loading = false;
-                }
-                return;
-            }
-
+            if (this.fetchingId === id) return;
+            const sequence = this.fetchSequence = (this.fetchSequence || 0) + 1;
+            this.fetchingId = id;
+            this.isPreview = id === 'preview';
             if (!silent) this.loading = true;
+            if (!silent) {
+                this.loadError = false;
+                this.catalogueLoadError = false;
+                this.showZoomModal = false;
+                this.artwork = null;
+            }
+            let readingDetail = false;
+            let readingCatalogue = false;
             try {
+                if (this.isPreview) {
+                    const previewData = sessionStorage.getItem('artwork_preview');
+                    const preview = previewData ? JSON.parse(previewData) : null;
+                    this.artwork = preview && preview._id ? preview : null;
+                    return;
+                }
+                let catalogueLoaded = false;
                 let resolvedId = id;
                 const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
                 
                 if (!isObjectId) {
                     let list = this.allArtworks;
                     if (!list || list.length === 0) {
+                        readingCatalogue = true;
                         const response = await this.$store.dispatch('artwork/get');
+                        if (sequence !== this.fetchSequence) return;
+                        readingCatalogue = false;
+                        this.catalogueLoadError = false;
+                        catalogueLoaded = true;
                         list = response || [];
                     }
                     
-                    const match = list.find(art => {
+                    const matches = list.filter(art => {
                         const titleEn = this.getName('en', art);
                         const titleTh = this.getName('th', art);
                         const slugEn = titleEn ? titleEn.replace(/\s+/g, '-').toLowerCase() : '';
@@ -491,9 +515,12 @@ export default {
                         return slugEn === id.toLowerCase() || slugTh === id;
                     });
                     
-                    if (match) {
-                        resolvedId = match._id;
+                    // Legacy title URLs are safe only when they identify one artwork.
+                    if (matches.length !== 1) {
+                        this.artwork = null;
+                        return;
                     }
+                    resolvedId = matches[0]._id;
                 }
 
                 if (!silent) {
@@ -502,16 +529,40 @@ export default {
                     } catch (viewError) {
                         console.error('Error updating artwork view:', viewError);
                     }
+                    if (sequence !== this.fetchSequence) return;
                 }
 
+                readingDetail = true;
                 const result = await this.$store.dispatch('artwork/explore', { _id: resolvedId });
-                if (result) {
-                    this.artwork = result;
+                if (sequence !== this.fetchSequence) return;
+                readingDetail = false;
+                this.artwork = result && result._id ? result : null;
+                this.loadError = !!this.catalogueLoadError;
+                if (!silent && !catalogueLoaded && this.artwork) {
+                    readingCatalogue = true;
+                    await this.$store.dispatch('artwork/get');
+                    if (sequence !== this.fetchSequence) return;
+                    this.catalogueLoadError = false;
+                    this.loadError = false;
                 }
             } catch (error) {
-                console.error('Error fetching artwork details:', error);
+                if (sequence !== this.fetchSequence) return;
+                if (readingDetail && error.response && error.response.status === 404) {
+                    this.artwork = null;
+                    this.showZoomModal = false;
+                    this.loadError = false;
+                } else {
+                    if (readingCatalogue) this.catalogueLoadError = true;
+                    this.loadError = true;
+                }
             } finally {
-                if (!silent) this.loading = false;
+                if (sequence === this.fetchSequence) {
+                    this.fetchingId = null;
+                    if (!silent) this.loading = false;
+                    if (!silent && this.loadError) this.$nextTick(() => {
+                        if (sequence === this.fetchSequence && this.$refs.artworkLoadNotice) this.$refs.artworkLoadNotice.focus();
+                    });
+                }
             }
         },
         formatPrice(price) {
@@ -530,7 +581,12 @@ export default {
         zoomImg() {
             if (this.artwork && this.artwork.image) {
                 this.showZoomModal = true;
+                this.$nextTick(() => this.$refs.zoomClose?.focus());
             }
+        },
+        closeZoom() {
+            this.showZoomModal = false;
+            this.$nextTick(() => this.$refs.zoomTrigger?.focus());
         },
         async addToCart() {
             if (this.isPreview || this.isSoldOut || !this.isPurchasable || (this.isApprovalReserved && !this.isInCart) || this.isAddingToCart) return;
@@ -540,11 +596,11 @@ export default {
                 
                 if (!this.isInCart) {
                     const result = await this.$store.dispatch('artwork/explore', { _id: this.artwork._id });
-                    if (result && this.getName('en', result.status.approval) === 'Reserved') {
-                        alert(this.$i18n.locale === 'en' ? 'Sorry, this artwork was just reserved.' : 'ขออภัย ผลงานนี้เพิ่งถูกจองไป');
+                    if (!isArtworkPurchasable(result, this.getName)) {
+                        if (result) this.artwork = result;
                         return;
                     }
-                    this.$store.dispatch('cart/addToCart', result || this.artwork);
+                    this.$store.dispatch('cart/addToCart', result);
                     this.showAddedModal = true;
                 } else {
                     this.$store.dispatch('cart/removeFromCart', this.artwork._id);
@@ -561,47 +617,34 @@ export default {
         contactInquiry() {
             alert('Opening contact inquiry for: ' + this.getName(this.$i18n.locale, this.artwork));
         },
-        shareArtwork() {
-            if (navigator.share) {
-                navigator.share({
-                    title: this.getName(this.$i18n.locale, this.artwork),
-                    url: window.location.href
-                }).catch(err => {
-                    console.log('Share canceled or failed:', err);
-                });
+        async shareArtwork() {
+            this.shareUrl = window.location.href;
+            this.shareStatus = '';
+            if (typeof navigator.share === 'function') {
+                try {
+                    await navigator.share({ title: this.getName(this.$i18n.locale, this.artwork), url: this.shareUrl });
+                    this.shareStatus = 'shared';
+                } catch (err) {
+                    if (err.name !== 'AbortError') await this.copyArtworkLink();
+                }
             } else {
-                navigator.clipboard.writeText(window.location.href)
-                    .then(() => {
-                        this.$store.commit('dialog/showToast', {
-                            title: this.$i18n.locale === 'en' ? 'Link Copied' : 'คัดลอกลิงก์แล้ว',
-                            message: this.$i18n.locale === 'en' ? 'Artwork URL copied to clipboard.' : 'คัดลอกลิงก์ผลงานศิลปะไปยังคลิปบอร์ดแล้ว',
-                            variant: 'success'
-                        });
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy: ', err);
-                        alert(this.$i18n.locale === 'en' ? 'URL copied: ' + window.location.href : 'คัดลอกลิงก์แล้ว: ' + window.location.href);
-                    });
+                await this.copyArtworkLink();
+            }
+        },
+        async copyArtworkLink() {
+            if (this.isCopying) return;
+            this.isCopying = true;
+            try {
+                await navigator.clipboard.writeText(this.shareUrl);
+                this.shareStatus = 'copied';
+            } catch (_) {
+                this.shareStatus = 'manual';
+            } finally {
+                this.isCopying = false;
             }
         },
         goToArtistProfile() {
-            if (this.artwork && this.artwork.artist) {
-                const artist = this.artwork.artist;
-                const artistId = typeof artist === 'object' ? artist._id : artist;
-                
-                if (typeof artist === 'object') {
-                    const nameEn = this.getName('en', artist);
-                    if (nameEn) {
-                        const slug = nameEn.replace(/\s+/g, '-').toLowerCase();
-                        this.$router.push({ name: 'ArtistPublicProfile', params: { id: slug } });
-                        return;
-                    }
-                }
-                
-                if (artistId) {
-                    this.$router.push({ name: 'ArtistPublicProfile', params: { id: artistId } });
-                }
-            }
+            if (this.artistProfileRoute) this.$router.push(this.artistProfileRoute);
         },
         getName(lang, obj, key) {
             if (!obj) return '';
@@ -625,7 +668,6 @@ export default {
     },
     mounted() {
         this.fetchArtwork();
-        this.$store.dispatch('artwork/get');
         this.polling = setInterval(() => {
             if (!this.isPreview) {
                 this.fetchArtwork(true);
@@ -633,6 +675,7 @@ export default {
         }, 5000);
     },
     beforeDestroy() {
+        this.fetchSequence++;
         if (this.polling) {
             clearInterval(this.polling);
         }
@@ -647,7 +690,7 @@ export default {
     background-color: #FAF9F6;
     padding-top: 0 !important;
     margin-top: -2rem !important;
-    font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--app-font-family);
 }
 
 .top-nav-accent {
@@ -666,7 +709,7 @@ export default {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 6px 12px;
     border-radius: 50px;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
 }
 
 .back-link-premium:hover {
@@ -844,7 +887,7 @@ export default {
 
 /* Title header */
 .artwork-master-title {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 2.5rem;
     font-weight: 700;
     line-height: 1.25;
@@ -860,6 +903,8 @@ export default {
 }
 
 /* Artist Widget */
+.artist-name a { color: inherit; text-decoration: none; }
+.artist-name a:focus-visible { outline: 2px solid #8b633b; outline-offset: 4px; border-radius: 2px; }
 .artist-profile-widget {
     background: #ffffff;
     border-radius: 20px;
@@ -927,7 +972,7 @@ export default {
 }
 
 .btn-view-profile-premium {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.78rem;
     font-weight: 600;
     border-color: rgba(74, 29, 24, 0.2);
@@ -980,7 +1025,7 @@ export default {
 }
 
 .exhibition-text {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 1.85rem;
     font-weight: 700;
     color: #4a1d18;
@@ -1036,7 +1081,7 @@ export default {
 }
 
 .valuation-price .amount {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 2.6rem;
     font-weight: 700;
     line-height: 1;
@@ -1128,7 +1173,7 @@ export default {
 }
 
 .curator-description h6 {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 0.88rem;
     color: #4a1d18;
     letter-spacing: 1px;
@@ -1140,41 +1185,6 @@ export default {
     font-size: 0.95rem;
     margin-bottom: 0;
     padding-left: 14px;
-}
-
-/* Remark Section */
-.curator-remark {
-    background: transparent;
-}
-
-.header-remark-mark {
-    width: 4px;
-    height: 18px;
-    background: #d97706;
-    border-radius: 2px;
-    margin-right: 10px;
-}
-
-.curator-remark h6 {
-    font-family: 'Cinzel', serif;
-    font-size: 0.88rem;
-    color: #92400e;
-    letter-spacing: 1px;
-}
-
-.remark-body-box {
-    background: #fffbeb;
-    border: 1px solid #fef3c7;
-    border-left: 3px solid #f59e0b;
-    border-radius: 14px;
-}
-
-.remark-text {
-    font-size: 0.9rem;
-    color: #92400e;
-    line-height: 1.6;
-    display: flex;
-    align-items: center;
 }
 
 /* Buttons Stack */
@@ -1266,13 +1276,11 @@ export default {
     border: none;
     color: white;
     cursor: pointer;
-    opacity: 0.7;
-    transition: all 0.3s ease;
+    opacity: 0.8;
 }
 
 .lightbox-close-btn:hover {
     opacity: 1;
-    transform: rotate(90deg) scale(1.1);
 }
 
 /* Not Found styling */
@@ -1426,14 +1434,14 @@ export default {
 }
 
 .related-title {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-weight: 700;
     font-size: 1.6rem;
     color: #4a1d18;
 }
 
 .related-category-badge {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.75rem;
     font-weight: 700;
     color: #8c3b32;

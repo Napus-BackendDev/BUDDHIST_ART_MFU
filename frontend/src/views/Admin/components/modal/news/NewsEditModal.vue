@@ -84,7 +84,9 @@
                                     :class="{ 'border-primary-highlight': coverIndex === index }"
                                     @click="setCoverIndex(index)"
                                 >
-                                    <img :src="img" class="preview-img" />
+                                    <button type="button" class="cover-select-btn" :aria-label="($i18n.locale === 'en' ? 'Set cover image ' : 'เลือกภาพหน้าปก ') + (index + 1)" :aria-pressed="String(coverIndex === index)" @click.stop="setCoverIndex(index)">
+                                        <img :src="img" class="preview-img" alt="" />
+                                    </button>
                                     <div class="cover-badge" v-if="coverIndex === index">
                                         {{ $i18n.locale === 'en' ? 'Cover' : 'หน้าปก' }}
                                     </div>
@@ -92,7 +94,7 @@
                                     <div class="set-cover-overlay" v-if="coverIndex !== index">
                                         {{ $i18n.locale === 'en' ? 'Set Cover' : 'ตั้งเป็นหน้าปก' }}
                                     </div>
-                                    <button class="remove-img-btn" @click.stop="removeExistingImage(index)">
+                                    <button type="button" class="remove-img-btn" :aria-label="($i18n.locale === 'en' ? 'Remove image ' : 'นำภาพออก ') + (index + 1)" @click.stop="removeExistingImage(index)">
                                         <CIcon name="cil-x" size="sm" />
                                     </button>
                                 </div>
@@ -104,14 +106,16 @@
                                     :class="{ 'border-primary-highlight': coverIndex === (index + existingImages.length) }"
                                     @click="setCoverIndex(index + existingImages.length)"
                                 >
-                                    <img :src="preview" class="preview-img" />
+                                    <button type="button" class="cover-select-btn" :aria-label="($i18n.locale === 'en' ? 'Set cover image ' : 'เลือกภาพหน้าปก ') + (index + existingImages.length + 1)" :aria-pressed="String(coverIndex === (index + existingImages.length))" @click.stop="setCoverIndex(index + existingImages.length)">
+                                        <img :src="preview" class="preview-img" alt="" />
+                                    </button>
                                     <div class="cover-badge" v-if="coverIndex === (index + existingImages.length)">
                                         {{ $i18n.locale === 'en' ? 'Cover' : 'หน้าปก' }}
                                     </div>
                                     <div class="set-cover-overlay" v-else>
                                         {{ $i18n.locale === 'en' ? 'Set Cover' : 'ตั้งเป็นหน้าปก' }}
                                     </div>
-                                    <button class="remove-img-btn" @click.stop="removeImage(index)">
+                                    <button type="button" class="remove-img-btn" :aria-label="($i18n.locale === 'en' ? 'Remove image ' : 'นำภาพออก ') + (index + existingImages.length + 1)" @click.stop="removeImage(index)">
                                         <CIcon name="cil-x" size="sm" />
                                     </button>
                                 </div>
@@ -187,20 +191,13 @@ export default {
         }
     },
     watch: {
+        show(value) {
+            if (value) this.resetForm(this.news);
+        },
         news: {
             immediate: true,
             handler(val) {
-                if (val) {
-                    this.form = {
-                        _id: val._id,
-                        title: this.getName('en', val.title),
-                        description: this.getName('en', val.description || val.content),
-                        images: []
-                    };
-                    this.existingImages = val.images || (val.image ? [val.image] : []);
-                    this.imagePreviews = [];
-                    this.coverIndex = 0; // Default cover index to first existing image
-                }
+                this.resetForm(val);
             }
         }
     },
@@ -211,6 +208,18 @@ export default {
         }
     },
     methods: {
+        resetForm(news) {
+            if (!news) return;
+            this.form = {
+                _id: news._id,
+                title: this.getName('en', news.title),
+                description: this.getName('en', news.description || news.content),
+                images: []
+            };
+            this.existingImages = [...(news.images || (news.image ? [news.image] : []))];
+            this.imagePreviews = [];
+            this.coverIndex = 0;
+        },
         getName(lang, field) {
             if (!field) return '';
             if (typeof field === 'string') return field;
@@ -222,6 +231,7 @@ export default {
         },
         handleMultipleFileUpload(event) {
             const files = Array.from(event.target.files);
+            event.target.value = '';
             if (files.length === 0) return;
             files.forEach(file => {
                 if (!file.type.match('image.*')) return;
@@ -285,6 +295,8 @@ export default {
 </script>
 
 <style scoped>
+.cover-select-btn { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.cover-select-btn:focus-visible { outline: 2px solid #612721; outline-offset: -3px; }
 .form-group-custom { margin-bottom: 1.25rem; }
 .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 0.75rem; letter-spacing: 0.05em; }
 .custom-input ::v-deep .form-control { border-radius: 12px; border: 1px solid #f1f5f9; padding: 0.85rem 1.25rem; font-size: 1rem; background-color: #f8fafc; }
@@ -300,7 +312,7 @@ export default {
     border-bottom-right-radius: 12px;
     border-color: #f1f5f9;
     min-height: 180px;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 1rem;
     background-color: #ffffff;
 }

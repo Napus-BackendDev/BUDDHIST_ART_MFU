@@ -57,7 +57,7 @@ describe('Order Lifecycle', () => {
   beforeAll(async () => {
     process.env.JWT_SECRET = 'testSecret';
     app = await getApp();
-    token = jwt.sign({ id: 'adminUser' }, 'testSecret');
+    token = jwt.sign({ userId: '000000000000000000000001', role: 'Admin' }, 'testSecret');
   });
 
   afterAll(async () => {
@@ -99,6 +99,55 @@ describe('Order Lifecycle', () => {
       // and the create path attaches no slip. Keeps the suite hermetic.
     });
   };
+
+  it('charges only the saved artwork price and ignores client-supplied totals in orders and invoices', async () => {
+    const art = await makeArtwork(1000);
+    pdfService.generateInvoice.mockClear();
+    const result = await request(app).post('/api/v1/order').set('Authorization', `Bearer ${token}`)
+      .send({ artwork: [art._id], amounts: { subtotal: 1, shipping: 999, total: 1000 } }).expect(200);
+    expect(result.body.data.amounts).toMatchObject({ subtotal: 1000, shipping: 0, total: 1000 });
+    await orderService.waitForPostCreateTasks();
+    expect(pdfService.generateInvoice.mock.calls[0][0]).toMatchObject({ total: 1000, shipping: 0 });
+    await Artwork.updateOne({ _id: art._id }, { price: 9000 });
+    const exists = jest.spyOn(require('fs'), 'existsSync').mockReturnValue(false);
+    try {
+      await request(app).get(`/api/v1/order/invoice/${result.body.data._id}`).set('Authorization', `Bearer ${token}`).expect(200);
+      const invoice = pdfService.generateInvoice.mock.calls.slice(-1)[0][0];
+      expect(invoice.total).toBe(1000);
+      expect(invoice.items[0].price).toBe(1000);
+    } finally { exists.mockRestore(); }
+  });
+
+  it('regenerates cached invoices containing obsolete shipping instead of serving their old total', async () => {
+    const art = await makeArtwork(9000);
+    const order = await Order.create({ artwork: [art._id], status: reservedStatus._id,
+      invoiceFile: 'obsolete-fee.pdf',
+      amounts: { subtotal: 700, shipping: 25, total: 725, items: [{ artwork: art._id, price: 700 }] } });
+    pdfService.generateInvoice.mockClear();
+    const exists = jest.spyOn(require('fs'), 'existsSync').mockReturnValue(true);
+    try {
+      await request(app).get(`/api/v1/order/invoice/${order._id}`).set('Authorization', `Bearer ${token}`).expect(200);
+      const invoice = pdfService.generateInvoice.mock.calls[0][0];
+      expect(invoice).toMatchObject({ subtotal: 700, shipping: 0, total: 700 });
+      expect(invoice.items[0].price).toBe(700);
+    } finally { exists.mockRestore(); }
+  });
+
+  it('sends the payment-slip confirmation after the Reserved-to-Pending transition using the saved total', async () => {
+    const art = await makeArtwork(1000);
+    const order = await Order.create({ artwork: [art._id], status: reservedStatus._id,
+      contact: { name: 'QA Buyer', email: 'buyer@example.test' },
+      amounts: { subtotal: 1000, shipping: 25, total: 1025, items: [{ artwork: art._id, price: 1000 }] } });
+    const imageUrl = jest.spyOn(require('../server/Project/Order/controller/order'), 'getImageUrl')
+      .mockReturnValue('https://mfudrive.mfu.ac.th/public.php/dav/files/qa-test/qa-slip.png');
+    try {
+      await request(app).put('/api/v1/order/upload').set('Authorization', `Bearer ${token}`)
+        .field('_id', String(order._id)).attach('image', Buffer.from('QA test image'), 'qa.png').expect(200);
+    } finally { imageUrl.mockRestore(); }
+    expect(String((await Order.findById(order._id)).status)).toBe(String(pendingStatus._id));
+    expect(sendMail).toHaveBeenCalledWith('buyer@example.test', expect.any(String), '', expect.stringContaining('1,000'), expect.any(Array));
+    expect(sendMail.mock.calls[0][4]).toEqual(expect.arrayContaining([expect.objectContaining({ filename: expect.stringMatching(/^Payment_Slip_/), path: expect.any(String) })]));
+  });
 
   it('rejects empty and duplicate artwork carts before any reservation', async () => {
     const art = await makeArtwork();

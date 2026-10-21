@@ -12,7 +12,7 @@
                             <!-- Preview Image Column -->
                             <template #preview="{ item }">
                                 <td class="text-center align-middle" @click="selectItem(item)" style="cursor: pointer;">
-                                    <img v-if="item.preview" :src="item.preview" alt="Artwork Preview" class="preview-img" />
+                                    <img v-if="item.preview" v-submission-image="item.preview" loading="lazy" decoding="async" alt="Artwork Preview" class="preview-img" />
                                     <span v-else class="text-muted">{{ $i18n.locale === 'en' ? 'No image' : 'ยังไม่มีรูปภาพ' }}</span>
                                 </td>
                             </template>
@@ -70,37 +70,39 @@
                                 <td class="align-middle text-right" @click.stop>
                                     <div v-if="isPending(item.status)" class="d-inline-flex align-items-center">
                                         <button 
-                                            class="action-btn icon-view" 
+                                            type="button" class="action-btn icon-view" :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'View details' : 'ดูรายละเอียด'" 
                                             @click.stop="selectItem(item)"
                                         >
                                             <CIcon name="cilMagnifyingGlass" size="lg" />
                                         </button>
                                         <button 
-                                            class="action-btn icon-edit ml-2" 
+                                            type="button" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'" 
                                             @click.stop="openLocationEditor(item)"
                                         >
                                             <CIcon name="cil-pencil" size="lg" />
                                         </button>
                                         <button 
-                                            class="action-btn icon-success mx-2" 
-                                            v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" 
-                                            :disabled="isUpdating" 
+                                            type="button" class="action-btn icon-success mx-2" :aria-label="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'"
+                                            v-c-tooltip="isUpdating && selectedItem && selectedItem.id === item.id ? ($i18n.locale === 'en' ? 'Updating...' : 'กำลังอัปเดต...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติ')"
+                                            :disabled="!!isUpdating"
                                             @click.stop="updateStatusForItem(item, 'Approved')"
                                         >
-                                            <CIcon name="cil-check" size="lg" />
+                                            <CIcon v-if="isUpdating === 'Approved' && selectedItem && selectedItem.id === item.id" name="cil-reload" size="lg" class="spinner-animation" />
+                                            <CIcon v-else name="cil-check" size="lg" />
                                         </button>
                                         <button 
-                                            class="action-btn icon-danger mr-2" 
-                                            v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" 
-                                            :disabled="isUpdating" 
+                                            type="button" class="action-btn icon-danger mr-2" :aria-label="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'"
+                                            v-c-tooltip="isUpdating && selectedItem && selectedItem.id === item.id ? ($i18n.locale === 'en' ? 'Updating...' : 'กำลังอัปเดต...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ')"
+                                            :disabled="!!isUpdating"
                                             @click.stop="updateStatusForItem(item, 'Rejected')"
                                         >
-                                            <CIcon name="cil-x" size="lg" />
+                                            <CIcon v-if="isUpdating === 'Rejected' && selectedItem && selectedItem.id === item.id" name="cil-reload" size="lg" class="spinner-animation" />
+                                            <CIcon v-else name="cil-x" size="lg" />
                                         </button>
                                         <button 
-                                            class="action-btn icon-trash" 
+                                            type="button" class="action-btn icon-trash" :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" 
                                             @click.stop="$emit('delete', item)"
                                         >
@@ -109,7 +111,7 @@
                                     </div>
                                     <div v-else class="d-inline-flex align-items-center">
                                         <button 
-                                            class="action-btn icon-view" 
+                                            type="button" class="action-btn icon-view" :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'View details' : 'ดูรายละเอียด'" 
                                             @click.stop="selectItem(item)"
                                         >
@@ -117,14 +119,14 @@
                                         </button>
                                         <button 
                                             v-if="item.status === 'Approved' || item.status === 'Passed'"
-                                            class="action-btn icon-edit ml-2" 
+                                            type="button" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'" 
                                             @click.stop="openLocationEditor(item)"
                                         >
                                             <CIcon name="cil-pencil" size="lg" />
                                         </button>
                                         <button 
-                                            class="action-btn icon-trash ml-2" 
+                                            type="button" class="action-btn icon-trash ml-2" :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" 
                                             @click.stop="$emit('delete', item)"
                                         >
@@ -193,6 +195,7 @@ export default {
         Multiselect
     },
     props: {
+        updateStatus: { type: Function, default: null },
         items: {
             type: Array,
             default: () => []
@@ -323,11 +326,9 @@ export default {
             this.modalShow = true;
         },
         updateStatusForItem(item, statusName) {
-            if (item && statusName === 'Approved') {
-                item.status = 'Approved';
-            }
+            if (this.isUpdating) return;
             this.selectedItem = item;
-            this.handleAction(statusName);
+            return this.handleAction(statusName);
         },
         closePanel() {
             this.modalShow = false;
@@ -341,13 +342,17 @@ export default {
             
             this.isUpdating = statusName;
             try {
-                if (this.selectedItem && statusName === 'Approved') {
-                    this.selectedItem.status = 'Approved';
+                const artworkId = this.selectedItem.id;
+                const payload = { artworkId, statusName };
+                if (this.updateStatus) {
+                    await this.updateStatus(payload);
+                    await this.$nextTick();
+                    if (this.selectedItem && this.selectedItem.id === artworkId) {
+                        this.selectedItem = this.items.find(item => item.id === artworkId) || this.selectedItem;
+                    }
+                } else {
+                    this.$emit('update-status', payload);
                 }
-                await this.$emit('update-status', { 
-                    artworkId: this.selectedItem.id, 
-                    statusName: statusName 
-                });
             } finally {
                 this.isUpdating = null;
             }
@@ -715,5 +720,12 @@ export default {
 ::v-deep tr:hover td {
     background-color: #f8f9fa;
     cursor: pointer;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner-animation {
+  animation: spin 1s linear infinite;
 }
 </style>

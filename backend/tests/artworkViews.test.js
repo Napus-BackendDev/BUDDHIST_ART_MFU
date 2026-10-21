@@ -1,13 +1,16 @@
 const request = require('supertest');
 const { getApp, closeDatabase } = require('./appHelper');
 const Artwork = require('../server/Project/Artwork/models/artwork.model');
+const Status = require('../server/Project/Settings/models/status.model');
 
 describe('Artwork view tracking', () => {
   jest.setTimeout(30000);
   let app;
+  let approved;
 
   beforeAll(async () => {
     app = await getApp();
+    approved = await Status.create({ code: 'APPROVED', title: [{ key: 'en', value: 'Approved' }] });
   });
 
   afterAll(async () => {
@@ -22,6 +25,7 @@ describe('Artwork view tracking', () => {
     const artwork = await Artwork.create({
       title: [{ key: 'en', value: 'Test artwork' }],
       views: 0,
+      status: { approval: approved._id },
     });
     const artworkId = artwork._id.toString();
 

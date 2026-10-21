@@ -1,5 +1,5 @@
 <template>
-  <CSidebar class="bg-style1" :minimize="minimize" unfoldable :show="show"
+  <CSidebar class="bg-style1 admin-navigation" :minimize="minimize" unfoldable :show="show"
     @update:show="(value) => $store.commit('set', ['sidebarShow', value])">
     <CSidebarBrand class="d-md-down-none">
       <!--      <CIcon-->
@@ -302,6 +302,14 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.admin-navigation { visibility: hidden; }
+.admin-navigation.c-sidebar-show { visibility: visible; }
+@media (min-width: 992px) {
+  .admin-navigation.c-sidebar-lg-show { visibility: visible; }
+}
+</style>
 
 <style>
 .bg-style1 {

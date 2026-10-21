@@ -273,9 +273,11 @@
         <div class="form-group mb-3">
           <label class="modal-form-label">{{ $i18n.locale === 'en' ? 'Select Decision' : 'เลือกความประสงค์' }} <span class="text-danger">*</span></label>
           <div class="decision-card-grid">
-            <div 
+            <button
+              type="button"
               class="decision-select-card" 
               :class="{ selected: form.decision === 'continue_sale' }" 
+              :aria-pressed="form.decision === 'continue_sale' ? 'true' : 'false'"
               @click="form.decision = 'continue_sale'"
             >
               <div class="d-flex align-items-center">
@@ -287,11 +289,13 @@
                   <div class="decision-card-desc">{{ $i18n.locale === 'en' ? 'Available for purchase with no end date until changed.' : 'ขายต่อไม่มีกำหนดจนกว่าจะหยุดขาย พร้อมออกใบรับรองสิทธิ์' }}</div>
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div 
+            <button
+              type="button"
               class="decision-select-card" 
               :class="{ selected: form.decision === 'display_only' }" 
+              :aria-pressed="form.decision === 'display_only' ? 'true' : 'false'"
               @click="form.decision = 'display_only'"
             >
               <div class="d-flex align-items-center">
@@ -303,22 +307,23 @@
                   <div class="decision-card-desc">{{ $i18n.locale === 'en' ? 'Remain in student portfolio without purchase button.' : 'ยังคงอยู่ในพอร์ตโฟลิโอแต่ปิดการสั่งซื้อ' }}</div>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
         <!-- Contact Method Select -->
         <div class="form-group mb-3">
-          <label class="modal-form-label">{{ $i18n.locale === 'en' ? 'Contact Method' : 'ช่องทางติดต่อที่ได้รับคำตอบ' }} <span class="text-danger">*</span></label>
-          <select v-model="form.contactMethod" class="form-control custom-select-field">
+          <label for="post-term-contact-method" class="modal-form-label">{{ $i18n.locale === 'en' ? 'Contact Method' : 'ช่องทางติดต่อที่ได้รับคำตอบ' }} <span class="text-danger">*</span></label>
+          <select id="post-term-contact-method" v-model="form.contactMethod" class="form-control custom-select-field">
             <option v-for="opt in contactOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
         </div>
 
         <!-- Note Textarea -->
         <div class="form-group mb-3">
-          <label class="modal-form-label">{{ $i18n.locale === 'en' ? 'Note / Remark' : 'หมายเหตุเพิ่มเติม (ถ้ามี)' }}</label>
+          <label for="post-term-note" class="modal-form-label">{{ $i18n.locale === 'en' ? 'Note / Remark' : 'หมายเหตุเพิ่มเติม (ถ้ามี)' }}</label>
           <textarea 
+            id="post-term-note"
             v-model="form.note" 
             rows="3" 
             class="form-control custom-textarea-field" 
@@ -924,7 +929,7 @@ export default {
 }
 
 .code-badge-pill {
-  font-family: monospace;
+  font-family: var(--app-font-family);
   font-size: 0.75rem;
   font-weight: 700;
   background: #f1f5f9;
@@ -1093,6 +1098,9 @@ export default {
 }
 
 .decision-select-card {
+  width: 100%;
+  color: inherit;
+  text-align: left;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   padding: 14px;
@@ -1104,6 +1112,11 @@ export default {
 .decision-select-card:hover {
   border-color: #cbd5e1;
   background: #f8fafc;
+}
+
+.decision-select-card:focus-visible {
+  outline: 3px solid #8c1515;
+  outline-offset: 3px;
 }
 
 .decision-select-card.selected {

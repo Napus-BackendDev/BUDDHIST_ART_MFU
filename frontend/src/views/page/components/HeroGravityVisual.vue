@@ -27,7 +27,7 @@ export default {
 <style scoped>
 .gravity-visual { position:absolute; inset:0 0 0 auto; width:48%; overflow:hidden; pointer-events:none; color:#efc46f; }
 .gravity-glow { position:absolute; width:420px; height:420px; right:8%; top:50%; transform:translateY(-50%); border-radius:50%; background:radial-gradient(circle, rgba(232,185,100,.16), transparent 68%); animation:breathe 5s ease-in-out infinite; }
-.meaning-label { position:absolute; right:10%; bottom:13%; font:700 .68rem/1 'Cinzel',serif; letter-spacing:.28em; color:rgba(255,255,255,.55); }
+.meaning-label { position:absolute; right:10%; bottom:13%; font:700 .68rem/1 var(--app-font-family); letter-spacing:.28em; color:rgba(255,255,255,.55); }
 .is-light .meaning-label { color:rgba(97,39,33,.55); }
 .is-light .gravity-glow { background:radial-gradient(circle, rgba(196,154,74,.18), transparent 68%); }
 .is-light .gallery-ring,

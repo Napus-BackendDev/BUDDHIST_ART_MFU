@@ -1,5 +1,15 @@
 <template>
-    <div class="submissions-detail-dashboard" v-if="submission">
+    <div>
+    <div v-if="pageLoading" class="text-center py-5"><CSpinner /></div>
+    <div v-else-if="loadError" class="text-center py-5" role="alert">
+        <h1>{{ $i18n.locale === 'en' ? 'Unable to load submission' : 'โหลด Submission ไม่สำเร็จ' }}</h1>
+        <CButton color="primary" @click="fetchSubmission">{{ $i18n.locale === 'en' ? 'Retry' : 'ลองใหม่' }}</CButton>
+    </div>
+    <div v-else-if="!submission" class="text-center py-5">
+        <h1>{{ $i18n.locale === 'en' ? 'Submission not found' : 'ไม่พบ Submission' }}</h1>
+        <CLink :to="{ name: 'Submissions' }">{{ $i18n.locale === 'en' ? 'Back to Submissions' : 'กลับหน้ารายการ Submission' }}</CLink>
+    </div>
+    <div v-else class="submissions-detail-dashboard">
         <!-- Back Button -->
         <div class="mb-3">
             <CLink :to="{ name: 'Submissions' }" class="back-link d-inline-flex align-items-center text-muted">
@@ -9,11 +19,13 @@
         </div>
 
         <HeaderHero :title="getName($i18n.locale, submission)" :description="($i18n.locale === 'en' ? 'Managing assignments and tracking progress for ' : 'จัดการงานและติดตามความคืบหน้าของผู้เรียนจำนวน ') + (submission.artist ? submission.artist.length : 0) + ($i18n.locale === 'en' ? ' learners.' : ' รูป/คน')" icon="cil-list" :showCreateButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Assignment' : 'สร้างงานมอบหมาย'" :showExportButton="true" themeColor="green" @create="addAssignment" @export="handleExport" />
+        <p v-if="saveFeedback" class="alert alert-success" role="status">{{ saveFeedback }}</p>
         <SubmissionDetailWidget :submission="submission" v-model="filters.status" />
         <SubmissionDetailFilter v-model="filters" @create="addAssignment" />
         <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
-        <AssignmentCreateModal :show.sync="showAssignmentModal" :enrolledStudents="submission.artist || []" :saving="saving" @save="handleAssignmentSave" />
-        <AssignmentEditModal :show.sync="showEditAssignmentModal" :assignmentData="selectedAssignment" :enrolledStudents="submission.artist || []" :saving="saving" @update="handleAssignmentUpdate" />
+        <AssignmentCreateModal :show.sync="showAssignmentModal" :enrolledStudents="submission.artist || []" :saving="saving" :error="saveError" @save="handleAssignmentSave" />
+        <AssignmentEditModal :show.sync="showEditAssignmentModal" :assignmentData="selectedAssignment" :enrolledStudents="submission.artist || []" :saving="saving" :error="saveError" @update="handleAssignmentUpdate" />
+    </div>
     </div>
 </template>
 
@@ -26,6 +38,7 @@ import AssignmentEditModal from './components/modal/submission/AssignmentEditMod
 import HeaderHero from './components/HeaderHero.vue'
 import * as XLSX from 'xlsx'
 import moment from 'moment'
+import { reviewCounts } from '@/utils/submissionReview'
 
 export default {
     name: 'SubmissionsDetail',
@@ -39,10 +52,14 @@ export default {
     },
     data() {
         return {
+            pageLoading: true,
+            loadError: false,
             showAssignmentModal: false,
             showEditAssignmentModal: false,
             selectedAssignment: null,
             saving: false,
+            saveError: '',
+            saveFeedback: '',
             filters: {
                 search: '',
                 status: 'All Status',
@@ -55,15 +72,19 @@ export default {
     created() {
         this.fetchSubmission();
     },
+    watch: { '$route.fullPath'() { this.fetchSubmission(); } },
     computed: {
         submission() {
-            return this.$store.getters['submission/submissions'].find(s => s._id === this.$route.params.id);
+            return (this.$store.getters['submission/submissions'] || []).find(s => s._id === this.$route.params.id);
         }
     },
     methods: {
-        fetchSubmission() {
-            // Already fetched in parent or can fetch specifically if needed
-            this.$store.dispatch('submission/get', { _id: this.$route.params.id });
+        async fetchSubmission() {
+            this.pageLoading = true;
+            this.loadError = false;
+            try { await this.$store.dispatch('submission/get', { _id: this.$route.params.id }); }
+            catch (error) { this.loadError = true; }
+            finally { this.pageLoading = false; }
         },
         getName(lang, item) {
             if (!item || !item.title) return 'N/A';
@@ -75,13 +96,15 @@ export default {
             return 'N/A';
         },
         addAssignment() {
+            this.saveError = '';
+            this.saveFeedback = '';
             this.showAssignmentModal = true;
         },
         handleAssignmentSave(data) {
             if (this.saving) return;
+            this.saveError = '';
             this.saving = true;
-            const updatedSubmission = { ...this.submission };
-            if (!updatedSubmission.assignments) updatedSubmission.assignments = [];
+            const updatedSubmission = { ...this.submission, assignments: [...(this.submission.assignments || [])] };
             
             updatedSubmission.assignments.push({
                 title: [
@@ -95,15 +118,15 @@ export default {
                 }
             });
 
-            this.$store.dispatch('submission/update', updatedSubmission)
+            return this.$store.dispatch('submission/update', updatedSubmission)
                 .then(() => {
                     this.fetchSubmission();
                     this.showAssignmentModal = false;
-                    alert(this.$i18n.locale === 'en' ? "Assignment created successfully." : "สร้างงานมอบหมายเรียบร้อยแล้ว");
+                    this.saveFeedback = this.$i18n.locale === 'en' ? "Assignment created successfully." : "สร้างงานมอบหมายเรียบร้อยแล้ว";
                 })
                 .catch(err => {
                     console.error('Create assignment error:', err);
-                    alert(this.$i18n.locale === 'en' ? "Failed to create assignment." : "ไม่สามารถสร้างงานมอบหมายได้");
+                    this.saveError = this.$i18n.locale === 'en' ? "Unable to create assignment. Your input is preserved; please retry." : "สร้างใบงานไม่สำเร็จ ข้อมูลยังอยู่ กรุณาลองใหม่";
                 })
                 .finally(() => {
                     this.saving = false;
@@ -119,13 +142,16 @@ export default {
             });
         },
         handleEdit(item) {
+            this.saveError = '';
+            this.saveFeedback = '';
             this.selectedAssignment = item;
             this.showEditAssignmentModal = true;
         },
         handleAssignmentUpdate(data) {
             if (this.saving) return;
+            this.saveError = '';
             this.saving = true;
-            const updatedSubmission = { ...this.submission };
+            const updatedSubmission = { ...this.submission, assignments: [...(this.submission.assignments || [])] };
             const index = updatedSubmission.assignments.findIndex(a => a._id === data._id);
             if (index !== -1) {
                 // Merge data, preserving artworks and other fields not in the edit modal
@@ -136,15 +162,15 @@ export default {
                     create: data.create
                 };
 
-                this.$store.dispatch('submission/update', updatedSubmission)
+                return this.$store.dispatch('submission/update', updatedSubmission)
                     .then(() => {
                         this.fetchSubmission();
                         this.showEditAssignmentModal = false;
-                        alert(this.$i18n.locale === 'en' ? "Assignment updated successfully." : "อัปเดตงานมอบหมายเรียบร้อยแล้ว");
+                        this.saveFeedback = this.$i18n.locale === 'en' ? "Assignment updated successfully." : "อัปเดตงานมอบหมายเรียบร้อยแล้ว";
                     })
                     .catch(err => {
                         console.error('Update assignment error:', err);
-                        alert(this.$i18n.locale === 'en' ? "Failed to update assignment." : "ไม่สามารถอัปเดตงานมอบหมายได้");
+                        this.saveError = this.$i18n.locale === 'en' ? "Unable to update assignment. Your input is preserved; please retry." : "แก้ไขใบงานไม่สำเร็จ ข้อมูลยังอยู่ กรุณาลองใหม่";
                     })
                     .finally(() => {
                         this.saving = false;
@@ -187,8 +213,8 @@ export default {
                 'Pending Review count', 'Rejected count'
             ] : [
                 'หัวข้อคำสั่งงาน', 'วันเริ่มต้น', 'วันกำหนดส่ง', 
-                'จำนวนนักศึกษาที่มอบหมาย', 'นักศึกษาที่ส่งแล้ว', 'ผ่าน/อนุมัติ (คน)', 
-                'รอตรวจสอบ (คน)', 'ไม่ผ่าน (คน)'
+                'จำนวนนักศึกษาที่มอบหมาย', 'นักศึกษาที่ส่งแล้ว', 'ผ่าน/อนุมัติ (รายการ)',
+                'รอตรวจสอบ (รายการ)', 'ไม่ผ่าน (รายการ)'
             ];
 
             const totalEnrolled = this.submission.artist ? this.submission.artist.length : 0;
@@ -209,21 +235,7 @@ export default {
                 const submittedCount = submittedOwners.size;
                 const targetCount = item.artist && item.artist.length > 0 ? item.artist.length : totalEnrolled;
                 
-                // Get approval status counts
-                const approvedCount = artworks.filter(a => {
-                    const statusVal = a.status && typeof a.status === 'object' ? this.getName('en', a.status) : a.status;
-                    return statusVal === 'Approved' || statusVal === 'Passed';
-                }).length;
-                
-                const pendingCount = artworks.filter(a => {
-                    const statusVal = a.status && typeof a.status === 'object' ? this.getName('en', a.status) : a.status;
-                    return statusVal === 'Pending';
-                }).length;
-                
-                const rejectedCount = artworks.filter(a => {
-                    const statusVal = a.status && typeof a.status === 'object' ? this.getName('en', a.status) : a.status;
-                    return statusVal === 'Rejected' || statusVal === 'Fail';
-                }).length;
+                const { approved: approvedCount, pending: pendingCount, rejected: rejectedCount } = reviewCounts(artworks);
 
                 return [
                     title,

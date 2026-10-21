@@ -1,5 +1,15 @@
 <template>
-    <div class="assignment-dashboard">
+    <div>
+    <div v-if="pageLoading" class="text-center py-5"><CSpinner /></div>
+    <div v-else-if="loadError" class="text-center py-5" role="alert">
+        <h1>{{ $i18n.locale === 'en' ? 'Unable to load assignment' : 'โหลดใบงานไม่สำเร็จ' }}</h1>
+        <CButton color="primary" @click="fetchSubmission">{{ $i18n.locale === 'en' ? 'Retry' : 'ลองใหม่' }}</CButton>
+    </div>
+    <div v-else-if="!assignment" class="text-center py-5">
+        <h1>{{ $i18n.locale === 'en' ? 'Assignment not found' : 'ไม่พบใบงาน' }}</h1>
+        <CLink :to="{ name: 'Submissions' }">{{ $i18n.locale === 'en' ? 'Back to Submissions' : 'กลับหน้ารายการ Submission' }}</CLink>
+    </div>
+    <div v-else class="assignment-dashboard">
         <!-- Back Button -->
         <div class="mb-3">
             <CLink :to="{ name: 'SubmissionsDetail', params: { id: $route.params.submissionId } }" class="back-link d-inline-flex align-items-center text-muted">
@@ -19,7 +29,7 @@
         />
         <AssignmentWidget v-model="filters.status" :stats="stats" />
         <AssignmentFilter v-model="filters" />
-        <AssignmentTable :filters="filters" :items="mappedArtworks" :location-options="storageLocationOptions" @update-status="handleStatusUpdate" @update-location="handleLocationUpdate" @delete="handleDeleteArtwork" />
+        <AssignmentTable :filters="filters" :items="mappedArtworks" :location-options="storageLocationOptions" :update-status="handleStatusUpdate" @update-location="handleLocationUpdate" @delete="handleDeleteArtwork" />
 
         <!-- Rejection Reason Modal -->
         <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Reject Submission' : 'ปฏิเสธงานส่งของนักศึกษา'" :show.sync="showRejectModal" color="danger" size="lg">
@@ -43,6 +53,7 @@
             </template>
         </CModal>
     </div>
+    </div>
 </template>
 
 <script>
@@ -51,6 +62,7 @@ import AssignmentWidget from './components/widget/AssignmentWidget.vue'
 import AssignmentFilter from './components/filter/AssignmentFilter.vue'
 import HeaderHero from './components/HeaderHero.vue'
 import moment from 'moment'
+import { reviewCode } from '@/utils/submissionReview'
 import * as XLSX from 'xlsx'
 import { submissionImageUrl } from '@/utils/submissionArtworkImport'
 
@@ -64,6 +76,8 @@ export default {
     },
     data() {
         return {
+            pageLoading: true,
+            loadError: false,
             filters: {
                 search: '',
                 status: 'All Statuses',
@@ -81,15 +95,16 @@ export default {
     },
     created() {
         this.fetchSubmission();
-        this.$store.dispatch('setting/status/get', {});
     },
+    watch: { '$route.fullPath'() { this.fetchSubmission(); } },
     computed: {
         allStatuses() {
             return this.$store.getters['setting/status/item'] || [];
         },
         stats() {
             const artworks = this.mappedArtworks;
-            const totalArtists = (this.submission && this.submission.artist) ? this.submission.artist.length : 0;
+            const targets = this.assignment && this.assignment.artist && this.assignment.artist.length ? this.assignment.artist : this.submission && this.submission.artist || [];
+            const totalArtists = targets.length;
             
             // Count unique students who have submitted
             const uniqueSubmitters = new Set(artworks.map(aw => aw.student_id)).size;
@@ -103,7 +118,7 @@ export default {
             };
         },
         submission() {
-            return this.$store.getters['submission/submissions'].find(s => s._id === this.$route.params.submissionId);
+            return (this.$store.getters['submission/submissions'] || []).find(s => s._id === this.$route.params.submissionId);
         },
         assignment() {
             if (!this.submission || !this.submission.assignments) return null;
@@ -147,7 +162,7 @@ export default {
                 // Determine status name safely (kept as 'en' to align with table badge CSS maps and keys)
                 let statusName = 'Pending';
                 if (status) {
-                    statusName = typeof status === 'object' ? (this.getName('en', status) || 'Pending') : 'Pending';
+                    statusName = { APPROVED: 'Approved', PENDING: 'Pending', REJECTED: 'Rejected' }[reviewCode(status)] || (typeof status === 'object' ? this.getName('en', status) : status) || 'Pending';
                 }
 
                 return {
@@ -234,8 +249,16 @@ export default {
             await this.$store.dispatch('submission/update', updatedSubmission);
             await this.fetchSubmission();
         },
-        fetchSubmission() {
-            this.$store.dispatch('submission/get', { _id: this.$route.params.submissionId });
+        async fetchSubmission() {
+            this.pageLoading = true;
+            this.loadError = false;
+            try {
+                await Promise.all([
+                    this.$store.dispatch('submission/get', { _id: this.$route.params.submissionId }),
+                    this.$store.dispatch('setting/status/get', {})
+                ]);
+            } catch (error) { this.loadError = true; }
+            finally { this.pageLoading = false; }
         },
         async handleStatusUpdate({ artworkId, statusName }) {
             if (statusName === 'Rejected') {

@@ -103,7 +103,7 @@
             </button>
           </header>
           <div class="table-responsive">
-            <CDataTable :items="filteredOrders" :fields="orderFields" :items-per-page="8" pagination hover>
+            <CDataTable :items="filteredOrders" :fields="orderFields" :items-per-page="8" :no-items-view="{ noItems: isEnglish ? 'No orders found' : 'ไม่พบคำสั่งซื้อ', noResults: isEnglish ? 'No matching orders' : 'ไม่พบคำสั่งซื้อที่ตรงกัน' }" pagination hover>
               <template #orderNumber="{ item }"><td><strong>{{ item.orderNumber || shortId(item._id) }}</strong></td></template>
               <template #customer="{ item }"><td>{{ item.contact && item.contact.name || '-' }}<small>{{ item.contact && item.contact.email || '' }}</small></td></template>
               <template #artworks="{ item }"><td>{{ orderArtworkNames(item) }}</td></template>
@@ -125,7 +125,7 @@
             </button>
           </header>
           <div class="table-responsive">
-            <CDataTable :items="filteredArtworks" :fields="artworkFields" :items-per-page="8" pagination hover>
+            <CDataTable :items="filteredArtworks" :fields="artworkFields" :items-per-page="8" :no-items-view="{ noItems: isEnglish ? 'No artworks found' : 'ไม่พบผลงานศิลปะ', noResults: isEnglish ? 'No matching artworks' : 'ไม่พบผลงานศิลปะที่ตรงกัน' }" pagination hover>
               <template #image="{ item }"><td><img class="artwork-thumb" :src="item.image || fallbackImage" :alt="translatedName(item)" /></td></template>
               <template #title="{ item }"><td><strong>{{ translatedName(item) || '-' }}</strong><small>{{ item.artworkCode || '-' }}</small></td></template>
               <template #artist="{ item }"><td>{{ translatedName(item.artist) || '-' }}<small>{{ item.artist && item.artist.studentId || '' }}</small></td></template>
@@ -142,9 +142,11 @@
 </template>
 
 <script>
+import { orderDocumentUrl } from '@/utils/orderDocuments'
 import { CChartBar } from '@coreui/vue-chartjs';
 import * as XLSX from 'xlsx';
 import moment from 'moment';
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 
 export default {
   name: 'AdminAnalytics',
@@ -246,7 +248,7 @@ export default {
     soldArtworkIds() {
       const cohortIds = new Set(this.filteredArtworks.map(item => this.idOf(item)));
       const ids = new Set(this.filteredArtworks.filter(item => this.isSoldArtwork(item)).map(item => this.idOf(item)));
-      this.filteredOrders.forEach(order => (order.artwork || []).forEach(art => {
+      this.filteredOrders.filter(order => this.isApprovedOrder(order)).forEach(order => (order.artwork || []).forEach(art => {
         const artworkId = this.idOf(art);
         if (cohortIds.has(artworkId)) ids.add(artworkId);
       }));
@@ -436,20 +438,11 @@ export default {
         .replace(/[/\\?%*:|"<>]/g, '');
     },
     isApprovedOrder(order) {
-      const status = `${this.translatedName(order && order.status, 'en')} ${this.translatedName(order && order.status, 'th')}`.toLowerCase();
-      return status.includes('approved') || status.includes('อนุมัติ');
+      return statusBadgeMixin.methods.getOrderStatusGroup(order && order.status) === 'Completed';
     },
     orderFileUrl(order, type) {
       if (!order) return '';
-      const buyerName = this.sanitizeForPath(order.contact && order.contact.name || (order.user && order.user.name) || 'Customer');
-      const buyerId = this.idOf(order.user) || 'Guest';
-      const orderIdentifier = String(order.orderNumber || this.idOf(order)).replace(/-/g, '_');
-      if (type === 'invoice' && order.invoiceFile) {
-        return `${this.apiBaseUrl()}/account/User/${buyerId}_${buyerName}/Invoice/${order.invoiceFile}`;
-      }
-      if (type === 'certificate' && this.isApprovedOrder(order)) {
-        return `${this.apiBaseUrl()}/account/User/${buyerId}_${buyerName}/Certificate/Certificate_${orderIdentifier}.pdf`;
-      }
+      if (type === 'invoice' || (type === 'certificate' && this.isApprovedOrder(order))) return orderDocumentUrl(order, type);
       return '';
     },
     async refreshCertificates(orders) {
@@ -589,8 +582,8 @@ export default {
         const links = [];
         const invoiceUrl = this.orderFileUrl(order, 'invoice');
         const certificateUrl = this.orderFileUrl(order, 'certificate');
-        if (invoiceUrl) links.push({ key: 'InvoiceFile', url: invoiceUrl, label: 'Download Invoice' });
-        if (certificateUrl) links.push({ key: 'CertificateFile', url: certificateUrl, label: 'Download Certificate' });
+        if (invoiceUrl) links.push({ key: 'InvoiceFile', url: invoiceUrl, label: 'Open Invoice' });
+        if (certificateUrl) links.push({ key: 'CertificateFile', url: certificateUrl, label: 'Open Certificate' });
         const images = artworks.filter(artwork => artwork && artwork.image).map((artwork, index) => ({
           key: `ArtworkImage${index + 1}`,
           url: this.absoluteAssetUrl(artwork.image),

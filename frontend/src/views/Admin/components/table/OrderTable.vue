@@ -63,31 +63,34 @@
 
                 <template #actions="{ item }">
                     <td class="text-right">
-                        <div v-if="(item.status ? getName('en', item.status) : 'Pending').includes('Pending')" class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)" :disabled="loadingItems.includes(item._id)">
+                        <div v-if="['Pending', 'Reserved', 'Pending Payment'].includes(item.status ? getName('en', item.status) : 'Pending')" class="d-inline-flex align-items-center">
+                            <button class="action-btn icon-view" :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit ml-2" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
+                            <button class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-success mx-2" v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" @click="$emit('approve', item)" :disabled="loadingItems.includes(item._id)">
+                            <button v-if="item.image" class="action-btn icon-success mx-2" :aria-label="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" @click="$emit('approve', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
                                 <CIcon v-else name="cil-check" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger mr-2" v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" @click="$emit('reject', item)" :disabled="loadingItems.includes(item._id)">
+                            <button class="action-btn icon-danger mr-2" :aria-label="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" @click="$emit('reject', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
                                 <CIcon v-else name="cil-x" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบกำกับภาษี'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id) || downloadingItems.includes(item._id)">
+                            <button class="action-btn icon-download" :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id) || downloadingItems.includes(item._id)">
                                 <CSpinner v-if="downloadingItems.includes(item._id)" size="sm" />
                                 <CIcon v-else name="cil-file" size="lg" />
                             </button>
                         </div>
                         <div v-else class="d-inline-flex align-items-center">
-                            <button class="action-btn icon-view mr-2" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)">
+                            <button class="action-btn icon-view mr-2" :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบกำกับภาษี'" @click="downloadInvoice(item)" :disabled="downloadingItems.includes(item._id)">
+                            <button v-if="getName('en', item.status) === 'Approved'" class="action-btn icon-edit mr-2" :aria-label="$i18n.locale === 'en' ? 'Edit delivery information' : 'แก้ไขข้อมูลจัดส่ง'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
+                                <CIcon name="cil-pencil" size="lg" />
+                            </button>
+                            <button class="action-btn icon-download" :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'" @click="downloadInvoice(item)" :disabled="downloadingItems.includes(item._id)">
                                 <CSpinner v-if="downloadingItems.includes(item._id)" size="sm" />
                                 <CIcon v-else name="cil-file" size="lg" />
                             </button>
@@ -117,6 +120,8 @@
 </template>
 
 <script>
+import { orderAmounts, orderLinePrice } from '@/utils/orderAmounts'
+import { orderDocumentUrl } from '@/utils/orderDocuments'
 import moment from 'moment';
 import * as XLSX from 'xlsx';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
@@ -243,8 +248,7 @@ export default {
             });
         },
         getOrderTotal(item) {
-            if (!item.artwork || !Array.isArray(item.artwork)) return 0;
-            return item.artwork.reduce((sum, art) => sum + (art.price || 0), 0);
+            return orderAmounts(item).total;
         },
         getOrderArtists(item) {
             if (!item.artwork || !Array.isArray(item.artwork)) return 'N/A';
@@ -266,14 +270,8 @@ export default {
             const data = [];
 
             this.filteredItems.forEach(item => {
-                const buyerName = this.sanitizeForPath(item.contact?.name || (item.user && item.user.name) || "Customer");
-                const buyerId = item.user?._id || item.user || "Guest";
-                const orderIdentifier = item.orderNumber ? item.orderNumber.replace(/-/g, '_') : item._id;
-
-                const invoiceUrl = item.invoiceFile 
-                    ? `${baseUrl}/account/User/${buyerId}_${buyerName}/Invoice/${item.invoiceFile}` 
-                    : null;
-                const certificateUrl = `${baseUrl}/account/User/${buyerId}_${buyerName}/Certificate/Certificate_${orderIdentifier}.pdf`;
+                const invoiceUrl = orderDocumentUrl(item, 'invoice');
+                const certificateUrl = orderDocumentUrl(item, 'certificate');
                 const slipUrl = item.image ? (item.image.startsWith('http') ? item.image : `${baseUrl}${item.image}`) : null;
                 const statusInfo = this.getStatusBadge(item.status ? this.getName('en', item.status) : 'Pending');
 
@@ -283,7 +281,7 @@ export default {
                     const artworkTitle = art ? this.getName(this.$i18n.locale, art) : 'N/A';
                     const artistName = art && art.artist ? this.getName(this.$i18n.locale, art.artist) : 'N/A';
                     const artworkUrl = art && art.image ? (art.image.startsWith('http') ? art.image : `${baseUrl}${art.image}`) : null;
-                    const artworkAmount = art ? (art.price || 0) : 0;
+                    const artworkAmount = art ? orderLinePrice(item, art) : 0;
 
                     data.push([
                         item.orderNumber || item._id,
@@ -296,8 +294,8 @@ export default {
                         // Link columns using SheetJS cell objects
                         artworkUrl ? { t: 's', v: 'View Artwork', l: { Target: artworkUrl } } : 'N/A',
                         slipUrl ? { t: 's', v: 'View Slip', l: { Target: slipUrl } } : 'No slip',
-                        invoiceUrl ? { t: 's', v: 'Download Invoice', l: { Target: invoiceUrl } } : 'Not Generated',
-                        (statusInfo.label === 'Approved' || statusInfo.label === 'อนุมัติแล้ว' || statusInfo.label === 'อนุมัติ' || (item.status && this.getName('en', item.status).toLowerCase().includes('approved'))) ? { t: 's', v: 'Download Certificate', l: { Target: certificateUrl } } : 'N/A'
+                        invoiceUrl ? { t: 's', v: 'Open Invoice', l: { Target: invoiceUrl } } : 'Not Generated',
+                        (statusInfo.label === 'Approved' || statusInfo.label === 'อนุมัติแล้ว' || statusInfo.label === 'อนุมัติ' || (item.status && this.getName('en', item.status).toLowerCase().includes('approved'))) ? { t: 's', v: 'Open Certificate', l: { Target: certificateUrl } } : 'N/A'
                     ]);
                 });
             });

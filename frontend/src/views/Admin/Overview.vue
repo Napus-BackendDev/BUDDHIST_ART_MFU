@@ -5,6 +5,7 @@
             :subtitle="$i18n.locale === 'en' ? 'Welcome back! Here\'s what\'s happening with your platform today.' : 'ยินดีต้อนรับกลับ! นี่คือความเคลื่อนไหวบนแพลตฟอร์มของคุณในวันนี้'"
             icon="cil-speedometer"
         />
+        <div v-if="statusError && !showRejectModal" class="alert alert-danger" role="alert">{{ statusError }}</div>
         <WidgetsDashboard />
         <CRow class="mb-4">
             <CCol md="8" sm="12">
@@ -37,11 +38,13 @@
         <!-- Rejection Reason Modal -->
         <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Reject Order' : 'ปฏิเสธคำสั่งซื้อ'" :show.sync="showRejectModal" color="danger" size="lg">
             <div class="p-3">
+                <div v-if="statusError" class="alert alert-danger" role="alert">{{ statusError }}</div>
                 <p class="text-muted mb-3">
                     {{ $i18n.locale === 'en' ? 'Please provide a reason for rejecting this order. This message will be sent to the customer via email.' : 'กรุณาระบุเหตุผลในการปฏิเสธคำสั่งซื้อนี้ ข้อความนี้จะถูกส่งไปยังอีเมลของลูกค้า' }}
                 </p>
                 <CTextarea 
                     v-model="rejectRemark" 
+                    :label="$i18n.locale === 'en' ? 'Rejection reason' : 'เหตุผลที่ปฏิเสธ'"
                     :placeholder="$i18n.locale === 'en' ? 'Enter reason for rejection...' : 'ระบุเหตุผล...'" 
                     rows="5"
                     style="border-radius: 8px;"
@@ -86,6 +89,7 @@ export default {
             showRejectModal: false,
             rejectRemark: '',
             loading: false,
+            statusError: '',
             loadingItems: []
         }
     },
@@ -150,20 +154,23 @@ export default {
         async handleRejectOrder(order) {
             this.selectedOrder = order;
             this.rejectRemark = '';
+            this.statusError = '';
             this.showRejectModal = true;
         },
         async confirmReject() {
             if (!this.rejectRemark) return;
-            await this.updateStatus(this.selectedOrder, 'Rejected', this.rejectRemark);
-            this.showRejectModal = false;
+            const saved = await this.updateStatus(this.selectedOrder, 'Rejected', this.rejectRemark);
+            if (saved) this.showRejectModal = false;
         },
         async updateStatus(order, statusName, remark = null) {
+            this.statusError = '';
             try {
                 this.loading = true;
                 this.loadingItems.push(order._id);
                 await this.$store.dispatch('setting/status/get');
                 const statuses = this.$store.getters['setting/status/item'] || [];
-                const targetStatus = statuses.find(s => {
+                const code = { Approved: 'APPROVED', Rejected: 'REJECTED' }[statusName];
+                const targetStatus = statuses.find(s => code && s.code === code) || statuses.find(s => {
                     const title = s.title || [];
                     const enStatus = title.find(t => t.key === 'en');
                     return (enStatus ? enStatus.value : '') === statusName;
@@ -188,13 +195,20 @@ export default {
                     message: `Order status updated to ${statusName}.`,
                     variant: 'success'
                 });
+                return true;
             } catch (error) {
                 console.error('Error updating order status:', error);
+                const message = error.response && error.response.data && error.response.data.message;
+                const translated = Array.isArray(message)
+                    ? (message.find(item => item.key === this.$i18n.locale) || message[0] || {}).value : message;
+                this.statusError = typeof translated === 'string' && translated ||
+                    (this.$i18n.locale === 'en' ? 'Unable to update order status. Please try again.' : 'เปลี่ยนสถานะคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่');
                 this.$store.commit('dialog/showToast', {
                     title: 'Error',
                     message: error.message || 'Failed to update order status.',
                     variant: 'danger'
                 });
+                return false;
             } finally {
                 this.loading = false;
                 this.loadingItems = this.loadingItems.filter(id => id !== order._id);

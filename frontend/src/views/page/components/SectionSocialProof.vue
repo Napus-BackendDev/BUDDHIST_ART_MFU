@@ -117,7 +117,7 @@ export default {
 .supporters-title {
     margin: 0 0 0.75rem;
     color: #612721;
-    font-family: 'Cinzel', 'Sarabun', serif;
+    font-family: var(--app-font-family);
     font-size: clamp(1.85rem, 3.5vw, 2.35rem);
     font-weight: 800;
     letter-spacing: 0.02em;
@@ -134,7 +134,7 @@ export default {
 .supporters-subtitle {
     max-width: 620px;
     margin: 0 auto;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 1rem;
     line-height: 1.6;
     color: #7a6b68;
@@ -201,7 +201,7 @@ export default {
     display: inline-block;
     padding: 0.25rem 0.75rem;
     margin-bottom: 0.85rem;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -213,7 +213,7 @@ export default {
 
 .supporter-name {
     margin: 0;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.95rem;
     font-weight: 700;
     line-height: 1.5;

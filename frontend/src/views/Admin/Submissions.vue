@@ -1,6 +1,7 @@
 <template>
     <div class="submissions-dashboard">
         <HeaderHero :title="$i18n.locale === 'en' ? 'Submission Management' : 'จัดการการส่งงาน'" :description="$i18n.locale === 'en' ? 'Track and manage all artwork submissions, student assignments, and digital portfolios.' : 'ติดตามและจัดการการส่งผลงานศิลปะ งานที่ได้รับมอบหมาย และพอร์ตโฟลิโอดิจิทัลทั้งหมด'" icon="cil-list" :showCreateButton="activeSection === 'submissions'" :showExportButton="activeSection === 'submissions'" :createButtonText="$i18n.locale === 'en' ? 'Add Submission' : 'เพิ่มการส่งงาน'" themeColor="red" @create="addSubmission" @export="handleExport" />
+        <p v-if="importFeedback" role="status" class="alert alert-success mt-3">{{ importFeedback }}</p>
         <div class="submission-section-tabs mb-4" role="tablist">
             <button type="button" class="section-tab" :class="{ active: activeSection === 'submissions' }" @click="activeSection = 'submissions'">
                 <CIcon name="cil-list" class="mr-2" />
@@ -22,10 +23,10 @@
             <SubmissionFilter v-model="filters" />
             <SubmissionTable ref="submissionTable" :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
         </div>
-        <SubmissionCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSave" />
-        <SubmissionCreateChoiceModal :show.sync="showChoiceModal" @manual="handleChoiceManual" @import="handleChoiceImport" @artwork-import="openArtworkImport()" @download-template="downloadTemplate" @download-artwork-template="$refs.artworkImport.downloadTemplate()" />
+        <SubmissionCreateModal :show.sync="showCreateModal" :saving="saving" :error="saveError" @save="handleSave" />
+        <SubmissionCreateChoiceModal :show.sync="showChoiceModal" :error="importError" :import-summary="importSummary" :importing="importing || importReading" @manual="handleChoiceManual" @import="handleChoiceImport" @confirm-import="confirmSubmissionImport" @artwork-import="openArtworkImport()" @download-template="downloadTemplate" @download-artwork-template="$refs.artworkImport.downloadTemplate()" />
         <ArtworkImportModal ref="artworkImport" :show.sync="showArtworkImportModal" :submissions="submissions" :initial-file="artworkImportFile" @imported="handleArtworkImported" />
-        <SubmissionEditModal :show.sync="showEditModal" :submissionData="selectedSubmission" :saving="saving" @update="handleUpdate" />
+        <SubmissionEditModal :show.sync="showEditModal" :submissionData="selectedSubmission" :saving="saving" :error="saveError" @update="handleUpdate" />
     </div>
 </template>
 
@@ -67,6 +68,13 @@ export default {
             categories: [],
             referenceReady: false,
             saving: false,
+            saveError: '',
+            pendingImport: null,
+            importSummary: '',
+            importError: '',
+            importFeedback: '',
+            importing: false,
+            importReading: false,
             postTermDueCount: 0,
             filters: {
                 search: '',
@@ -107,13 +115,9 @@ export default {
                 this.postTermDueCount = items.filter(item => {
                     const sale = item.postTermSale || {};
                     if (sale.needsReview) return true;
-                    if (sale.decision === 'pending') return true;
-                    const end = sale.initialSaleEndsAt ? new Date(sale.initialSaleEndsAt) : null;
-                    if (end) {
-                        const diffDays = (end - now) / (1000 * 60 * 60 * 24);
-                        return diffDays <= 30;
-                    }
-                    return false;
+                    if (sale.decision !== 'pending' || !sale.initialSaleEndsAt) return false;
+                    const deadline = new Date(sale.initialSaleEndsAt).getTime();
+                    return Number.isFinite(deadline) && deadline <= now.getTime() + 30 * 86400000;
                 }).length;
             } catch (err) {
                 // silent
@@ -159,9 +163,14 @@ export default {
             return arr;
         },
         addSubmission() {
+            this.pendingImport = null;
+            this.importSummary = '';
+            this.importError = '';
+            this.importFeedback = '';
             this.showChoiceModal = true;
         },
         handleChoiceManual() {
+            this.saveError = '';
             this.showChoiceModal = false;
             this.showCreateModal = true;
         },
@@ -185,15 +194,20 @@ export default {
             return artist ? artist._id : null;
         },
         handleChoiceImport(file) {
+            if (this.importing || this.importReading) return;
+            this.pendingImport = null;
+            this.importSummary = '';
+            this.importError = '';
             // Gate: reference data (users/categories/statuses) must be loaded before we can
             // resolve owners/categories/statuses, otherwise the import would silently mis-map.
             const users = this.$store.getters['user/user'] || [];
             if (!this.referenceReady || users.length === 0) {
-                alert(this.$i18n.locale === 'en'
+                this.importError = this.$i18n.locale === 'en'
                     ? 'Reference data is still loading. Please wait a moment and try again.'
-                    : 'กำลังโหลดข้อมูลอ้างอิง กรุณารอสักครู่แล้วลองใหม่อีกครั้ง');
+                    : 'กำลังโหลดข้อมูลอ้างอิง กรุณารอสักครู่แล้วลองใหม่อีกครั้ง';
                 return;
             }
+            this.importReading = true;
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
@@ -205,11 +219,12 @@ export default {
 
                     if (results.length && Object.keys(results[0]).some(key => key.trim() === 'รหัสประจำตัว')) {
                         this.openArtworkImport(file);
+                        this.showChoiceModal = false;
                         return;
                     }
 
                     if (results.length === 0) {
-                        alert(this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง");
+                        this.importError = this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง";
                         return;
                     }
 
@@ -344,7 +359,7 @@ export default {
                     });
 
                     if (submissions.length === 0) {
-                        alert(this.$i18n.locale === 'en' ? "No valid submission data found. Please check column headers." : "ไม่พบข้อมูลการส่งงานที่ถูกต้อง กรุณาตรวจสอบหัวตาราง");
+                        this.importError = this.$i18n.locale === 'en' ? "No valid submission data found. Please check column headers." : "ไม่พบข้อมูลการส่งงานที่ถูกต้อง กรุณาตรวจสอบหัวตาราง";
                         return;
                     }
 
@@ -354,43 +369,54 @@ export default {
                             : ` มีรหัสนักศึกษา ${unmatched.size} รหัสที่ไม่พบและถูกข้าม`)
                         : '';
 
-                    const confirmMsg = this.$i18n.locale === 'en'
-                        ? `Detected ${submissions.length} submissions from ${results.length} rows.${skippedMsg} Proceed with bulk import?`
-                        : `ตรวจพบการส่งงาน ${submissions.length} รายการ จาก ${results.length} แถว${skippedMsg} ดำเนินการนำเข้าข้อมูลทั้งหมดหรือไม่?`;
-
-                    if (confirm(confirmMsg)) {
-                        try {
-                            const isEmbeddedImageWorkbook = file.name.toLowerCase().endsWith('.xlsx');
-                            let importSummary = null;
-                            if (isEmbeddedImageWorkbook) {
-                                const formData = new FormData();
-                                formData.append('workbook', file);
-                                const response = await this.$store.dispatch('submission/importExcel', formData);
-                                importSummary = response.data?.data?.summary || null;
-                            } else {
-                                await this.$store.dispatch('submission/create', submissions);
-                            }
-                            this.fetchSubmissions();
-                            const imageMessage = importSummary
-                                ? (this.$i18n.locale === 'en'
-                                    ? ` Images saved: ${importSummary.imagesSaved}/${importSummary.artworkCount}. Missing image rows: ${(importSummary.missingImageRows || []).join(', ') || 'none'}.`
-                                    : ` บันทึกรูปแล้ว ${importSummary.imagesSaved}/${importSummary.artworkCount} รูป แถวที่ไม่มีรูป: ${(importSummary.missingImageRows || []).join(', ') || 'ไม่มี'}`)
-                                : '';
-                            const successMsg = this.$i18n.locale === 'en' ? "Bulk import completed successfully!" : "นำเข้าข้อมูลเรียบร้อยแล้ว!";
-                            alert(successMsg + imageMessage + skippedMsg);
-                            this.showChoiceModal = false;
-                        } catch (err) {
-                            console.error("Import error:", err);
-                            const backendMessage = err.response?.data?.message;
-                            alert(backendMessage || (this.$i18n.locale === 'en' ? "Failed to import submissions. Please check data format." : "ไม่สามารถนำเข้าข้อมูลได้ กรุณาตรวจสอบรูปแบบข้อมูล"));
-                        }
-                    }
+                    this.importSummary = this.$i18n.locale === 'en'
+                        ? `Detected ${submissions.length} submissions from ${results.length} rows.${skippedMsg}`
+                        : `ตรวจพบการส่งงาน ${submissions.length} รายการ จาก ${results.length} แถว${skippedMsg}`;
+                    this.pendingImport = { file, submissions, skippedMessage: skippedMsg };
                 } catch (error) {
-                    console.error("File processing error:", error);
-                    alert(this.$i18n.locale === 'en' ? "Error reading file." : "เกิดข้อผิดพลาดในการอ่านไฟล์");
+                    this.importError = this.$i18n.locale === 'en' ? "Error reading file." : "เกิดข้อผิดพลาดในการอ่านไฟล์";
+                } finally {
+                    this.importReading = false;
                 }
             };
+            reader.onerror = () => {
+                this.importReading = false;
+                this.importError = this.$i18n.locale === 'en' ? 'Error reading file.' : 'เกิดข้อผิดพลาดในการอ่านไฟล์';
+            };
             reader.readAsArrayBuffer(file);
+        },
+        async confirmSubmissionImport() {
+            if (!this.pendingImport || this.importing) return;
+            this.importing = true;
+            this.importError = '';
+            const { file, submissions, skippedMessage } = this.pendingImport;
+            try {
+                let summary = null;
+                if (file.name.toLowerCase().endsWith('.xlsx')) {
+                    const formData = new FormData();
+                    formData.append('workbook', file);
+                    const response = await this.$store.dispatch('submission/importExcel', formData);
+                    summary = response.data?.data?.summary || null;
+                } else {
+                    await this.$store.dispatch('submission/create', submissions);
+                }
+                this.fetchSubmissions();
+                const imageMessage = summary
+                    ? (this.$i18n.locale === 'en'
+                        ? ` Images saved: ${summary.imagesSaved}/${summary.artworkCount}. Missing image rows: ${(summary.missingImageRows || []).join(', ') || 'none'}.`
+                        : ` บันทึกรูปแล้ว ${summary.imagesSaved}/${summary.artworkCount} รูป แถวที่ไม่มีรูป: ${(summary.missingImageRows || []).join(', ') || 'ไม่มี'}`)
+                    : '';
+                this.importFeedback = (this.$i18n.locale === 'en' ? 'Bulk import completed successfully!' : 'นำเข้าข้อมูลเรียบร้อยแล้ว!') + imageMessage + skippedMessage;
+                this.pendingImport = null;
+                this.importSummary = '';
+                this.showChoiceModal = false;
+            } catch (error) {
+                this.importError = error.response?.data?.message || (this.$i18n.locale === 'en'
+                    ? 'Failed to import submissions. Your file is preserved; please retry.'
+                    : 'นำเข้าไม่สำเร็จ เก็บไฟล์เดิมไว้แล้ว กรุณาลองใหม่');
+            } finally {
+                this.importing = false;
+            }
         },
         downloadTemplate() {
             const data = [[
@@ -412,6 +438,7 @@ export default {
         },
         async handleSave(data) {
             if (this.saving) return;
+            this.saveError = '';
             this.saving = true;
             try {
                 await this.$store.dispatch('submission/create', data);
@@ -419,6 +446,7 @@ export default {
                 this.showCreateModal = false;
             } catch (error) {
                 console.error('Create submission error:', error);
+                this.saveError = this.$i18n.locale === 'en' ? 'Unable to create submission. Your input is preserved; please retry.' : 'สร้าง Submission ไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาลองใหม่';
             } finally {
                 this.saving = false;
             }
@@ -427,11 +455,13 @@ export default {
             this.$router.push({ name: 'SubmissionsDetail', params: { id: item._id } });
         },
         handleEdit(item) {
+            this.saveError = '';
             this.selectedSubmission = item;
             this.showEditModal = true;
         },
         async handleUpdate(data) {
             if (this.saving) return;
+            this.saveError = '';
             this.saving = true;
             try {
                 await this.$store.dispatch('submission/update', data);
@@ -439,6 +469,7 @@ export default {
                 this.showEditModal = false;
             } catch (error) {
                 console.error('Update submission error:', error);
+                this.saveError = this.$i18n.locale === 'en' ? 'Unable to update submission. Your input is preserved; please retry.' : 'แก้ไข Submission ไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาลองใหม่';
             } finally {
                 this.saving = false;
             }

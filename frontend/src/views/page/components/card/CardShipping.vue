@@ -12,29 +12,30 @@
             <CCardBody class="p-4 pt-3">
                 <CRow>
                     <CCol md="12" class="mb-3">
-                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Full Name' : 'ชื่อ-นามสกุล' }}</label>
-                        <CInput v-model="form.name" placeholder="" class="bg-light border-0 shadow-none rounded-lg" />
+                        <label class="font-weight-bold small text-muted" for="shipping-name">{{ $i18n.locale === 'en' ? 'Full Name' : 'ชื่อ-นามสกุล' }}</label>
+                        <CInput id="shipping-name" v-model="form.name" placeholder="" class="bg-light border-0 shadow-none rounded-lg" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมล' }}</label>
-                        <CInput v-model="form.email" placeholder="" type="email" class="bg-light border-0 shadow-none rounded-lg" />
+                        <label class="font-weight-bold small text-muted" for="shipping-email">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมล' }}</label>
+                        <CInput id="shipping-email" v-model="form.email" placeholder="" type="email" class="bg-light border-0 shadow-none rounded-lg" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
-                        <CInput v-model="form.telephone" placeholder="" class="bg-light border-0 shadow-none rounded-lg" />
+                        <label class="font-weight-bold small text-muted" for="shipping-telephone">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
+                        <CInput id="shipping-telephone" v-model="form.telephone" placeholder="" class="bg-light border-0 shadow-none rounded-lg" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ออกใบเสร็จ' }}</label>
-                        <CTextarea v-model="form.bill" placeholder="" rows="3" class="bg-light border-0 shadow-none rounded-lg" />
+                        <label class="font-weight-bold small text-muted" for="shipping-bill">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ออกใบเสร็จ' }}</label>
+                        <CTextarea id="shipping-bill" v-model="form.bill" placeholder="" rows="3" class="bg-light border-0 shadow-none rounded-lg" />
                     </CCol>
                     <CCol md="6" class="mb-3">
-                        <label class="font-weight-bold small text-muted">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</label>
-                        <CTextarea v-model="form.shipping" placeholder="" rows="3" class="bg-light border-0 shadow-none rounded-lg" />
+                        <label class="font-weight-bold small text-muted" for="shipping-address">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</label>
+                        <CTextarea id="shipping-address" v-model="form.shipping" placeholder="" rows="3" class="bg-light border-0 shadow-none rounded-lg" />
                     </CCol>
                 </CRow>
 
+                <p v-if="formError" role="alert" class="text-danger mt-3 mb-0">{{ formErrorMessage }}</p>
                 <CButton block color="danger" size="lg" class="mt-4 py-3 font-weight-bold shadow-sm btn-main"
-                    style="border: none; border-radius: 50px;" @click="handleProceedToPayment" :disabled="loading">
+                    style="border: none; border-radius: 50px;" @click="handleProceedToPayment" :disabled="loading || hasReservedItems">
                     <CSpinner v-if="loading" size="sm" class="mr-2" />
                     {{ $i18n.locale === 'en' ? 'Confirm & Proceed to Payment' : 'ยืนยันและดำเนินการชำระเงิน' }}
                 </CButton>
@@ -118,13 +119,14 @@
                 <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" class="d-none">
 
                 <!-- Upload Area (Clickable) -->
-                <div v-if="!paymentProofImage" @click="triggerUpload"
-                    class="upload-area border-dashed rounded-lg p-5 text-center mb-4 bg-light cursor-pointer position-relative">
+                <button v-if="!paymentProofImage" type="button" @click="triggerUpload"
+                    @dragover.prevent @drop.prevent="handleFileDrop" :disabled="loading || hasReservedItems"
+                    class="upload-area w-100 border-dashed rounded-lg p-5 text-center mb-4 bg-light cursor-pointer position-relative">
                     <CIcon name="cil-cloud-upload" size="xl" class="text-muted mb-3" />
-                    <div class="text-danger font-weight-bold">{{ $i18n.locale === 'en' ? 'Upload a file' : 'อัพโหลดไฟล์' }}</div>
-                    <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'or drag and drop' : 'หรือลากและวาง' }}</p>
-                    <p class="text-muted small">{{ $i18n.locale === 'en' ? 'PNG, JPG, GIF up to 10MB' : 'รองรับ PNG, JPG, GIF ขนาดไม่เกิน 10MB' }}</p>
-                </div>
+                    <span class="d-block text-danger font-weight-bold">{{ $i18n.locale === 'en' ? 'Upload a file' : 'อัพโหลดไฟล์' }}</span>
+                    <span class="d-block text-muted small">{{ $i18n.locale === 'en' ? 'or drag and drop' : 'หรือลากและวาง' }}</span>
+                    <span class="d-block text-muted small">{{ $i18n.locale === 'en' ? 'PNG, JPG, GIF, WebP up to 10MB' : 'รองรับ PNG, JPG, GIF, WebP ขนาดไม่เกิน 10MB' }}</span>
+                </button>
 
                 <!-- File Info (Success State) -->
                 <div v-else class="mb-4">
@@ -135,10 +137,11 @@
                         <div class="text-muted small">{{ paymentProofSize }}</div>
                     </div>
                     <div class="mt-2 text-left">
-                        <a href="#" @click.prevent="removeImage" class="text-danger small text-decoration-none font-weight-bold">{{ $i18n.locale === 'en' ? 'Remove file' : 'ลบไฟล์' }}</a>
+                        <button type="button" @click="removeImage" class="btn btn-link p-0 text-danger small text-decoration-none font-weight-bold">{{ $i18n.locale === 'en' ? 'Remove file' : 'ลบไฟล์' }}</button>
                     </div>
                 </div>
 
+                <p v-if="slipError" role="alert" class="text-danger mb-3">{{ slipErrorMessage }}</p>
                 <!-- Confirm Button -->
                 <CButton block color="danger" size="lg" class="py-3 font-weight-bold shadow btn-main"
                     style="border: none; border-radius: 50px;" @click="onConfirmPayment"
@@ -150,11 +153,23 @@
             </CCardBody>
         </CCard>
 
+        <CModal :show.sync="confirmWithoutSlip" centered
+            :title="$i18n.locale === 'en' ? 'Finish without a payment slip?' : 'เสร็จสิ้นโดยไม่แนบสลิป?'">
+            <p class="mb-0">{{ $i18n.locale === 'en'
+                ? 'Your order will remain awaiting payment. You can upload your payment slip later in your Profile before the reservation deadline.'
+                : 'คำสั่งซื้อยังคงรอชำระเงิน คุณสามารถอัปโหลดสลิปภายหลังในหน้าโปรไฟล์ได้ก่อนหมดเวลาจอง' }}</p>
+            <template #footer>
+                <CButton color="secondary" @click="confirmWithoutSlip = false">{{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}</CButton>
+                <CButton color="danger" :disabled="loading || hasReservedItems" @click="finishWithoutSlip">{{ $i18n.locale === 'en' ? 'Finish without slip' : 'เสร็จสิ้นโดยไม่แนบสลิป' }}</CButton>
+            </template>
+        </CModal>
     </CCol>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
+import { isValidPersonalEmail } from '@/utils/profileEmail';
+import { paymentSlipIssue, paymentSlipMessage } from '@/utils/paymentSlip';
 
 export default {
     name: 'CardShipping',
@@ -178,6 +193,9 @@ export default {
     },
     data() {
         return {
+            formError: '',
+            slipError: '',
+            confirmWithoutSlip: false,
             paymentMethod: 'bank',
             paymentProofImage: null,
             paymentProofFile: null,
@@ -193,6 +211,13 @@ export default {
         }
     },
     computed: {
+        slipErrorMessage() { return paymentSlipMessage(this.slipError, this.$i18n.locale); },
+        formErrorMessage() {
+            const messages = this.$i18n.locale === 'en'
+                ? { required: 'Please fill in all required shipping information.', email: 'Please enter a valid email address.' }
+                : { required: 'กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน', email: 'กรุณาระบุอีเมลให้ถูกต้อง' };
+            return messages[this.formError] || '';
+        },
         ...mapGetters('cart', ['cartFinalTotal']),
         ...mapGetters({
             userId: 'auth/userId',
@@ -229,6 +254,9 @@ export default {
             await this.autofillUserData();
         }
     },
+    beforeDestroy() {
+        if (this.paymentProofImage) URL.revokeObjectURL(this.paymentProofImage);
+    },
     methods: {
         async autofillUserData() {
             try {
@@ -256,16 +284,22 @@ export default {
             }
         },
         triggerUpload() {
+            if (this.loading || this.hasReservedItems) return;
             this.$refs.fileInput.click();
         },
+        handleFileDrop(event) {
+            this.handleFileUpload({target:{files:event.dataTransfer?.files || []}});
+        },
         handleFileUpload(event) {
+            if (this.loading || this.hasReservedItems) return;
             const file = event.target.files[0];
             if (file) {
-                if (file.size > 10 * 1024 * 1024) {
-                    alert(this.$i18n.locale === 'en' ? 'File size exceeds 10MB limit.' : 'ขนาดไฟล์เกิน 10MB');
+                this.slipError = paymentSlipIssue(file);
+                if (this.slipError) {
+                    event.target.value = '';
                     return;
                 }
-
+                this.removeImage();
                 this.paymentProofFile = file;
                 this.paymentProofName = file.name;
                 this.paymentProofSize = this.formatFileSize(file.size);
@@ -287,6 +321,8 @@ export default {
             return parseFloat(value).toLocaleString('en-US');
         },
         removeImage() {
+            if (this.paymentProofImage) URL.revokeObjectURL(this.paymentProofImage);
+            this.slipError = '';
             this.paymentProofImage = null;
             this.paymentProofFile = null;
             this.paymentProofName = '';
@@ -296,6 +332,8 @@ export default {
             }
         },
         handleProceedToPayment() {
+            if (this.loading || this.hasReservedItems) return;
+            this.formError = '';
             const userId = this.$store.getters['auth/userId'];
             if (!userId) {
                 this.$store.commit('dialog/showToast', { title: 'Authentication Required', message: this.$i18n.locale === 'en' ? 'Please login before confirming the order' : 'กรุณาเข้าสู่ระบบก่อนยืนยันคำสั่งซื้อ', variant: 'warning' });
@@ -303,23 +341,30 @@ export default {
                 return;
             }
 
-            if (!this.form.name || !this.form.email || !this.form.shipping) {
-                alert(this.$i18n.locale === 'en' ? 'Please fill in all required shipping information.' : 'กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
+            if (![this.form.name, this.form.email, this.form.shipping].every(value => typeof value === 'string' && value.trim())) {
+                this.formError = 'required';
                 return;
             }
-
-            this.$emit('create-order', this.form);
+            if (!isValidPersonalEmail(this.form.email)) {
+                this.formError = 'email';
+                return;
+            }
+            this.$emit('create-order', { ...this.form, email: this.form.email.trim() });
         },
         onConfirmPayment() {
+            if (this.loading || this.hasReservedItems) return;
             if (!this.paymentProofFile) {
-                const confirmNoSlip = confirm(this.$i18n.locale === 'en' 
-                    ? 'You haven\'t uploaded a payment slip. You can finish the order and upload it later in your Profile. Continue?' 
-                    : 'คุณยังไม่ได้อัปโหลดสลิปชำระเงิน คุณสามารถดำเนินการต่อเพื่อปิดรายการและไปอัปโหลดภายหลังได้ ยืนยันหรือไม่?');
-                if (!confirmNoSlip) {
-                    return;
-                }
+                this.confirmWithoutSlip = true;
+                return;
             }
-
+            this.submitPayment();
+        },
+        finishWithoutSlip() {
+            if (!this.confirmWithoutSlip || this.loading || this.hasReservedItems) return;
+            this.confirmWithoutSlip = false;
+            this.submitPayment();
+        },
+        submitPayment() {
             this.$emit('submit-payment', {
                 paymentMethod: this.paymentMethod,
                 paymentProofFile: this.paymentProofFile

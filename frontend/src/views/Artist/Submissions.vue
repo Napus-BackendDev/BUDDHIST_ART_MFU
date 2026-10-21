@@ -1,6 +1,11 @@
 <template>
   <div class="artist-submissions-list mt-2">
-    <div v-if="submissions && submissions.length > 0">
+    <p v-if="loading" role="status">{{ $i18n.locale === 'en' ? 'Loading submissions...' : 'กำลังโหลดรายการส่งงาน...' }}</p>
+    <div v-else-if="loadError" role="alert" class="alert alert-warning">
+      <p>{{ loadMessage }}</p>
+      <button type="button" class="btn btn-warning" :disabled="retryNow < retryAt" @click="fetchSubmissions">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+    </div>
+    <div v-else-if="submissions && submissions.length > 0">
       <div 
         v-for="(item, index) in submissions" 
         :key="item._id" 
@@ -60,9 +65,9 @@
 
               <!-- Action Link -->
               <div class="action-container-minimal ml-md-2">
-                <div class="btn-circle-action shadow-sm">
+                <button type="button" class="btn-circle-action shadow-sm" :aria-label="($i18n.locale === 'en' ? 'Open submission: ' : 'เปิดการส่งงาน: ') + getName($i18n.locale, item)" @click.stop="handleView(item)">
                   <CIcon name="cil-chevron-right" />
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -88,10 +93,18 @@
 <script>
 import moment from 'moment'
 import { mapGetters } from 'vuex'
+import { retryAtFromHeaders } from '@/utils/rateLimit'
 
 export default {
     name: 'ArtistSubmissions',
+    data() {
+        return { loading: false, loadError: '', retryAt: 0, retryNow: 0, retryTimer: null }
+    },
     computed: {
+        loadMessage() {
+            if (this.loadError === 'rate') return this.$i18n.locale === 'en' ? 'Too many requests. Please wait before retrying.' : 'มีคำขอถี่เกินกำหนด กรุณารอก่อนลองใหม่';
+            return this.$i18n.locale === 'en' ? 'Unable to load submissions. Please try again.' : 'โหลดรายการส่งงานไม่สำเร็จ กรุณาลองใหม่';
+        },
         ...mapGetters({
             submissions: 'submission/submissions',
             userId: 'auth/userId'
@@ -100,13 +113,30 @@ export default {
     created() {
         this.fetchSubmissions();
     },
+    beforeDestroy() {
+        clearTimeout(this.retryTimer);
+    },
     methods: {
-        fetchSubmissions() {
-            const userId = this.userId;
-            this.$store.dispatch('submission/get', { artist: userId });
+        async fetchSubmissions() {
+            if (this.loading || Date.now() < this.retryAt) return;
+            this.loading = true;
+            try {
+                await this.$store.dispatch('submission/get', { artist: this.userId });
+                this.loadError = '';
+            } catch (error) {
+                this.loadError = error.response?.status === 429 ? 'rate' : 'load';
+                if (this.loadError === 'rate') {
+                    this.retryAt = retryAtFromHeaders(error.response.headers);
+                    this.retryNow = Date.now();
+                    clearTimeout(this.retryTimer);
+                    this.retryTimer = setTimeout(() => { this.retryNow = Date.now(); }, Math.max(0, this.retryAt - Date.now()));
+                }
+            } finally { this.loading = false; }
         },
         handleView(item) {
-            this.$emit('view-detail', item._id);
+            if (this.$route?.name === 'ArtistSubmissions') {
+                this.$router.push({ name: 'ArtistSubmissionsDetail', params: { id: item._id } });
+            } else this.$emit('view-detail', item._id);
         },
         formatDate(date) {
             if (!date) return 'N/A';
@@ -272,6 +302,8 @@ export default {
 .status-pill-flat.status-upcoming { background: #fef3c7; color: #92400e; }
 
 .btn-circle-action {
+    border: 0;
+    padding: 0;
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -283,11 +315,14 @@ export default {
     transition: all 0.3s ease;
 }
 
-.submission-bar-item:hover .btn-circle-action {
+.submission-bar-item:hover .btn-circle-action,
+.btn-circle-action:focus-visible {
     background: #8b5cf6;
     color: white;
     transform: scale(1.1);
 }
+
+.btn-circle-action:focus-visible { outline: 2px solid #8b633b; outline-offset: 3px; }
 
 .empty-state-list-modern {
     background: #fcfcfc;

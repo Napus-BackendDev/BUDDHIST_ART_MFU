@@ -7,10 +7,10 @@
                     <span class="badge text-uppercase font-weight-bold px-3 py-2 mb-3" style="color: #612721; background-color: rgba(97,39,33,0.08); border-radius: 50px; font-size: 0.8rem; letter-spacing: 1px;">
                         {{ $i18n.locale === 'en' ? 'Additional Course Information' : 'ข้อมูลหลักสูตรเพิ่มเติม' }}
                     </span>
-                    <h2 class="font-weight-bold mb-4" style="color: #2c3e50; font-family: 'Cinzel', serif; font-size: 2.4rem;">
+                    <h2 class="font-weight-bold mb-4" style="color: #2c3e50; font-family: var(--app-font-family); font-size: 2.4rem;">
                         {{ $i18n.locale === 'en' ? 'Origins of the Program' : 'ที่มาของหลักสูตร' }}
                     </h2>
-                    <p class="lead text-muted mb-4" style="font-family: 'Sarabun', sans-serif; font-size: 1.1rem; line-height: 1.7; font-weight: 500;">
+                    <p class="lead text-muted mb-4" style="font-family: var(--app-font-family); font-size: 1.1rem; line-height: 1.7; font-weight: 500;">
                         {{ $i18n.locale === 'en' 
                             ? 'Mae Fah Luang University, Wat Rong Khun, and Rai Chern Tawan International Meditation Center have jointly offered the Short Course Program in Buddhist Art since 2021 (B.E. 2564). The program provides opportunities for people interested in Buddhist art—especially monks, novices, artists, and members of the general public—to study the field. It emphasizes intensive theoretical and practical learning in aesthetics, enabling learners to apply these principles to arts management, preserve and sustain Buddhist art from damage caused by a lack of understanding, and present creative Buddhist artworks to the public at both national and international levels.'
                             : 'มหาวิทยาลัยแม่ฟ้าหลวง วัดร่องขุ่น และ ศูนย์วิปัสสนาสากลไร่เชิญตะวัน ร่วมกันจัดให้มีหลักสูตรระยะสั้น สาขาวิชาพุทธศิลปกรรม มาตั้งแต่ปี พ.ศ. 2564 เพื่อเปิดโอกาสและส่งเสริมให้ผู้ที่มีความสนใจศึกษาด้านพุทธศิลปกรรม โดยเฉพาะพระภิกษุ สามเณร ศิลปินและบุคคลทั่วไปที่มีความสนใจศึกษาด้านพุทธศิลปกรรมเข้าศึกษา เน้นการสร้างความรู้ ความเข้าใจด้านสุนทรียศาสตร์ทั้งภาคทฤษฎีและปฏิบัติแบบเข้มข้น เพื่อให้สามารถนำหลักการมาประยุกต์ใช้ด้านการบริหารจัดการศิลปะ การธำรงรักษาสืบสานงานพุทธศิลปกรรมไม่ให้ถูกทำลายด้วยความรู้เท่าไม่ถึงการณ์ ตลอดจนเผยแพร่ผลงานสร้างสรรค์พุทธศิลปกรรมให้เป็นที่ประจักษ์ต่อสาธารณะทั้งในระดับชาติและนานาชาติ' }}

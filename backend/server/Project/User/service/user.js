@@ -3,8 +3,8 @@ const User = require('../controller/user');
 const UserModel = require('../models/user.model');
 const RoleModel = require('../../Settings/models/role.model');
 const StatusModel = require('../../Settings/models/status.model');
+const { isAdmin, isSelf } = require('../../../../middleware/userAccessMiddleware');
 const ResMessage = require("../../Settings/service/message");
-const { hashPassword, verifyPassword, isPasswordHash } = require('./password');
 const {
     normalizeStudentId,
     isArtistRole,
@@ -23,6 +23,13 @@ const withoutPassword = (doc) => {
     return value;
 };
 
+const visibleProfile = (request, doc) => {
+    if (!doc || isAdmin(request) || isSelf(request, doc._id)) return withoutPassword(doc);
+    const value = withoutPassword(doc);
+    return Object.fromEntries(['_id', 'name', 'image', 'bio', 'createdAt']
+        .filter(key => value[key] !== undefined).map(key => [key, value[key]]));
+};
+
 exports.onQuery = async function (request, response) {
     try {
         let query = {};
@@ -31,7 +38,7 @@ exports.onQuery = async function (request, response) {
         if (mongo.ObjectId.isValid(idOrSlug)) {
             query._id = new mongo.ObjectId(idOrSlug);
             const doc = await User.onQuery(query);
-            return ResMessage.sendResponse(response, 0, 20000, doc);
+            return ResMessage.sendResponse(response, 0, 20000, visibleProfile(request, doc));
         } else {
             // It's a slug, let's find all users and find the matching one (slugified)
             const allUsers = await User.onQuerys({});
@@ -46,7 +53,7 @@ exports.onQuery = async function (request, response) {
                 return false;
             });
             if (matchedUser) {
-                return ResMessage.sendResponse(response, 0, 20000, matchedUser);
+                return ResMessage.sendResponse(response, 0, 20000, visibleProfile(request, matchedUser));
             }
             return ResMessage.sendResponse(response, 0, 40400);
         }
@@ -57,102 +64,14 @@ exports.onQuery = async function (request, response) {
 
 exports.onQuerys = async function (request, response) {
     try {
-        let query = {};
+        if (!isAdmin(request) && !mongo.ObjectId.isValid(request.user && request.user.userId)) {
+            return response.status(403).json({ code: '40300', message: 'Account identity required.' });
+        }
+        let query = isAdmin(request) ? {} : { _id: new mongo.ObjectId(request.user.userId) };
         const doc = await User.onQuerys(query);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
-    }
-};
-
-const cfg = require('../../../../config/config');
-const jwt = require('jsonwebtoken');
-
-const createSessionUser = (user, roleName) => {
-    const userData = withoutPassword(user);
-    delete userData.password;
-    userData.role = roleName;
-    userData.token = jwt.sign(
-        { userId: user._id, role: roleName },
-        cfg.jwtSecret,
-        { expiresIn: cfg.tokenExpired / 1000 }
-    );
-    return userData;
-};
-
-exports.onSignIn = async function (request, response) {
-    try {
-        const { username, password } = request.body;
-        // Reject non-string credentials to block NoSQL operator injection (e.g. {$ne:null})
-        if (typeof username !== 'string' || typeof password !== 'string') {
-            return response.status(401).json({ message: "Invalid username or password" });
-        }
-        const user = await UserModel.findOne({ studentId: username })
-            .select('+password')
-            .populate('role')
-            .lean();
-        const passwordMatches = user && await verifyPassword(password, user.password);
-
-        if (passwordMatches) {
-            if (!isPasswordHash(user.password)) {
-                await UserModel.updateOne(
-                    { _id: user._id },
-                    { $set: { password: await hashPassword(password) } }
-                );
-            }
-            
-            // Extract role name (in English) for frontend redirection
-            let roleName = 'Customer';
-            if (user.role && user.role.title) {
-                const roleObj = user.role.title.find(t => t.key === 'en');
-                if (roleObj) roleName = roleObj.value;
-            } else if (user.role && typeof user.role === 'string') {
-                roleName = user.role;
-            }
-
-            const userData = createSessionUser(user, roleName);
-            
-            return ResMessage.sendResponse(response, 0, 20000, userData);
-        } else {
-            // Send 401 status for invalid login
-            return response.status(401).json({ message: "Invalid username or password" });
-        }
-    } catch (err) {
-        console.error("Login Error:", err);
-        return response.status(500).json({ message: "Server error during login" });
-    }
-};
-
-exports.onDevAdminSignIn = async function (request, response) {
-    const remoteAddress = String(request.socket && request.socket.remoteAddress || '');
-    const isLoopback = remoteAddress === '::1'
-        || remoteAddress === '127.0.0.1'
-        || remoteAddress === '::ffff:127.0.0.1';
-    const enabled = process.env.NODE_ENV === 'development'
-        && process.env.ALLOW_DEV_ADMIN_LOGIN === 'true'
-        && isLoopback;
-
-    if (!enabled) {
-        return response.status(404).json({ message: 'Not found' });
-    }
-
-    try {
-        const adminRole = await RoleModel.findOne({
-            title: { $elemMatch: { key: 'en', value: /^admin$/i } }
-        }).lean();
-        if (!adminRole) {
-            return response.status(503).json({ message: 'Local Admin role is not configured' });
-        }
-
-        const user = await UserModel.findOne({ role: adminRole._id }).lean();
-        if (!user) {
-            return response.status(503).json({ message: 'Local Admin user is not configured' });
-        }
-
-        return ResMessage.sendResponse(response, 0, 20000, createSessionUser(user, 'Admin'));
-    } catch (err) {
-        console.error('Local Admin Login Error:', err);
-        return response.status(500).json({ message: 'Server error during local Admin login' });
     }
 };
 
@@ -173,11 +92,11 @@ exports.onCreate = async function (request, response) {
                 : null;
             return [String(role._id), title && title.value ? String(title.value).trim().toLowerCase() : ''];
         }));
-        const data = await Promise.all(input.map(async item => ({
-            ...item,
-            studentId: normalizeStudentId(item && item.studentId),
-            ...(item.password ? { password: await hashPassword(item.password) } : {})
-        })));
+        const data = input.map(item => {
+            const value = { ...item, studentId: normalizeStudentId(item && item.studentId) };
+            delete value.password;
+            return value;
+        });
 
         // Bulk user imports are intentionally idempotent. A repeated import should
         // not fail on unique studentId/email indexes or create duplicate accounts.
@@ -226,11 +145,12 @@ exports.onCreate = async function (request, response) {
                                 : (existing.contact || {})),
                             ...(item.contact || {})
                         },
-                        status: newStudentStatus ? newStudentStatus._id : item.status
+                        status: item.status || (newStudentStatus && newStudentStatus._id)
                     };
                     if (artistImport) {
                         update.contact = normalizeArtistContact(studentId, item.contact, existing.contact);
                     }
+                    if (item.image) update.image = item.image;
                     // Do not overwrite a user's existing password or role on repeat import.
                     if (!existing.role && item.role) update.role = item.role;
                     const updated = await UserModel.findByIdAndUpdate(
@@ -244,7 +164,7 @@ exports.onCreate = async function (request, response) {
                     if (isArtistRole(item.role, roleNameById)) {
                         createData.contact = normalizeArtistContact(studentId, item.contact);
                     }
-                    if (newStudentStatus) createData.status = newStudentStatus._id;
+                    if (!createData.status && newStudentStatus) createData.status = newStudentStatus._id;
                     imported.push(await UserModel.create(createData));
                 }
             }
@@ -279,9 +199,17 @@ exports.onUpdate = async function (request, response) {
 
         const data = { ...request.body };
         delete data._id;
-        if (data.password) data.password = await hashPassword(data.password);
-        data.studentId = normalizeStudentId(data.studentId);
+        if (data.contact && Object.prototype.hasOwnProperty.call(data.contact, 'personalEmail')) {
+            const email = data.contact.personalEmail === null ? '' : data.contact.personalEmail;
+            if (typeof email !== 'string' || email.trim().length > 254 || (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))) {
+                return response.status(400).json({ code: '40000', message: 'Invalid personal email address.' });
+            }
+            data.contact = { ...data.contact, personalEmail: email.trim() };
+        }
+        delete data.password;
+        if (data.studentId !== undefined) data.studentId = normalizeStudentId(data.studentId);
         const existing = await UserModel.findById(query._id).populate('role').lean();
+        if (data.contact && existing) data.contact = { ...existing.contact, ...data.contact };
         const roles = data.role && mongo.ObjectId.isValid(data.role)
             ? await RoleModel.find({ _id: data.role }).lean()
             : [];

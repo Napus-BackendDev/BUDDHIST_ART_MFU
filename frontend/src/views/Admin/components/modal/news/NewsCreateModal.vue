@@ -83,14 +83,16 @@
                                     :class="{ 'border-primary-highlight': coverIndex === index }"
                                     @click="setCoverIndex(index)"
                                 >
-                                    <img :src="preview" class="preview-img" />
+                                    <button type="button" class="cover-select-btn" :aria-label="($i18n.locale === 'en' ? 'Set cover image ' : 'เลือกภาพหน้าปก ') + (index + 1)" :aria-pressed="String(coverIndex === index)" @click.stop="setCoverIndex(index)">
+                                        <img :src="preview" class="preview-img" alt="" />
+                                    </button>
                                     <div class="cover-badge" v-if="coverIndex === index">
                                         {{ $i18n.locale === 'en' ? 'Cover' : 'หน้าปก' }}
                                     </div>
                                     <div class="set-cover-overlay" v-else>
                                         {{ $i18n.locale === 'en' ? 'Set Cover' : 'ตั้งเป็นหน้าปก' }}
                                     </div>
-                                    <button class="remove-img-btn" @click.stop="removeImage(index)">
+                                    <button type="button" class="remove-img-btn" :aria-label="($i18n.locale === 'en' ? 'Remove image ' : 'นำภาพออก ') + (index + 1)" @click.stop="removeImage(index)">
                                         <CIcon name="cil-x" size="sm" />
                                     </button>
                                 </div>
@@ -168,6 +170,11 @@ export default {
             }
         }
     },
+    watch: {
+        show(value) {
+            if (value) this.resetForm();
+        }
+    },
     computed: {
         isFormValid() {
             return this.form.title && this.form.title.trim() !== '' && 
@@ -186,6 +193,7 @@ export default {
         },
         handleMultipleFileUpload(event) {
             const files = Array.from(event.target.files);
+            event.target.value = '';
             if (files.length === 0) return;
 
             files.forEach(file => {
@@ -212,22 +220,23 @@ export default {
             this.coverIndex = index;
         },
         onSave() {
+            if (this.saving || !this.isFormValid) return;
+            const images = [...this.form.images];
             // Reorder form.images based on coverIndex
-            if (this.coverIndex > 0 && this.coverIndex < this.form.images.length) {
-                const coverImage = this.form.images[this.coverIndex];
-                this.form.images.splice(this.coverIndex, 1);
-                this.form.images.unshift(coverImage);
+            if (this.coverIndex > 0 && this.coverIndex < images.length) {
+                const coverImage = images[this.coverIndex];
+                images.splice(this.coverIndex, 1);
+                images.unshift(coverImage);
             }
 
             const payload = {
                 title: [{ key: 'en', value: this.form.title }, { key: 'th', value: this.form.title }],
                 description: [{ key: 'en', value: this.form.description }, { key: 'th', value: this.form.description }],
-                _images: this.form.images,
+                _images: images,
                 newCoverIndex: 0 // Since we reordered form.images, the cover is always index 0 of the uploaded files
             };
 
             this.$emit('save', payload);
-            this.resetForm();
         },
         resetForm() {
             this.form = {
@@ -243,6 +252,8 @@ export default {
 </script>
 
 <style scoped>
+.cover-select-btn { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.cover-select-btn:focus-visible { outline: 2px solid #612721; outline-offset: -3px; }
 .form-group-custom { margin-bottom: 1.25rem; }
 .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 0.75rem; letter-spacing: 0.05em; }
 .custom-input ::v-deep .form-control { border-radius: 12px; border: 1px solid #f1f5f9; padding: 0.85rem 1.25rem; font-size: 1rem; background-color: #f8fafc; }
@@ -259,7 +270,7 @@ export default {
     border-bottom-right-radius: 12px;
     border-color: #f1f5f9;
     min-height: 180px;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 1rem;
     background-color: #ffffff;
 }

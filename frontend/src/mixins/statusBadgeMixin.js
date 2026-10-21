@@ -48,7 +48,7 @@ export const statusBadgeMixin = {
             let badgeClass = 'badge-pending';
             let icon = 'cil-clock';
 
-            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success') || s.includes('active') || s.includes('passed') || s.includes('newstudent')) {
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || ['อนุมัติ', 'อนุมัติแล้ว'].includes(s) || s.includes('success') || s.includes('active') || s.includes('passed') || s.includes('newstudent')) {
                 badgeClass = 'badge-completed';
                 icon = 'cil-check-circle';
             } else if (s.includes('processing') || s.includes('รอดำเนินการ') || (s.includes('pending') && !s.includes('payment') && !s.includes('ชำระเงิน')) || s.includes('oldstudent')) {
@@ -60,7 +60,7 @@ export const statusBadgeMixin = {
             } else if (s.includes('shipped') || s.includes('จัดส่งแล้ว') || s.includes('revised') || s.includes('admin')) {
                 badgeClass = 'badge-update';
                 icon = s.includes('admin') ? 'cil-shield-check' : 'cil-sync';
-            } else if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('suspended') || s.includes('fail')) {
+            } else if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('ไม่อนุมัติ') || s.includes('ปฏิเสธ') || s.includes('suspended') || s.includes('fail')) {
                 badgeClass = 'badge-cancelled';
                 icon = 'cil-x-circle';
             }
@@ -95,11 +95,11 @@ export const statusBadgeMixin = {
                 : String(title || '');
             const normalizedStatus = statusText.toLowerCase();
 
+            if (/(cancelled|canceled|rejected|ปฏิเสธ|ยกเลิก|ไม่อนุมัติ|ไม่ผ่าน)/.test(normalizedStatus)) {
+                return 'Cancelled';
+            }
             if (/(approved|completed|success|อนุมัติ)/.test(normalizedStatus)) {
                 return 'Completed';
-            }
-            if (/(cancelled|canceled|rejected|ปฏิเสธ|ยกเลิก)/.test(normalizedStatus)) {
-                return 'Cancelled';
             }
             return 'Pending';
         },

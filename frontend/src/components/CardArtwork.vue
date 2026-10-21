@@ -19,32 +19,34 @@
                         <div v-if="!isPublic && isPending(art)" class="status-overlay pending-overlay">
                             <div class="status-content">
                                 <CIcon name="cil-clock" class="mb-2" size="xl" />
-                                <span class="font-weight-bold">Pending Review</span>
+                                <span class="font-weight-bold">{{ currentLocale === 'en' ? 'Pending Review' : 'รอตรวจสอบ' }}</span>
                             </div>
                         </div>
 
                         <div v-if="!isPublic && isRejected(art)" class="status-overlay rejected-overlay">
                             <div class="status-content">
                                 <CIcon name="cil-warning" class="mb-2" size="xl" />
-                                <span class="font-weight-bold">แก้ไข</span>
+                                <span class="font-weight-bold">{{ currentLocale === 'en' ? 'Revision Required' : 'แก้ไข' }}</span>
                             </div>
                         </div>
 
                         <!-- Action Buttons (Edit/Delete) for Artist (Private Only) -->
                         <div v-if="!isPublic" class="action-buttons-group">
-                            <div class="action-btn edit-btn shadow-sm" title="Edit Artwork" @click.stop="handleEdit(art)">
+                            <button type="button" class="action-btn edit-btn shadow-sm" :aria-label="(currentLocale === 'en' ? 'Edit artwork: ' : 'แก้ไขผลงาน: ') + getName(currentLocale, art)" :title="currentLocale === 'en' ? 'Edit Artwork' : 'แก้ไขผลงาน'" @click.stop="handleEdit(art)">
                                 <CIcon name="cil-pencil" />
-                            </div>
-                            <div class="action-btn delete-btn shadow-sm" title="Delete Artwork" @click.stop="handleDelete(art)">
+                            </button>
+                            <button type="button" class="action-btn delete-btn shadow-sm" :aria-label="(currentLocale === 'en' ? 'Delete artwork: ' : 'ลบผลงาน: ') + getName(currentLocale, art)" :title="currentLocale === 'en' ? 'Delete Artwork' : 'ลบผลงาน'" @click.stop="handleDelete(art)">
                                 <CIcon name="cil-trash" />
-                            </div>
+                            </button>
                         </div>
                     </div>
 
                     <!-- Content Body -->
                     <div class="card-content">
                         <div class="art-details">
-                            <h4 class="art-title text-truncate" :title="getName(currentLocale, art)">{{ getName(currentLocale, art) }}</h4>
+                            <h4 class="art-title text-truncate" :title="getName(currentLocale, art)">
+                                <router-link class="artwork-detail-link" :to="`/artwork/${art._id}`" @click.native.stop>{{ getName(currentLocale, art) }}</router-link>
+                            </h4>
                             <p class="art-artist text-truncate mb-2">
                                 <span>{{ currentLocale === 'en' ? 'By ' : 'โดย ' }}</span> 
                                 <strong>{{ art.artist ? getName(currentLocale, art.artist) : (currentLocale === 'en' ? 'Anonymous' : 'ศิลปินนิรนาม') }}</strong>
@@ -133,7 +135,6 @@
         <CModal
             :show.sync="showAddedModal"
             centered
-            size="md"
             class="cart-alert-modal"
             :closeOnBackdrop="true"
         >
@@ -174,6 +175,7 @@
 </template>
 
 <script>
+import { isArtworkPurchasable } from '@/utils/artworkPurchase';
 import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 export default {
     name: 'CardArtwork',
@@ -205,13 +207,7 @@ export default {
     methods: {
         artworkImageUrl,
         getDetail(art) {
-            const titleEn = this.getName('en', art);
-            if (titleEn) {
-                const slug = titleEn.replace(/\s+/g, '-').toLowerCase();
-                this.$router.push(`/artwork/${slug}`);
-            } else {
-                this.$router.push(`/artwork/${art._id}`);
-            }
+            this.$router.push(`/artwork/${art._id}`);
         },
         handleEdit(art) {
             this.$emit('edit', art);
@@ -258,18 +254,9 @@ export default {
                 this.loadingItems.push(art._id);
                 
                 if (!this.isInCart(art._id)) {
-                    let latest = art;
-                    try {
-                        const res = await this.$store.dispatch('artwork/explore', { _id: art._id });
-                        if (res) latest = res;
-                    } catch (error) {
-                        console.warn('artwork/explore not available, using local data:', error);
-                    }
-                    if (latest && this.isApprovalReserved(latest)) {
-                        alert(this.currentLocale === 'en' ? 'Sorry, this artwork was just reserved.' : 'ขออภัย ผลงานนี้เพิ่งถูกจองไป');
-                        return;
-                    }
-                    this.$store.dispatch('cart/addToCart', latest || art);
+                    const latest = await this.$store.dispatch('artwork/explore', { _id: art._id });
+                    if (!this.isPurchasable(latest)) return;
+                    this.$store.dispatch('cart/addToCart', latest);
                     this.showAddedModal = true;
                 } else {
                     this.$store.dispatch('cart/removeFromCart', art._id);
@@ -288,9 +275,7 @@ export default {
             return this.getName('en', art.status.approval) === 'Reserved';
         },
         isPurchasable(art) {
-            if (!art || !art.status || !art.status.sale) return false;
-            const status = this.getName('en', art.status.sale);
-            return status === 'Available';
+            return isArtworkPurchasable(art, this.getName);
         },
         isExhibition(art) {
             if (!art || !art.status || !art.status.sale) return false;
@@ -343,6 +328,8 @@ export default {
 </script>
 
 <style scoped>
+.artwork-detail-link { color: inherit; text-decoration: none; }
+.artwork-detail-link:focus-visible { outline: 2px solid #612721; outline-offset: 4px; }
 /* Modern Premium Artwork Card Design */
 .artwork-card {
     background: #ffffff;
@@ -431,7 +418,7 @@ export default {
 }
 
 .art-title {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 1.12rem;
     font-weight: 700;
     color: #1c1917;
@@ -440,7 +427,7 @@ export default {
 }
 
 .art-artist {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.84rem;
     color: #6b7280;
     margin-bottom: 6px;
@@ -478,7 +465,7 @@ export default {
 }
 
 .art-technique {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.78rem;
     color: #9ca3af;
 }
@@ -556,7 +543,7 @@ export default {
 }
 
 .price-label {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.62rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -566,7 +553,7 @@ export default {
 }
 
 .price-value {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 1.25rem;
     font-weight: 700;
     color: #4a1d18;
@@ -697,12 +684,15 @@ export default {
     z-index: 5;
 }
 
-.artwork-card:hover .action-buttons-group {
+.artwork-card:hover .action-buttons-group,
+.artwork-card:focus-within .action-buttons-group {
     opacity: 1;
     transform: translateX(0);
 }
 
 .action-btn {
+    border: 0;
+    padding: 0;
     width: 44px;
     min-width: 44px;
     height: 44px;
@@ -714,6 +704,11 @@ export default {
     color: white;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.action-btn:focus-visible { outline: 3px solid #8b633b; outline-offset: 3px; }
+@media (hover: none) {
+    .action-buttons-group { opacity: 1; transform: none; }
 }
 
 .edit-btn { background-color: #4a1d18; }

@@ -57,7 +57,7 @@ describe('Submission Student Status Transition Tests', () => {
       ]
     });
 
-    testToken = jwt.sign({ id: 'dummyUser' }, 'testSecret');
+    testToken = jwt.sign({ userId: '000000000000000000000001', role: 'Admin' }, 'testSecret');
   });
 
   afterAll(async () => {
@@ -141,7 +141,8 @@ describe('Submission Student Status Transition Tests', () => {
     const responseDoc = responseDocs.find(d => d._id.toString() === submission._id.toString());
     expect(responseDoc).toBeDefined();
     expect(responseDoc.artist[0]._id.toString()).toBe(artist._id.toString());
-    expect(responseDoc.artist[0].status.toString()).toBe(oldStudentStatus._id.toString());
+    // Public batches do not disclose private learner status; DB transition is asserted above.
+    expect(responseDoc.artist[0].status).toBeUndefined();
   });
 
   it('should transition status on onUpdate (PUT /api/v1/submission) when deadline has passed', async () => {

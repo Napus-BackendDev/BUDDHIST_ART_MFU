@@ -3,12 +3,15 @@
     <CToggler
       in-header
       class="mr-2 d-lg-none admin-mobile-toggler"
-      aria-label="Toggle navigation"
+      :aria-label="lang === 'en' ? 'Toggle navigation' : 'เปิดหรือปิดเมนูนำทาง'"
+      :aria-expanded="$store.state.sidebarShow === true ? 'true' : 'false'"
       @click="$store.commit('toggleSidebarMobile')"
     />
     <CToggler
       in-header
       class="ml-0 d-md-down-none"
+      :aria-label="lang === 'en' ? 'Toggle sidebar' : 'เปิดหรือปิดแถบเมนู'"
+      :aria-expanded="[true, 'responsive'].includes($store.state.sidebarShow) ? 'true' : 'false'"
       @click="$store.commit('toggleSidebarDesktop')"
     />
     <CHeaderBrand class="mx-auto d-lg-none admin-mobile-brand bg-danger d-flex align-items-center justify-content-center" to="/">
@@ -56,12 +59,12 @@
 <!--        </button>-->
 <!--      </CHeaderNavItem>-->
       <CHeaderNavItem class="px-3 d-flex align-items-center">
-        <div class="lang-switcher-pill d-flex align-items-center" @click="onSwitchLang" style="cursor: pointer;">
+        <button type="button" class="lang-switcher-pill d-flex align-items-center" @click="onSwitchLang" :aria-label="lang === 'th' ? 'Switch to English' : 'เปลี่ยนเป็นภาษาไทย'">
           <CIcon name="cil-globe-alt" class="mr-2 text-secondary" />
           <span class="font-weight-bold text-dark" style="font-size: 0.85rem;">
             {{lang === 'th' ? 'EN' : 'TH'}}
           </span>
-        </div>
+        </button>
       </CHeaderNavItem>
 
       <TheHeaderDropdownAccnt class="ml-2 border-left pl-3" />

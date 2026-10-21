@@ -76,7 +76,7 @@ describe('Orders.vue', () => {
     })
   })
 
-  it('filters out orders with Reserved (รอชำระเงิน) status', () => {
+  it('keeps Reserved orders visible so admin can upload their payment slip', () => {
     const wrapper = shallowMount(Orders, {
       store,
       localVue,
@@ -85,14 +85,14 @@ describe('Orders.vue', () => {
       }
     })
 
-    // The component should only expose the non-Reserved orders
+    // Admin-created reservations must remain visible for payment follow-up.
     const componentOrders = wrapper.vm.orders
-    expect(componentOrders).toHaveLength(2)
+    expect(componentOrders).toHaveLength(3)
     
-    // ORD-2026-0002 has Reserved status and should be filtered out
+    // ORD-2026-0002 is Reserved and must remain manageable.
     const orderNumbers = componentOrders.map(o => o.orderNumber)
     expect(orderNumbers).toContain('ORD-2026-0001')
     expect(orderNumbers).toContain('ORD-2026-0003')
-    expect(orderNumbers).not.toContain('ORD-2026-0002')
+    expect(orderNumbers).toContain('ORD-2026-0002')
   })
 })

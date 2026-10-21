@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const mongoose = require("mongoose");
 const mfuDrive = require("../helpers/mfuDrive");
+const { isAdmin, isSelf } = require('./userAccessMiddleware');
 
 module.exports = function uploadImage(folderType, fieldName = "image", isMultiple = false, maxFiles = 10) {
   const storage = multer.diskStorage({
@@ -53,7 +54,9 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
               const Submission = mongoose.model('Submission');
               const doc = await Submission.findById(id).populate('artist');
               if (doc) {
-                const artist = Array.isArray(doc.artist) ? doc.artist[0] : doc.artist;
+                const artist = Array.isArray(doc.artist)
+                  ? (req.submissionUploadArtist ? doc.artist.find(item=>String(item._id)===String(req.submissionUploadArtist)) : doc.artist[0])
+                  : doc.artist;
                 const artistName = sanitize(artist?.name || "Artist");
                 const studentId = artist?.studentId || artist?._id || "unknown";
                 const subTitle = sanitize(doc.title);
@@ -111,15 +114,11 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
       const ext = path.extname(file.originalname);
       
       if (folderType === 'news') {
-        // Use a request-level counter to ensure sequential naming without collisions during parallel processing
+        // Each upload gets a new URL even when the news title and folder stay the same.
         req._fileCounter = (req._fileCounter || 0) + 1;
-        try {
-          const files = fs.readdirSync(file.destination);
-          const nextIndex = files.length + req._fileCounter;
-          cb(null, `${nextIndex}${ext}`);
-        } catch (e) {
-          cb(null, `${req._fileCounter}${ext}`);
-        }
+        cb(null, `${req._fileCounter}-${require('crypto').randomBytes(8).toString('hex')}${ext}`);
+      } else if (['submission', 'artwork'].includes(folderType) && file.customFilename) {
+        cb(null, `${file.customFilename}-${require('crypto').randomBytes(8).toString('hex')}${ext}`);
       } else if (file.customFilename) {
         // For artwork/submission, keep the custom name
         // If it's multiple, we still need a unique suffix to avoid overwriting same custom name
@@ -136,15 +135,30 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
     },
   });
 
-  const fileFilter = (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const mimetype = allowedTypes.test(file.mimetype);
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const validateFile = (req, file, cb) => {
+    // Multipart identity must precede the file, as in the existing profile forms.
+    // Reject before disk storage or the MFU Drive mirror can run.
+    if (folderType === 'profile' && !isAdmin(req) && !isSelf(req, req.body._id)) {
+      const error = new Error('Access to this account is not allowed.');
+      error.status = 403;
+      return cb(error);
+    }
+    const mimetype = /^image\/(jpeg|jpg|png|gif|webp)$/i.test(file.mimetype);
+    const extname = /^\.(jpeg|jpg|png|gif|webp)$/i.test(path.extname(file.originalname));
 
     if (mimetype && extname) {
       return cb(null, true);
     }
-    cb(new Error("Only image files are allowed! (jpeg, jpg, png, gif, webp)"));
+    cb(Object.assign(new Error("Only image files are allowed! (jpeg, jpg, png, gif, webp)"), { status: 400 }));
+  };
+
+  const fileFilter = (req, file, cb) => {
+    if (!['order', 'artwork', 'submission'].includes(folderType)) return validateFile(req, file, cb);
+    // Ownership and order state must be checked before disk/cloud writes.
+    const access = folderType === 'order' ? require('./orderAccessMiddleware')
+      : folderType === 'artwork' ? require('./artworkAccessMiddleware') : require('./submissionAccessMiddleware');
+    access.authorizeUpload(req)
+      .then(() => validateFile(req, file, cb), cb);
   };
 
   const limits = {
@@ -160,6 +174,8 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
   // workflows, then mirror every uploaded image to the shared MFU Drive.
   return (req, res, next) => {
     multerHandler(req, res, async (err) => {
+      if (err && err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ code: '41300', message: 'Image exceeds the 10 MiB limit.' });
+      if (err && [400, 403, 404, 409].includes(err.status)) return res.status(err.status).json({ code: String(err.status) + '00', message: err.message });
       if (err) return next(err);
       if (!mfuDrive.isEnabled()) return next();
 

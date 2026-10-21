@@ -295,8 +295,8 @@
         </div>
 
         <div v-if="formType === 'status'" class="form-group mb-3">
-          <label class="form-label-custom">{{ locale === 'en' ? 'Workflow Group' : 'กลุ่มการทำงาน' }} <span class="required">*</span></label>
-          <select v-model="form.group" class="form-control custom-select-field">
+          <label for="settings-workflow-group" class="form-label-custom">{{ locale === 'en' ? 'Workflow Group' : 'กลุ่มการทำงาน' }} <span class="required">*</span></label>
+          <select id="settings-workflow-group" v-model="form.group" class="form-control custom-select-field">
             <option value="" disabled>{{ locale === 'en' ? 'Select workflow group' : 'เลือกกลุ่มการทำงาน' }}</option>
             <option v-for="group in groups" :key="group._id" :value="group._id">{{ displayName(group) }}</option>
           </select>
@@ -310,8 +310,8 @@
 
         <div class="row">
           <div class="col-md-6 form-group mb-3">
-            <label class="form-label-custom">{{ locale === 'en' ? 'Thai Name' : 'ชื่อภาษาไทย' }} <span class="required">*</span></label>
-            <input 
+            <label for="settings-name-th" class="form-label-custom">{{ locale === 'en' ? 'Thai Name' : 'ชื่อภาษาไทย' }} <span class="required">*</span></label>
+            <input id="settings-name-th"
               v-model.trim="form.title.th" 
               class="form-control custom-input-field" 
               :class="{ 'is-invalid': touched && !form.title.th }" 
@@ -321,8 +321,8 @@
             <small v-if="touched && !form.title.th" class="field-error">{{ locale === 'en' ? 'Thai name is required.' : 'กรุณาระบุชื่อภาษาไทย' }}</small>
           </div>
           <div class="col-md-6 form-group mb-3">
-            <label class="form-label-custom">{{ locale === 'en' ? 'English Name' : 'ชื่อภาษาอังกฤษ' }} <span class="required">*</span></label>
-            <input 
+            <label for="settings-name-en" class="form-label-custom">{{ locale === 'en' ? 'English Name' : 'ชื่อภาษาอังกฤษ' }} <span class="required">*</span></label>
+            <input id="settings-name-en"
               v-model.trim="form.title.en" 
               class="form-control custom-input-field" 
               :class="{ 'is-invalid': touched && !form.title.en }" 
@@ -335,8 +335,8 @@
 
         <div class="row">
           <div class="col-md-6 form-group mb-3">
-            <label class="form-label-custom">{{ locale === 'en' ? 'Thai Description' : 'คำอธิบายภาษาไทย' }}</label>
-            <textarea 
+            <label for="settings-description-th" class="form-label-custom">{{ locale === 'en' ? 'Thai Description' : 'คำอธิบายภาษาไทย' }}</label>
+            <textarea id="settings-description-th"
               v-model.trim="form.description.th" 
               class="form-control custom-textarea-field" 
               rows="3"
@@ -344,8 +344,8 @@
             ></textarea>
           </div>
           <div class="col-md-6 form-group mb-3">
-            <label class="form-label-custom">{{ locale === 'en' ? 'English Description' : 'คำอธิบายภาษาอังกฤษ' }}</label>
-            <textarea 
+            <label for="settings-description-en" class="form-label-custom">{{ locale === 'en' ? 'English Description' : 'คำอธิบายภาษาอังกฤษ' }}</label>
+            <textarea id="settings-description-en"
               v-model.trim="form.description.en" 
               class="form-control custom-textarea-field" 
               rows="3"
@@ -401,8 +401,8 @@
         </div>
 
         <div v-if="impact && impact.requiresReplacement && !impact.protected" class="form-group mb-3">
-          <label class="form-label-custom">{{ locale === 'en' ? 'Move references to replacement' : 'ย้ายรายการอ้างอิงไปยังรายการใหม่' }} <span class="required">*</span></label>
-          <select v-model="replacementId" class="form-control custom-select-field">
+          <label for="settings-replacement" class="form-label-custom">{{ locale === 'en' ? 'Move references to replacement' : 'ย้ายรายการอ้างอิงไปยังรายการใหม่' }} <span class="required">*</span></label>
+          <select id="settings-replacement" v-model="replacementId" class="form-control custom-select-field">
             <option value="" disabled>{{ locale === 'en' ? 'Select replacement item' : 'เลือกข้อมูลทดแทน' }}</option>
             <option v-for="item in replacementOptions" :key="item._id" :value="item._id">{{ displayName(item) }}</option>
           </select>
@@ -477,15 +477,15 @@ export default {
     selectedGroup() { return this.groups.find(item => item._id === this.selectedGroupId) || null; },
     filteredGroups() { 
       const q = this.groupSearch.toLowerCase(); 
-      return this.groups.filter(item => !q || this.displayName(item).toLowerCase().includes(q) || String(item.code || '').toLowerCase().includes(q)); 
+      return this.groups.filter(item => this.matchesSearch(item, q));
     },
     filteredStatuses() { 
       const q = this.statusSearch.toLowerCase(); 
-      return this.statuses.filter(item => String(item.group && item.group._id || item.group) === String(this.selectedGroupId)).filter(item => !q || this.displayName(item).toLowerCase().includes(q) || String(item.code || '').toLowerCase().includes(q)); 
+      return this.statuses.filter(item => String(item.group && item.group._id || item.group) === String(this.selectedGroupId)).filter(item => this.matchesSearch(item, q));
     },
     filteredCategories() { 
       const q = this.categorySearch.toLowerCase(); 
-      return this.categories.filter(item => !q || this.displayName(item).toLowerCase().includes(q) || String(item.code || '').toLowerCase().includes(q) || (this.nameFor(item, 'th') || '').toLowerCase().includes(q) || (this.nameFor(item, 'en') || '').toLowerCase().includes(q)); 
+      return this.categories.filter(item => this.matchesSearch(item, q));
     },
     modalTitle() { 
       const names = { group: ['Group', 'กลุ่มการทำงาน'], status: ['Status', 'สถานะการทำงาน'], category: ['Category', 'หมวดหมู่ผลงาน'] }; 
@@ -501,6 +501,9 @@ export default {
     this.loadAll(); 
   },
   methods: {
+    matchesSearch(item, query) {
+      return [item.code, this.nameFor(item, 'th'), this.nameFor(item, 'en')].some(value => String(value || '').toLowerCase().includes(query));
+    },
     emptyForm() { 
       return { title: { th: '', en: '' }, description: { th: '', en: '' }, group: '' }; 
     },
@@ -943,7 +946,7 @@ export default {
 }
 
 .code-tag {
-  font-family: monospace;
+  font-family: var(--app-font-family);
   font-size: 0.72rem;
   font-weight: 700;
   background: #f1f5f9;
@@ -1044,7 +1047,7 @@ export default {
 }
 
 .code-badge-pill {
-  font-family: monospace;
+  font-family: var(--app-font-family);
   font-size: 0.78rem;
   font-weight: 700;
   background: #f1f5f9;

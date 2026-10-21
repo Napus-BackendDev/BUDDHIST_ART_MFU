@@ -41,6 +41,21 @@ module.exports = function (app) {
     app.use(nosniff());
     app.use(xssFilter());
 
+    // Order PDFs contain private buyer details. Serve them only through the
+    // authenticated, owner-checked order endpoints, never the static aliases.
+    app.use((req, res, next) => {
+        let pathname;
+        try {
+            pathname = path.posix.normalize(decodeURIComponent(req.path).replace(/\\/g, '/'));
+        } catch (error) {
+            return res.sendStatus(400);
+        }
+        if (/^\/(?:uploads\/)?account\/User\/[^/]+\/(?:Invoice|Certificate)(?:\/|$)/i.test(pathname)) {
+            return res.sendStatus(404);
+        }
+        return next();
+    });
+
     app.use(sass({ src: "./sass", dest: "./public/css", debug: true, outputStyle: "compressed" }));
     app.use(express.static(path.join(__dirname, "../public")));
     app.use(express.static(path.join(__dirname, "../node_modules/bootstrap/dist")));

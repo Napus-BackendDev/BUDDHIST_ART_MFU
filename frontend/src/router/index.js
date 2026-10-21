@@ -63,6 +63,7 @@ const router = new Router({
         {
             path: '/',
             name: 'Users',
+            redirect: { name: 'Home' },
             component: TheContainerUser,
             children: [
                 {
@@ -88,7 +89,7 @@ const router = new Router({
                 },
                 {
                     path: 'bill',
-                    redirect: '/payment?step=3'
+                    redirect: { name: 'Payment', query: { step: '3' } }
                 },
                 {
                     path: 'artworks',
@@ -142,6 +143,7 @@ const router = new Router({
         {
             path: '/admin',
             name: 'Admin',
+            redirect: { name: 'Overview' },
             component: TheContainerAdmin,
             meta: { requiresAuth: true, roles: ['admin'] },
             children: [
@@ -242,9 +244,8 @@ const router = new Router({
         },
         {
             path: '*',
-            name: 'NotFound',
             component: TheContainerUser,
-            children: [{ path: '', component: SystemMessage }]
+            children: [{ path: '', name: 'NotFound', component: SystemMessage }]
         }
 
     ]

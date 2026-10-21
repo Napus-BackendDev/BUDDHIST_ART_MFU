@@ -26,7 +26,7 @@
                         </p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
+                <button type="button" class="close-btn" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="$emit('update:show', false)">
                     <CIcon name="cil-x" size="sm" />
                 </button>
             </div>
@@ -49,7 +49,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Artwork Title (TH)' : 'ชื่อผลงาน (ภาษาไทย)' }} *</label>
                         <CInput
-                            v-model="form.title.th" 
+                            :aria-label="$i18n.locale === 'en' ? 'Artwork Title (TH)' : 'ชื่อผลงาน (ภาษาไทย)'" v-model="form.title.th"
                             :placeholder="$i18n.locale === 'en' ? 'Enter artwork title in Thai' : 'กรอกชื่อผลงานภาษาไทย'"
                             class="custom-input mb-0"
                         />
@@ -69,7 +69,7 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                            <div class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="cat in categories" 
                                     :key="cat._id" 
@@ -77,7 +77,7 @@
                                 >
                                     {{ getName($i18n.locale === 'en' ? 'en' : 'th', cat) }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -89,7 +89,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Technique (TH)' : 'เทคนิคที่ใช้ (ภาษาไทย)' }}</label>
                         <CInput 
-                            v-model="form.technique.th" 
+                            :aria-label="$i18n.locale === 'en' ? 'Technique (TH)' : 'เทคนิคที่ใช้ (ภาษาไทย)'" v-model="form.technique.th"
                             :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas (Thai)' : 'เช่น สีน้ำมันบนผ้าใบ'"
                             class="custom-input mb-0"
                         />
@@ -112,7 +112,7 @@
                                     <span class="dimension-prefix">W</span>
                                     <CInput 
                                         type="number"
-                                        v-model="form.width" 
+                                        :aria-label="$i18n.locale === 'en' ? 'Width' : 'ความกว้าง'" v-model="form.width"
                                         :placeholder="$i18n.locale === 'en' ? 'Width' : 'ความกว้าง'"
                                         class="custom-input-with-prefix mb-0"
                                     />
@@ -124,7 +124,7 @@
                                     <span class="dimension-prefix">L</span>
                                     <CInput 
                                         type="number"
-                                        v-model="form.height" 
+                                        :aria-label="$i18n.locale === 'en' ? 'Length' : 'ความยาว'" v-model="form.height"
                                         :placeholder="$i18n.locale === 'en' ? 'Length' : 'ความยาว'"
                                         class="custom-input-with-prefix mb-0"
                                     />
@@ -137,7 +137,7 @@
                                         <span class="dimension-prefix">H</span>
                                         <CInput 
                                             type="number"
-                                            v-model="form.depth" 
+                                            :aria-label="$i18n.locale === 'en' ? 'Height' : 'ความสูง'" v-model="form.depth"
                                             :placeholder="$i18n.locale === 'en' ? 'Height' : 'ความสูง'"
                                             class="custom-input-with-prefix mb-0"
                                         />
@@ -152,11 +152,11 @@
                                             <CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" />
                                         </CButton>
                                     </template>
-                                    <CDropdownMenu class="border-0 shadow-lg mt-2">
+                                    <div class="border-0 shadow-lg mt-2">
                                         <CDropdownItem v-for="u in unitOptions" :key="u.en" @click="form.unit = u.en">
                                             {{ $i18n.locale === 'en' ? u.en : u.th }}
                                         </CDropdownItem>
-                                    </CDropdownMenu>
+                                    </div>
                                 </CDropdown>
                             </div>
                         </div>
@@ -169,7 +169,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Remark (TH)' : 'หมายเหตุ (ภาษาไทย)' }}</label>
                         <CInput
-                            v-model="form.remark.th"
+                            :aria-label="$i18n.locale === 'en' ? 'Remark (TH)' : 'หมายเหตุ (ภาษาไทย)'" v-model="form.remark.th"
                             :placeholder="$i18n.locale === 'en' ? 'Additional notes in Thai...' : 'หมายเหตุเพิ่มเติมเกี่ยวกับผลงาน'"
                             class="custom-input mb-0"
                         />
@@ -182,7 +182,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Description (TH)' : 'รายละเอียดผลงาน (ภาษาไทย)' }}</label>
                         <CTextarea
-                            v-model="form.description.th"
+                            :aria-label="$i18n.locale === 'en' ? 'Description (TH)' : 'รายละเอียดผลงาน (ภาษาไทย)'" v-model="form.description.th"
                             :placeholder="$i18n.locale === 'en' ? 'Artwork description in Thai...' : 'อธิบายแนวคิด ที่มา หรือรายละเอียดของผลงาน'"
                             rows="3"
                             class="custom-textarea"
@@ -207,7 +207,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Artwork Title (EN)' : 'ชื่อผลงาน (ภาษาอังกฤษ)' }} *</label>
                         <CInput
-                            v-model="form.title.en"
+                            :aria-label="$i18n.locale === 'en' ? 'Artwork Title (EN)' : 'ชื่อผลงาน (ภาษาอังกฤษ)'" v-model="form.title.en"
                             :placeholder="$i18n.locale === 'en' ? 'e.g. The Golden Serenity' : 'กรอกชื่อผลงานภาษาอังกฤษ'"
                             class="custom-input mb-0"
                         />
@@ -226,7 +226,7 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                            <div class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem
                                     v-for="cat in categories"
                                     :key="cat._id"
@@ -234,7 +234,7 @@
                                 >
                                     {{ getName($i18n.locale === 'en' ? 'en' : 'th', cat) }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -245,7 +245,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Technique (EN)' : 'เทคนิคที่ใช้ (ภาษาอังกฤษ)' }}</label>
                         <CInput
-                            v-model="form.technique.en"
+                            :aria-label="$i18n.locale === 'en' ? 'Technique (EN)' : 'เทคนิคที่ใช้ (ภาษาอังกฤษ)'" v-model="form.technique.en"
                             :placeholder="$i18n.locale === 'en' ? 'e.g. Oil on Canvas' : 'เช่น Oil on Canvas'"
                             class="custom-input mb-0"
                         />
@@ -267,7 +267,7 @@
                                     <span class="dimension-prefix">W</span>
                                     <CInput
                                         type="number"
-                                        v-model="form.width"
+                                        :aria-label="$i18n.locale === 'en' ? 'Width' : 'ความกว้าง'" v-model="form.width"
                                         :placeholder="$i18n.locale === 'en' ? 'Width' : 'ความกว้าง'"
                                         class="custom-input-with-prefix mb-0"
                                     />
@@ -279,7 +279,7 @@
                                     <span class="dimension-prefix">L</span>
                                     <CInput
                                         type="number"
-                                        v-model="form.height"
+                                        :aria-label="$i18n.locale === 'en' ? 'Length' : 'ความยาว'" v-model="form.height"
                                         :placeholder="$i18n.locale === 'en' ? 'Length' : 'ความยาว'"
                                         class="custom-input-with-prefix mb-0"
                                     />
@@ -292,7 +292,7 @@
                                         <span class="dimension-prefix">H</span>
                                         <CInput
                                             type="number"
-                                            v-model="form.depth"
+                                            :aria-label="$i18n.locale === 'en' ? 'Height' : 'ความสูง'" v-model="form.depth"
                                             :placeholder="$i18n.locale === 'en' ? 'Height' : 'ความสูง'"
                                             class="custom-input-with-prefix mb-0"
                                         />
@@ -307,11 +307,11 @@
                                             <CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" />
                                         </CButton>
                                     </template>
-                                    <CDropdownMenu class="border-0 shadow-lg mt-2">
+                                    <div class="border-0 shadow-lg mt-2">
                                         <CDropdownItem v-for="u in unitOptions" :key="u.en" @click="form.unit = u.en">
                                             {{ $i18n.locale === 'en' ? u.en : u.th }}
                                         </CDropdownItem>
-                                    </CDropdownMenu>
+                                    </div>
                                 </CDropdown>
                             </div>
                         </div>
@@ -325,7 +325,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Remark (EN)' : 'หมายเหตุ (ภาษาอังกฤษ)' }}</label>
                         <CInput
-                            v-model="form.remark.en"
+                            :aria-label="$i18n.locale === 'en' ? 'Remark (EN)' : 'หมายเหตุ (ภาษาอังกฤษ)'" v-model="form.remark.en"
                             :placeholder="$i18n.locale === 'en' ? 'Additional notes in English...' : 'หมายเหตุเพิ่มเติมเป็นภาษาอังกฤษ'"
                             class="custom-input mb-0"
                         />
@@ -340,7 +340,7 @@
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Description (EN)' : 'รายละเอียดผลงาน (ภาษาอังกฤษ)' }}</label>
                         <CTextarea
-                            v-model="form.description.en"
+                            :aria-label="$i18n.locale === 'en' ? 'Description (EN)' : 'รายละเอียดผลงาน (ภาษาอังกฤษ)'" v-model="form.description.en"
                             :placeholder="$i18n.locale === 'en' ? 'English description...' : 'อธิบายรายละเอียดผลงานเป็นภาษาอังกฤษ'"
                             rows="4"
                             class="custom-textarea"
@@ -365,7 +365,8 @@
                         type="file"
                         :id="uploadInputId"
                         @change="handleFileUpload"
-                        accept="image/*"
+                        accept="image/png,image/jpeg"
+                        :disabled="isProcessingImage"
                         class="file-input-hidden"
                     />
                     <label :for="uploadInputId" class="file-upload-label w-100">
@@ -389,6 +390,7 @@
                         </template>
                     </label>
                 </div>
+                <p v-if="imageError" role="alert" class="text-danger mt-2">{{ imageError }}</p>
                 <div class="sale-settings-under-image">
                     <div class="form-group-custom">
                         <label class="form-label">{{ $i18n.locale === 'en' ? 'Sale Status' : 'สถานะการขาย' }}</label>
@@ -399,7 +401,7 @@
                                     <CIcon name="cil-filter" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu v-if="!isInitialTermLocked" class="w-100 border-0 shadow-lg mt-2">
+                            <div v-if="!isInitialTermLocked" class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem
                                     v-for="status in saleStatuses"
                                     :key="status._id"
@@ -407,7 +409,7 @@
                                 >
                                     {{ getSaleStatusLabel(status) }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                         <small v-if="isInitialTermLocked" id="initial-term-sale-help" class="text-muted d-block mt-2">{{ $i18n.locale === 'en' ? 'Sale rights remain active during the first year. Contact an admin to change this status.' : 'ระหว่างปีแรก ระบบเปิดสิทธิ์ขายอยู่ หากต้องการเปลี่ยนสถานะ กรุณาติดต่อแอดมิน' }}</small>
                     </div>
@@ -417,7 +419,7 @@
                             <span class="currency-prefix">฿</span>
                             <CInput
                                 type="number"
-                                v-model="form.price"
+                                :aria-label="$i18n.locale === 'en' ? 'Price' : 'ราคา'" v-model="form.price"
                                 placeholder="0.00"
                                 class="custom-input-with-prefix text-right mb-0"
                             />
@@ -475,14 +477,15 @@
 </template>
 
 <script>
-import { CDropdown, CDropdownMenu, CDropdownItem } from '@coreui/vue';
+import { CDropdown, CDropdownItem } from '@coreui/vue';
 import { mapGetters } from 'vuex';
+import artistImageInput from '@/mixins/artistImageInput';
 
 export default {
     name: 'ArtworkCreateModal',
+    mixins: [artistImageInput],
     components: {
         CDropdown,
-        CDropdownMenu,
         CDropdownItem
     },
     props: {
@@ -556,21 +559,22 @@ export default {
             return this.isEditMode ? 'artwork-image-edit-upload' : 'artwork-image-create-upload';
         },
         isStepOneValid() {
-            const dimensionsValid = this.form.width !== '' &&
-                                    this.form.height !== '' &&
-                                    (!this.is3D || this.form.depth !== '');
+            const dimensions = [this.form.width, this.form.height];
+            if (this.is3D) dimensions.push(this.form.depth);
+            const dimensionsValid = dimensions.every(value => Number.isFinite(Number(value)) && Number(value) > 0);
             return this.form.title.th.trim() !== '' &&
                    this.form.artist !== '' &&
                    this.form.category !== '' &&
                    dimensionsValid;
         },
         isFormValid() {
-            const basicValid = this.isStepOneValid &&
+            const basicValid = !this.isProcessingImage && this.isStepOneValid &&
                                this.form.title.en.trim() !== '' &&
                                this.imagePreview !== null;
             
             if (this.isPriceVisible) {
-                return basicValid && this.form.price !== '' && parseFloat(this.form.price) >= 0;
+                return basicValid && String(this.form.price).trim() !== '' &&
+                       Number.isFinite(Number(this.form.price)) && Number(this.form.price) >= 0;
             }
             return basicValid;
         },
@@ -694,23 +698,6 @@ export default {
         },
         handleSaleStatusSelect(id) {
             this.$set(this.form.status, 'sale', id);
-        },
-        handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!file.type.match('image.*')) {
-                alert('Please select an image file');
-                return;
-            }
-
-            this.form.image = file;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.imagePreview = e.target.result;
-            };
-            reader.readAsDataURL(file);
         },
         toggleArtistDropdown() {
             // Deprecated for Artist-facing modal
@@ -1198,7 +1185,7 @@ export default {
 
 .step-heading > span {
     color: #b7791f;
-    font-family: Georgia, serif;
+    font-family: var(--app-font-family);
     font-size: 1.35rem;
     font-weight: 700;
 }

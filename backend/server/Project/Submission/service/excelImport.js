@@ -1,6 +1,7 @@
 'use strict';
 
 const ExcelJS = require('exceljs');
+const hasInvalidSubmissionDates = require('./dateValidation');
 const sharp = require('sharp');
 const fs = require('fs').promises;
 const path = require('path');
@@ -171,7 +172,7 @@ async function parseWorkbook(buffer) {
     }
     const worksheet = workbook.worksheets[0];
     if (!worksheet) throw new ExcelImportError('Workbook has no worksheet.');
-    if (worksheet.actualRowCount > MAX_WORKSHEET_ROWS) {
+    if (worksheet.rowCount > MAX_WORKSHEET_ROWS) {
         throw new ExcelImportError(`Workbook contains more than ${MAX_WORKSHEET_ROWS} rows.`);
     }
 
@@ -188,7 +189,7 @@ async function parseWorkbook(buffer) {
 
     const { imagesByRow, warnings } = await extractImages(workbook, worksheet);
     const rows = [];
-    for (let rowNumber = 2; rowNumber <= worksheet.actualRowCount; rowNumber += 1) {
+    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
         const row = worksheet.getRow(rowNumber);
         const submissionTitleTh = String(getRowValue(row, headerMap, 'SubmissionTitleThai') || '').trim();
         const submissionTitleEn = String(getRowValue(row, headerMap, 'SubmissionTitleEng') || '').trim();
@@ -228,6 +229,11 @@ async function parseWorkbook(buffer) {
 }
 
 async function resolveRows(parsed) {
+    const invalidDates = parsed.rows.filter(row => hasInvalidSubmissionDates({
+        create: { startAt: row.submissionStartDate, endAt: row.submissionEndDate },
+        assignments: [{ create: { startAt: row.assignmentStartDate, endAt: row.assignmentEndDate } }]
+    }));
+    if (invalidDates.length) throw new ExcelImportError('End dates must not precede start dates.', invalidDates.map(row => ({ code: 'INVALID_DATE_RANGE', row: row.rowNumber })));
     const studentIds = [...new Set(parsed.rows.map(row => row.studentId).filter(Boolean))];
     const [users, categories, pendingStatus] = await Promise.all([
         User.find({ studentId: { $in: studentIds } }).lean(),
@@ -281,6 +287,16 @@ async function resolveRows(parsed) {
             submissions.set(submissionKey, submission);
         }
 
+        const owner = usersByStudentId.get(row.studentId);
+        const ownerId = owner?._id.toString();
+        const hasArtwork = row.artworkTitleTh || row.artworkTitleEn;
+        if (hasArtwork && !owner) throw new ExcelImportError('ArtistStudentID is required for artwork rows.', [{code:'ARTIST_REQUIRED',row:row.rowNumber}]);
+        if (ownerId && !submission._artists.has(ownerId)) {
+            submission._artists.add(ownerId);
+            submission.artist.push(owner._id);
+        }
+        if (!row.assignmentTitleTh && !row.assignmentTitleEn && !row.assignmentStartDate && !row.assignmentEndDate && !hasArtwork) return;
+
         const assignmentKey = `${normalizeText(row.assignmentTitleEn || row.assignmentTitleTh)}|${row.assignmentStartDate?.toISOString() || ''}|${row.assignmentEndDate?.toISOString() || ''}`;
         let assignment = submission._assignments.get(assignmentKey);
         if (!assignment) {
@@ -298,13 +314,7 @@ async function resolveRows(parsed) {
             submission.assignments.push(assignment);
         }
 
-        const owner = usersByStudentId.get(row.studentId);
-        const ownerId = owner._id.toString();
-        if (!submission._artists.has(ownerId)) {
-            submission._artists.add(ownerId);
-            submission.artist.push(owner._id);
-        }
-        if (!assignment._artists.has(ownerId)) {
+        if (ownerId && !assignment._artists.has(ownerId)) {
             assignment._artists.add(ownerId);
             assignment.artist.push(owner._id);
         }
@@ -336,7 +346,7 @@ async function resolveRows(parsed) {
             assignmentCount: [...submissions.values()].reduce((sum, item) => sum + item.assignments.length, 0),
             artworkCount: [...submissions.values()].reduce((sum, item) => sum + item.assignments.reduce((inner, assignment) => inner + assignment.artworks.length, 0), 0),
             imageCount: parsed.imageCount,
-            missingImageRows: parsed.rows.filter(row => !row.image).map(row => row.rowNumber),
+            missingImageRows: parsed.rows.filter(row => (row.artworkTitleTh || row.artworkTitleEn) && !row.image).map(row => row.rowNumber),
             lowResolutionRows: parsed.warnings.filter(item => item.code === 'LOW_RESOLUTION').map(item => item.row)
         }
     };

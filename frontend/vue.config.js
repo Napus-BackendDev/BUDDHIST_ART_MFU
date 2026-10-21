@@ -29,6 +29,11 @@ if (!process.env.VUE_APP_CLIENTID) {
   }
 }
 
+if (process.env.NODE_ENV === 'production' &&
+    !/^[\w-]+\.apps\.googleusercontent\.com$/.test(String(process.env.VUE_APP_CLIENTID || '').trim())) {
+  throw new Error('Production build requires a valid VUE_APP_CLIENTID. Set it in frontend/.env.production or the build environment.')
+}
+
 module.exports = {
   lintOnSave: false,
   runtimeCompiler: true,

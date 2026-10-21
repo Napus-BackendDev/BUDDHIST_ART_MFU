@@ -83,6 +83,7 @@
                         <div class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
+                                :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 @click="$emit('view', item)"
                             >
@@ -90,6 +91,7 @@
                             </button>
                             <button 
                                 class="action-btn icon-edit mx-2" 
+                                :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 @click="$emit('edit', item)"
                             >
@@ -97,6 +99,7 @@
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
+                                :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="$emit('delete', item)"
                             >
@@ -113,6 +116,7 @@
 </template>
 
 <script>
+import { reviewCounts } from '@/utils/submissionReview'
 import moment from 'moment'
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin'
 import TablePaginationFooter from './TablePaginationFooter.vue'
@@ -213,37 +217,8 @@ export default {
             return 'N/A';
         },
         getResponStats(item) {
-            const artworks = item.artworks || [];
-            let finish = 0;
-            let pending = 0;
-            let error = 0;
-
-            artworks.forEach(a => {
-                if (!a.status) return;
-                
-                let statusVal = '';
-                if (typeof a.status === 'string') {
-                    statusVal = a.status;
-                } else if (typeof a.status === 'object') {
-                    if (a.status.title && Array.isArray(a.status.title)) {
-                        const enStatus = a.status.title.find(t => t.key === 'en');
-                        statusVal = enStatus ? enStatus.value : '';
-                    } else if (a.status.name && Array.isArray(a.status.name)) {
-                        const enStatus = a.status.name.find(t => t.key === 'en');
-                        statusVal = enStatus ? enStatus.value : '';
-                    }
-                }
-
-                if (statusVal === 'Approved' || statusVal === 'Passed') {
-                    finish++;
-                } else if (statusVal === 'Pending') {
-                    pending++;
-                } else if (statusVal === 'Rejected' || statusVal === 'Fail') {
-                    error++;
-                }
-            });
-
-            return { finish, pending, error };
+            const counts = reviewCounts(item.artworks || []);
+            return { finish: counts.approved, pending: counts.pending, error: counts.rejected };
         },
         getUniqueSubmitters(item) {
             if (!item || !item.artworks) return 0;
@@ -275,21 +250,22 @@ export default {
                 const searchMatch = !this.filters.search || 
                     title.includes(this.filters.search.toLowerCase());
                 
-                // Status logic can be refined based on dates
-                const now = moment();
-                const isClosed = item.create && item.create.endAt && moment(item.create.endAt).isBefore(now);
-                const status = isClosed ? 'Closed' : 'In Progress';
+                const status = this.getAssignmentLabel(item, 'en');
 
                 const statusMatch = this.filters.status === 'All Status' || status === this.filters.status;
 
                 let dateMatch = true;
-                if (this.filters.startDate && this.filters.endDate) {
+                if (this.filters.startDate || this.filters.endDate) {
                     const startAt = (item.create && item.create.startAt) ? item.create.startAt : null;
                     if (startAt) {
                         const assignmentDate = moment(startAt).startOf('day');
-                        const start = moment(this.filters.startDate).startOf('day');
-                        const end = moment(this.filters.endDate).endOf('day');
-                        dateMatch = assignmentDate.isBetween(start, end, null, '[]');
+                        dateMatch = assignmentDate.isValid();
+                        if (dateMatch && this.filters.startDate) {
+                            dateMatch = assignmentDate.isSameOrAfter(moment(this.filters.startDate).startOf('day'));
+                        }
+                        if (dateMatch && this.filters.endDate) {
+                            dateMatch = assignmentDate.isSameOrBefore(moment(this.filters.endDate).endOf('day'));
+                        }
                     } else {
                         dateMatch = false;
                     }

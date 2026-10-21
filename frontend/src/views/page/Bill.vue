@@ -35,7 +35,7 @@
                     class="bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
                     <h5 class="font-weight-bold mb-0">{{ $i18n.locale === 'en' ? 'Order Details' : 'รายละเอียดคำสั่งซื้อ' }}</h5>
                     <CLink href="#" class="text-danger small font-weight-bold text-decoration-none">
-                        <CIcon name="cil-cloud-download" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Download Receipt' : 'ดาวน์โหลดใบเสร็จ' }}
+                        <CIcon name="cil-cloud-download" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้' }}
                     </CLink>
                 </CCardHeader>
                 <CCardBody class="p-4">
@@ -80,10 +80,6 @@
                         <span>{{ $i18n.locale === 'en' ? 'Subtotal' : 'ยอดรวม' }}</span>
                         <span class="font-weight-bold text-dark">฿{{ formatPrice(order.subtotal) }}</span>
                     </div>
-                    <div class="d-flex justify-content-between mb-2 text-muted small">
-                        <span>{{ $i18n.locale === 'en' ? 'Shipping' : 'ค่าจัดส่ง' }}</span>
-                        <span class="font-weight-bold text-dark">฿{{ formatPrice(order.shipping) }}</span>
-                    </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                         <span class="font-weight-bold text-dark">{{ $i18n.locale === 'en' ? 'Total Paid' : 'ยอดสุทธิ' }}</span>
@@ -100,7 +96,7 @@
                 </CButton>
                 <CButton color="white" class="px-4 py-2 font-weight-bold shadow-sm border"
                     style="color: #2c3e50; min-width: 150px;" @click="downloadBilling">
-                    <CIcon name="cil-cloud-download" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Download Billing' : 'ดาวน์โหลดใบเสร็จ' }}
+                    <CIcon name="cil-cloud-download" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้' }}
                 </CButton>
             </div>
 
@@ -111,6 +107,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import i18nMixin from '@/mixins/i18nMixin';
+import { orderAmounts } from '@/utils/orderAmounts';
 
 export default {
     name: 'Bill',
@@ -118,7 +115,8 @@ export default {
     computed: {
         ...mapGetters('cart', ['lastOrder']),
         order() {
-            return this.lastOrder || {};
+            const order = this.lastOrder || {};
+            return { ...order, ...orderAmounts({ ...order, artwork: order.items }) };
         }
     },
     methods: {

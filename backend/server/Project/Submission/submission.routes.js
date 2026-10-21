@@ -5,10 +5,12 @@ const uploadExcel = require('../../../middleware/excelUploadMiddleware');
 
 const auth = require('../../../middleware/authMiddleware');
 const admin = require('../../../middleware/adminMiddleware');
+const access = require('../../../middleware/submissionAccessMiddleware');
+const work = require('./service/work');
 const submissionService = require("./service/submission");
 const { onImage } = require('./service/image');
 
-router.get('/image/:artworkId', onImage);
+router.get('/image/:artworkId', auth.optional, onImage);
 
 router.post("/import-excel", admin, (req, res, next) => {
     uploadExcel(req, res, err => {
@@ -17,10 +19,10 @@ router.post("/import-excel", admin, (req, res, next) => {
     });
 }, submissionService.onImportExcel);
 router.post("/upload", auth, uploadImage("submission", "image", false, 1), submissionService.onUpload);
-router.get("", submissionService.onQuerys);
-router.post("/explore", auth, submissionService.onQuery);
-router.post("", auth, submissionService.onCreate);
-router.put("", auth, submissionService.onUpdate);
-router.delete("", auth, submissionService.onDelete);
+router.get("", auth.optional, submissionService.onQuerys);
+router.post("/explore", auth, access.explore, submissionService.onQuery);
+router.post("", admin, submissionService.onCreate);
+router.put("", auth, (req,res,next)=>access.isAdmin(req) ? submissionService.onUpdate(req,res,next) : work.onUpdate(req,res,next));
+router.delete("", admin, submissionService.onDelete);
 
 module.exports = router;

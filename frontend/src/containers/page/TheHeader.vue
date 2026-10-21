@@ -14,24 +14,26 @@
             <CHeaderNav class="ml-auto d-flex align-items-center">
                 <!-- User Login Icon / Dropdown (Top Right) -->
                 <CHeaderNavItem class="px-3" v-if="!isLoggedIn">
-                    <div class="user-login-trigger text-dark d-flex align-items-center" @click="openLoginModal" style="cursor: pointer;">
+                    <button type="button" class="user-login-trigger text-dark d-flex align-items-center border-0 bg-transparent p-0" :aria-label="$i18n.locale === 'en' ? 'Sign in' : 'เข้าสู่ระบบ'" @click="openLoginModal">
                         <CIcon name="cil-user" size="xl" />
-                    </div>
+                    </button>
                 </CHeaderNavItem>
                 <CDropdown
                     v-else
+                    :show.sync="accountMenu"
+                    @keydown.esc.native.stop.prevent="closeAccountMenu"
                     inNav
                     class="c-header-nav-items px-3"
                     placement="bottom-end"
                     add-menu-classes="pt-0 mt-2 shadow-sm rounded-lg premium-dropdown-menu"
                 >
                     <template #toggler>
-                        <CHeaderNavLink class="px-0">
+                        <button ref="accountMenuTrigger" type="button" class="user-login-trigger text-dark border-0 bg-transparent p-0" :aria-label="$i18n.locale === 'en' ? 'Account menu' : 'เมนูบัญชี'" aria-haspopup="true" :aria-expanded="String(accountMenu)">
                             <div class="user-login-trigger text-dark d-flex align-items-center" style="cursor: pointer;">
-                                <img v-if="userImage" :src="userImage" class="rounded-circle border" style="width: 35px; height: 35px; object-fit: cover;" />
+                                <img v-if="userImage" :src="userImage" alt="" class="rounded-circle border" style="width: 35px; height: 35px; object-fit: cover;" />
                                 <CIcon v-else name="cil-user" size="xl" />
                             </div>
-                        </CHeaderNavLink>
+                        </button>
                     </template>
 
                     <!-- User Role Links -->
@@ -60,26 +62,28 @@
                 </CDropdown>
 
                 <CHeaderNavItem class="px-3 border-right language-switcher d-md-down-none">
-                    <div class="d-flex align-items-center text-dark" style="cursor: pointer;" @click="toggleLang">
+                    <button type="button" class="d-flex align-items-center text-dark border-0 bg-transparent p-0" :aria-label="$i18n.locale === 'th' ? 'Switch to English' : 'เปลี่ยนเป็นภาษาไทย'" @click="toggleLang">
                         <CIcon name="cil-globe-alt" size="lg" class="mr-2" />
                         <span class="font-weight-bold">{{ $i18n.locale === 'th' ? 'EN' : 'TH' }}</span>
-                    </div>
+                    </button>
                 </CHeaderNavItem>
                 
                 <CHeaderNavItem class="px-3">
-                    <div class="position-relative cart-trigger text-dark" style="cursor: pointer;" @click="setShowCart(true)">
+                    <button ref="cartTrigger" type="button" class="position-relative cart-trigger text-dark border-0 bg-transparent p-0" :aria-label="$i18n.locale === 'en' ? 'Open cart' : 'เปิดตะกร้าสินค้า'" :aria-expanded="String(isCartOpen)" aria-controls="shopping-cart-panel" @click="setShowCart(true)">
                         <CIcon name="cil-basket" size="xl" />
                         <span v-if="cartCount > 0" class="badge badge-pill badge-danger cart-count-badge">
                             {{ cartCount }}
                         </span>
-                    </div>
+                    </button>
                 </CHeaderNavItem>
 
                 <CHeaderNavItem class="px-2 d-lg-none">
                     <CToggler
+                        ref="navigationTrigger"
                         in-header
                         :aria-label="$i18n.locale === 'en' ? 'Open navigation menu' : 'เปิดเมนูนำทาง'"
                         :aria-expanded="String(mobileMenu)"
+                        aria-controls="mobile-navigation-panel"
                         @click="mobileMenu = !mobileMenu"
                     >
                         <CIcon name="cil-menu" size="xl" class="text-dark" />
@@ -117,14 +121,19 @@
         <!-- Mobile Navigation Overlay (Moved outside for cleaner DOM but stays in component) -->
         <transition name="fade">
             <div v-if="mobileMenu" class="mobile-nav-overlay d-lg-none" @click="mobileMenu = false">
-                <div class="mobile-menu-content bg-white p-4 h-100" @click.stop>
+                <div id="mobile-navigation-panel" ref="navigationPanel" role="dialog" aria-modal="true" aria-labelledby="mobile-navigation-title" tabindex="-1" class="mobile-menu-content bg-white p-4 h-100" @click.stop @keydown="handleDrawerKeydown($event, 'navigation')">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="m-0 font-weight-bold">Menu</h5>
-                        <button type="button" class="close" @click="mobileMenu = false">
+                        <h5 id="mobile-navigation-title" class="m-0 font-weight-bold">{{ $i18n.locale === 'en' ? 'Menu' : 'เมนู' }}</h5>
+                        <button type="button" class="close" :aria-label="$i18n.locale === 'en' ? 'Close navigation menu' : 'ปิดเมนูนำทาง'" @click="mobileMenu = false">
                             <CIcon name="cil-x" size="lg" />
                         </button>
                     </div>
                     <ul class="list-unstyled">
+                        <li class="mb-4">
+                            <button type="button" class="text-dark h5 p-0 border-0 bg-transparent" @click="toggleLang">
+                                {{ $i18n.locale === 'th' ? 'Switch to English' : 'เปลี่ยนเป็นภาษาไทย' }}
+                            </button>
+                        </li>
                         <li class="mb-4">
                             <CHeaderNavLink to="/" exact class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.home') }}</CHeaderNavLink>
                         </li>
@@ -151,13 +160,13 @@
 
         <!-- Cart Sidebar Overlay/Content -->
         <div class="cart-backdrop" v-if="isCartOpen" @click="setShowCart(false)"></div>
-        <div class="cart-sidebar bg-white shadow-lg" :class="{ 'open': isCartOpen }">
+        <div id="shopping-cart-panel" ref="cartPanel" role="dialog" :aria-modal="isCartOpen ? 'true' : null" aria-labelledby="shopping-cart-title" tabindex="-1" class="cart-sidebar bg-white shadow-lg" :class="{ 'open': isCartOpen }" :aria-hidden="String(!isCartOpen)" :inert="isCartOpen ? null : ''" @keydown="handleDrawerKeydown($event, 'cart')">
             <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
                 <div class="d-flex align-items-center">
-                    <h5 class="font-weight-bold m-0">{{ $i18n.locale === 'en' ? 'Your Cart' : 'ตะกร้าสินค้า' }} ({{ cartCount || 0 }})</h5>
+                    <h5 id="shopping-cart-title" class="font-weight-bold m-0">{{ $i18n.locale === 'en' ? 'Your Cart' : 'ตะกร้าสินค้า' }} ({{ cartCount || 0 }})</h5>
                     <CIcon v-if="isSyncing" name="cil-reload" size="sm" class="ml-2 text-muted spinner-animation" />
                 </div>
-                <button type="button" class="close" @click="setShowCart(false)" style="outline: none;">
+                <button type="button" class="close" :aria-label="$i18n.locale === 'en' ? 'Close cart' : 'ปิดตะกร้าสินค้า'" @click="setShowCart(false)">
                     <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span>
                 </button>
             </div>
@@ -207,7 +216,7 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <CButton size="sm" color="link" class="text-danger" @click="removeFromCart(item._id)">
+                            <CButton size="sm" color="link" class="text-danger" :aria-label="($i18n.locale === 'en' ? 'Remove from cart: ' : 'นำออกจากตะกร้า: ') + getName($i18n.locale, item.title)" @click="removeFromCart(item._id)">
                                 <CIcon name="cil-trash" />
                             </CButton>
                         </div>
@@ -245,6 +254,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
+import { trapFocusTab } from '@/utils/modalKeyboard';
 
 export default {
     name: 'TheHeaderUser',
@@ -253,6 +263,7 @@ export default {
     data() {
         return {
             mobileMenu: false,
+            accountMenu: false,
             isLoggedIn: false,
             userRole: '',
             userImage: '',
@@ -280,6 +291,19 @@ export default {
         }
     },
     watch: {
+        cartItems() {
+            this.$nextTick(() => {
+                const panel = this.$refs.cartPanel;
+                if (this.isCartOpen && panel && !panel.contains(document.activeElement)) panel.focus();
+            });
+        },
+        mobileMenu(value, previous) {
+            if (value) {
+                this.accountMenu = false;
+                if (this.isCartOpen) this.setShowCart(false);
+                this.focusDrawer('navigation');
+            } else if (previous) this.restoreDrawerTrigger('navigation');
+        },
         $route() {
             this.checkLoginStatus();
         },
@@ -288,8 +312,11 @@ export default {
         },
         isCartOpen: {
             immediate: true,
-            handler(newVal) {
+            handler(newVal, oldVal) {
                 if (newVal) {
+                    this.mobileMenu = false;
+                    this.accountMenu = false;
+                    this.focusDrawer('cart');
                     this.refreshCartStatuses();
                     // Balanced sync every 5 seconds while cart is open
                     this.syncTimer = setInterval(() => {
@@ -300,6 +327,7 @@ export default {
                         clearInterval(this.syncTimer);
                         this.syncTimer = null;
                     }
+                    if (oldVal) this.restoreDrawerTrigger('cart');
                 }
             }
         }
@@ -307,7 +335,38 @@ export default {
     created() {
         this.checkLoginStatus();
     },
+    beforeDestroy() {
+        if (this.syncTimer) clearInterval(this.syncTimer);
+    },
     methods: {
+        focusDrawer(kind) {
+            this.$nextTick(() => {
+                if (kind === 'cart' ? !this.isCartOpen : !this.mobileMenu) return;
+                const panel = this.$refs[`${kind}Panel`];
+                if (panel) panel.focus();
+            });
+        },
+        restoreDrawerTrigger(kind) {
+            this.$nextTick(() => {
+                if (this.isCartOpen || this.mobileMenu) return;
+                const ref = this.$refs[`${kind}Trigger`];
+                const trigger = ref && (ref.$el || ref);
+                if (trigger && trigger.isConnected) trigger.focus();
+            });
+        },
+        handleDrawerKeydown(event, kind) {
+            if (event.key === 'Tab') trapFocusTab(event, this.$refs[`${kind}Panel`]);
+            else if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                if (kind === 'cart') this.setShowCart(false);
+                else this.mobileMenu = false;
+            }
+        },
+        closeAccountMenu() {
+            this.accountMenu = false;
+            this.$nextTick(() => this.$refs.accountMenuTrigger && this.$refs.accountMenuTrigger.focus());
+        },
         ...mapActions('cart', ['removeFromCart', 'setShowCart', 'addToCart']),
         async refreshCartStatuses(silent = false) {
             if (!this.cartItems || this.cartItems.length === 0) return;
@@ -363,12 +422,13 @@ export default {
                     this.userRole = (objs.role || 'customer').toLowerCase();
                     const userId = objs.accounts;
                     if (userId) {
-                        const users = await this.$store.dispatch('user/get', {});
-                        const currentUser = users ? users.find(u => u._id === userId) : null;
-                        if (currentUser && currentUser.image) {
-                            this.userImage = currentUser.image;
-                        } else {
-                            this.userImage = '';
+                        try {
+                            const users = await this.$store.dispatch('user/get', {});
+                            const currentUser = users ? users.find(u => u._id === userId) : null;
+                            this.userImage = currentUser && currentUser.image || '';
+                        } catch (error) {
+                            // Profile loading does not determine whether a saved session exists.
+                            // Authentication failures remain enforced by the API interceptor.
                         }
                     } else {
                         this.userImage = '';
@@ -397,16 +457,17 @@ export default {
                     message: this.$i18n.locale === 'en' ? 'Please login before checking out' : 'กรุณาเข้าสู่ระบบก่อนสั่งซื้อสินค้า',
                     variant: 'warning'
                 });
+                this.$store.commit('auth/postLoginContext', { redirect: '/payment', reopenCart: false });
                 this.openLoginModal();
                 this.setShowCart(false);
                 return;
             }
-            this.$router.push('/payment');
+            this.handleNavigateTo('/payment');
             this.setShowCart(false);
         },
         startShopping() {
             this.setShowCart(false);
-            this.$router.push('/artworks');
+            this.handleNavigateTo('/artworks');
         },
         formatPrice(value) {
             if (value === undefined || value === null) return '0';
@@ -423,8 +484,8 @@ export default {
         },
         handleNavigateTo(path) {
             if (this.$route.path !== path) {
-                this.$router.push(path).catch(err => {
-                    if (err.name !== 'NavigationDuplicated') {
+                return this.$router.push(path).catch(err => {
+                    if (err && err.name !== 'NavigationDuplicated') {
                         throw err;
                     }
                 });

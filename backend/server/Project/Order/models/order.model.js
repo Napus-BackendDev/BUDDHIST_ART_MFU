@@ -19,6 +19,12 @@ var objsSchema = new Schema({
     trackingId: { type: String, default: "" },
     deliveryDate: { type: Date, default: null },
     artwork: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artwork', default: null }],
+    amounts: { type: new Schema({
+        subtotal: { type: Number, required: true, min: 0 },
+        shipping: { type: Number, required: true, min: 0 },
+        total: { type: Number, required: true, min: 0 },
+        items: [{ artwork: { type: Schema.Types.ObjectId, ref: 'Artwork' }, price: { type: Number, min: 0 } }]
+    }, { _id: false }), default: null },
     artworkReferences: [{
         artwork: { type: mongoose.Schema.Types.ObjectId, ref: 'Artwork', required: true },
         artworkCode: { type: String, required: true, index: true }

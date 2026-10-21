@@ -16,13 +16,18 @@
             <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Order ID' : 'รหัสคำสั่งซื้อ' }}: #{{ displayOrderId }} · {{ dateDisplay }}</p>
           </div>
         </div>
-        <button class="close-btn" @click="localShow = false">
+        <button type="button" class="close-btn" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="localShow = false">
           <CIcon name="cil-x" size="sm" />
         </button>
       </div>
     </template>
 
     <div class="wizard-body px-3 py-2" v-if="order">
+      <div v-if="isRejected" class="alert alert-danger mb-3" role="status">
+        <strong>{{ $i18n.locale === 'en' ? 'Order rejected' : 'คำสั่งซื้อถูกปฏิเสธ' }}</strong>
+        <p v-if="order.remark" class="mb-1 rejection-reason">{{ order.remark }}</p>
+        <span>{{ $i18n.locale === 'en' ? 'This reservation has ended. Check availability before placing a new order, or contact our team.' : 'การจองนี้สิ้นสุดแล้ว โปรดตรวจสอบว่าผลงานยังพร้อมขายก่อนทำรายการจองใหม่ หรือติดต่อทีมงาน' }}</span>
+      </div>
       <div class="wizard-content-grid">
         <!-- Left Column: Customer & Order Information -->
         <div class="wizard-form-column">
@@ -118,7 +123,7 @@
                     </div>
                   </div>
                   <div class="text-right flex-shrink-0">
-                    <span class="font-weight-bold text-primary h6 mb-0">฿ {{ formatPrice(art.price) }}</span>
+                    <span class="font-weight-bold text-primary h6 mb-0">฿ {{ formatPrice(orderLinePrice(order, art)) }}</span>
                   </div>
                 </div>
               </div>
@@ -186,6 +191,11 @@
             </CRow>
           </div>
 
+          <div v-if="order.trackingId" class="form-group-custom">
+            <label class="form-label">{{ $i18n.locale === 'en' ? 'Delivery information' : 'ข้อมูลจัดส่ง' }}</label>
+            <div class="custom-display-box bg-white">{{ order.carrier }} · {{ order.trackingId }}</div>
+          </div>
+
           <!-- Documents Downloads & Total Amount -->
           <div class="storage-location-row">
             <!-- Documents Download Buttons -->
@@ -198,21 +208,22 @@
                   class="doc-pill-btn" 
                   :disabled="!hasReceipt"
                   @click="downloadReceipt"
-                  :title="hasReceipt ? ($i18n.locale === 'en' ? 'View Payment Receipt/Slip' : 'ดูใบเสร็จ/สลิปโอนเงิน') : ($i18n.locale === 'en' ? 'No slip uploaded' : 'ยังไม่มีสลิปการโอน')"
+                  :title="hasReceipt ? ($i18n.locale === 'en' ? 'View Payment Receipt/Slip' : 'ดูใบเสร็จ/หลักฐานการโอนเงิน') : ($i18n.locale === 'en' ? 'No slip uploaded' : 'ยังไม่มีหลักฐานการโอนเงิน')"
                 >
                   <CIcon name="cil-file" class="mr-2 doc-icon" />
-                  <span>{{ $i18n.locale === 'en' ? 'Receipt' : 'ใบเสร็จ (สลิป)' }}</span>
+                  <span>{{ $i18n.locale === 'en' ? 'Receipt' : 'ใบเสร็จ (หลักฐานการโอนเงิน)' }}</span>
                 </button>
 
                 <!-- Certificate -->
                 <button 
                   type="button" 
                   class="doc-pill-btn" 
-                  :disabled="!isCertificateAvailable"
+                  :disabled="!isCertificateAvailable || downloading === 'certificate'"
                   @click="downloadCertificate"
                   :title="isCertificateAvailable ? ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน') : ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ')"
                 >
-                  <CIcon name="cil-description" class="mr-2 doc-icon" />
+                  <CSpinner v-if="downloading === 'certificate'" size="sm" class="mr-2" />
+                  <CIcon v-else name="cil-description" class="mr-2 doc-icon" />
                   <span>{{ $i18n.locale === 'en' ? 'Certificate' : 'ใบรับรอง' }}</span>
                 </button>
 
@@ -220,10 +231,12 @@
                 <button 
                   type="button" 
                   class="doc-pill-btn" 
+                  :disabled="downloading === 'invoice'"
                   @click="downloadInvoice"
                   :title="$i18n.locale === 'en' ? 'Download Invoice PDF' : 'ดาวน์โหลดใบแจ้งหนี้ PDF'"
                 >
-                  <CIcon name="cil-cloud-download" class="mr-2 doc-icon" />
+                  <CSpinner v-if="downloading === 'invoice'" size="sm" class="mr-2" />
+                  <CIcon v-else name="cil-cloud-download" class="mr-2 doc-icon" />
                   <span>{{ $i18n.locale === 'en' ? 'Invoice' : 'ใบแจ้งหนี้' }}</span>
                 </button>
               </div>
@@ -233,7 +246,7 @@
             <div class="form-group-custom mt-3">
               <label class="form-label">{{ $i18n.locale === 'en' ? 'Total Amount' : 'ยอดรวมทั้งสิ้น' }}</label>
               <div class="custom-display-box bg-white total-amount-box justify-content-between">
-                <span class="text-muted font-weight-500">{{ $i18n.locale === 'en' ? 'Total Price' : 'ราคารวม' }}</span>
+                  <span class="text-muted font-weight-500">{{ $i18n.locale === 'en' ? 'Total Price' : 'ราคารวม' }}</span>
                 <div class="d-flex align-items-center">
                   <span class="currency-prefix">฿</span>
                   <span class="font-weight-bold text-primary h4 mb-0">{{ formatPrice(totalAmount) }}</span>
@@ -266,6 +279,7 @@
 </template>
 
 <script>
+import { orderAmounts, orderLinePrice } from '@/utils/orderAmounts'
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import Service from '@/service/api';
 
@@ -281,6 +295,11 @@ export default {
       type: Object,
       default: () => null
     }
+  },
+  data() {
+    return {
+      downloading: null
+    };
   },
   computed: {
     localShow: {
@@ -313,7 +332,7 @@ export default {
     },
     totalAmount() {
       if (!this.order) return 0;
-      return this.order.totalAmount || this.order.total || 0;
+      return orderAmounts(this.order).total;
     },
     hasReceipt() {
       return !!(this.order && (this.order.image || this.order.slip));
@@ -325,12 +344,17 @@ export default {
       }
       return this.order.image || null;
     },
+    isRejected() {
+      const status = String(this.getName('en', this.order?.status) || this.order?.statusName || '').toLowerCase();
+      return /rejected|fail|ไม่อนุมัติ|ปฏิเสธ/.test(status);
+    },
     isCertificateAvailable() {
       const status = String(this.order && this.order.statusName || '').toLowerCase();
       return status.includes('approved') || status.includes('success') || status.includes('delivered') || status.includes('เสร็จสิ้น');
     }
   },
   methods: {
+    orderLinePrice,
     formatPrice(value) {
       if (value === undefined || value === null) return '0.00';
       const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
@@ -366,7 +390,7 @@ export default {
     getStatusTextColor(statusName) {
       const s = String(statusName || '').toLowerCase();
       if (s.includes('approved') || s.includes('success') || s.includes('delivered') || s.includes('เสร็จสิ้น')) return 'text-success';
-      if (s.includes('reject') || s.includes('cancel') || s.includes('ยกเลิก')) return 'text-danger';
+      if (s.includes('reject') || s.includes('cancel') || s.includes('ยกเลิก') || s.includes('ไม่อนุมัติ') || s.includes('ปฏิเสธ')) return 'text-danger';
       return 'text-warning';
     },
     downloadReceipt() {
@@ -376,7 +400,8 @@ export default {
       }
     },
     async downloadInvoice() {
-      if (!this.order || !this.order._id) return;
+      if (!this.order || !this.order._id || this.downloading) return;
+      this.downloading = 'invoice';
       try {
         const response = await this.$store.dispatch('order/getInvoice', this.order._id);
         const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
@@ -389,11 +414,13 @@ export default {
         window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Download Invoice Error:', error);
+      } finally {
+        this.downloading = null;
       }
     },
     async downloadCertificate() {
-      if (!this.order || !this.order._id || !this.isCertificateAvailable) return;
-
+      if (!this.order || !this.order._id || !this.isCertificateAvailable || this.downloading) return;
+      this.downloading = 'certificate';
       try {
         const response = await Service.order('certificate', this.order._id);
         const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
@@ -406,6 +433,8 @@ export default {
         window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Download Certificate Error:', error);
+      } finally {
+        this.downloading = null;
       }
     }
   }
@@ -506,7 +535,7 @@ export default {
 
 .step-heading > span {
   color: #b7791f;
-  font-family: Georgia, serif;
+  font-family: var(--app-font-family);
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.08em;

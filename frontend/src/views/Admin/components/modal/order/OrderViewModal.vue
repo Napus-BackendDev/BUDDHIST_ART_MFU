@@ -24,6 +24,9 @@
         </template>
 
         <div class="wizard-body px-3 py-2" v-if="order">
+            <p v-if="requestedDocument" class="alert alert-info" role="status">
+                {{ $i18n.locale === 'en' ? 'Use the Invoice or Certificate button below to download the document. Downloads remain subject to your access permissions.' : 'กดปุ่มใบแจ้งหนี้หรือใบรับรองด้านล่างเพื่อดาวน์โหลดเอกสาร ตามสิทธิ์การเข้าถึงของคุณ' }}
+            </p>
             <div class="wizard-content-grid">
                 <!-- Left Column: Customer & Order Information -->
                 <div class="wizard-form-column">
@@ -119,7 +122,7 @@
                                         </div>
                                     </div>
                                     <div class="text-right flex-shrink-0">
-                                        <span class="font-weight-bold text-primary h6 mb-0">฿ {{ formatPrice(art.price) }}</span>
+                                        <span class="font-weight-bold text-primary h6 mb-0">฿ {{ formatPrice(orderLinePrice(order, art)) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -202,7 +205,7 @@
                                     :title="order.image ? ($i18n.locale === 'en' ? 'View Payment Slip' : 'ดูหลักฐานการชำระเงิน') : ($i18n.locale === 'en' ? 'No slip uploaded' : 'ไม่มีหลักฐานการชำระเงิน')"
                                 >
                                     <CIcon name="cil-file" class="mr-2 doc-icon" />
-                                    <span>{{ $i18n.locale === 'en' ? 'Receipt' : 'ใบเสร็จ (สลิป)' }}</span>
+                                    <span>{{ $i18n.locale === 'en' ? 'Receipt' : 'ใบเสร็จ (หลักฐานการโอนเงิน)' }}</span>
                                 </button>
 
                                 <!-- Certificate -->
@@ -210,8 +213,8 @@
                                     type="button" 
                                     class="doc-pill-btn" 
                                     @click="downloadCertificate"
-                                    :disabled="!!downloading"
-                                    :title="$i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน'"
+                                    :disabled="!isCertificateAvailable || !!downloading"
+                                    :title="isCertificateAvailable ? ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน') : ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ')"
                                 >
                                     <CSpinner v-if="downloading === 'certificate'" size="sm" class="mr-2" />
                                     <CIcon v-else name="cil-description" class="mr-2 doc-icon" />
@@ -270,12 +273,14 @@
 </template>
 
 <script>
+import { orderAmounts, orderLinePrice } from '@/utils/orderAmounts'
 import moment from 'moment';
 import Service from '@/service/api';
 
 export default {
     name: 'OrderViewModal',
     props: {
+        requestedDocument: { type: String, default: '' },
         show: {
             type: Boolean,
             default: false
@@ -291,6 +296,10 @@ export default {
         };
     },
     computed: {
+        isCertificateAvailable() {
+            const title = this.order && this.order.status && this.order.status.title;
+            return Array.isArray(title) && title.some(item => item.value === 'Approved' || item.value === 'อนุมัติ');
+        },
         displayOrderId() {
             if (!this.order) return '';
             return this.order.orderNumber || (this.order._id ? this.order._id.substring(this.order._id.length - 8).toUpperCase() : '');
@@ -303,12 +312,12 @@ export default {
             return this.order.image || null;
         },
         totalAmount() {
-            if (!this.order || !this.order.artwork) return '0.00';
-            const total = this.order.artwork.reduce((sum, art) => sum + (parseFloat(art.price) || 0), 0);
+            const total = orderAmounts(this.order).total;
             return this.formatPrice(total);
         }
     },
     methods: {
+    orderLinePrice,
         getName(lang, item) {
             if (!item) return '';
             if (typeof item === 'string') return item;
@@ -377,7 +386,7 @@ export default {
             }
         },
         async downloadCertificate() {
-            if (!this.order || !this.order._id) return;
+            if (!this.order || !this.order._id || !this.isCertificateAvailable) return;
             if (this.downloading) return;
             this.downloading = 'certificate';
             try {
@@ -497,7 +506,7 @@ export default {
 
 .step-heading > span {
     color: #b7791f;
-    font-family: Georgia, serif;
+    font-family: var(--app-font-family);
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: 0.08em;

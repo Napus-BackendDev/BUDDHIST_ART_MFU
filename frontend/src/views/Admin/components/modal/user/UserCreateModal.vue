@@ -28,8 +28,9 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Student ID / Username' : 'รหัสนักศึกษา / ชื่อผู้ใช้' }}</label>
+                        <label for="user-create-id" class="form-label">{{ $i18n.locale === 'en' ? 'Student ID / Username' : 'รหัสนักศึกษา / ชื่อผู้ใช้' }}</label>
                         <CInput 
+                            id="user-create-id"
                             v-model="form.studentId" 
                             placeholder="e.g. 66xxxxxxxx" 
                             class="custom-input mb-0"
@@ -49,11 +50,11 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                            <div class="w-100 shadow-sm border-0 mt-1">
                                 <CDropdownItem v-for="r in roleOptions" :key="r._id" @click="handleRoleSelect(r)">
                                     {{ r.name }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -70,11 +71,11 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                            <div class="w-100 shadow-sm border-0 mt-1">
                                 <CDropdownItem v-for="s in statuses" :key="s._id" @click="handleStatusSelect(s)">
                                     {{ s.name }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -84,8 +85,9 @@
             <CRow>
                 <CCol :md="form.roleNameEn === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
+                        <label for="user-create-name-th" class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
                         <CInput 
+                            id="user-create-name-th"
                             v-model="form.nameTh" 
                             placeholder="ภาษาไทย" 
                             class="custom-input mb-0"
@@ -94,8 +96,9 @@
                 </CCol>
                 <CCol md="6" v-if="form.roleNameEn !== 'Customer'">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
+                        <label for="user-create-name-en" class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
                         <CInput 
+                            id="user-create-name-en"
                             v-model="form.nameEn" 
                             placeholder="English name" 
                             class="custom-input mb-0"
@@ -108,8 +111,9 @@
             <CRow>
                 <CCol md="6" v-if="form.roleNameEn !== 'Customer'">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Official Email' : 'อีเมลทางการ' }}</label>
+                        <label for="user-create-email" class="form-label">{{ $i18n.locale === 'en' ? 'Official Email' : 'อีเมลทางการ' }}</label>
                         <CInput
+                            id="user-create-email"
                             v-if="!isArtist"
                             v-model="form.email" 
                             type="email" 
@@ -118,6 +122,7 @@
                         />
                         <CInput
                             v-else
+                            id="user-create-email"
                             :value="officialEmail"
                             type="email"
                             readonly
@@ -132,8 +137,9 @@
                 </CCol>
                 <CCol :md="form.roleNameEn === 'Customer' ? '12' : '6'">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
+                        <label for="user-create-personal-email" class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
                         <CInput 
+                            id="user-create-personal-email"
                             v-model="form.personalEmail" 
                             type="email" 
                             placeholder="personal@gmail.com" 
@@ -147,25 +153,16 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
+                        <label for="user-create-telephone" class="form-label">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
                         <CInput 
+                            id="user-create-telephone"
                             v-model="form.telephone" 
                             placeholder="08x-xxx-xxxx" 
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
-                <CCol md="6">
-                    <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Temporary Password' : 'รหัสผ่านชั่วคราว' }}</label>
-                        <CInput 
-                            v-model="form.password" 
-                            type="password" 
-                            :placeholder="$i18n.locale === 'en' ? 'Enter password' : 'กรอกรหัสผ่าน'"
-                            class="custom-input mb-0"
-                        />
-                    </div>
-                </CCol>
+
             </CRow>
         </div>
 
@@ -232,12 +229,14 @@ export default {
                 nameEn: '',
                 email: '',
                 personalEmail: '',
-                telephone: '',
-                password: ''
+                telephone: ''
             }
         }
     },
     computed: {
+        isCustomer() {
+            return String(this.form.roleNameEn).toLowerCase() === 'customer';
+        },
         roleOptions() {
             return dedupeRoles(this.roles);
         },
@@ -250,11 +249,19 @@ export default {
                 : this.form.email;
         },
         isFormValid() {
-            const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.officialEmail && this.form.password;
+            const name = this.isCustomer ? this.form.nameTh : this.form.nameEn;
+            const email = this.isCustomer ? this.form.personalEmail : this.officialEmail;
+            const baseValid = String(this.form.studentId).trim() && this.form.roleId &&
+                String(name || '').trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
             if (this.isArtist) {
                 return baseValid && this.form.statusId;
             }
             return baseValid;
+        }
+    },
+    watch: {
+        show(value) {
+            if (!value) this.resetForm();
         }
     },
     methods: {
@@ -291,19 +298,17 @@ export default {
                 role: this.form.roleId,
                 name: [
                     { key: 'th', value: this.form.nameTh },
-                    { key: 'en', value: this.form.nameEn }
+                    { key: 'en', value: this.isCustomer ? this.form.nameTh : this.form.nameEn }
                 ],
                 contact: {
-                    studentEmail: this.officialEmail,
+                    ...(this.isCustomer ? {} : { studentEmail: this.officialEmail }),
                     personalEmail: this.form.personalEmail,
                     telephone: this.form.telephone
                 },
-                status: this.form.statusId || null,
-                password: this.form.password
+                status: this.form.statusId || null
             };
 
             this.$emit('save', payload);
-            this.resetForm();
         },
         resetForm() {
             this.form = {
@@ -318,8 +323,7 @@ export default {
                 nameEn: '',
                 email: '',
                 personalEmail: '',
-                telephone: '',
-                password: ''
+                telephone: ''
             };
         }
     }

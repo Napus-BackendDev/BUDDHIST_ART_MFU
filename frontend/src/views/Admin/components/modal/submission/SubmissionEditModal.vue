@@ -17,20 +17,21 @@
                         <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Update the details and assignments for this submission portal.' : 'อัปเดตรายละเอียดและใบงานสำหรับช่องทางส่งงานนี้' }}</p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
+                <button type="button" :disabled="saving" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" class="close-btn" @click="$emit('update:show', false)">
                     <CIcon name="cil-x" size="sm" />
                 </button>
             </div>
         </template>
 
         <div class="px-3 py-2">
+            <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
             <!-- Basic Info Row -->
             <CRow>
                 <CCol md="8">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Submission Title' : 'หัวข้อหลักการส่งงาน' }}</label>
+                        <label for="submission-edit-title" class="form-label">{{ $i18n.locale === 'en' ? 'Submission Title' : 'หัวข้อหลักการส่งงาน' }}</label>
                         <CInput 
-                            v-model="form.title" 
+                            id="submission-edit-title" v-model="form.title"
                             :placeholder="$i18n.locale === 'en' ? 'e.g. Midterm Art Project 2024' : 'เช่น โครงการศิลปะกลางภาค 2568'" 
                             class="custom-input mb-0"
                         />
@@ -38,9 +39,9 @@
                 </CCol>
                 <CCol md="4">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Course Level' : 'ระดับหลักสูตร' }}</label>
+                        <label for="submission-edit-courseLevel" class="form-label">{{ $i18n.locale === 'en' ? 'Course Level' : 'ระดับหลักสูตร' }}</label>
                         <CInput
-                            v-model="form.courseLevel"
+                            id="submission-edit-courseLevel" v-model="form.courseLevel"
                             placeholder="01"
                             class="custom-input mb-0"
                         />
@@ -52,9 +53,9 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Start Date' : 'วันที่เริ่มรับงาน' }}</label>
+                        <label for="submission-edit-startDate" class="form-label">{{ $i18n.locale === 'en' ? 'Start Date' : 'วันที่เริ่มรับงาน' }}</label>
                         <CInput 
-                            v-model="form.startDate" 
+                            id="submission-edit-startDate" v-model="form.startDate"
                             :type="form.startDate ? 'date' : 'text'"
                             placeholder="วัน/เดือน/ปี"
                             lang="en-GB"
@@ -66,9 +67,9 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Due Date (Deadline)' : 'วันที่สิ้นสุด (กำหนดส่ง)' }}</label>
+                        <label for="submission-edit-dueDate" class="form-label">{{ $i18n.locale === 'en' ? 'Due Date (Deadline)' : 'วันที่สิ้นสุด (กำหนดส่ง)' }}</label>
                         <CInput 
-                            v-model="form.dueDate" 
+                            id="submission-edit-dueDate" v-model="form.dueDate"
                             :type="form.dueDate ? 'date' : 'text'"
                             placeholder="วัน/เดือน/ปี"
                             lang="en-GB"
@@ -123,7 +124,7 @@
                                     {{ getInitials(getStudentName(student)) }}
                                 </div>
                                 <span class="tag-name mr-2 text-truncate">{{ getStudentName(student) }}</span>
-                                <button class="btn-remove-tag" @click="toggleStudent(student)">
+                                <button type="button" :aria-label="($i18n.locale === 'en' ? 'Remove learner: ' : 'นำผู้เรียนออก: ') + getStudentName(student)" class="btn-remove-tag" @click="toggleStudent(student)">
                                     <CIcon name="cil-x" size="custom-sm" />
                                 </button>
                             </div>
@@ -136,23 +137,23 @@
             <div class="student-selection-wrapper mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <label class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Select Students to Enroll' : 'เลือกนักศึกษาลงทะเบียน' }}</label>
-                    <div class="select-all-toggle" @click="toggleSelectAll">
+                    <button type="button" class="select-all-toggle" @click="toggleSelectAll">
                         <span class="text-orange small font-weight-bold pointer">{{ allSelected ? ($i18n.locale === 'en' ? 'Deselect All' : 'ยกเลิกเลือกทั้งหมด') : ($i18n.locale === 'en' ? 'Select All' : 'เลือกทั้งหมด') }}</span>
-                    </div>
+                    </button>
                 </div>
                 
                 <div class="search-box-orange mb-3">
                     <CIcon name="cil-search" class="search-icon-orange" />
                     <input 
                         type="text" 
-                        v-model="studentSearch" 
+                        v-model="studentSearch" :aria-label="$i18n.locale === 'en' ? 'Search learners' : 'ค้นหาผู้เรียน'"
                         :placeholder="$i18n.locale === 'en' ? 'Search students by name or ID...' : 'ค้นหานักศึกษาจากชื่อหรือรหัส...'"
                         class="search-input-orange"
                     />
                 </div>
 
                 <div class="student-list-container">
-                    <div 
+                    <button type="button" :aria-pressed="isSelected(student._id) ? 'true' : 'false'"
                         v-for="student in filteredStudents" 
                         :key="student._id"
                         class="student-item"
@@ -171,7 +172,7 @@
                                 <div class="student-id-text">ID: {{ student.studentId }}</div>
                             </div>
                         </div>
-                    </div>
+                    </button>
                 </div>
             </div>
 
@@ -207,7 +208,7 @@
                             <CRow>
                                 <CCol md="12" class="mb-2">
                                     <input 
-                                        v-model="assignment.title" 
+                                        v-model="assignment.title" :aria-label="($i18n.locale === 'en' ? 'Task title ' : 'หัวข้อใบงานที่ ') + (index + 1)"
                                         :placeholder="$i18n.locale === 'en' ? 'Assignment Title (e.g. Sketch 1: Perspective)' : 'หัวข้อใบงาน (เช่น ภาพร่าง 1: ทัศนียภาพ)'" 
                                         class="task-input-premium w-100"
                                     />
@@ -219,7 +220,7 @@
                                             :type="assignment.startDateTime ? 'datetime-local' : 'text'" 
                                             placeholder="วัน/เดือน/ปี --:--"
                                             lang="en-GB"
-                                            v-model="assignment.startDateTime"
+                                            v-model="assignment.startDateTime" :aria-label="($i18n.locale === 'en' ? 'Task start ' : 'วันเริ่มใบงานที่ ') + (index + 1)"
                                             @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
                                             @blur="!$event.target.value && ($event.target.type = 'text')"
                                             class="mini-date-input"
@@ -233,7 +234,7 @@
                                             :type="assignment.endDateTime ? 'datetime-local' : 'text'" 
                                             placeholder="วัน/เดือน/ปี --:--"
                                             lang="en-GB"
-                                            v-model="assignment.endDateTime"
+                                            v-model="assignment.endDateTime" :aria-label="($i18n.locale === 'en' ? 'Task deadline ' : 'กำหนดส่งใบงานที่ ') + (index + 1)"
                                             @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
                                             @blur="!$event.target.value && ($event.target.type = 'text')"
                                             class="mini-date-input"
@@ -248,6 +249,7 @@
         </div>
 
         <template #footer>
+            <p v-if="hasDateRangeError" role="alert" class="text-danger w-100">{{ $i18n.locale === 'en' ? 'End dates must not precede start dates.' : 'วันสิ้นสุดต้องไม่อยู่ก่อนวันเริ่มต้น กรุณาตรวจสอบช่วงวันที่ของ Submission และใบงาน' }}</p>
             <div class="w-100 d-flex justify-content-end align-items-center py-2">
                 <CButton 
                     variant="ghost" 
@@ -273,11 +275,13 @@
 </template>
 
 <script>
+import { hasInvalidSubmissionDates } from '@/utils/submissionDates'
 import { mapGetters } from 'vuex'
 
 export default {
     name: 'SubmissionEditModal',
     props: {
+        error: { type: String, default: '' },
         show: {
             type: Boolean,
             default: false
@@ -311,6 +315,9 @@ export default {
         }
     },
     watch: {
+        show(value) {
+            if (value && this.submissionData) { this.populateForm(this.submissionData); this.studentSearch = ''; }
+        },
         submissionData: {
             immediate: true,
             handler(newVal) {
@@ -324,7 +331,9 @@ export default {
         ...mapGetters({
             availableStudents: 'user/user'
         }),
+        hasDateRangeError() { return hasInvalidSubmissionDates(this.form); },
         isFormValid() {
+            if (hasInvalidSubmissionDates(this.form)) return false;
             const hasAssignments = this.form.assignments.length > 0 && 
                 this.form.assignments.every(a => {
                     const title = typeof a.title === 'string' ? a.title : this.getName('en', a);
@@ -481,6 +490,9 @@ export default {
 </script>
 
 <style scoped>
+.student-item { width: 100%; text-align: left; font: inherit; color: inherit; }
+.select-all-toggle { border: 0; background: transparent; font: inherit; }
+.student-item:focus-visible, .select-all-toggle:focus-visible { outline: 3px solid #321fdb; outline-offset: 2px; }
 .form-group-custom {
     margin-bottom: 1.25rem;
 }

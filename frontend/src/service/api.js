@@ -56,6 +56,18 @@ instance.interceptors.response.use(
         readRetryAt = Math.max(readRetryAt, retryAtFromHeaders(error.response.headers));
       }
       if (error.response && error.response.status === 401) {
+          const headers = error.config && error.config.headers;
+          const failedToken = headers && (typeof headers.get === 'function'
+            ? headers.get('X-Access-Token')
+            : headers['X-Access-Token'] || headers['x-access-token']);
+          let savedSession;
+          try { savedSession = JSON.parse(localStorage.getItem('objs')); } catch (e) { /* Invalid sessions are cleared below. */ }
+          if (savedSession && savedSession.xAccessToken && savedSession.xAccessToken !== failedToken) {
+            // A late response from another tab must not erase a newer login.
+            // Keep rejecting this request; never replay a write automatically.
+            store.dispatch('auth/supportReload');
+            return Promise.reject(error);
+          }
           // Clear local storage and redirect to login on unauthorized
           const currentPath = window.location.pathname + window.location.search;
           if (currentPath.startsWith('/payment')) {
@@ -75,6 +87,9 @@ instance.interceptors.response.use(
 );
 
 export default {
+    contact(data) {
+        return instance.post('/api/v1/contact', data);
+    },
 
     user(method, data, configs) {
         switch (method) {
@@ -196,6 +211,8 @@ export default {
 
     submission(method, data, configs) {
         switch (method) {
+            case 'image':
+                return instance.get(`/api/v1/submission/image/${encodeURIComponent(data)}`, { responseType: 'blob' });
             case 'get':
                 return instance.get("/api/v1/submission", { params: data });
             case 'exp':
@@ -296,10 +313,6 @@ export default {
 
     authen(method, data, configs) {
         switch (method) {
-            case 'sign-in':
-                return instance.post("/api/v1/user/auth/sign-in", data);
-            case 'dev-admin':
-                return instance.post("/api/v1/user/auth/dev-admin");
             case '2fa':
                 return instance.post("/api/v1/user/auth/2fa", data);
             case '2fa-send':
