@@ -18,7 +18,7 @@
                         <p class="text-muted small mb-0">Modify the details of this artwork.</p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
+                <button type="button" class="close-btn" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="$emit('update:show', false)">
                     <CIcon name="cil-x" size="sm" />
                 </button>
             </div>
@@ -71,7 +71,7 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                            <div class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="cat in categories" 
                                     :key="cat._id" 
@@ -79,7 +79,7 @@
                                 >
                                     {{ getName('en', cat) }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -97,7 +97,7 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                            <div class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="store in storages" 
                                     :key="store._id" 
@@ -105,7 +105,7 @@
                                 >
                                     {{ getName($i18n.locale, store) }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -187,11 +187,11 @@
                                             <CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" />
                                         </CButton>
                                     </template>
-                                    <CDropdownMenu class="border-0 shadow-lg mt-2">
+                                    <div class="border-0 shadow-lg mt-2">
                                         <CDropdownItem v-for="u in unitOptions" :key="u.en" @click="form.unit = u.en">
                                             {{ u.en }} ({{ u.th }})
                                         </CDropdownItem>
-                                    </CDropdownMenu>
+                                    </div>
                                 </CDropdown>
                             </div>
                         </div>
@@ -234,7 +234,7 @@
                                     <CIcon name="cil-filter" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                            <div class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="status in saleStatuses" 
                                     :key="status._id" 
@@ -242,7 +242,7 @@
                                 >
                                     {{ getName('en', status) }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -273,7 +273,8 @@
                                 type="file" 
                                 id="artwork-image-edit-upload" 
                                 @change="handleFileUpload" 
-                                accept="image/*"
+                                accept="image/png,image/jpeg"
+                                :disabled="isProcessingImage"
                                 class="file-input-hidden"
                             />
                             <label for="artwork-image-edit-upload" class="file-upload-label w-100">
@@ -296,6 +297,7 @@
                                 </template>
                             </label>
                         </div>
+                        <p v-if="imageError" role="alert" class="text-danger mt-2">{{ imageError }}</p>
                     </div>
                 </CCol>
             </CRow>
@@ -345,9 +347,10 @@
                     color="primary" 
                     @click="handleSave"
                     class="btn-save-artwork"
-                    :disabled="!isFormValid"
+                    :disabled="!isFormValid || loading"
                 >
-                    Save Changes
+                    <CSpinner v-if="loading" size="sm" class="mr-2" />
+                    {{ loading ? ($i18n.locale === 'en' ? 'Saving...' : 'กำลังบันทึก...') : ($i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการแก้ไข') }}
                 </CButton>
             </div>
         </template>
@@ -356,8 +359,10 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import artistImageInput from '@/mixins/artistImageInput';
 
 export default {
+    mixins: [artistImageInput],
     name: 'ArtworkEditModal',
     components: {
     },
@@ -369,6 +374,10 @@ export default {
         artwork: {
             type: Object,
             default: () => null
+        },
+        loading: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -399,7 +408,7 @@ export default {
                 image: null
             },
             unitOptions: [
-                { en: 'cm', th: 'ชม.' },
+                { en: 'cm', th: 'ซม.' },
                 { en: 'm', th: 'ม.' },
                 { en: 'inch', th: 'นิ้ว' },
                 { en: 'mm', th: 'มม.' }
@@ -430,16 +439,16 @@ export default {
             allUsers: 'user/user'
         }),
         isFormValid() {
-            const basicValid = this.form.title.en.trim() !== '' && 
+            const dimensions = [this.form.width, this.form.height, ...(this.is3D ? [this.form.depth] : [])];
+            const basicValid = !this.isProcessingImage && this.form.title.en.trim() !== '' &&
                                this.form.title.th.trim() !== '' && 
                                this.form.artist !== '' && 
-                               this.form.width !== '' &&
-                               this.form.height !== '' &&
+                               dimensions.every(value => Number.isFinite(Number(value)) && Number(value) > 0) &&
                                this.form.category !== '' && 
                                this.imagePreview !== null;
             
             if (this.isPriceVisible) {
-                return basicValid && this.form.price !== '' && parseFloat(this.form.price) >= 0;
+                return basicValid && this.form.price !== '' && Number.isFinite(Number(this.form.price)) && Number(this.form.price) >= 0;
             }
             return basicValid;
         },
@@ -557,14 +566,18 @@ export default {
                     en: getVal(artwork.size, 'en'),
                     th: getVal(artwork.size, 'th')
                 },
+                width: '',
+                height: '',
+                depth: '',
+                unit: 'cm',
                 price: this.cleanPrice(artwork.price),
                 description: {
                     en: getVal(artwork.description, 'en'),
                     th: getVal(artwork.description, 'th')
                 },
                 status: {
-                    approval: artwork.status?.approval?._id || '',
-                    sale: artwork.status?.sale?._id || ''
+                    approval: artwork.status?.approval?._id || artwork.status?._id || artwork.status || '',
+                    sale: artwork.status?.sale?._id || this.statuses.find(status => status.code === 'AVAILABLE' || this.getName('en', status) === 'Available')?._id || ''
                 },
                 remark: {
                     en: getVal(artwork.remark, 'en'),
@@ -601,25 +614,8 @@ export default {
             }
         },
         cleanPrice(price) {
-            if (!price) return '';
+            if (price === null || price === undefined || price === '') return '';
             return String(price).replace(/[^0-9.]/g, '');
-        },
-        handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!file.type.match('image.*')) {
-                alert('Please select an image file');
-                return;
-            }
-
-            this.form.image = file;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.imagePreview = e.target.result;
-            };
-            reader.readAsDataURL(file);
         },
         getUnitTH(unitEN) {
             const unit = this.unitOptions.find(u => u.en === unitEN);
@@ -663,7 +659,6 @@ export default {
             };
 
             this.$emit('save', payload);
-            this.$emit('update:show', false);
         }
     }
 }

@@ -1,4 +1,9 @@
 module.exports = function rejectedOrderMailTemplate({ buyerName, orderId, artworkTitle, reason }) {
+    const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+    buyerName = escapeHtml(buyerName);
+    orderId = escapeHtml(orderId);
+    artworkTitle = escapeHtml(artworkTitle);
+    reason = escapeHtml(reason);
     return `
     <!DOCTYPE html>
     <html>
@@ -56,7 +61,7 @@ module.exports = function rejectedOrderMailTemplate({ buyerName, orderId, artwor
                     ${reason || 'หลักฐานการชำระเงินไม่ชัดเจน หรือข้อมูลการโอนเงินไม่ถูกต้อง'}
                 </div>
 
-                <p>กรุณาลงชื่อเข้าใช้งานบัญชีของท่านเพื่อดำเนินการอัปโหลดภาพหลักฐานการโอนเงิน (สลิปโอนเงิน) ที่ถูกต้องใหม่อีกครั้ง หรือติดต่อทีมงานพุทธศิลปกรรมเพื่อขอรับความช่วยเหลือ</p>
+                <p>การจองในคำสั่งซื้อนี้สิ้นสุดแล้ว ไม่สามารถอัปโหลดหลักฐานเพิ่มในคำสั่งซื้อเดิมได้ หากต้องการจองอีกครั้ง โปรดตรวจสอบว่าผลงานยังพร้อมขายก่อนทำรายการจองใหม่ หรือติดต่อทีมงานพุทธศิลปกรรมเพื่อขอรับความช่วยเหลือ</p>
                 
                 <p>ขอแสดงความนับถือ<br/><strong>ทีมงานพุทธศิลปกรรม มฟล. (Buddhist Art MFU Team)</strong></p>
             </div>

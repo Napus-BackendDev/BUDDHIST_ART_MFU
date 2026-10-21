@@ -119,7 +119,7 @@ module.exports = function certificateOfAuthenticityMailTemplate({
                                 <div class="certificate-footer" style="margin-top:96px;text-align:center;color:#b4531b;font:14px/1.65 Arial,'Helvetica Neue',sans-serif;">
                                     <div>“Buddhist Art MFU” — Short Course Program in Buddhist Art</div>
                                     <div>Mae Fah Luang University, Chiang Rai, Thailand</div>
-                                    <div><a href="mailto:buddhistart@mfu.ac.th" style="color:#b4531b;text-decoration:none;">buddhistart@mfu.ac.th</a> &nbsp;|&nbsp; <a href="https://buddhistart.mfu.ac.th" style="color:#b4531b;text-decoration:none;">buddhistart.mfu.ac.th</a> &nbsp;|&nbsp; <a href="https://facebook.com/BuddhistArtMFU" style="color:#b4531b;text-decoration:none;">facebook.com/BuddhistArtMFU</a></div>
+                                    <div><a href="mailto:buddhist.art@mfu.ac.th" style="color:#b4531b;text-decoration:none;">buddhist.art@mfu.ac.th</a> &nbsp;|&nbsp; <a href="https://buddhistart.mfu.ac.th" style="color:#b4531b;text-decoration:none;">buddhistart.mfu.ac.th</a> &nbsp;|&nbsp; <a href="https://facebook.com/BuddhistArtMFU" style="color:#b4531b;text-decoration:none;">facebook.com/BuddhistArtMFU</a></div>
                                 </div>
 
                                 <div style="display:none;max-height:0;overflow:hidden;">

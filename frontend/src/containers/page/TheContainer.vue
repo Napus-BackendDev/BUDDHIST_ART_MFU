@@ -59,6 +59,7 @@ import TheFooterUser from './TheFooterUser'
 import CenterLoading from "@/projects/components/dialog/CenterLoading.vue";
 import SignIn from "@/projects/components/dialog/SignIn.vue";
 import TwoFA from "@/projects/components/dialog/TwoFA.vue";
+import { canUploadPaymentSlip } from '@/utils/paymentSlip';
 
 export default {
     name: 'TheContainerUser',
@@ -72,8 +73,16 @@ export default {
     data() {
         return {
             noticeDismissed: false,
-            pendingPaymentCheckInFlight: false
+            pendingPaymentCheckInFlight: false,
+            now: Date.now(),
+            paymentDeadlineTimer: null
         }
+    },
+    mounted() {
+        this.paymentDeadlineTimer = setInterval(() => { this.now = Date.now(); }, 1000);
+    },
+    beforeDestroy() {
+        clearInterval(this.paymentDeadlineTimer);
     },
     computed: {
         userId() {
@@ -104,7 +113,7 @@ export default {
         pendingPaymentMessage() {
             return this.$i18n.locale === 'en'
                 ? 'Open your order table to upload a slip and complete payment.'
-                : 'กดเพื่อไปตารางคำสั่งซื้อ แล้วอัปโหลดสลิปเพื่อชำระเงินให้เสร็จสมบูรณ์';
+                : 'กดเพื่อไปตารางคำสั่งซื้อ แล้วอัปโหลดหลักฐานการโอนเงินเพื่อชำระเงินให้เสร็จสมบูรณ์';
         },
         shouldShowPendingPaymentNotice() {
             return Boolean(
@@ -158,34 +167,7 @@ export default {
             return order.user === this.userId;
         },
         isPendingPaymentOrder(order) {
-            if (!order || order.image) return false;
-
-            const statusText = [
-                this.getName('en', order.status),
-                this.getName('th', order.status)
-            ].join(' ').toLowerCase();
-
-            const closedTerms = [
-                'delivered',
-                'approved',
-                'success',
-                'completed',
-                'complete',
-                'cancelled',
-                'canceled',
-                'rejected',
-                'fail',
-                'failed',
-                'เสร็จสิ้น',
-                'อนุมัติ',
-                'สำเร็จ',
-                'ยืนยันข้อมูล',
-                'ยกเลิก',
-                'ไม่นุมัติ',
-                'ไม่อนุมัติ'
-            ];
-
-            return !closedTerms.some(term => statusText.includes(term));
+            return canUploadPaymentSlip(order, this.getName, this.now);
         },
         goToPendingOrders() {
             this.noticeDismissed = true;

@@ -5,6 +5,10 @@
             <router-link to="/admin/artworks" class="view-all-link">{{ $i18n.locale === 'en' ? 'View All' : 'ดูทั้งหมด' }}</router-link>
         </CCardHeader>
         <CCardBody>
+            <div v-if="actionError" class="alert alert-danger" role="alert">
+                {{ actionError }}
+                <button type="button" class="btn btn-link p-0 ml-2" @click="actionError = ''">{{ $i18n.locale === 'en' ? 'Dismiss' : 'ปิดข้อความ' }}</button>
+            </div>
             <div class="scrollable-list">
                 <div v-if="!pendingArtworks || pendingArtworks.length === 0" class="text-center text-muted mt-4">
                     {{ $i18n.locale === 'en' ? 'No pending artworks.' : 'ไม่มีผลงานที่รออนุมัติ' }}
@@ -19,13 +23,13 @@
                         </div>
                     </div>
                     <div class="action-buttons d-flex align-items-center">
-                        <CButton @click="goToArtwork(item)" color="transparent" class="btn-icon p-1 text-info mr-1" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'">
+                        <CButton :aria-label="($i18n.locale === 'en' ? 'View artwork: ' : 'ดูผลงาน: ') + (getName($i18n.locale, item.title) || ($i18n.locale === 'en' ? 'Untitled' : 'ไม่มีชื่อ'))" @click="goToArtwork(item)" color="transparent" class="btn-icon p-1 text-info mr-1" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'">
                             <CIcon name="cilMagnifyingGlass" size="lg" />
                         </CButton>
-                        <CButton @click="handleApprove(item)" color="transparent" class="btn-icon p-1 text-success mr-1" v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'">
+                        <CButton :aria-label="($i18n.locale === 'en' ? 'Approve artwork: ' : 'อนุมัติผลงาน: ') + (getName($i18n.locale, item.title) || ($i18n.locale === 'en' ? 'Untitled' : 'ไม่มีชื่อ'))" @click="handleApprove(item)" color="transparent" class="btn-icon p-1 text-success mr-1" v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'">
                             <CIcon name="cil-check" size="lg" />
                         </CButton>
-                        <CButton @click="handleReject(item)" color="transparent" class="btn-icon p-1 text-danger" v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'">
+                        <CButton :aria-label="($i18n.locale === 'en' ? 'Reject artwork: ' : 'ปฏิเสธผลงาน: ') + (getName($i18n.locale, item.title) || ($i18n.locale === 'en' ? 'Untitled' : 'ไม่มีชื่อ'))" @click="handleReject(item)" color="transparent" class="btn-icon p-1 text-danger" v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'">
                             <CIcon name="cil-x" size="lg" />
                         </CButton>
                     </div>
@@ -41,6 +45,7 @@ import moment from 'moment';
 
 export default {
     name: 'PendingApproval',
+    data() { return { actionError: '' }; },
     computed: {
         ...mapState('dashboard', ['stats']),
         pendingArtworks() {
@@ -70,6 +75,7 @@ export default {
                 ? `Are you sure you want to approve "${this.getName('en', artwork.title) || this.getName('th', artwork.title)}"?`
                 : `คุณแน่ใจหรือไม่ว่าต้องการอนุมัติผลงาน "${this.getName('th', artwork.title) || this.getName('en', artwork.title)}"?`;
             if (!confirm(confirmMsg)) return;
+            this.actionError = '';
 
             try {
                 this.$store.commit("dialog/loading", true);
@@ -78,7 +84,7 @@ export default {
                     await this.$store.dispatch('setting/status/get');
                     statuses = this.$store.getters['setting/status/item'] || [];
                 }
-                const approvedStatus = statuses.find(s => {
+                const approvedStatus = statuses.find(s => s.code === 'APPROVED') || statuses.find(s => {
                     const enVal = (s.title && s.title.find(t => t.key === 'en')?.value) || '';
                     return enVal.toLowerCase() === 'approved';
                 });
@@ -104,7 +110,8 @@ export default {
                     variant: 'success'
                 });
             } catch (err) {
-                console.error("Approve error:", err);
+                this.actionError = this.getName(this.$i18n.locale, err && err.response && err.response.data && err.response.data.message) ||
+                    (this.$i18n.locale === 'en' ? 'Unable to approve artwork. Please try again.' : 'ไม่สามารถอนุมัติผลงานได้ กรุณาลองใหม่');
             } finally {
                 this.$store.commit("dialog/loading", false);
             }
@@ -114,6 +121,7 @@ export default {
                 ? `Are you sure you want to reject "${this.getName('en', artwork.title) || this.getName('th', artwork.title)}"?`
                 : `คุณแน่ใจหรือไม่ว่าต้องการปฏิเสธผลงาน "${this.getName('th', artwork.title) || this.getName('en', artwork.title)}"?`;
             if (!confirm(confirmMsg)) return;
+            this.actionError = '';
 
             try {
                 this.$store.commit("dialog/loading", true);
@@ -122,7 +130,7 @@ export default {
                     await this.$store.dispatch('setting/status/get');
                     statuses = this.$store.getters['setting/status/item'] || [];
                 }
-                const rejectedStatus = statuses.find(s => {
+                const rejectedStatus = statuses.find(s => s.code === 'REJECTED') || statuses.find(s => {
                     const enVal = (s.title && s.title.find(t => t.key === 'en')?.value) || '';
                     return enVal.toLowerCase() === 'rejected';
                 });
@@ -148,7 +156,8 @@ export default {
                     variant: 'success'
                 });
             } catch (err) {
-                console.error("Reject error:", err);
+                this.actionError = this.getName(this.$i18n.locale, err && err.response && err.response.data && err.response.data.message) ||
+                    (this.$i18n.locale === 'en' ? 'Unable to reject artwork. Please try again.' : 'ไม่สามารถปฏิเสธผลงานได้ กรุณาลองใหม่');
             } finally {
                 this.$store.commit("dialog/loading", false);
             }

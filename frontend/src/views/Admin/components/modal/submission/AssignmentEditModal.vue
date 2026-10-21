@@ -17,20 +17,21 @@
                         <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Update the title and deadline for this specific task.' : 'อัปเดตหัวข้องานและกำหนดส่งสำหรับงานย่อยนี้' }}</p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
+                <button type="button" :disabled="saving" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" class="close-btn" @click="$emit('update:show', false)">
                     <CIcon name="cil-x" size="sm" />
                 </button>
             </div>
         </template>
 
         <div class="px-3 py-2 pb-4">
+            <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
             <!-- Basic Info Row -->
             <CRow>
                 <CCol md="12">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Assignment Title' : 'หัวข้องาน' }}</label>
+                        <label for="assignment-edit-title" class="form-label">{{ $i18n.locale === 'en' ? 'Assignment Title' : 'หัวข้องาน' }}</label>
                         <CInput 
-                            v-model="form.title" 
+                            id="assignment-edit-title" v-model="form.title"
                             :placeholder="$i18n.locale === 'en' ? 'e.g. Sketch 1: Basic Shapes' : 'เช่น วาดเส้น 1: รูปทรงพื้นฐาน'" 
                             class="custom-input mb-0"
                         />
@@ -42,9 +43,9 @@
             <CRow>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Start Date & Time' : 'วันและเวลาเริ่มต้น' }}</label>
+                        <label for="assignment-edit-startDateTime" class="form-label">{{ $i18n.locale === 'en' ? 'Start Date & Time' : 'วันและเวลาเริ่มต้น' }}</label>
                         <CInput 
-                            v-model="form.startDateTime" 
+                            id="assignment-edit-startDateTime" v-model="form.startDateTime"
                             :type="form.startDateTime ? 'datetime-local' : 'text'"
                             placeholder="วัน/เดือน/ปี --:--"
                             lang="en-GB"
@@ -56,9 +57,9 @@
                 </CCol>
                 <CCol md="6">
                     <div class="form-group-custom">
-                        <label class="form-label">{{ $i18n.locale === 'en' ? 'End Date & Time (Deadline)' : 'วันและเวลาสิ้นสุด (กำหนดส่ง)' }}</label>
+                        <label for="assignment-edit-endDateTime" class="form-label">{{ $i18n.locale === 'en' ? 'End Date & Time (Deadline)' : 'วันและเวลาสิ้นสุด (กำหนดส่ง)' }}</label>
                         <CInput 
-                            v-model="form.endDateTime" 
+                            id="assignment-edit-endDateTime" v-model="form.endDateTime"
                             :type="form.endDateTime ? 'datetime-local' : 'text'"
                             placeholder="วัน/เดือน/ปี --:--"
                             lang="en-GB"
@@ -72,6 +73,7 @@
         </div>
 
         <template #footer>
+            <p v-if="hasDateRangeError" role="alert" class="text-danger w-100">{{ $i18n.locale === 'en' ? 'End dates must not precede start dates.' : 'วันสิ้นสุดต้องไม่อยู่ก่อนวันเริ่มต้น' }}</p>
             <div class="w-100 d-flex justify-content-end align-items-center py-2">
                 <CButton 
                     variant="ghost" 
@@ -97,9 +99,11 @@
 </template>
 
 <script>
+import { hasInvalidSubmissionDates } from '@/utils/submissionDates'
 export default {
     name: 'AssignmentEditModal',
     props: {
+        error: { type: String, default: '' },
         show: {
             type: Boolean,
             default: false
@@ -131,6 +135,7 @@ export default {
         }
     },
     watch: {
+        show(value) { if (value && this.assignmentData) { this.populateForm(this.assignmentData); this.studentSearch = ''; } },
         assignmentData: {
             immediate: true,
             handler(newVal) {
@@ -141,7 +146,9 @@ export default {
         }
     },
     computed: {
+        hasDateRangeError() { return hasInvalidSubmissionDates({ assignments: [this.form] }); },
         isFormValid() {
+            if (hasInvalidSubmissionDates({ assignments: [this.form] })) return false;
             return this.form.title && this.form.startDateTime && this.form.endDateTime;
         },
         filteredStudents() {

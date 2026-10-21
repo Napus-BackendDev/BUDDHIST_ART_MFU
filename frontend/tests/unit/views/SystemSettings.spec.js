@@ -9,6 +9,17 @@ localVue.use(CoreuiVue)
 const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0))
 
 describe('SystemSettings.vue', () => {
+  test.each(['Groups', 'Statuses', 'Categories'])('searches %s by either translated name after renaming', type => {
+    const item = { _id:'qa-setting',code:'ORIGINAL_CODE',group:'qa-group',
+      title:[{key:'th',value:'ชื่อใหม่ภาษาไทย'},{key:'en',value:'Renamed English label'}] };
+    const vm = { ...SystemSettings.methods,locale:'th',selectedGroupId:'qa-group',
+      groups:[item],statuses:[item,{...item,_id:'other',group:'other-group'}],categories:[item] };
+    const searchKey = {Groups:'groupSearch',Statuses:'statusSearch',Categories:'categorySearch'}[type];
+    for (const query of ['renamed english','ชื่อใหม่','original_code']) {
+      vm[searchKey]=query;
+      expect(SystemSettings.computed[`filtered${type}`].call(vm).map(s=>s._id)).toEqual(['qa-setting']);
+    }
+  });
   const groups = [
     { _id: 'group-sale', code: 'SALE_STATUS', title: [{ key: 'th', value: 'สถานะการขาย' }, { key: 'en', value: 'Sale status' }] },
     { _id: 'group-student', code: 'STUDENT_GROUP', title: [{ key: 'th', value: 'กลุ่มนักศึกษา' }, { key: 'en', value: 'Student group' }] }
@@ -61,3 +72,28 @@ describe('SystemSettings.vue', () => {
   })
 })
 
+
+
+describe('settings form accessible labels', () => {
+  test.each(['th', 'en'])('associates every field label with its control in %s', async locale => {
+    const wrapper = shallowMount(SystemSettings, {
+      localVue,
+      mocks: { $i18n: {locale}, $store: {dispatch: jest.fn(() => Promise.resolve([])), commit: jest.fn()} },
+      stubs: {CModal: {template: '<div><slot/><slot name="footer"/></div>'}}
+    })
+    await flushPromises()
+    await wrapper.setData({formType: 'status', formModal: true, deleteModal: true,
+      impact: {requiresReplacement: true}, deleteItem: {_id: 'qa-source'}})
+    const labels = wrapper.findAll('label.form-label-custom')
+    expect(labels.length).toBe(6)
+    for (const label of labels.wrappers) {
+      const id = label.attributes('for')
+      expect(id).toBeTruthy()
+      const control = wrapper.find('#' + id)
+      expect(control.exists()).toBe(true)
+      expect(['INPUT', 'SELECT', 'TEXTAREA']).toContain(control.element.tagName)
+      expect(control.element.labels[0]).toBe(label.element)
+    }
+    wrapper.destroy()
+  })
+})

@@ -2,7 +2,7 @@
     <CRow class="mb-4">
         <!-- Total Users -->
         <CCol sm="6" lg="3" @click="updateFilter('All Status', 'All Roles')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': currentRole === 'All Roles' }]">
+            <CCard :class="['widget-card', { 'active-widget': isRoleActive('All Roles') }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">{{ $i18n.locale === 'en' ? 'Total Users' : 'ผู้ใช้งานทั้งหมด' }}</div>
@@ -17,7 +17,7 @@
 
         <!-- Admins -->
         <CCol sm="6" lg="3" @click="updateFilter('All Status', 'Admin')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': currentRole === 'Admin' }]">
+            <CCard :class="['widget-card', { 'active-widget': isRoleActive('Admin') }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">{{ $i18n.locale === 'en' ? 'Admin' : 'ผู้ดูแลระบบ' }}</div>
@@ -32,7 +32,7 @@
 
         <!-- Artists -->
         <CCol sm="6" lg="3" @click="updateFilter('All Status', 'Artist')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': currentRole === 'Artist' }]">
+            <CCard :class="['widget-card', { 'active-widget': isRoleActive('Artist') }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">{{ $i18n.locale === 'en' ? 'Artist' : 'ศิลปิน' }}</div>
@@ -47,7 +47,7 @@
 
         <!-- Customers -->
         <CCol sm="6" lg="3" @click="updateFilter('All Status', 'Customer')" style="cursor: pointer;">
-            <CCard :class="['widget-card', { 'active-widget': currentRole === 'Customer' }]">
+            <CCard :class="['widget-card', { 'active-widget': isRoleActive('Customer') }]">
                 <CCardBody class="d-flex justify-content-between align-items-center p-4">
                     <div>
                         <div class="widget-title">{{ $i18n.locale === 'en' ? 'Customer' : 'ลูกค้า' }}</div>
@@ -99,14 +99,37 @@ export default {
             this.$emit('input', status);
             this.$emit('update:currentRole', role);
         },
+        isRoleActive(role) {
+            if (!this.currentRole) return role === 'All Roles';
+            return String(this.currentRole).trim().toLowerCase() === String(role).trim().toLowerCase();
+        },
         getRoleName(role) {
-            if (!role) return 'User';
-            if (typeof role === 'string') return role;
-            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
-                const titleEn = role.title.find(t => t.key === 'en');
-                return titleEn ? titleEn.value : (role.title[0] ? role.title[0].value : 'Unknown');
+            if (!role) return 'Customer';
+            if (typeof role === 'string') {
+                const r = role.toLowerCase();
+                if (r.includes('admin') || r.includes('ผู้ดูแลระบบ')) return 'Admin';
+                if (r.includes('artist') || r.includes('ศิลปิน')) return 'Artist';
+                if (r.includes('customer') || r.includes('user') || r.includes('ลูกค้า')) return 'Customer';
+                return role;
             }
-            return 'User';
+            if (typeof role === 'object') {
+                if (role.code) {
+                    const c = String(role.code).toUpperCase();
+                    if (c === 'ADMIN') return 'Admin';
+                    if (c === 'ARTIST') return 'Artist';
+                    if (c === 'CUSTOMER' || c === 'USER') return 'Customer';
+                }
+                if (Array.isArray(role.title)) {
+                    const titleEn = role.title.find(t => t.key === 'en');
+                    const val = titleEn ? titleEn.value : (role.title[0] ? role.title[0].value : '');
+                    const valLower = val.toLowerCase();
+                    if (valLower.includes('admin') || val.includes('ผู้ดูแลระบบ')) return 'Admin';
+                    if (valLower.includes('artist') || val.includes('ศิลปิน')) return 'Artist';
+                    if (valLower.includes('customer') || valLower.includes('user') || val.includes('ลูกค้า')) return 'Customer';
+                    return val || 'Customer';
+                }
+            }
+            return 'Customer';
         },
         getStatusName(status) {
             if (!status) return 'Active';

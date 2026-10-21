@@ -94,7 +94,7 @@ module.exports = function adminNewOrderMailTemplate({ buyerName, orderId, artwor
                     </tr>
                 </table>
 
-                <p>โปรดเข้าสู่ระบบแอดมินเพื่อตรวจสอบข้อมูลของลูกค้า หรือรอการอัปโหลดหลักฐานการชำระเงิน (สลิปโอนเงิน) จากทางลูกค้าต่อไป</p>
+                <p>โปรดเข้าสู่ระบบแอดมินเพื่อตรวจสอบข้อมูลของลูกค้า หรือรอการอัปโหลดหลักฐานการชำระเงิน (หลักฐานการโอนเงิน) จากทางลูกค้าต่อไป</p>
                 
                 <div class="btn-container">
                     <a href="http://localhost:8080/admin/orders" class="btn-action">เข้าสู่ระบบแอดมินเพื่อตรวจสอบออเดอร์</a>

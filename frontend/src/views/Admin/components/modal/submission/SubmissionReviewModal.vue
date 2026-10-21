@@ -204,7 +204,7 @@
                         <div class="file-upload-container">
                             <div class="preview-container">
                                 <img v-if="artwork.preview || artwork.image"
-                                    :src="artwork.preview || artwork.image"
+                                    v-submission-image="artwork.preview || artwork.image"
                                     class="upload-preview" 
                                     :alt="artwork.title_en || artwork.title_th || 'Artwork'"
                                 />
@@ -422,11 +422,11 @@ export default {
             const is3D = cat.includes('sculpture') || cat.includes('installation') || cat.includes('ประติมากรรม') || cat.includes('จัดวาง');
 
             // Extract unit
-            const unitMatch = normalizedSize.match(/(cm|m|inch|mm|ชม\.|ม\.|นิ้ว|มม\.)/i);
-            let unit = this.$i18n.locale === 'en' ? 'cm' : 'ชม.';
+            const unitMatch = normalizedSize.match(/(cm|mm|inch|m|ชม\.|ซม\.?|มม\.|ม\.|นิ้ว)/i);
+            let unit = this.$i18n.locale === 'en' ? 'cm' : 'ซม.';
             if (unitMatch) {
                 const u = unitMatch[0].toLowerCase();
-                if (u === 'cm' || u === 'ชม.') unit = this.$i18n.locale === 'en' ? 'cm' : 'ชม.';
+                if (u === 'cm' || u === 'ชม.' || u === 'ซม.' || u === 'ซม') unit = this.$i18n.locale === 'en' ? 'cm' : 'ซม.';
                 else if (u === 'm' || u === 'ม.') unit = this.$i18n.locale === 'en' ? 'm' : 'ม.';
                 else if (u === 'inch' || u === 'นิ้ว') unit = this.$i18n.locale === 'en' ? 'inch' : 'นิ้ว';
                 else if (u === 'mm' || u === 'มม.') unit = this.$i18n.locale === 'en' ? 'mm' : 'มม.';
@@ -625,7 +625,7 @@ export default {
 
 .step-heading > span {
     color: #b7791f;
-    font-family: Georgia, serif;
+    font-family: var(--app-font-family);
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: 0.08em;

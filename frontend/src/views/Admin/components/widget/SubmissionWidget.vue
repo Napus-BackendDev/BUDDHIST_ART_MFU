@@ -90,7 +90,10 @@ export default {
             const studentIds = new Set();
             this.submissions.forEach(sub => {
                 if (sub.artist) {
-                    sub.artist.forEach(id => studentIds.add(id.toString()));
+                    sub.artist.forEach(artist => {
+                        const id = artist?._id || artist;
+                        if (id) studentIds.add(String(id));
+                    });
                 }
             });
             return studentIds.size;

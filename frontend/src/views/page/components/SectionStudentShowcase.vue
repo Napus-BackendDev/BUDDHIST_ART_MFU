@@ -8,10 +8,10 @@
                     </span>
                     <!-- hidden per client 2026-07: showcase H2 + description hidden; badge & artworks grid kept -->
                     <!--
-                    <h2 class="font-weight-bold mb-2 section-title-home" style="color: #612721; font-family: 'Cinzel', serif; font-size: 2.2rem;">
+                    <h2 class="font-weight-bold mb-2 section-title-home" style="color: #612721; font-family: var(--app-font-family); font-size: 2.2rem;">
                         {{ $i18n.locale === 'en' ? 'Student Creative Showcase' : 'หอศิลป์ผลงานสร้างสรรค์โดยผู้เรียน' }}
                     </h2>
-                    <p class="text-muted mb-0 lead-sub" style="font-family: 'Sarabun', sans-serif; font-size: 1.05rem;">
+                    <p class="text-muted mb-0 lead-sub" style="font-family: var(--app-font-family); font-size: 1.05rem;">
                         {{ $i18n.locale === 'en'
                             ? 'Masterpieces submitted as course assignments and approved by our Buddhist Art curators.'
                             : 'ผลงานพุทธศิลปกรรมและล้านนาสร้างสรรค์ที่ผ่านการคัดสรรจากรายวิชาเรียนของนักศึกษา' }}
@@ -28,6 +28,10 @@
                 <p class="mt-3 text-muted">{{ $i18n.locale === 'en' ? 'Loading learner artworks...' : 'กำลังโหลดผลงานผู้เรียน...' }}</p>
             </div>
 
+            <div v-else-if="loadError" role="alert" class="alert alert-danger">
+                <p>{{ $i18n.locale === 'en' ? 'Unable to load learner artworks. Please try again.' : 'โหลดผลงานผู้เรียนไม่สำเร็จ กรุณาลองใหม่' }}</p>
+                <button type="button" class="btn btn-outline-danger" @click="fetchArtworks">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+            </div>
             <template v-else>
                 <div v-if="filteredStudentWorks.length > 0">
                     <CardArtworks :artworks="filteredStudentWorks" />
@@ -53,6 +57,7 @@ export default {
     data() {
         return {
             loading: true,
+            loadError: false,
             latestArtworkIds: []
         }
     },
@@ -94,6 +99,8 @@ export default {
     methods: {
         async fetchArtworks() {
             this.loading = true;
+            this.loadError = false;
+            this.latestArtworkIds = [];
             try {
                 await this.$store.dispatch('artwork/get');
                 // Fetch submissions to identify the latest batch
@@ -123,7 +130,7 @@ export default {
                     this.latestArtworkIds = ids;
                 }
             } catch (err) {
-                console.error("Failed to load student showcase submissions", err);
+                this.loadError = true;
             } finally {
                 this.loading = false;
             }

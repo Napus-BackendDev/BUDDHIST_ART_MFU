@@ -5,6 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VUE_APP_CLIENTID: ${VUE_APP_CLIENTID:?Set VUE_APP_CLIENTID in the build environment or --env-file .env.production}
+        VUE_APP_API_URL: ${VUE_APP_API_URL:-https://bas.beta.mfu.ac.th}
     container_name: vue-app
     ports:
       - "8080:80"

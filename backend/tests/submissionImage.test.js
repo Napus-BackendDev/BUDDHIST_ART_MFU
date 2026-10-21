@@ -10,10 +10,16 @@ const id = '6acf25584e9fdf5a3408f5ba';
 const app = express();
 app.get('/image/:artworkId', onImage);
 let image;
-const stored = source => Submission.findOne.mockReturnValue({ select: () => ({ lean: async () => ({ assignments: [{ artworks: [{ _id: id, image: source }] }] }) }) });
+const stored = (source, status = 'Approved') => Submission.findOne.mockReturnValue({ select: () => ({ populate: () => ({ lean: async () => ({ assignments: [{ artworks: [{ _id: id, image: source, status:{title:[{key:'en',value:status}]} }] }] }) }) }) });
 
 beforeAll(async () => { image = await sharp({ create: { width: 20, height: 20, channels: 3, background: '#abcdef' } }).png().toBuffer(); });
 beforeEach(() => jest.clearAllMocks());
+
+test('does not fetch unpublished artwork images for a public visitor', async () => {
+    stored('https://mfudrive.mfu.ac.th/s/unpublished/download', 'Pending');
+    await request(app).get(`/image/${id}`).expect(404);
+    expect(axios.get).not.toHaveBeenCalled();
+});
 
 test('serves a stored Drive image as JPEG through the API without using the thumbnail endpoint', async () => {
     stored('https://drive.google.com/thumbnail?id=public-image&sz=w1600');
@@ -53,9 +59,24 @@ test('never serves a provider login page as an image', async () => {
     await request(app).get(`/image/${id}`).expect(502);
 });
 
-test('rejects oversized provider images', async () => {
+test('serves large MFU Drive originals above 20 MB as bounded JPEG previews', async () => {
+    stored('https://mfudrive.mfu.ac.th/s/large-original-test/download');
+    const original = await sharp(require('crypto').randomBytes(2700 * 2700 * 3), {
+        raw: { width: 2700, height: 2700, channels: 3 }
+    }).png({ compressionLevel: 0 }).toBuffer();
+    expect(original.length).toBeGreaterThan(20 * 1024 * 1024);
+    axios.get.mockResolvedValue({ status: 200, headers: { 'content-type': 'image/png' }, data: original });
+    const res = await request(app).get(`/image/${id}`).expect(200);
+    const metadata = await sharp(res.body).metadata();
+    expect(metadata.format).toBe('jpeg');
+    expect(metadata.width).toBe(1600);
+    expect(metadata.height).toBe(1600);
+    expect(axios.get.mock.calls[0][1].maxContentLength).toBe(25 * 1024 * 1024);
+});
+
+test('rejects provider images above the 25 MB preview download limit', async () => {
     stored('https://mfudrive.mfu.ac.th/s/oversized-test/download');
-    axios.get.mockResolvedValue({ status: 200, headers: { 'content-type': 'image/png' }, data: Buffer.alloc(10 * 1024 * 1024 + 1) });
+    axios.get.mockResolvedValue({ status: 200, headers: { 'content-type': 'image/png' }, data: Buffer.alloc(25 * 1024 * 1024 + 1) });
     await request(app).get(`/image/${id}`).expect(502);
 });
 

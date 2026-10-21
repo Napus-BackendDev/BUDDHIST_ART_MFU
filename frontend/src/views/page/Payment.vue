@@ -5,11 +5,12 @@
             <div class="row" v-if="currentStep !== 3">
                 <div class="col-lg-8">
                     <transition name="fade">
-                        <div v-if="hasReservedItems" class="alert alert-danger mb-4 shadow-sm border-0 d-flex align-items-center" style="border-radius: 12px; background-color: #fff5f5; color: #e55b5b;">
+                        <div v-if="hasReservedItems" role="alert" class="alert alert-danger mb-4 shadow-sm border-0 d-flex align-items-center" style="border-radius: 12px; background-color: #fff5f5; color: #e55b5b;">
                             <CIcon name="cil-warning" class="mr-3" size="xl" />
                             <div>
-                                <h6 class="font-weight-bold mb-1">{{ $i18n.locale === 'en' ? 'Items Unavailable' : 'สินค้าไม่พร้อมสั่งซื้อ' }}</h6>
-                                <p class="small mb-0">{{ $i18n.locale === 'en' ? 'One or more items in your cart have just been reserved by someone else. Please return to cart.' : 'มีสินค้าบางรายการในตะกร้าของคุณถูกจองโดยผู้อื่นแล้วเมื่อสักครู่ กรุณากลับไปที่ตะกร้าสินค้า' }}</p>
+                                <h6 class="font-weight-bold mb-1">{{ reservationEnded ? ($i18n.locale === 'en' ? 'Reservation Ended' : 'การจองสิ้นสุดแล้ว') : ($i18n.locale === 'en' ? 'Items Unavailable' : 'สินค้าไม่พร้อมสั่งซื้อ') }}</h6>
+                                <p class="small mb-0">{{ reservationEnded ? ($i18n.locale === 'en' ? 'Check your purchase history and artwork availability before placing a new order.' : 'โปรดตรวจสอบประวัติคำสั่งซื้อและความพร้อมของผลงานก่อนทำรายการใหม่') : ($i18n.locale === 'en' ? 'One or more items in your cart have just been reserved by someone else. Please return to cart.' : 'มีสินค้าบางรายการในตะกร้าของคุณถูกจองโดยผู้อื่นแล้วเมื่อสักครู่ กรุณากลับไปที่ตะกร้าสินค้า') }}</p>
+                                <CLink v-if="reservationEnded" :to="{ name: 'UserOrder' }" class="d-inline-block mt-2">{{ $i18n.locale === 'en' ? 'View Purchase History' : 'ดูประวัติคำสั่งซื้อ' }}</CLink>
                             </div>
                         </div>
                     </transition>
@@ -64,7 +65,8 @@
             </div>
 
             <!-- STEP CONTENT -->
-            <CRow v-if="currentStep !== 3">
+            <p v-if="paymentError && paymentError !== 'invoice'" role="alert" class="text-danger mb-3">{{ paymentErrorMessage }}</p>
+            <CRow v-if="currentStep !== 3 && !reservationEnded && cartItems.length">
                 <!-- Left: Form Steps (Step 1 and Step 2 handled by CardShipping) -->
                 <CardShipping 
                     ref="cardShipping" 
@@ -77,11 +79,17 @@
                 />
                 
                 <!-- Right: Order Summary -->
-                <CardOrderSummary />
+                <CardOrderSummary :created-order="createdOrder" />
             </CRow>
 
+            <div v-else-if="currentStep !== 3 && !reservationEnded" class="text-center py-5">
+                <h2>{{ $i18n.locale === 'en' ? 'Your cart is empty' : 'ตะกร้าสินค้าว่างเปล่า' }}</h2>
+                <p>{{ $i18n.locale === 'en' ? 'Check your existing reservations in your order history.' : 'ตรวจสอบรายการจองเดิมได้ในประวัติคำสั่งซื้อของคุณ' }}</p>
+                <CLink to="/user/order">{{ $i18n.locale === 'en' ? 'View orders' : 'ดูคำสั่งซื้อ' }}</CLink>
+            </div>
+
             <!-- STEP 3: CONFIRMATION / RECEIPT SCREEN -->
-            <div v-else class="receipt-step-container py-4">
+            <div v-else-if="currentStep === 3" class="receipt-step-container py-4">
                 <div class="text-center">
                     <!-- Success Icon -->
                     <div class="mb-4 animate-scale-up">
@@ -102,9 +110,11 @@
                         <div style="height: 6px; background: linear-gradient(90deg, #612721, #FEC260); border-radius: 16px 16px 0 0;"></div>
                         <CCardHeader class="bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
                             <h5 class="font-weight-bold mb-0 text-dark">{{ $i18n.locale === 'en' ? 'Order Details' : 'รายละเอียดคำสั่งซื้อ' }}</h5>
-                            <CLink href="#" class="text-danger small font-weight-bold text-decoration-none d-flex align-items-center" @click.prevent="downloadBilling">
-                                <CIcon name="cil-cloud-download" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Download Receipt' : 'ดาวน์โหลดใบเสร็จ' }}
-                            </CLink>
+                            <button type="button" class="btn btn-link p-0 text-danger small font-weight-bold text-decoration-none d-flex align-items-center" :disabled="isDownloading" @click="downloadBilling">
+                                <CSpinner v-if="isDownloading" size="sm" class="mr-1" />
+                                <CIcon v-else name="cil-cloud-download" size="sm" class="mr-1" />
+                                {{ isDownloading ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้') }}
+                            </button>
                         </CCardHeader>
                         <CCardBody class="p-4">
                             <div class="d-flex justify-content-between mb-2">
@@ -113,7 +123,7 @@
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Date' : 'วันที่' }}</span>
-                                <span class="font-weight-bold text-dark small">{{ order.date }}</span>
+                                <span class="font-weight-bold text-dark small">{{ receiptDate }}</span>
                             </div>
                             <div class="d-flex justify-content-between mb-4">
                                 <span class="text-muted small">{{ $i18n.locale === 'en' ? 'Payment Method' : 'ช่องทางการชำระเงิน' }}</span>
@@ -122,7 +132,7 @@
 
                             <!-- Product Items -->
                             <div v-for="(item, index) in order.items" :key="index" class="rounded p-2 mb-3 bg-light border d-flex align-items-center">
-                                <img :src="item.image" class="rounded mr-3" style="width: 55px; height: 55px; object-fit: cover;">
+                                <img :src="item.image" :alt="getName($i18n.locale, item.title)" class="rounded mr-3" style="width: 55px; height: 55px; object-fit: cover;">
                                 <div class="w-100">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
@@ -145,25 +155,25 @@
                                 <span>{{ $i18n.locale === 'en' ? 'Subtotal' : 'ยอดรวม' }}</span>
                                 <span class="font-weight-bold text-dark">฿{{ formatPrice(order.subtotal) }}</span>
                             </div>
-                            <div class="d-flex justify-content-between mb-2 text-muted small">
-                                <span>{{ $i18n.locale === 'en' ? 'Shipping' : 'ค่าจัดส่ง' }}</span>
-                                <span class="font-weight-bold text-dark">฿{{ formatPrice(order.shipping) }}</span>
-                            </div>
 
                             <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-3">
-                                <span class="font-weight-bold text-dark">{{ $i18n.locale === 'en' ? 'Total Paid' : 'ยอดสุทธิ' }}</span>
+                                <span class="font-weight-bold text-dark">{{ $i18n.locale === 'en' ? 'Total' : 'ยอดสุทธิ' }}</span>
                                 <span class="font-weight-bold text-danger h5 mb-0">฿{{ formatPrice(order.total) }}</span>
                             </div>
                         </CCardBody>
                     </CCard>
+
+                    <p v-if="paymentError === 'invoice'" role="alert" class="text-danger mb-3">{{ paymentErrorMessage }}</p>
 
                     <!-- Action Buttons -->
                     <div class="d-flex justify-content-center">
                         <CButton color="danger" class="px-5 py-2 font-weight-bold shadow hover-lift mr-3 btn-main" style="min-width: 160px; border-radius: 50px;" to="/">
                             {{ $i18n.locale === 'en' ? 'Return to Home' : 'กลับหน้าหลัก' }}
                         </CButton>
-                        <CButton color="white" class="px-5 py-2 font-weight-bold shadow-sm border hover-lift btn-outline-dark" style="min-width: 160px; border-radius: 50px;" @click="downloadBilling">
-                            <CIcon name="cil-cloud-download" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Download Receipt' : 'ดาวน์โหลดใบเสร็จ' }}
+                        <CButton color="white" class="px-5 py-2 font-weight-bold shadow-sm border hover-lift btn-outline-dark" style="min-width: 160px; border-radius: 50px;" :disabled="isDownloading" @click="downloadBilling">
+                            <CSpinner v-if="isDownloading" size="sm" class="mr-2" />
+                            <CIcon v-else name="cil-cloud-download" class="mr-2" />
+                            {{ isDownloading ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้') }}
                         </CButton>
                     </div>
                 </div>
@@ -173,6 +183,7 @@
 </template>
 
 <script>
+import { orderAmounts, shippingForSubtotal } from '@/utils/orderAmounts'
 import { mapGetters } from 'vuex';
 import CardShipping from './components/card/CardShipping.vue';
 import CardOrderSummary from './components/card/CardOrderSummary.vue';
@@ -192,7 +203,9 @@ export default {
             currentStep: 1,
             syncTimer: null,
             submittingOrder: false,
-            submittingPayment: false
+            submittingPayment: false,
+            isDownloading: false,
+            paymentError: ''
         }
     },
     created() {
@@ -208,6 +221,9 @@ export default {
             return;
         }
 
+        if (this.lastOrder && this.cartItems.length === 0) {
+            this.currentStep = 3;
+        }
         // Load initial step from query param if available
         if (this.$route.query.step) {
             const stepNum = parseInt(this.$route.query.step);
@@ -218,18 +234,32 @@ export default {
         this.fetchInitialData();
     },
     computed: {
+        paymentErrorMessage() {
+            const messages = this.$i18n.locale === 'en'
+                ? {missing:'Order not found. Check your order history.',submit:'Could not complete this step. Your order is saved. Check your order history and try again.',invoice:'Could not download invoice. Please try again.'}
+                : {missing:'ไม่พบคำสั่งซื้อ กรุณาตรวจสอบประวัติคำสั่งซื้อ',submit:'ดำเนินการไม่สำเร็จ คำสั่งซื้อบันทึกไว้แล้ว กรุณาตรวจสอบประวัติคำสั่งซื้อและลองใหม่อีกครั้ง',invoice:'ไม่สามารถดาวน์โหลดใบแจ้งหนี้ได้ กรุณาลองใหม่อีกครั้ง'};
+            return messages[this.paymentError] || '';
+        },
         ...mapGetters('cart', ['cartItems', 'cartTotal', 'cartShippingCost', 'cartFinalTotal', 'lastOrder']),
         order() {
-            return this.lastOrder || this.createdOrder || {};
+            const order = this.lastOrder || this.createdOrder || {};
+            const { subtotal, shipping, total } = orderAmounts(order);
+            return { ...order, subtotal, shipping, total };
+        },
+        receiptDate() {
+            const date = new Date(this.order.createdAt || this.order.date);
+            return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString(this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH', {
+                day: 'numeric', month: 'short', year: 'numeric'
+            });
         },
         subtotal() {
-            return this.cartTotal || 0;
+            return this.createdOrder?._id ? orderAmounts(this.createdOrder).subtotal : (this.cartTotal || 0);
         },
         shippingCost() {
-            return (this.subtotal > 1000 || this.subtotal === 0) ? 0 : 25;
+            return this.createdOrder?._id ? orderAmounts(this.createdOrder).shipping : shippingForSubtotal(this.subtotal);
         },
         total() {
-            return this.subtotal + this.shippingCost;
+            return this.createdOrder?._id ? orderAmounts(this.createdOrder).total : this.subtotal + this.shippingCost;
         },
         progressLineStyle() {
             let widthPercent = '0%';
@@ -239,10 +269,17 @@ export default {
                 width: widthPercent
             };
         },
+        reservationEnded() {
+            if (!this.createdOrder) return false;
+            const order = this.createdOrder;
+            const status = String(order.status?.code || this.getName('en', order.status) || '').toUpperCase();
+            if (!['RESERVED', 'PENDING'].includes(status)) return true;
+            return !order.image && new Date(order.createdAt).getTime() + 24 * 60 * 60 * 1000 <= Date.now();
+        },
         hasReservedItems() {
             // If the order has already been successfully created for THIS user in Step 1,
             // the items are "Reserved" for us! So we don't show the warning.
-            if (this.createdOrder) return false;
+            if (this.createdOrder) return this.reservationEnded;
 
             return this.cartItems.some(item => {
                 if (!item.status) return false;
@@ -255,6 +292,13 @@ export default {
         }
     },
     methods: {
+        async refreshCheckoutOrder() {
+            if (!this.createdOrder?._id) return;
+            const orders = await this.$store.dispatch('order/get', {});
+            const latest = (orders || []).find(order => String(order._id) === String(this.createdOrder._id));
+            if (!latest) throw new Error('ORDER_STATUS_UNAVAILABLE');
+            this.createdOrder = latest;
+        },
         async fetchInitialData() {
             await this.refreshStatuses();
             await this.checkExistingPendingOrder();
@@ -314,6 +358,8 @@ export default {
 
                 // If order was already created, update it instead of creating a new one
                 if (this.createdOrder && this.createdOrder._id) {
+                    await this.refreshCheckoutOrder();
+                    if (this.reservationEnded) return;
                     const orderData = {
                         _id: this.createdOrder._id,
                         contact: {
@@ -413,14 +459,17 @@ export default {
         async handleSubmitPayment(payload) {
             console.log(`[Checkout Flow] Submitting Payment Slip...`);
             if (this.submittingPayment) return;
+            this.paymentError = '';
             if (!this.createdOrder) {
-                alert(this.$i18n.locale === 'en' ? 'Order not found. Please try again.' : 'ไม่พบข้อมูลคำสั่งซื้อ กรุณาทำรายการใหม่');
+                this.paymentError = 'missing';
                 return;
             }
 
             try {
                 this.submittingPayment = true;
                 this.loading = true;
+                await this.refreshCheckoutOrder();
+                if (this.reservationEnded) return;
 
                 // Upload payment slip if attached
                 if (payload.paymentProofFile && this.createdOrder._id) {
@@ -434,7 +483,6 @@ export default {
                 const finalOrder = {
                     ...this.createdOrder,
                     _id: this.createdOrder._id || 'ART-' + Math.floor(Math.random() * 10000),
-                    date: new Date().toLocaleDateString(),
                     items: [...this.cartItems],
                     paymentMethod: payload.paymentMethod,
                     subtotal: this.subtotal,
@@ -452,13 +500,16 @@ export default {
 
             } catch (error) {
                 console.error('Slip upload failed:', error);
-                alert(this.$i18n.locale === 'en' ? 'Error uploading payment slip. Please check your profile.' : 'เกิดข้อผิดพลาดในการอัปโหลดสลิปชำระเงิน กรุณาตรวจสอบในหน้าโปรไฟล์ของคุณ');
+                this.paymentError = 'submit';
             } finally {
                 this.submittingPayment = false;
                 this.loading = false;
             }
         },
         async downloadBilling() {
+            if (this.isDownloading) return;
+            this.paymentError = '';
+            this.isDownloading = true;
             try {
                 const orderId = this.order._id || this.order.orderNumber;
                 const response = await this.$store.dispatch('order/getInvoice', orderId);
@@ -469,9 +520,12 @@ export default {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
             } catch (error) {
                 console.error('Download failed:', error);
-                alert('Could not download invoice. Please try again.');
+                this.paymentError = 'invoice';
+            } finally {
+                this.isDownloading = false;
             }
         },
         isReserved(item) {
@@ -481,6 +535,7 @@ export default {
         async refreshStatuses() {
             if (this.cartItems.length === 0) return;
             try {
+                await this.refreshCheckoutOrder();
                 const promises = this.cartItems.map(item => 
                     this.$store.dispatch('artwork/explore', { _id: item._id })
                 );

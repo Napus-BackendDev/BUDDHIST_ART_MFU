@@ -12,10 +12,10 @@
         <div class="col-md-6"><label for="import-assignment">หัวข้องาน *</label><select id="import-assignment" v-model="assignmentId" class="form-control" :disabled="!selectedSubmission || busy"><option value="">เลือกหัวข้องาน</option><option v-for="a in assignments" :key="a._id" :value="a._id">{{ name(a.title) }}</option></select></div>
       </div>
       <div class="row mt-3">
-        <div class="col-md-6"><label for="import-excel">ไฟล์ Excel *</label><input id="import-excel" ref="excel" type="file" accept=".xlsx,.xls,.csv" class="form-control" :disabled="busy || loading" @change="readExcel"><small class="text-muted">ใช้หัวคอลัมน์เดิมได้ เลือก Submission และหัวข้องานปลายทางด้านบน</small></div>
-        <div class="col-md-6"><label for="import-images">แนบรูปภาพเพิ่มเติม</label><input id="import-images" ref="images" type="file" accept="image/*" multiple class="form-control" :disabled="busy" @change="setImages"><small class="text-muted">ใช้ชื่อผลงาน หรือ ชื่อผลงาน_ลำดับ หรือระบุ ImageFilename ระบบไม่จับคู่ตามลำดับไฟล์</small></div>
+        <div class="col-12"><label for="import-excel">ไฟล์ Excel *</label><input id="import-excel" ref="excel" type="file" accept=".xlsx,.xls,.csv" class="form-control" :disabled="busy || loading" @change="readExcel"><small class="text-muted">ใช้หัวคอลัมน์เดิมได้ เลือก Submission และหัวข้องานปลายทางด้านบน</small></div>
       </div>
-      <p class="text-muted small mt-3">ใช้ลิงก์ภาพจาก “คอลัมน์ 1” ก่อน “อัพโหลดภาพผลงานสมบูรณ์” รูปที่แนบจะใช้แทนลิงก์ กรุณาเปิดดูภาพและตั้งสิทธิ์ลิงก์ให้เข้าถึงได้โดยไม่ต้องเข้าสู่ระบบ</p>
+      <p class="text-muted small mt-3">ใช้ลิงก์ภาพจาก “คอลัมน์ 1” ก่อน “อัพโหลดภาพผลงานสมบูรณ์” กรุณาเปิดดูภาพและตั้งสิทธิ์ลิงก์ให้เข้าถึงได้โดยไม่ต้องเข้าสู่ระบบ</p>
+      <p class="text-muted small">ประเภทผลงานที่จับคู่ไม่ได้จะใช้ “อื่นๆ” และเก็บประเภทต้นฉบับในหมายเหตุหลังบ้าน</p>
       <div v-if="loading" role="status" class="alert alert-info">กำลังอ่านไฟล์และโหลดข้อมูลอ้างอิง...</div>
       <div v-if="error" role="alert" class="alert alert-danger mt-3 mb-0">{{ error }}</div>
       <div v-if="rows.length" class="mt-4">
@@ -25,7 +25,7 @@
             <td>{{ r.rowNumber }}<small class="d-block">ชิ้นที่ {{ r.piece || '-' }} / ลำดับ {{ r.sequence || '-' }}</small></td>
             <td>{{ r.titleTh || r.titleEn || '-' }}<small class="d-block">{{ r.titleEn }}</small></td>
             <td>{{ r.studentId }}<small class="d-block">{{ r.artistName }}</small></td>
-            <td>{{ r.category || '-' }}<small class="d-block">{{ r.price }} บาท</small></td>
+            <td>{{ r.categoryFallback ? 'อื่นๆ' : (r.category || '-') }}<small v-if="r.categoryFallback" class="d-block">ประเภทต้นฉบับ: {{ r.category }} (เก็บในหมายเหตุ)</small><small class="d-block">{{ r.price }} บาท</small></td>
             <td><span v-if="r.image" class="text-success">{{ r.image.name }}</span><a v-else-if="r.imageUrl" :href="r.imageUrl" target="_blank" rel="noopener noreferrer">เปิดดูภาพ</a><span v-else class="text-warning">ไม่มีรูปภาพ</span></td>
             <td class="text-danger">{{ issues(r).join(' · ') }}<span v-if="!issues(r).length" class="text-success">พร้อมนำเข้า</span></td>
           </tr>
@@ -34,13 +34,13 @@
         <p class="text-muted small mb-0">นำเข้าทุกรายการไปยังหัวข้องานที่เลือก เก็บประทับเวลา คำอธิบาย เทคนิค ขนาด ราคา และวิธีติดตั้งเป็นหมายเหตุ ชื่อผู้เรียนใช้แสดงประกอบและจับคู่เจ้าของด้วยรหัสประจำตัว</p>
       </div>
     </div>
-    <template #footer><div class="w-100 d-flex justify-content-between"><button type="button" class="btn btn-link" :disabled="busy" @click="close(false)">ยกเลิก</button><div><button type="button" class="btn btn-outline-secondary mr-2" :disabled="busy" @click="downloadTemplate">ดาวน์โหลด Template รุ่นที่ 6</button><button type="button" class="btn btn-primary" :disabled="!canImport" @click="importRows">{{ busy ? 'กำลังนำเข้า...' : 'นำเข้าและบันทึก' }}</button></div></div></template>
+    <template #footer><div class="w-100 d-flex justify-content-between"><button type="button" class="btn btn-link" :disabled="busy" @click="close(false)">ยกเลิก</button><div><button type="button" class="btn btn-primary" :disabled="!canImport || busy" @click="importRows"><CSpinner v-if="busy" size="sm" class="mr-2" />{{ busy ? 'กำลังนำเข้า...' : 'นำเข้าและบันทึก' }}</button></div></div></template>
   </CModal>
 </template>
 <script>
 import * as XLSX from 'xlsx'
 import Service from '@/service/api'
-import { artworkFormHeaders, parseArtworkRows, matchArtworkImages, artworkPayload } from '@/utils/submissionArtworkImport'
+import { parseArtworkRows, matchArtworkImages, artworkPayload } from '@/utils/submissionArtworkImport'
 
 const id = value => String(value && value._id || value || '')
 const titleKey = values => String((values || []).find(item => item.key === 'th' && item.value)?.value || (values || []).find(item => item.value)?.value || '').trim().toLowerCase()
@@ -138,13 +138,6 @@ export default {
         this.$emit('imported', this.rows.length); this.$emit('update:show', false)
       } catch (error) { this.error = error.response?.data?.message || error.message || 'นำเข้าไม่สำเร็จ กรุณาตรวจสอบข้อมูล' }
       finally { this.busy = false }
-    },
-    downloadTemplate() {
-      const ws = XLSX.utils.aoa_to_sheet([artworkFormHeaders])
-      ws['!cols'] = artworkFormHeaders.map(() => ({ wch: 28 }))
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'การตอบแบบฟอร์ม 1')
-      XLSX.writeFile(wb, 'ฐานข้อมูลผลงานสร้างสรรค์_รุ่นที่6_Template.xlsx')
     }
   }
 }

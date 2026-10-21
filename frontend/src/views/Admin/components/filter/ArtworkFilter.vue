@@ -1,23 +1,24 @@
 <template>
     <CCard class="mb-4 border-0 shadow-sm admin-filter-card">
         <CCardBody class="p-4">
-            <CRow class="align-items-end">
+            <div class="artwork-filter-grid">
                 <!-- Search Field -->
-                <CCol lg="3" md="12" class="mb-3 mb-lg-0">
-                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search Artworks' : 'ค้นหาผลงาน' }}</label>
+                <div>
+                    <label for="artwork-filter-search" class="filter-label">{{ $i18n.locale === 'en' ? 'Search Artworks' : 'ค้นหาผลงาน' }}</label>
                     <div class="search-field-wrapper">
                         <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
                         <CInput 
+                            id="artwork-filter-search"
                             :value="value.search" 
                             @input="updateFilter('search', $event)"
                             class="m-0 border-0 custom-input-plain"
                             :placeholder="$i18n.locale === 'en' ? 'Title, Artist...' : 'ชื่อผลงาน, ศิลปิน...'" 
                         />
                     </div>
-                </CCol>
+                </div>
 
                 <!-- Category/Status Filters -->
-                <CCol lg="2" md="6" class="mb-3 mb-lg-0">
+                <div>
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Category' : 'หมวดหมู่' }}</label>
                     <CDropdown :key="value.category + '_' + $i18n.locale" :caret="false" class="w-100 custom-add-dropdown">
                         <template #toggler>
@@ -26,15 +27,15 @@
                                 <CIcon name="cil-layers" class="filter-icon-small" />
                             </CButton>
                         </template>
-                        <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                        <div class="w-100 shadow-sm border-0 mt-1">
                         <CDropdownItem @click="updateFilter('category', 'All Categories')">{{ $i18n.locale === 'en' ? 'All Categories' : 'หมวดหมู่ทั้งหมด' }}</CDropdownItem>
                         <CDropdownItem v-for="category in categories" :key="category._id" @click="updateFilter('category', category._id)">{{ getCategoryLabel(category._id) }}</CDropdownItem>
                         <CDropdownItem v-if="!categories.length" disabled>{{ $i18n.locale === 'en' ? 'No categories available' : 'ไม่พบหมวดหมู่' }}</CDropdownItem>
-                        </CDropdownMenu>
+                        </div>
                     </CDropdown>
-                </CCol>
+                </div>
 
-                <CCol lg="2" md="6" class="mb-3 mb-lg-0">
+                <div>
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Status' : 'สถานะ' }}</label>
                     <CDropdown :key="value.status + '_' + $i18n.locale" :caret="false" class="w-100 custom-add-dropdown">
                         <template #toggler>
@@ -43,17 +44,17 @@
                                 <CIcon name="cil-filter" class="filter-icon-small" />
                             </CButton>
                         </template>
-                        <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                        <div class="w-100 shadow-sm border-0 mt-1">
                         <CDropdownItem @click="updateFilter('status', 'All Status')">{{ $i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด' }}</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Pending')">{{ $i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ' }}</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Approved')">{{ $i18n.locale === 'en' ? 'Approved' : 'อนุมัติแล้ว' }}</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Rejected')">{{ $i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธ' }}</CDropdownItem>
-                        </CDropdownMenu>
+                        </div>
                     </CDropdown>
-                </CCol>
+                </div>
 
                 <!-- Quick Range -->
-                <CCol lg="3" md="12" class="mb-3 mb-lg-0">
+                <div>
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Quick Range' : 'ช่วงเวลาด่วน' }}</label>
                     <CButtonGroup class="w-100 quick-range-group">
                         <CButton 
@@ -65,16 +66,18 @@
                             {{ getQuickRangeLabel(range) }}
                         </CButton>
                     </CButtonGroup>
-                </CCol>
+                </div>
 
                 <!-- Time Range -->
-                <CCol lg="2" md="12" class="mb-3 mb-lg-0">
+                <div>
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
                     <div class="d-flex align-items-center">
                         <div class="date-input-wrapper">
+                            <label for="artwork-filter-start" class="sr-only">{{ $i18n.locale === 'en' ? 'Start date' : 'วันเริ่มต้น' }}</label>
                             <CInput 
+                                id="artwork-filter-start"
                                 :type="formattedStartDate ? 'date' : 'text'"
-                                placeholder="วัน/เดือน/ปี"
+                                :placeholder="$i18n.locale === 'en' ? 'Start date' : 'วันเริ่มต้น'"
                                 lang="en-GB"
                                 :value="formattedStartDate" 
                                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
@@ -86,9 +89,11 @@
                         </div>
                         <span class="mx-1 text-muted">&ndash;</span>
                         <div class="date-input-wrapper">
+                            <label for="artwork-filter-end" class="sr-only">{{ $i18n.locale === 'en' ? 'End date' : 'วันสิ้นสุด' }}</label>
                             <CInput 
+                                id="artwork-filter-end"
                                 :type="formattedEndDate ? 'date' : 'text'"
-                                placeholder="วัน/เดือน/ปี"
+                                :placeholder="$i18n.locale === 'en' ? 'End date' : 'วันสิ้นสุด'"
                                 lang="en-GB"
                                 :value="formattedEndDate" 
                                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
@@ -99,8 +104,8 @@
                             <CIcon name="cil-calendar" class="date-icon-right" />
                         </div>
                     </div>
-                </CCol>
-            </CRow>
+                </div>
+            </div>
         </CCardBody>
     </CCard>
 </template>
@@ -222,6 +227,14 @@ export default {
 </script>
 
 <style scoped>
+.artwork-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 16px;
+}
+
+.artwork-filter-grid > div { min-width: 0; }
+
 .admin-filter-card {
     position: relative !important;
     z-index: 5 !important;
@@ -310,6 +323,7 @@ export default {
 
 /* Time Range Group */
 .date-input-wrapper {
+    min-width: 0;
     position: relative;
     flex: 1;
     display: flex;
@@ -352,8 +366,8 @@ export default {
     height: 42px;
     text-align: center;
     cursor: pointer;
-    padding-left: 36px;
-    padding-right: 36px;
+    padding-left: 8px;
+    padding-right: 28px;
 }
 
 .custom-date-field ::v-deep .form-control::-webkit-calendar-picker-indicator {
@@ -370,11 +384,14 @@ export default {
 
 /* Quick Range ButtonGroup */
 .quick-range-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     background: #f8f9fa;
     border: 1px solid #e2e8f0;
     border-radius: 8px !important;
     padding: 3px;
-    height: 42px;
+    min-height: 42px;
+    height: auto;
 }
 
 .range-btn {
@@ -385,7 +402,8 @@ export default {
     transition: all 0.2s ease !important;
     flex: 1;
     white-space: nowrap;
-    height: 100% !important;
+    min-height: 36px;
+    height: auto !important;
     box-shadow: none !important;
 }
 

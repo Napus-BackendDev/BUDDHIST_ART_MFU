@@ -46,7 +46,7 @@ export default {
 
 <style scoped>
 .cart-item-timer {
-  font-family: monospace;
+  font-family: var(--app-font-family);
   font-size: 1.1em;
   color: #dc3545;
 }

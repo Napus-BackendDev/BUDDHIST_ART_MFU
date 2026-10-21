@@ -1,13 +1,13 @@
 <template>
-    <div class="news-detail-wrapper pb-5">
-        <div v-if="currentNews" class="news-detail-page bg-white min-vh-100">
-            <CContainer class="py-5">
+    <div class="news-detail-wrapper bg-white min-vh-100">
+        <div v-if="currentNews" class="news-detail-page">
+            <CContainer class="pt-4 pt-md-5 pb-5">
                 <CRow>
                     <CCol lg="10" class="mx-auto">
                         <!-- Header -->
-                        <div class="news-header-simple mb-5">
-                            <h1 class="font-weight-bold mb-4">{{ getName($i18n.locale, currentNews.title) }}</h1>
-                            <hr class="my-4">
+                        <div class="news-header-simple mb-4">
+                            <h1 class="font-weight-bold mb-3">{{ getName($i18n.locale, currentNews.title) }}</h1>
+                            <hr class="my-3">
                         </div>
 
                         <!-- Content -->
@@ -18,9 +18,9 @@
                         <div v-if="currentNews.images && currentNews.images.length > 0" class="mt-4 mb-5">
                             <CRow>
                                 <CCol md="4" sm="6" v-for="(img, index) in currentNews.images" :key="index" class="mb-4 px-2">
-                                    <div class="gallery-item shadow-sm rounded overflow-hidden h-100 bg-light">
-                                        <img :src="img" :alt="`${getName($i18n.locale, currentNews.title)} ${index + 1}`" class="img-fluid cursor-pointer transition-all w-100" style="height: 250px; object-fit: cover;" @click="zoomImage(index)">
-                                    </div>
+                                    <button type="button" class="gallery-open gallery-item shadow-sm rounded overflow-hidden h-100 bg-light p-0 border-0 w-100" :aria-label="`${$i18n.locale === 'en' ? 'View image' : 'ดูภาพที่'} ${index + 1}: ${getName($i18n.locale, currentNews.title)}`" @click="zoomImage(index, $event)">
+                                        <img :src="img" :alt="`${getName($i18n.locale, currentNews.title)} ${index + 1}`" class="img-fluid cursor-pointer transition-all w-100" style="height: 250px; object-fit: cover;">
+                                    </button>
                                 </CCol>
                             </CRow>
                         </div>
@@ -33,7 +33,7 @@
                             </div>
                             <div class="mb-2">
                                 <span class="mr-2">{{ $i18n.locale === 'en' ? 'Follow for more news:' : 'ติดตามข่าวสารเพิ่มเติม:' }}</span>
-                                <CButton color="link" class="p-0" @click="goToFacebook">
+                                <CButton color="link" class="p-0" @click="goToFacebook" :aria-label="$i18n.locale === 'en' ? 'Follow Buddhist Art MFU on Facebook' : 'ติดตามพุทธศิลป์ มฟล. บน Facebook'">
                                     <CIcon name="cib-facebook" size="xl" style="color: #1877F2;" />
                                 </CButton>
                             </div>
@@ -52,10 +52,21 @@
         <div v-else-if="loading" class="text-center py-5">
             <CSpinner color="danger" />
         </div>
+        <div v-else-if="loadError" class="container text-center py-5" role="alert">
+            <h1>{{ $i18n.locale === 'en' ? 'Unable to load news' : 'โหลดข่าวสารไม่สำเร็จ' }}</h1>
+            <p>{{ $i18n.locale === 'en' ? 'Please try again.' : 'กรุณาลองใหม่อีกครั้ง' }}</p>
+            <CButton color="outline-dark" shape="pill" @click="fetchNewsDetail">{{ $i18n.locale === 'en' ? 'Retry' : 'ลองใหม่' }}</CButton>
+        </div>
+        <div v-else class="container text-center py-5">
+            <h1>{{ $i18n.locale === 'en' ? 'News not found' : 'ไม่พบข่าวสาร' }}</h1>
+            <p>{{ $i18n.locale === 'en' ? 'This article may have been removed.' : 'ข่าวสารนี้อาจถูกลบแล้ว' }}</p>
+            <CButton color="outline-dark" shape="pill" @click="$router.push('/news')">{{ $i18n.locale === 'en' ? 'Back to News' : 'กลับหน้าหลักข่าวสาร' }}</CButton>
+        </div>
 
         <!-- Lightbox -->
         <div
             v-if="showZoom"
+            ref="lightbox"
             class="lightbox-overlay"
             role="dialog"
             aria-modal="true"
@@ -64,21 +75,30 @@
             @touchstart.passive="onTouchStart"
             @touchend.passive="onTouchEnd"
         >
-            <button type="button" class="lightbox-close" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="closeZoom">&times;</button>
-            <button v-if="galleryImages.length > 1" type="button" class="lightbox-nav lightbox-prev" :aria-label="$i18n.locale === 'en' ? 'Previous image' : 'ภาพก่อนหน้า'" @click.stop="previousImage">&#8249;</button>
+            <button ref="lightboxClose" type="button" class="lightbox-close" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="closeZoom">&times;</button>
+            <button v-if="galleryImages.length > 1" type="button" class="lightbox-nav lightbox-prev" :aria-label="$i18n.locale === 'en' ? 'Previous image' : 'ภาพก่อนหน้า'" @click.stop="previousImage">
+                <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
             <div class="lightbox-stage" @click.stop>
                 <transition name="lightbox-fade" mode="out-in">
                     <img :key="selectedImg" :src="selectedImg" class="lightbox-image" :alt="`${getName($i18n.locale, currentNews.title)} ${selectedIndex + 1}`">
                 </transition>
                 <div class="lightbox-counter">{{ selectedIndex + 1 }} / {{ galleryImages.length }}</div>
             </div>
-            <button v-if="galleryImages.length > 1" type="button" class="lightbox-nav lightbox-next" :aria-label="$i18n.locale === 'en' ? 'Next image' : 'ภาพถัดไป'" @click.stop="nextImage">&#8250;</button>
+            <button v-if="galleryImages.length > 1" type="button" class="lightbox-nav lightbox-next" :aria-label="$i18n.locale === 'en' ? 'Next image' : 'ภาพถัดไป'" @click.stop="nextImage">
+                <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
         </div>
     </div>
 </template>
 
 <script>
 import DOMPurify from 'dompurify';
+import { trapFocusTab } from '@/utils/modalKeyboard';
 
 export default {
     name: 'NewsDetail',
@@ -88,18 +108,25 @@ export default {
             selectedIndex: 0,
             touchStartX: 0,
             loading: true,
-            currentNews: null
+            loadError: false,
+            fetchSequence: 0,
+            currentNews: null,
+            zoomOpener: null,
+            previousOverflow: null
         }
     },
     async created() {
         await this.fetchNewsDetail();
+    },
+    watch: {
+        '$route.fullPath'() { this.fetchNewsDetail(); }
     },
     mounted() {
         window.addEventListener('keydown', this.handleLightboxKeydown);
     },
     beforeDestroy() {
         window.removeEventListener('keydown', this.handleLightboxKeydown);
-        document.body.style.overflow = '';
+        this.closeZoom();
     },
     computed: {
         safeDescription() {
@@ -116,10 +143,14 @@ export default {
     },
     methods: {
         async fetchNewsDetail() {
+            const sequence = ++this.fetchSequence;
             this.loading = true;
-            
-            // Check if we are in preview mode
-            if (this.$route.query.preview === 'true') {
+            this.loadError = false;
+            this.currentNews = null;
+            this.closeZoom();
+            try {
+              // Check if we are in preview mode
+              if (this.$route.query.preview === 'true') {
                 let previewData = this.$store.getters['news/previewData'];
                 
                 // If store is empty (e.g. page refresh or new tab), try localStorage
@@ -132,21 +163,20 @@ export default {
                 }
 
                 this.currentNews = previewData;
-                this.loading = false;
                 return;
-            }
-
-            const id = this.$route.params.id;
-            try {
-                // Increment view count
-                await this.$store.dispatch('news/updateView', id);
-                
+              }
+                const id = this.$route.params.id;
                 const news = await this.$store.dispatch('news/get');
-                this.currentNews = news.find(n => n._id === id);
+                if (sequence !== this.fetchSequence) return;
+                this.currentNews = (Array.isArray(news) ? news.find(n => n._id === id) : null) || null;
+                if (this.currentNews) {
+                    // View tracking must not hide an article when that request fails.
+                    try { await this.$store.dispatch('news/updateView', id); } catch (_) { /* Reading remains available. */ }
+                }
             } catch (error) {
-                console.error(error);
+                if (sequence === this.fetchSequence) this.loadError = true;
             } finally {
-                this.loading = false;
+                if (sequence === this.fetchSequence) this.loading = false;
             }
         },
         getFirstImage(item) {
@@ -158,14 +188,29 @@ export default {
             const locale = this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH';
             return date.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' });
         },
-        zoomImage(index) {
+        zoomImage(index, event) {
+            if (!this.galleryImages[index]) return;
+            if (!this.showZoom) {
+                this.zoomOpener = event && event.currentTarget || document.activeElement;
+                this.previousOverflow = document.body.style.overflow;
+            }
             this.selectedIndex = index;
             this.showZoom = true;
             document.body.style.overflow = 'hidden';
+            this.$nextTick(() => {
+                if (this.showZoom && this.$refs.lightboxClose) this.$refs.lightboxClose.focus();
+            });
         },
         closeZoom() {
+            if (!this.showZoom) return;
             this.showZoom = false;
-            document.body.style.overflow = '';
+            document.body.style.overflow = this.previousOverflow || '';
+            const opener = this.zoomOpener;
+            this.zoomOpener = null;
+            this.previousOverflow = null;
+            this.$nextTick(() => {
+                if (opener && opener.isConnected && !this.showZoom) opener.focus();
+            });
         },
         previousImage() {
             if (!this.galleryImages.length) return;
@@ -177,6 +222,11 @@ export default {
         },
         handleLightboxKeydown(event) {
             if (!this.showZoom) return;
+            if (event.key === 'Tab') {
+                trapFocusTab(event, this.$refs.lightbox);
+                return;
+            }
+            if (['ArrowLeft', 'ArrowRight', 'Escape'].includes(event.key)) event.preventDefault();
             if (event.key === 'ArrowLeft') this.previousImage();
             if (event.key === 'ArrowRight') this.nextImage();
             if (event.key === 'Escape') this.closeZoom();
@@ -198,8 +248,10 @@ export default {
 
 <style scoped>
 .news-detail-wrapper {
-    padding-top: 0 !important;
-    margin-top: -2rem !important;
+    background-color: #ffffff;
+    min-height: 100vh;
+    padding-top: 0;
+    margin-top: 0;
 }
 
 .article-content {
@@ -210,6 +262,11 @@ export default {
 .gallery-item img:hover {
     transform: scale(1.05);
     filter: brightness(0.9);
+}
+
+.gallery-open:focus-visible {
+    outline: 3px solid #8a3a30;
+    outline-offset: 4px;
 }
 
 .transition-all {
@@ -258,14 +315,15 @@ export default {
     height: 48px;
     box-sizing: border-box;
     padding: 0;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #fff;
     background: rgba(97, 39, 33, 0.72);
     border: 1px solid rgba(255, 255, 255, 0.28);
     border-radius: 50%;
-    line-height: 1;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .lightbox-close:hover,
@@ -273,9 +331,8 @@ export default {
 .lightbox-nav:hover,
 .lightbox-nav:focus-visible {
     background: #8a3a30;
-    transform: scale(1.08);
-    outline: 2px solid #e8c77e;
-    outline-offset: 3px;
+    border-color: rgba(255, 255, 255, 0.5);
+    outline: none;
 }
 
 .lightbox-close {
@@ -308,12 +365,14 @@ export default {
 .lightbox-nav {
     top: 50%;
     transform: translateY(-50%);
-    font-size: 2.5rem;
 }
 
-.lightbox-nav:hover,
-.lightbox-nav:focus-visible {
-    transform: translateY(-50%) scale(1.08);
+.lightbox-nav svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    fill: none;
 }
 
 .lightbox-prev { left: 1.25rem; }
@@ -346,7 +405,7 @@ export default {
 @media (max-width: 767.98px) {
     .lightbox-overlay { padding: 4.5rem 0.75rem 5rem; }
     .lightbox-image { max-height: 78vh; border-radius: 8px; }
-    .lightbox-nav { top: auto; bottom: 1rem; }
+    .lightbox-nav { top: auto; bottom: 1rem; transform: none; }
     .lightbox-prev { left: calc(50% - 64px); }
     .lightbox-next { right: calc(50% - 64px); }
     .lightbox-counter { bottom: -2.7rem; }

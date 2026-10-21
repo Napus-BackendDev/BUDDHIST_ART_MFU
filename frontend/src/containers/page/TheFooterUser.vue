@@ -33,7 +33,7 @@
                             <a href="https://buddhistart.mfu.ac.th" target="_blank" rel="noopener noreferrer" class="social-btn" title="Official Website" aria-label="Official Website">
                                 <CIcon name="cil-globe-alt" aria-hidden="true" />
                             </a>
-                            <a href="mailto:buddhistart@mfu.ac.th" class="social-btn" title="Email Us" aria-label="Email Us">
+                            <a href="mailto:buddhist.art@mfu.ac.th" class="social-btn" title="Email Us" aria-label="Email Us">
                                 <CIcon name="cil-envelope-closed" aria-hidden="true" />
                             </a>
                         </div>
@@ -67,7 +67,7 @@
                                 </div>
                                 <div class="contact-text" style="line-height: 1.6;">
                                     <div class="font-weight-bold mb-1" style="color: #fff;">
-                                        {{ $i18n.locale === 'en' ? 'Academic Services Center (Academic Services Division), Mae Fah Luang University' : 'ศูนย์บริการวิชาการ (ฝ่ายบริการวิชาการ) มหาวิทยาลัยแม่ฟ้าหลวง' }}
+                                        {{ $i18n.locale === 'en' ? 'Center For Academic Success Service, Mae Fah Luang University' : 'ศูนย์บริการวิชาการ (ฝ่ายบริการวิชาการ) มหาวิทยาลัยแม่ฟ้าหลวง' }}
                                     </div>
                                     <div class="small text-white-50">
                                         {{ $i18n.locale === 'en' ? 'Gen. Sampao Choosri Building (E4), 333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'อาคารพลเอกสำเภา ชูศรี (E4) เลขที่ 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
@@ -97,7 +97,7 @@
                                         </div>
                                         <div class="contact-text small">
                                             <span class="d-block text-white-50 font-weight-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">{{ $i18n.locale === 'en' ? 'Email' : 'อีเมล' }}</span>
-                                            <a href="mailto:buddhistart@mfu.ac.th" class="text-white text-decoration-none">buddhistart@mfu.ac.th</a>
+                                            <a href="mailto:buddhist.art@mfu.ac.th" class="text-white text-decoration-none">buddhist.art@mfu.ac.th</a>
                                         </div>
                                     </div>
                                 </div>
@@ -191,7 +191,7 @@ export default {
 .footer-user {
     background-color: #612721; /* Main Burgundy */
     color: #f8f9fa;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     position: relative;
     z-index: 100;
 }
@@ -205,7 +205,7 @@ export default {
 }
 
 .brand-title {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 1.75rem;
     font-weight: 900;
     color: #fff;
@@ -232,7 +232,7 @@ export default {
 }
 
 .footer-heading {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     color: #fff;
     font-weight: 700;
     letter-spacing: 1.5px;

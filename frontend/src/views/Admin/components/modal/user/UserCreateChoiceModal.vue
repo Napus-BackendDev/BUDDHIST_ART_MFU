@@ -17,7 +17,7 @@
                         <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Choose how you would like to add new members to the system.' : 'เลือกวิธีที่คุณต้องการเพิ่มสมาชิกใหม่เข้าสู่ระบบ' }}</p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
+                <button type="button" class="close-btn" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="$emit('update:show', false)">
                     <CIcon name="cil-x" size="sm" />
                 </button>
             </div>
@@ -27,7 +27,7 @@
             <CRow>
                 <!-- Manual Choice -->
                 <CCol md="6">
-                    <div class="choice-card clickable" @click="$emit('manual')">
+                    <button type="button" class="choice-card clickable" @click="$emit('manual')">
                         <div class="choice-icon bg-green-light text-green">
                             <CIcon name="cil-keyboard" size="xl" />
                         </div>
@@ -37,21 +37,23 @@
                             <span>{{ $i18n.locale === 'en' ? 'Add Manually' : 'เพิ่มด้วยตนเอง' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
-                    </div>
+                    </button>
                 </CCol>
 
                 <!-- Import Choice -->
                 <CCol md="6">
-                    <div class="choice-card clickable" @click="triggerFileInput">
+                    <button type="button" class="choice-card clickable" @click="triggerFileInput">
                         <div class="choice-icon bg-blue-light text-blue">
                             <CIcon name="cil-file" size="xl" />
                         </div>
                         <h6 class="choice-label">{{ $i18n.locale === 'en' ? 'Import from File' : 'นำเข้าจากไฟล์' }}</h6>
+                        <p class="text-muted small">{{ $i18n.locale === 'en' ? 'Supports the learner form. National ID / Passport is excluded.' : 'รองรับแบบฟอร์มข้อมูลผู้เรียน โดยไม่นำเข้าบัตรประชาชน/Passport' }}</p>
                         <p class="choice-desc">{{ $i18n.locale === 'en' ? 'Bulk upload multiple users at once using an Excel or CSV file. Fast and efficient for large batches.' : 'อัปโหลดผู้ใช้หลายคนพร้อมกันด้วยไฟล์ Excel หรือ CSV รวดเร็วและมีประสิทธิภาพ' }}</p>
                         <div class="choice-footer text-blue">
                             <span>{{ $i18n.locale === 'en' ? 'Upload File' : 'อัปโหลดไฟล์' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
+                    </button>
                         <input 
                             type="file" 
                             ref="fileInput" 
@@ -59,7 +61,6 @@
                             accept=".xlsx, .xls, .csv"
                             @change="handleFileChange"
                         >
-                    </div>
                 </CCol>
             </CRow>
         </div>
@@ -117,6 +118,8 @@ export default {
 .text-green { color: #10b981; }
 
 .choice-card {
+    width: 100%;
+    color: inherit;
     background: #ffffff;
     border: 1px solid #f1f5f9;
     border-radius: 20px;
@@ -134,6 +137,11 @@ export default {
     transform: translateY(-8px);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
     border-color: #3b82f633;
+}
+
+.choice-card:focus-visible {
+    outline: 3px solid #8c1515;
+    outline-offset: 3px;
 }
 
 .choice-icon {

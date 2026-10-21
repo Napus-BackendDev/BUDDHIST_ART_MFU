@@ -6,6 +6,7 @@
             <CDataTable 
                 :items="filteredItems" 
                 :fields="fields" 
+                :no-items-view="{ noItems: $i18n.locale === 'en' ? 'No artworks found' : 'ไม่พบผลงานศิลปะ', noResults: $i18n.locale === 'en' ? 'No matching artworks' : 'ไม่พบผลงานที่ตรงกับการค้นหา' }"
                 class="custom-table mb-0" 
                 hover 
                 :border="false"
@@ -70,11 +71,11 @@
                             <div class="storage-main-row">
                                 <span class="storage-name">{{ item.storage ? (getName($i18n.locale, item.storage) || getName('en', item.storage)) : '-' }}</span>
                                 <span v-if="isUniversityStorage(item.storage) && !item.storageDetail" class="storage-warning" v-c-tooltip="$i18n.locale === 'en' ? 'Exact location required' : 'กรุณาระบุตำแหน่งจัดเก็บจริง'">!</span>
-                                <button v-if="isUniversityStorage(item.storage)" type="button" class="storage-edit-btn" @click="onEdit(item)" v-c-tooltip="$i18n.locale === 'en' ? 'Edit exact location' : 'แก้ไขตำแหน่งจัดเก็บจริง'">
+                                <button v-if="isUniversityStorage(item.storage)" type="button" class="storage-edit-btn" @click="onEdit(item)" :aria-label="$i18n.locale === 'en' ? 'Edit exact location' : 'แก้ไขตำแหน่งจัดเก็บจริง'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit exact location' : 'แก้ไขตำแหน่งจัดเก็บจริง'">
                                     <CIcon name="cil-pencil" size="sm" />
                                 </button>
                             </div>
-                            <small v-if="isUniversityStorage(item.storage) && item.storageDetail" class="storage-detail">{{ item.storageDetail }}</small>
+                            <small v-if="item.storageDetail" class="storage-detail">{{ item.storageDetail }}</small>
                         </div>
                     </td>
                 </template>
@@ -83,7 +84,7 @@
                         <div v-if="(item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending') === 'Pending' || (item.status && item.status.approval ? getName('en', item.status.approval) : 'Pending') === 'Revised'" class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
-                                v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
+                                :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 @click="onView(item)"
                                 :disabled="loadingItems.includes(item._id)"
                             >
@@ -91,31 +92,32 @@
                             </button>
                             <button 
                                 class="action-btn icon-edit ml-2" 
-                                v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
+                                :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 @click="onEdit(item)"
                                 :disabled="loadingItems.includes(item._id)"
                             >
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button 
-                                v-if="!loadingItems.includes(item._id)"
                                 class="action-btn icon-success mx-2" 
-                                v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'"
+                                :disabled="loadingItems.includes(item._id)"
+                                :aria-label="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติ')" v-c-tooltip="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติ')"
                                 @click="onApprove(item)"
                             >
-                                <CIcon name="cil-check" size="lg" />
+                                <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
+                                <CIcon v-else name="cil-check" size="lg" />
                             </button>
                             <button 
-                                v-if="!loadingItems.includes(item._id)"
                                 class="action-btn icon-danger" 
-                                v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'"
+                                :disabled="loadingItems.includes(item._id)"
+                                :aria-label="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ')" v-c-tooltip="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ')"
                                 @click="onReject(item)"
                             >
                                 <CIcon name="cil-x" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
-                                v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
+                                :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="onDelete(item)"
                                 :disabled="loadingItems.includes(item._id)"
                             >
@@ -125,17 +127,17 @@
                         <div v-else class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
-                                v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
+                                :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 @click="onView(item)"
                             >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button v-if="approvalStatus(item) === 'Approved'" class="action-btn icon-edit ml-2" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
+                            <button v-if="approvalStatus(item) === 'Approved'" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
-                                v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
+                                :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="onDelete(item)"
                             >
                                 <CIcon name="cil-trash" size="lg" />

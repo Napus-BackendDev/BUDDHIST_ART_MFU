@@ -23,6 +23,7 @@
                <CInput 
                  v-model="search"
                  :placeholder="$i18n.locale === 'en' ? 'Search orders...' : 'ค้นหาคำสั่งซื้อ...'" 
+                 :aria-label="$i18n.locale === 'en' ? 'Search orders' : 'ค้นหาคำสั่งซื้อ'"
                  class="custom-search-input mb-0"
                >
                  <template #prepend-content><CIcon name="cilMagnifyingGlass"/></template>
@@ -32,12 +33,20 @@
         </CCardHeader>
 
         <CCardBody class="p-0">
+          <div v-if="loadError" role="alert" class="alert alert-warning m-3">
+            <p>{{ loadErrorMessage }}</p>
+            <button type="button" class="btn btn-outline-dark" :disabled="loadingOrders || now < retryAt" @click="fetchOrders">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+          </div>
+          <p v-if="documentError" role="alert" class="text-danger px-4 pt-3 mb-0">{{ documentErrorMessage }}</p>
+          <p v-if="slipError" role="alert" class="text-danger px-4 pt-3 mb-0">{{ slipErrorMessage }}</p>
           <CDataTable
+            :loading="loadingOrders"
             :key="tableKey"
             :items="filteredOrders"
             :fields="fields"
-            :items-per-page="5"
+            :items-per-page="itemsPerPage"
             :active-page="activePage"
+            :no-items-view="{ noItems: $i18n.locale === 'en' ? 'No orders found' : 'ไม่พบคำสั่งซื้อ', noResults: $i18n.locale === 'en' ? 'No matching orders' : 'ไม่พบคำสั่งซื้อที่ตรงกับการค้นหา' }"
             hover
             class="custom-table mb-0"
           >
@@ -46,7 +55,8 @@
                 <div class="d-flex align-items-center">
                   <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 50px; height: 50px; min-width: 50px; background-color: #f0f0f0;">
                     <img v-if="item.artwork && item.artwork[0] && item.artwork[0].image" 
-                         :src="item.artwork[0].image" 
+                         :src="item.artwork[0].image"
+                         :alt="getName($i18n.locale, item.artwork[0])"
                          class="w-100 h-100" 
                          style="object-fit: cover;" />
                     <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
@@ -100,10 +110,11 @@
             <template #action="{item}">
               <td class="align-middle text-right px-4" style="white-space: nowrap;">
                 <!-- If not paid (no slip image) -->
-                <button 
-                  v-if="!item.image && (item.statusName === 'Pending Payment' || item.statusName === 'รอชำระเงิน')"
+                <button type="button"
+                  v-if="canUploadSlip(item)"
                   class="btn-quick-pay mr-2" 
-                  v-c-tooltip="$i18n.locale === 'en' ? 'Upload Slip to Pay' : 'ชำระเงิน / ส่งสลิป'"
+                  :disabled="slipUploading"
+                  v-c-tooltip="$i18n.locale === 'en' ? 'Upload Slip to Pay' : 'ชำระเงิน / ส่งหลักฐานการโอนเงิน'"
                   @click="triggerOrderSlipUpload(item)"
                 >
                   <CIcon name="cil-cloud-upload" class="mr-1" />
@@ -111,31 +122,35 @@
                 </button>
 
                 <!-- Paid documents -->
-                <template v-else-if="item.statusName !== 'Rejected' && item.statusName !== 'ยกเลิก'">
+                <template v-else-if="(item.image || isApprovedOrder(item)) && !['Rejected', 'Cancelled', 'ยกเลิก', 'ปฏิเสธ'].includes(item.statusName)">
                   <!-- Receipt (Slip) -->
-                  <button 
+                  <button type="button"
                     class="action-btn-doc icon-receipt mr-1" 
-                    v-c-tooltip="$i18n.locale === 'en' ? 'Receipt (Slip)' : 'ใบเสร็จ (สลิป)'"
+                    :aria-label="$i18n.locale === 'en' ? 'Receipt (Slip)' : 'ใบเสร็จ (หลักฐานการโอนเงิน)'"
+                    v-c-tooltip="$i18n.locale === 'en' ? 'Receipt (Slip)' : 'ใบเสร็จ (หลักฐานการโอนเงิน)'"
                     @click="downloadReceipt(item)"
                   >
                     <CIcon name="cil-file" size="sm" />
                   </button>
 
                   <!-- Invoice -->
-                  <button 
+                  <button type="button"
                     class="action-btn-doc icon-invoice mr-1" 
+                    :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
                     v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
                     @click="downloadInvoice(item)"
+                    :disabled="!!downloading"
                   >
                     <CIcon name="cil-cloud-download" size="sm" />
                   </button>
 
                   <!-- Certificate (Only if Approved) -->
-                  <button 
+                  <button type="button"
                     class="action-btn-doc icon-cert mr-1" 
+                    :aria-label="$i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน'"
                     v-c-tooltip="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน')"
                     @click="downloadCertificate(item)"
-                    :disabled="!isApprovedOrder(item)"
+                    :disabled="!isApprovedOrder(item) || !!downloading"
                     :class="{ 'disabled-btn': !isApprovedOrder(item) }"
                   >
                     <CIcon name="cil-description" size="sm" />
@@ -143,8 +158,9 @@
                 </template>
 
                 <!-- View Details -->
-                <button 
+                <button type="button"
                     class="action-btn icon-view" 
+                    :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                     v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                     @click="viewDetails(item)"
                 >
@@ -158,14 +174,14 @@
         <CCardFooter
             class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredOrders.length > 0">
-                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * 10 + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * 10, filteredOrders.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredOrders.length }} {{ $i18n.locale === 'en' ? 'orders' : 'รายการ' }}
+                {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * itemsPerPage + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * itemsPerPage, filteredOrders.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredOrders.length }} {{ $i18n.locale === 'en' ? 'orders' : 'รายการ' }}
             </div>
             <div class="text-muted text-sm" v-else>
                 {{ $i18n.locale === 'en' ? 'Showing 0 orders' : 'ไม่พบรายการ' }}
             </div>
             <CPagination
                 :active-page.sync="activePage"
-                :pages="Math.max(1, Math.ceil(filteredOrders.length / 10))"
+                :pages="Math.max(1, Math.ceil(filteredOrders.length / itemsPerPage))"
                 size="sm"
                 align="end"
                 class="mb-0 pill-pagination"
@@ -184,10 +200,13 @@
 </template>
 
 <script>
+import { orderAmounts } from '@/utils/orderAmounts'
+import { retryAtFromHeaders } from '@/utils/rateLimit'
 import { mapGetters } from 'vuex';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import OrderModal from './components/modal/OrderModal.vue';
 import Service from '@/service/api';
+import { canUploadPaymentSlip, paymentSlipIssue, paymentSlipMessage } from '@/utils/paymentSlip';
 
 export default {
   name: 'UserOrders',
@@ -199,14 +218,30 @@ export default {
     return {
       showModal: false,
       selectedOrder: null,
+      slipUploading: false,
+      slipError: '',
+      loadingOrders: false,
+      loadError: '',
+      retryAt: 0,
+      downloading: '',
+      documentError: '',
       search: '',
       activePage: 1,
+      itemsPerPage: 5,
       now: Date.now(),
       timer: null,
       tableKey: 0
     }
   },
   computed: {
+    loadErrorMessage() {
+      if (this.loadError === 'rate') return this.$i18n.locale === 'en' ? 'Too many requests. Please wait before retrying.' : 'มีคำขอถี่เกินกำหนด กรุณารอก่อนลองใหม่';
+      return this.$i18n.locale === 'en' ? 'Unable to load orders. The list may be out of date. Please try again.' : 'โหลดคำสั่งซื้อไม่สำเร็จ รายการอาจไม่ใช่ข้อมูลล่าสุด กรุณาลองใหม่';
+    },
+    documentErrorMessage() {
+      return this.$i18n.locale === 'en' ? 'Unable to download the document. Please try again.' : 'ดาวน์โหลดเอกสารไม่สำเร็จ กรุณาลองใหม่';
+    },
+    slipErrorMessage() { return paymentSlipMessage(this.slipError, this.$i18n.locale); },
     ...mapGetters({
       allOrders: 'order/orders',
       userId: 'auth/userId'
@@ -229,17 +264,18 @@ export default {
         .map(order => ({
           ...order,
           orderId: order.orderNumber || order._id.substring(order._id.length - 8).toUpperCase(),
-          date: new Date(order.createdAt).toLocaleDateString('en-GB', {
+          date: new Date(order.createdAt).toLocaleDateString(this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH', {
             day: '2-digit',
             month: 'short',
             year: 'numeric'
           }),
-          total: order.artwork ? order.artwork.reduce((acc, art) => acc + (art.price || 0), 0) : 0,
+          total: orderAmounts(order).total,
           statusName: (() => {
-            const statusLabel = this.getName('en', order.status);
+            const statusLabel = order.status?.code || this.getName('en', order.status);
             const s = statusLabel ? statusLabel.toLowerCase() : '';
-            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'ยืนยันข้อมูล';
-            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return this.$i18n.locale === 'en' ? 'Rejected' : 'ยกเลิก';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'อนุมัติ';
+            if (s.includes('cancelled') || s.includes('ยกเลิก')) return this.$i18n.locale === 'en' ? 'Cancelled' : 'ยกเลิก';
+            if (s.includes('rejected') || s.includes('fail') || s.includes('ปฏิเสธ') || s.includes('ไม่อนุมัติ')) return this.$i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธ';
             
             if (!order.image) {
                 return this.$i18n.locale === 'en' ? 'Pending Payment' : 'รอชำระเงิน';
@@ -263,16 +299,33 @@ export default {
       return [...orders].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
   },
+  watch: {
+    search() { this.activePage = 1; },
+    filteredOrders(orders) {
+      this.activePage = Math.min(this.activePage, Math.max(1, Math.ceil(orders.length / this.itemsPerPage)));
+    }
+  },
   async created() {
-    await this.$store.dispatch('order/get', {});
     this.timer = setInterval(() => {
       this.now = Date.now();
     }, 1000);
+    await this.fetchOrders();
   },
   beforeDestroy() {
     if (this.timer) clearInterval(this.timer);
   },
   methods: {
+    async fetchOrders() {
+      if (this.loadingOrders || Date.now() < this.retryAt) return;
+      this.loadingOrders = true;
+      try {
+        await this.$store.dispatch('order/get', {});
+        this.loadError = '';
+      } catch (error) {
+        this.loadError = error.response?.status === 429 ? 'rate' : 'load';
+        if (this.loadError === 'rate') this.retryAt = retryAtFromHeaders(error.response.headers);
+      } finally { this.loadingOrders = false; }
+    },
     calculateTimeLeft(order) {
       // Only show countdown for items without a slip that are not completed/cancelled
       const statusLabel = this.getName('en', order.status);
@@ -299,7 +352,12 @@ export default {
       this.selectedOrder = item;
       this.showModal = true;
     },
+    canUploadSlip(order) {
+      return canUploadPaymentSlip(order, this.getName);
+    },
     triggerOrderSlipUpload(item) {
+      if (this.slipUploading || !this.canUploadSlip(item)) return;
+      this.slipError = '';
       this.selectedOrder = item;
       this.$nextTick(() => {
         if (this.$refs.orderSlipInput) {
@@ -308,18 +366,34 @@ export default {
       });
     },
     async handleOrderSlipUpload(event) {
+      if (this.slipUploading) return;
       const file = event.target.files[0];
       if (!file || !this.selectedOrder) return;
+      this.slipError = '';
+      if (!this.canUploadSlip(this.selectedOrder)) {
+        this.slipError = 'expired';
+        this.$store.commit('dialog/showToast', {
+          title: this.$i18n.locale === 'en' ? 'Reservation ended' : 'การจองสิ้นสุดแล้ว',
+          message: this.$i18n.locale === 'en' ? 'Check your order status before uploading a payment slip.' : 'โปรดตรวจสอบสถานะคำสั่งซื้อก่อนอัปโหลดหลักฐานการโอนเงิน',
+          variant: 'warning'
+        });
+        event.target.value = '';
+        this.selectedOrder = null;
+        return;
+      }
 
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File size exceeds 10MB limit.');
+      this.slipError = paymentSlipIssue(file);
+      if (this.slipError) {
+        event.target.value = '';
+        this.selectedOrder = null;
         return;
       }
 
       try {
+        this.slipUploading = true;
         this.$store.commit('dialog/showToast', { 
           title: this.$i18n.locale === 'en' ? 'Uploading...' : 'กำลังอัปโหลด...', 
-          message: this.$i18n.locale === 'en' ? 'Please wait while we upload your slip.' : 'โปรดรอสักครู่ขณะระบบกำลังอัปโหลดสลิปของคุณ', 
+          message: this.$i18n.locale === 'en' ? 'Please wait while we upload your slip.' : 'โปรดรอสักครู่ขณะระบบกำลังอัปโหลดหลักฐานการโอนเงินของคุณ',
           variant: 'info' 
         });
         
@@ -330,39 +404,47 @@ export default {
 
         this.$store.commit('dialog/showToast', { 
           title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ', 
-          message: this.$i18n.locale === 'en' ? 'Payment slip uploaded successfully.' : 'อัปโหลดสลิปชำระเงินเรียบร้อยแล้ว', 
+          message: this.$i18n.locale === 'en' ? 'Payment slip uploaded successfully.' : 'อัปโหลดหลักฐานการโอนเงินเรียบร้อยแล้ว',
           variant: 'success' 
         });
 
         // Refresh orders data
-        await this.$store.dispatch('order/get', {});
+        await this.fetchOrders();
         this.tableKey += 1;
       } catch (error) {
         console.error('Upload failed:', error);
-        alert(this.$i18n.locale === 'en' ? 'Upload failed. Please try again.' : 'เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่อีกครั้ง');
+        this.slipError = 'upload';
       } finally {
+        this.slipUploading = false;
         if (this.$refs.orderSlipInput) {
           this.$refs.orderSlipInput.value = '';
         }
         this.selectedOrder = null;
       }
     },
-    async downloadInvoice(item) {
+    downloadInvoice(item) {
+      return this.downloadDocument(item, 'invoice');
+    },
+    async downloadDocument(item, kind) {
+      if (this.downloading) return;
+      this.downloading = `${item._id}:${kind}`;
+      this.documentError = '';
+      let url;
       try {
-        const orderId = item._id;
-        const response = await this.$store.dispatch('order/getInvoice', orderId);
-        
-        // Create a blob link to download the file
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const response = kind === 'invoice'
+          ? await this.$store.dispatch('order/getInvoice', item._id)
+          : await Service.order('certificate', item._id);
+        url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `Invoice_${item.orderId || item._id}.pdf`);
+        link.setAttribute('download', `${kind === 'invoice' ? 'Invoice' : 'Certificate'}_${item.orderId || item._id}.pdf`);
         document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        try { link.click(); } finally { document.body.removeChild(link); }
       } catch (error) {
-        console.error('Download failed:', error);
-        alert(this.$i18n.locale === 'en' ? 'Could not download invoice. Please try again.' : 'ไม่สามารถดาวน์โหลดใบเสร็จได้ กรุณาลองใหม่อีกครั้ง');
+        this.documentError = kind;
+      } finally {
+        if (url) window.URL.revokeObjectURL(url);
+        this.downloading = '';
       }
     },
     downloadReceipt(item) {
@@ -370,23 +452,11 @@ export default {
         window.open(item.image, '_blank');
       }
     },
-    async downloadCertificate(item) {
-      try {
-        const res = await Service.order('certificate', item._id);
-        
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `Certificate_${item.orderId || item._id}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (error) {
-        console.error('Download Certificate Error:', error);
-        alert(this.$i18n.locale === 'en' ? 'Failed to download certificate.' : 'ดาวน์โหลดใบรับรองไม่สำเร็จ');
-      }
+    downloadCertificate(item) {
+      return this.downloadDocument(item, 'certificate');
     },
     isApprovedOrder(item) {
+      if (item?.status?.code) return item.status.code === 'APPROVED';
       const statusLabel = this.getName('en', item.status);
       const s = statusLabel ? statusLabel.toLowerCase() : '';
       return s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success');
@@ -533,7 +603,7 @@ export default {
 }
 
 .section-title {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 2.2rem;
     color: #2c3e50;
     letter-spacing: 1px;

@@ -4,14 +4,14 @@
             <CRow class="align-items-end">
                 <!-- Search Field -->
                 <CCol lg="3" md="12" class="mb-3 mb-lg-0">
-                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search Orders' : 'ค้นหาคำสั่งซื้อ' }}</label>
+                    <label for="order-filter-search" class="filter-label">{{ $i18n.locale === 'en' ? 'Search Orders' : 'ค้นหาคำสั่งซื้อ' }}</label>
                     <div class="search-field-wrapper">
                         <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
-                        <CInput 
-                            :value="value.search" 
+                        <CInput id="order-filter-search"
+                            :value="value.search"
                             @input="updateFilter('search', $event)"
                             class="m-0 border-0 custom-input-plain"
-                            :placeholder="$i18n.locale === 'en' ? 'Order ID, Customer...' : 'รหัส, ชื่อลูกค้า...'" 
+                            :placeholder="$i18n.locale === 'en' ? 'Order ID, Customer...' : 'รหัส, ชื่อลูกค้า...'"
                         />
                     </div>
                 </CCol>
@@ -26,12 +26,12 @@
                                 <CIcon name="cil-filter" class="filter-icon-small" />
                             </CButton>
                         </template>
-                        <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                        <div class="w-100 shadow-sm border-0 mt-1">
                         <CDropdownItem @click="updateFilter('status', 'All Status')">{{ $i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด' }}</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Pending')">{{ $i18n.locale === 'en' ? 'Pending' : 'รอดำเนินการ' }}</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Completed')">{{ $i18n.locale === 'en' ? 'Approved' : 'อนุมัติ' }}</CDropdownItem>
                         <CDropdownItem @click="updateFilter('status', 'Cancelled')">{{ $i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธ' }}</CDropdownItem>
-                        </CDropdownMenu>
+                        </div>
                     </CDropdown>
                 </CCol>
 
@@ -39,8 +39,8 @@
                 <CCol lg="4" md="8" class="mb-3 mb-lg-0">
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Quick Range' : 'ช่วงเวลาด่วน' }}</label>
                     <CButtonGroup class="w-100 quick-range-group">
-                        <CButton 
-                            v-for="range in [ 'All Time' , 'Today', 'This Week', 'Last 30 Days', 'This Year']" 
+                        <CButton
+                            v-for="range in [ 'All Time' , 'Today', 'This Week', 'Last 30 Days', 'This Year']"
                             :key="range"
                             @click="setQuickRange(range)"
                             :class="['range-btn', { 'active': value.quickRange === range }]"
@@ -55,29 +55,31 @@
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
                     <div class="d-flex align-items-center">
                         <div class="date-input-wrapper">
-                            <CInput 
+                            <CInput
                                 :type="formattedStartDate ? 'date' : 'text'"
-                                placeholder="วัน/เดือน/ปี"
+                                :aria-label="$i18n.locale === 'en' ? 'Start date' : 'วันที่เริ่มต้น'"
+                                :placeholder="$i18n.locale === 'en' ? 'dd/mm/yyyy' : 'วัน/เดือน/ปี'"
                                 lang="en-GB"
-                                :value="formattedStartDate" 
+                                :value="formattedStartDate"
                                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
                                 @blur="!$event.target.value && ($event.target.type = 'text')"
                                 @input="onDateInput('startDate', $event)"
-                                class="mb-0 custom-date-field" 
+                                class="mb-0 custom-date-field"
                             />
                             <CIcon name="cil-calendar" class="date-icon-right" />
                         </div>
                         <span class="mx-2 text-muted">&ndash;</span>
                         <div class="date-input-wrapper">
-                            <CInput 
+                            <CInput
                                 :type="formattedEndDate ? 'date' : 'text'"
-                                placeholder="วัน/เดือน/ปี"
+                                :aria-label="$i18n.locale === 'en' ? 'End date' : 'วันที่สิ้นสุด'"
+                                :placeholder="$i18n.locale === 'en' ? 'dd/mm/yyyy' : 'วัน/เดือน/ปี'"
                                 lang="en-GB"
-                                :value="formattedEndDate" 
+                                :value="formattedEndDate"
                                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
                                 @blur="!$event.target.value && ($event.target.type = 'text')"
                                 @input="onDateInput('endDate', $event)"
-                                class="mb-0 custom-date-field" 
+                                class="mb-0 custom-date-field"
                             />
                             <CIcon name="cil-calendar" class="date-icon-right" />
                         </div>
@@ -147,8 +149,8 @@ export default {
         },
         onDateInput(type, val) {
             const dateVal = val ? moment(val).toDate() : null
-            const newFilters = { 
-                ...this.value, 
+            const newFilters = {
+                ...this.value,
                 [type]: dateVal,
                 quickRange: 'Custom'
             }

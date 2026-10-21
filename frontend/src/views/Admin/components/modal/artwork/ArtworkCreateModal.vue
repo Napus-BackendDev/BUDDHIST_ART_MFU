@@ -25,6 +25,8 @@
         </template>
 
         <div class="wizard-body px-3 py-2">
+            <div v-if="imageError" role="alert" class="alert alert-danger">{{ imageError }}</div>
+            <p v-if="isProcessingImage" role="status" class="text-muted">{{ $i18n.locale === 'en' ? 'Processing image...' : 'กำลังประมวลผลรูปภาพ...' }}</p>
             <div class="wizard-content-grid">
                 <div class="wizard-form-column">
                     <div class="wizard-panel">
@@ -124,7 +126,7 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                            <div class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="cat in categories" 
                                     :key="cat._id" 
@@ -132,7 +134,7 @@
                                 >
                                     {{ getName($i18n.locale, cat) }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -213,11 +215,11 @@
                                             <CIcon name="cil-chevron-bottom" class="dropdown-icon ml-1" />
                                         </CButton>
                                     </template>
-                                    <CDropdownMenu class="border-0 shadow-lg mt-2">
+                                    <div class="border-0 shadow-lg mt-2">
                                         <CDropdownItem v-for="u in unitOptions" :key="u.en" @click="form.unit = u.en">
                                             {{ u.en }} ({{ u.th }})
                                         </CDropdownItem>
-                                    </CDropdownMenu>
+                                    </div>
                                 </CDropdown>
                             </div>
                         </div>
@@ -305,7 +307,7 @@
                                     <CIcon name="cil-filter" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                            <div class="w-100 border-0 shadow-lg mt-2">
                                 <CDropdownItem 
                                     v-for="status in saleStatuses" 
                                     :key="status._id" 
@@ -313,7 +315,7 @@
                                 >
                                     {{ getName($i18n.locale, status) }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -346,7 +348,7 @@
                                             <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                         </CButton>
                                     </template>
-                                    <CDropdownMenu class="w-100 border-0 shadow-lg mt-2">
+                                    <div class="w-100 border-0 shadow-lg mt-2">
                                         <CDropdownItem
                                             v-for="storage in storages"
                                             :key="storage._id"
@@ -354,7 +356,7 @@
                                         >
                                             {{ getName($i18n.locale, storage) || getName('en', storage) }}
                                         </CDropdownItem>
-                                    </CDropdownMenu>
+                                    </div>
                                 </CDropdown>
                             </div>
                         </CCol>
@@ -381,7 +383,8 @@
                                 type="file" 
                                 id="artwork-image-upload" 
                                 @change="handleFileUpload" 
-                                accept="image/*"
+                                accept="image/png,image/jpeg"
+                                :disabled="isProcessingImage"
                                 class="file-input-hidden"
                             />
                             <label for="artwork-image-upload" class="file-upload-label w-100">
@@ -445,7 +448,7 @@
                     color="primary"
                     @click="currentStep = 2"
                     class="btn-create-artwork"
-                    :disabled="!isStepOneValid"
+                    :disabled="!isStepOneValid || isProcessingImage"
                 >
                     {{ $i18n.locale === 'en' ? 'Continue' : 'ถัดไป' }} <CIcon name="cil-arrow-right" class="ml-2" />
                 </CButton>
@@ -489,6 +492,8 @@ export default {
             storages: [],
             statuses: [],
             imagePreview: null,
+            imageError: '',
+            isProcessingImage: false,
             artistSearchQuery: '',
             showArtistDropdown: false,
             form: {
@@ -513,7 +518,7 @@ export default {
                 image: null
             },
             unitOptions: [
-                { en: 'cm', th: 'ชม.' },
+                { en: 'cm', th: 'ซม.' },
                 { en: 'm', th: 'ม.' },
                 { en: 'inch', th: 'นิ้ว' },
                 { en: 'mm', th: 'มม.' }
@@ -528,29 +533,29 @@ export default {
             allUsers: 'user/user'
         }),
         isStepOneValid() {
-            const dimensionsValid = this.form.width !== '' &&
-                                    this.form.height !== '' &&
-                                    (!this.is3D || this.form.depth !== '');
+            const dimensionsValid = [this.form.width, this.form.height, ...(this.is3D ? [this.form.depth] : [])]
+                .every(value => Number.isFinite(Number(value)) && Number(value) > 0);
             return this.form.title.th.trim() !== '' &&
                    this.form.artist !== '' &&
                    this.form.category !== '' &&
                    dimensionsValid;
         },
         isFormValid() {
-            return (this.form.title.en.trim() !== '' || this.form.title.th.trim() !== '') && 
-                   this.form.artist !== '' && 
-                   this.form.width !== '' &&
-                   this.form.height !== '' &&
-                   this.form.price !== '' && 
+            const dimensionsValid = [this.form.width, this.form.height, ...(this.is3D ? [this.form.depth] : [])]
+                .every(value => Number.isFinite(Number(value)) && Number(value) > 0);
+            const priceValid = String(this.form.price).trim() !== '' && Number.isFinite(Number(this.form.price)) && Number(this.form.price) >= 0;
+            return !this.isProcessingImage && (this.form.title.en.trim() !== '' || this.form.title.th.trim() !== '') &&
+                   this.form.artist !== '' &&
+                   dimensionsValid && priceValid &&
                    this.imagePreview !== null &&
                    (!this.isUniversityStorageSelected || this.form.storageDetail.trim() !== '');
         },
         filteredArtists() {
             if (!this.allUsers) return [];
-            const q = this.artistSearchQuery.toLowerCase();
+            const q = this.artistSearchQuery.trim().toLowerCase();
             return this.allUsers.filter(artist => {
-                const name = this.getArtistName(artist).toLowerCase();
-                return name.includes(q);
+                const names = Array.isArray(artist.name) ? artist.name.map(item => item.value || '') : [artist.name || ''];
+                return [...names, artist.studentId || ''].some(value => String(value).toLowerCase().includes(q));
             });
         },
         saleStatuses() {
@@ -648,26 +653,26 @@ export default {
         },
         async handleFileUpload(event) {
             const file = event.target.files[0];
-            if (!file) return;
-
-            if (!file.type.match('image.*')) {
-                alert(this.$i18n.locale === 'en' ? 'Please select an image file' : 'กรุณาเลือกไฟล์รูปภาพ');
-                return;
+            if (!file || this.isProcessingImage) return;
+            this.imageError = '';
+            if (!/^image\/(png|jpeg|jpg)$/.test(file.type || '')) {
+                this.imageError = this.$i18n.locale === 'en' ? 'Only PNG or JPG images are supported.' : 'รองรับเฉพาะภาพ PNG หรือ JPG';
+            } else if (file.size > 5 * 1024 * 1024) {
+                this.imageError = this.$i18n.locale === 'en' ? 'Image size must not exceed 5MB.' : 'ขนาดรูปภาพต้องไม่เกิน 5MB';
             }
-
-            // Create temporary object URL for instant preview to user
-            if (this.imagePreview && this.imagePreview.startsWith('blob:')) {
-                URL.revokeObjectURL(this.imagePreview);
-            }
-            this.imagePreview = URL.createObjectURL(file);
-
-            // Show loading state if needed or just process
+            if (this.imageError) { event.target.value = ''; return; }
+            this.isProcessingImage = true;
             try {
                 const compressedFile = await this.compressImage(file);
+                const preview = URL.createObjectURL(compressedFile);
+                if (this.imagePreview && this.imagePreview.startsWith('blob:')) URL.revokeObjectURL(this.imagePreview);
                 this.form.image = compressedFile;
+                this.imagePreview = preview;
             } catch (error) {
-                console.error('Compression error:', error);
-                alert(this.$i18n.locale === 'en' ? 'Failed to process image. Please try another file.' : 'ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใช้ไฟล์อื่น');
+                this.imageError = this.$i18n.locale === 'en' ? 'Cannot read this image. Please choose another file.' : 'ไม่สามารถอ่านรูปภาพนี้ได้ กรุณาเลือกไฟล์อื่น';
+            } finally {
+                this.isProcessingImage = false;
+                event.target.value = '';
             }
         },
         compressImage(file) {
@@ -769,7 +774,7 @@ export default {
         getArtistName(artist) {
             if (!artist) return 'N/A';
             if (Array.isArray(artist.name)) {
-                const nameObj = artist.name.find(n => n.key === 'en') || artist.name[0];
+                const nameObj = artist.name.find(n => n.key === this.$i18n.locale && n.value) || artist.name.find(n => n.value);
                 return nameObj ? nameObj.value : (artist.studentId || 'N/A');
             }
             return artist.studentId || 'N/A';
@@ -832,6 +837,7 @@ export default {
             this.resetForm();
         },
         resetForm() {
+            this.imageError = '';
             const defaultSale = this.saleStatuses.find(s => this.getName('en', s) === 'Available');
             const defaultApproval = this.approvalStatuses.find(s => this.getName('en', s) === 'Pending');
 
@@ -1343,7 +1349,7 @@ export default {
 
 .step-heading > span {
     color: #b7791f;
-    font-family: Georgia, serif;
+    font-family: var(--app-font-family);
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: 0.08em;

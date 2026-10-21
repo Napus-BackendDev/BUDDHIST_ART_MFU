@@ -76,6 +76,27 @@ describe('Submission artwork form import', () => {
     expect(parse({ ...source, 'รหัสประจำตัว': 'unknown', 'ประเภทผลงาน': 'Unknown', 'ประทับเวลา': 'bad-date' }).issues).toHaveLength(3)
   })
 
+  test.each(['Mixed Media & Kinetic Mechanism', 'Drawing Installation', 'สีอะคริลิคบนผ้าดิบ'])('imports unmatched category %s as Others and preserves original notes', category => {
+    const other = { _id: 'other-id', code: 'OTHERS', title: [{ key: 'th', value: 'อื่นๆ' }] }
+    const row = parseArtworkRows([{ ...source, 'ประเภทผลงาน': category }], users, [...categories, other])[0]
+    expect(row).toMatchObject({ categoryId: 'other-id', categoryFallback: true, category, issues: [] })
+    expect(artworkPayload(row, row.imageUrl, 'pending').remark).toContainEqual({
+      key: 'th', value: `${source['วิธีการนำเสนอ / การติดตั้งผลงาน']}\n${source['ผลงานสร้างสรรค์ชิ้นที่']}\nประเภทผลงานตามต้นฉบับ: ${category}`
+    })
+  })
+
+  test('keeps exact matches and falls back for ambiguous matches without guessing', () => {
+    const other = { _id: 'other-id', title: [{ key: 'en', value: 'Others' }] }
+    const exact = parseArtworkRows([source], users, [...categories, other])[0]
+    expect(exact).toMatchObject({ categoryId: 'painting', categoryFallback: false })
+    expect(exact.remarkTh).not.toContain('ประเภทผลงานตามต้นฉบับ')
+    const ambiguous = parseArtworkRows([source], users, [...categories, { ...categories[0], _id: 'duplicate' }, other])[0]
+    expect(ambiguous).toMatchObject({ categoryId: 'other-id', categoryFallback: true, issues: [] })
+    const unresolved = parseArtworkRows([{ ...source, Category: '', 'ประเภทผลงาน': 'Unknown' }], users, [other, { ...other, _id: 'duplicate-other' }])[0]
+    expect(unresolved.categoryId).toBeNull()
+    expect(unresolved.issues).toContain('ไม่พบประเภทผลงานที่ตรงกันเพียงประเภทเดียว')
+  })
+
   test('rejects unrelated workbook headers', () => {
     expect(() => parseArtworkRows([{ 'ชื่อ': 'คน' }])).toThrow('หัวคอลัมน์ไม่ตรง')
   })

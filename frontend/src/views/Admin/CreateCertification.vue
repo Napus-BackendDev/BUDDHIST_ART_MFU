@@ -170,7 +170,7 @@ export default {
                 x: this.stageConfig.width / 2 - 50,
                 y: this.stageConfig.height / 2,
                 fontSize: 32,
-                fontFamily: 'Arial',
+                fontFamily: 'Sarabun',
                 fill: '#172b4d',
                 align: 'center'
             });

@@ -14,16 +14,17 @@
                     </div>
                     <div>
                         <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Edit Order' : 'แก้ไขคำสั่งซื้อ' }}</h5>
-                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Modify order details and manage artworks.' : 'แก้ไขรายละเอียดคำสั่งซื้อและจัดการผลงาน' }} #{{ order ? (order.orderNumber || order._id.substring(order._id.length - 8).toUpperCase()) : '' }}</p>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Modify customer and delivery information.' : 'แก้ไขข้อมูลลูกค้าและการจัดส่ง' }} #{{ order ? (order.orderNumber || order._id.substring(order._id.length - 8).toUpperCase()) : '' }}</p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
+                <button type="button" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" class="close-btn" @click="$emit('update:show', false)">
                     <CIcon name="cil-x" size="sm" />
                 </button>
             </div>
         </template>
 
         <div class="wizard-body px-3 py-2" v-if="order">
+            <div v-if="uploadError" class="alert alert-danger" role="alert">{{ uploadError }}</div>
             <div class="wizard-content-grid">
                 <!-- Left Column: Customer & Order Form -->
                 <div class="wizard-form-column">
@@ -40,10 +41,10 @@
                         <CRow>
                             <CCol md="12">
                                 <div class="form-group-custom">
-                                    <label class="form-label">{{ $i18n.locale === 'en' ? 'Customer Name *' : 'ชื่อลูกค้า *' }}</label>
+                                    <label for="order-edit-customer-name" class="form-label">{{ $i18n.locale === 'en' ? 'Customer Name *' : 'ชื่อลูกค้า *' }}</label>
                                     <div class="input-with-icon-left">
                                         <CIcon name="cil-user" class="input-icon-left" />
-                                        <CInput 
+                                        <CInput id="order-edit-customer-name"
                                             v-model="form.contact.name" 
                                             :placeholder="$i18n.locale === 'en' ? 'e.g. Alice Johnson' : 'เช่น สมชาย ดีใจ'" 
                                             class="custom-input pl-5 mb-0"
@@ -57,10 +58,10 @@
                         <CRow>
                             <CCol md="6">
                                 <div class="form-group-custom">
-                                    <label class="form-label">{{ $i18n.locale === 'en' ? 'Email Address' : 'ที่อยู่อีเมล' }}</label>
+                                    <label for="order-edit-email" class="form-label">{{ $i18n.locale === 'en' ? 'Email Address' : 'ที่อยู่อีเมล' }}</label>
                                     <div class="input-with-icon-left">
                                         <CIcon name="cil-envelope-closed" class="input-icon-left" />
-                                        <CInput 
+                                        <CInput id="order-edit-email"
                                             v-model="form.contact.email" 
                                             :placeholder="$i18n.locale === 'en' ? 'e.g. alice@example.com' : 'เช่น alice@example.com'" 
                                             class="custom-input pl-5 mb-0"
@@ -70,10 +71,10 @@
                             </CCol>
                             <CCol md="6">
                                 <div class="form-group-custom">
-                                    <label class="form-label">{{ $i18n.locale === 'en' ? 'Phone Number' : 'เบอร์โทรศัพท์' }}</label>
+                                    <label for="order-edit-phone" class="form-label">{{ $i18n.locale === 'en' ? 'Phone Number' : 'เบอร์โทรศัพท์' }}</label>
                                     <div class="input-with-icon-left">
                                         <CIcon name="cil-phone" class="input-icon-left" />
-                                        <CInput 
+                                        <CInput id="order-edit-phone"
                                             v-model="form.contact.telephone" 
                                             :placeholder="$i18n.locale === 'en' ? 'e.g. 081-234-5678' : 'เช่น 081-234-5678'" 
                                             class="custom-input pl-5 mb-0"
@@ -87,8 +88,8 @@
                         <CRow>
                             <CCol md="12">
                                 <div class="form-group-custom">
-                                    <label class="form-label">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ใบเสร็จ' }}</label>
-                                    <CTextarea 
+                                    <label for="order-edit-billing" class="form-label">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่ใบเสร็จ' }}</label>
+                                    <CTextarea id="order-edit-billing"
                                         v-model="form.address.bill" 
                                         :placeholder="$i18n.locale === 'en' ? 'Billing address...' : 'ที่อยู่ใบเสร็จ...'" 
                                         rows="2"
@@ -103,7 +104,7 @@
                             <CCol md="12">
                                 <div class="form-group-custom">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <label class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</label> 
+                                        <label for="order-edit-shipping" class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่จัดส่ง' }}</label>
                                         <button 
                                             type="button" 
                                             @click="copyBillingToShipping" 
@@ -113,7 +114,7 @@
                                             {{ $i18n.locale === 'en' ? 'Same as billing' : 'เหมือนที่อยู่ใบเสร็จ' }}
                                         </button>
                                     </div>
-                                    <CTextarea 
+                                    <CTextarea id="order-edit-shipping"
                                         v-model="form.address.shipping" 
                                         :placeholder="$i18n.locale === 'en' ? 'Shipping address...' : 'ที่อยู่จัดส่ง...'" 
                                         rows="2"
@@ -126,13 +127,13 @@
                         <!-- Row 5: Search & Add Artworks -->
                         <div class="artwork-selection-section mt-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Search & Add Artworks *' : 'ค้นหาและเพิ่มผลงานศิลปะ *' }}</label>
+                                <label class="form-label mb-0">{{ isSavedOrder ? ($i18n.locale === 'en' ? 'Ordered Artworks' : 'ผลงานในคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Search & Add Artworks *' : 'ค้นหาและเพิ่มผลงานศิลปะ *') }}</label>
                                 <span class="badge badge-light border font-weight-bold" v-if="form.artworks.length > 0">
                                     {{ form.artworks.length }} {{ $i18n.locale === 'en' ? 'items' : 'รายการ' }}
                                 </span>
                             </div>
                             
-                            <div class="search-box-container position-relative mb-3">
+                            <div v-if="!isSavedOrder" class="search-box-container position-relative mb-3">
                                 <div class="search-input-wrapper-limited position-relative">
                                     <CIcon name="cil-search" class="search-input-icon" />
                                     <CInput 
@@ -192,7 +193,7 @@
                                         </div>
                                     </div>
                                     <div class="mr-3 font-weight-bold text-primary">฿ {{ formatPrice(art.price) }}</div>
-                                    <CButton color="danger" variant="ghost" size="sm" @click="removeArtwork(index)" class="btn-remove">
+                                    <CButton v-if="!isSavedOrder" color="danger" variant="ghost" size="sm" @click="removeArtwork(index)" class="btn-remove">
                                         <CIcon name="cil-trash" />
                                     </CButton>
                                 </div>
@@ -210,28 +211,28 @@
                     <div class="image-column-heading">
                         <span><CIcon name="cil-cloud-upload" size="lg" /></span>
                         <div>
-                            <h6>{{ $i18n.locale === 'en' ? 'Payment Slip & Tracking' : 'สลิปการโอนและพัสดุ' }}</h6>
-                            <p>{{ $i18n.locale === 'en' ? 'Upload receipt and update fulfillment info.' : 'อัปโหลดหลักฐานและข้อมูลการจัดส่ง' }}</p>
+                            <h6>{{ $i18n.locale === 'en' ? 'Payment Slip & Tracking' : 'หลักฐานการโอนเงินและพัสดุ' }}</h6>
+                            <p>{{ $i18n.locale === 'en' ? 'Payment proof and delivery information.' : 'หลักฐานการโอนเงินและข้อมูลการจัดส่ง' }}</p>
                         </div>
                     </div>
 
                     <!-- Proof of Payment Upload Container -->
                     <div class="image-upload-block">
                         <div class="file-upload-container" :class="{ 'has-preview': imagePreview }">
-                            <div v-if="!imagePreview" class="upload-dropzone w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3 text-center" @click="$refs.fileInput.click()">
+                            <div v-if="!imagePreview && canUploadImage" class="upload-dropzone w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3 text-center" @click="$refs.fileInput.click()">
                                 <div class="upload-icon-circle mb-2">
                                     <CIcon name="cil-cloud-upload" size="xl" class="text-primary" />
                                 </div>
                                 <div class="upload-title font-weight-bold text-dark small mb-1">
-                                    {{ $i18n.locale === 'en' ? 'Click to upload payment slip' : 'คลิกเพื่ออัปโหลดสลิปการโอนเงิน' }}
+                                    {{ $i18n.locale === 'en' ? 'Click to upload payment slip' : 'คลิกเพื่ออัปโหลดหลักฐานการโอนเงิน' }}
                                 </div>
                                 <div class="upload-hint text-muted small">
-                                    {{ $i18n.locale === 'en' ? 'PNG, JPG (Max 2MB)' : 'PNG, JPG (สูงสุด 2MB)' }}
+                                    {{ $i18n.locale === 'en' ? 'PNG, JPG, GIF, WEBP (Max 2MB)' : 'PNG, JPG, GIF, WEBP (สูงสุด 2MB)' }}
                                 </div>
                             </div>
-                            <div v-else class="preview-container position-relative w-100 h-100">
+                            <div v-else-if="imagePreview" class="preview-container position-relative w-100 h-100">
                                 <img :src="imagePreview" alt="Payment Proof" class="upload-preview" />
-                                <div class="preview-overlay d-flex align-items-center justify-content-center">
+                                <div v-if="canUploadImage" class="preview-overlay d-flex align-items-center justify-content-center">
                                     <button type="button" class="btn btn-sm btn-light rounded-pill mx-1" @click="$refs.fileInput.click()">
                                         <CIcon name="cil-reload" size="sm" class="mr-1" />
                                         {{ $i18n.locale === 'en' ? 'Change' : 'เปลี่ยน' }}
@@ -242,15 +243,16 @@
                                     </button>
                                 </div>
                             </div>
-                            <input type="file" ref="fileInput" class="d-none" @change="handleImageUpload" accept="image/*">
+                            <div v-else class="text-muted p-3">{{ $i18n.locale === 'en' ? 'No payment slip uploaded' : 'ยังไม่มีหลักฐานการโอนเงิน' }}</div>
+                            <input v-if="canUploadImage" type="file" ref="fileInput" class="d-none" @change="handleImageUpload" accept="image/*">
                         </div>
                     </div>
 
                     <!-- Fulfillment / Tracking Information -->
                     <div class="storage-location-row mt-3">
                         <div class="form-group-custom mb-2">
-                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Carrier / Delivery Service' : 'บริษัทขนส่ง' }}</label>
-                            <CSelect
+                            <label for="order-edit-carrier" class="form-label">{{ $i18n.locale === 'en' ? 'Carrier / Delivery Service' : 'บริษัทขนส่ง' }}</label>
+                            <CSelect id="order-edit-carrier"
                                 :value.sync="form.carrier"
                                 :options="carrierOptions"
                                 class="custom-select-box mb-0"
@@ -258,10 +260,10 @@
                         </div>
 
                         <div class="form-group-custom mb-2">
-                            <label class="form-label">{{ $i18n.locale === 'en' ? 'Tracking Number' : 'เลขพัสดุ (Tracking)' }}</label>
+                            <label for="order-edit-tracking" class="form-label">{{ $i18n.locale === 'en' ? 'Tracking Number' : 'เลขพัสดุ (Tracking)' }}</label>
                             <div class="input-with-icon-left">
                                 <CIcon name="cil-location-pin" class="input-icon-left" />
-                                <CInput 
+                                <CInput id="order-edit-tracking"
                                     v-model="form.trackingId" 
                                     :placeholder="$i18n.locale === 'en' ? 'e.g. TH0123456789' : 'เช่น TH0123456789'" 
                                     class="custom-input pl-5 mb-0"
@@ -318,6 +320,8 @@
 </template>
 
 <script>
+import { orderImageError } from '@/utils/orderImage'
+import { checkoutAmounts, orderAmounts } from '@/utils/orderAmounts'
 export default {
     name: 'OrderEditModal',
     props: {
@@ -338,6 +342,7 @@ export default {
         return {
             artworkSearchQuery: '',
             searchResults: [],
+            uploadError: '',
             imagePreview: null,
             imageFile: null,
             carrierOptions: [
@@ -389,11 +394,21 @@ export default {
         }
     },
     computed: {
+        isSavedOrder() {
+            return Boolean(this.order?._id || this.form._id);
+        },
+        canUploadImage() {
+            const order = this.order;
+            if (!order?._id || order.image) return false;
+            const reserved = order.status?.code === 'RESERVED' || this.getName('en', order.status) === 'Reserved';
+            const createdAt = new Date(order.createdAt).getTime();
+            return reserved && Number.isFinite(createdAt) && createdAt + 24 * 60 * 60 * 1000 > Date.now();
+        },
         allArtworks() {
             return this.$store.getters['artwork/artworks'] || [];
         },
         totalAmount() {
-            return this.form.artworks.reduce((sum, art) => sum + (parseFloat(art.price) || 0), 0);
+            return this.order?._id ? orderAmounts(this.order).total : checkoutAmounts(this.form.artworks).total;
         }
     },
     methods: {
@@ -416,6 +431,7 @@ export default {
                     deliveryDate: this.order.deliveryDate ? new Date(this.order.deliveryDate).toISOString().split('T')[0] : '',
                     _image: null
                 };
+                this.uploadError = '';
                 this.imagePreview = this.order.image || null;
                 this.imageFile = null;
                 this.artworkSearchQuery = '';
@@ -444,6 +460,7 @@ export default {
             });
         },
         selectArtwork(art) {
+            if (this.isSavedOrder) return;
             if (this.form.artworks.find(a => a._id === art._id)) {
                 this.artworkSearchQuery = '';
                 return;
@@ -452,6 +469,7 @@ export default {
             this.artworkSearchQuery = '';
         },
         removeArtwork(index) {
+            if (this.isSavedOrder) return;
             this.form.artworks.splice(index, 1);
         },
         copyBillingToShipping() {
@@ -460,8 +478,9 @@ export default {
         handleImageUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                if (file.size > 2 * 1024 * 1024) {
-                    alert(this.$i18n.locale === 'en' ? 'Image size exceeds 2MB limit.' : 'ขนาดรูปภาพต้องไม่เกิน 2MB');
+                this.uploadError = orderImageError(file, this.$i18n.locale);
+                if (this.uploadError) {
+                    event.target.value = '';
                     return;
                 }
                 this.imageFile = file;
@@ -487,16 +506,15 @@ export default {
             const submitData = {
                 contact: { ...this.form.contact },
                 address: { ...this.form.address },
-                artwork: this.form.artworks.map(a => a._id),
                 carrier: this.form.carrier,
                 trackingId: this.form.trackingId,
                 deliveryDate: this.form.deliveryDate,
-                _image: this.imageFile
+                _image: this.canUploadImage ? this.imageFile : null
             };
             
             this.$emit('save', {
-                id: this.form._id,
-                data: submitData
+                _id: this.form._id,
+                ...submitData
             });
         }
     }
@@ -597,7 +615,7 @@ export default {
 
 .step-heading > span {
     color: #b7791f;
-    font-family: Georgia, serif;
+    font-family: var(--app-font-family);
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: 0.08em;

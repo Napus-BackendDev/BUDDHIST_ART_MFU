@@ -10,16 +10,23 @@ import i18n from './i18n.js'
 import store from "@/store/store";
 import i18nMixin from './mixins/i18nMixin.js';
 import LoadingButton from './components/LoadingButton.vue';
+import submissionImage from './directives/submissionImage';
+import installModalKeyboard from './utils/modalKeyboard';
+Vue.directive('submission-image', submissionImage);
 
 import OtpInput from "@bachdgvn/vue-otp-input";
 Vue.component("v-otp-input", OtpInput);
 Vue.mixin(i18nMixin);
 Vue.component('LoadingButton', LoadingButton);
 
+import Chart from 'chart.js'
+Chart.defaults.global.defaultFontFamily = 'Sarabun'
+
 import VueKonva from 'vue-konva'
 Vue.use(VueKonva)
 
 Vue.use(CoreuiVuePro)
+installModalKeyboard(Vue)
 Vue.prototype.$log = console.log.bind(console)
 
 import VueQRCodeComponent from 'vue-qrcode-component'

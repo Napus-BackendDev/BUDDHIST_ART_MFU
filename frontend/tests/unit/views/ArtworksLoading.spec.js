@@ -46,3 +46,21 @@ test('successful empty results remain an ordinary empty gallery', async () => {
   expect(vm.loadError).toBe('')
   expect(vm.categories).toEqual([])
 })
+
+test.each([500,429])('existing %s error follows locale changes without another API call',status=>{
+ const vm=context(jest.fn())
+ Artworks.methods.handleLoadError.call(vm,{response:{status,headers:{'retry-after':'1'}}})
+ try{
+  vm.$i18n.locale='en'
+  expect(Artworks.computed.loadErrorMessage.call(vm)).toContain(status===429?'Too many requests':'The server could not load')
+  vm.$i18n.locale='th'
+  expect(Artworks.computed.loadErrorMessage.call(vm)).toContain(status===429?'มีคำขอถี่เกินกำหนด':'ระบบไม่สามารถโหลดข้อมูล')
+  expect(vm.$store.dispatch).not.toHaveBeenCalled()
+ }finally{clearTimeout(vm.retryTimer)}
+})
+
+test.each(['th','en'])('gallery sort has a localized accessible name (%s)',locale=>{
+ const w=shallowMount(Artworks,{methods:{fetchInitialData:jest.fn(),checkMobileCollapse:jest.fn()},mocks:{$i18n:{locale},$route:{query:{}},$store:{getters:{},dispatch:jest.fn()}},stubs:['CContainer','SectionHeaderArtworks','CIcon','ArtworkCard']})
+ try{expect(w.find('select.custom-sort-select').attributes('aria-label')).toBe(locale==='en'?'Sort artworks':'เรียงลำดับผลงาน')}
+ finally{w.destroy()}
+})

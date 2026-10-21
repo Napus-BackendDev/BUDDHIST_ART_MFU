@@ -49,11 +49,11 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                            <div class="w-100 shadow-sm border-0 mt-1">
                                 <CDropdownItem v-for="r in roleOptions" :key="r._id" @click="handleRoleSelect(r)">
                                     {{ r.name }}
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -74,14 +74,14 @@
                                     <CIcon name="cil-chevron-bottom" class="dropdown-icon" />
                                 </CButton>
                             </template>
-                            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+                            <div class="w-100 shadow-sm border-0 mt-1">
                                 <CDropdownItem v-for="s in statuses" :key="s._id" @click="handleStatusSelect(s)">
                                     <div class="d-flex align-items-center">
                                         <div :class="['status-dot mr-2', getStatusDotClass(s.nameEn)]"></div>
                                         {{ s.name }}
                                     </div>
                                 </CDropdownItem>
-                            </CDropdownMenu>
+                            </div>
                         </CDropdown>
                     </div>
                 </CCol>
@@ -230,6 +230,9 @@ export default {
         }
     },
     computed: {
+        isCustomer() {
+            return this.form && String(this.form.roleNameEn).toLowerCase() === 'customer';
+        },
         roleOptions() {
             return dedupeRoles(this.roles);
         },
@@ -244,7 +247,10 @@ export default {
         },
         isFormValid() {
             if (!this.form) return false;
-            const baseValid = this.form.studentId && this.form.roleId && this.form.nameEn && this.officialEmail;
+            const name = this.isCustomer ? this.form.nameTh : this.form.nameEn;
+            const email = this.isCustomer ? this.form.personalEmail : this.officialEmail;
+            const baseValid = String(this.form.studentId).trim() && this.form.roleId &&
+                String(name || '').trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
             if (this.isArtist) {
                 return baseValid && this.form.statusId;
             }
@@ -360,17 +366,16 @@ export default {
                 status: this.form.statusId || null, // Always send ObjectID or null
                 name: [
                     { key: 'th', value: this.form.nameTh },
-                    { key: 'en', value: this.form.nameEn }
+                    { key: 'en', value: this.form.nameEn || (this.isCustomer ? this.form.nameTh : '') }
                 ],
                 contact: {
-                    studentEmail: this.officialEmail,
+                    ...(this.isCustomer ? {} : { studentEmail: this.officialEmail }),
                     personalEmail: this.form.personalEmail,
                     telephone: this.form.telephone
                 }
             };
 
             this.$emit('save', payload);
-            this.$emit('update:show', false);
         },
         getStatusDotClass(status) {
             if (!status) return 'bg-secondary';

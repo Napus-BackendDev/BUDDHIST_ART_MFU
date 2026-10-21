@@ -5,6 +5,7 @@ const User = require("../../User/models/user.model");
 const ResMessage = require("../../Settings/service/message");
 const { generateArtworkCode } = require('./artworkCode');
 const { getEffectiveMode, isAdminUser, requestUserId, constants } = require('./postTermSale');
+const access = require('../../../../middleware/artworkAccessMiddleware');
 
 const generateDirectArtworkCode = async (artistId, courseLevel, academicYear) => {
   if (!artistId) return null;
@@ -20,11 +21,12 @@ const generateDirectArtworkCode = async (artistId, courseLevel, academicYear) =>
 
 exports.onQuery = async function (request, response) {
   try {
-    let query = {};
+    let query = await access.readQuery(request);
     query._id = new mongo.ObjectId(request.body._id);
 
     const doc = await Artwork.onQuery(query);
-    return ResMessage.sendResponse(response, 0, 20000, doc);
+    if (!doc) return ResMessage.sendResponse(response, 0, 40400);
+    return ResMessage.sendResponse(response, 0, 20000, access.visible(request, doc));
   } catch (err) {
     return ResMessage.sendResponse(response, 0, 40400);
   }
@@ -33,13 +35,14 @@ exports.onQuery = async function (request, response) {
 exports.onUpdateView = async function (request, response) {
   try {
     const artworkId = new mongo.ObjectId(request.params.id);
-    const doc = await ArtworkModel.findByIdAndUpdate(
-      artworkId,
+    const doc = await ArtworkModel.findOneAndUpdate(
+      { _id: artworkId, ...await access.readQuery(request) },
       { $inc: { views: 1 } },
       { new: true }
     ).lean();
 
-    return ResMessage.sendResponse(response, 0, 20000, doc);
+    if (!doc) return ResMessage.sendResponse(response, 0, 40400);
+    return ResMessage.sendResponse(response, 0, 20000, access.visible(request, doc));
   } catch (err) {
     return ResMessage.sendResponse(response, 0, 40400);
   }
@@ -47,9 +50,9 @@ exports.onUpdateView = async function (request, response) {
 
 exports.onQuerys = async function (request, response) {
   try {
-    let query = {};
+    let query = await access.readQuery(request);
     const doc = await Artwork.onQuerys(query);
-    return ResMessage.sendResponse(response, 0, 20000, doc);
+    return ResMessage.sendResponse(response, 0, 20000, doc.map(item => access.visible(request, item)));
   } catch (err) {
     return ResMessage.sendResponse(response, 0, 40400);
   }
@@ -100,11 +103,21 @@ exports.onCreate = async function (request, response) {
     };
 
     if (isArray) {
-      const results = [];
+      const staged = [];
       for (const item of data) {
         const cleaned = await cleanObject(item);
-        const doc = await Artwork.onCreate(cleaned);
-        results.push(doc);
+        // Server-owned IDs make compensation independent of caller-supplied IDs.
+        const doc = new ArtworkModel({ ...cleaned, _id: new mongo.ObjectId() });
+        await doc.validate();
+        staged.push(doc.toObject());
+      }
+      const results = [];
+      try {
+        for (const item of staged) results.push(await Artwork.onCreate(item));
+      } catch (error) {
+        // This also covers a save that succeeded before its population failed.
+        await ArtworkModel.deleteMany({ _id: { $in: staged.map(item => item._id) } });
+        throw error;
       }
       return ResMessage.sendResponse(response, 0, 20000, results);
     } else {
@@ -120,7 +133,7 @@ exports.onCreate = async function (request, response) {
 
 exports.onUpload = async function (request, response) {
   try {
-    let query = {};
+    let query = { ...request.artworkWriteQuery };
     query._id = new mongo.ObjectId(request.body._id);
 
     // ใช้ Helper แทนการ Hardcode path
@@ -136,7 +149,7 @@ exports.onUpload = async function (request, response) {
 
 exports.onUpdate = async function (request, response) {
   try {
-    let query = {};
+    let query = { ...request.artworkWriteQuery };
     query._id = new mongo.ObjectId(request.body._id);
 
     if (request.body.previousApprovalId) {
@@ -179,7 +192,7 @@ exports.onUpdate = async function (request, response) {
         // It's already an array, ensure it has valid structure
         data.remark = data.remark.filter(item => item && item.key !== undefined);
       }
-    } else {
+    } else if (data.remark !== undefined) {
       data.remark = [
         { key: 'en', value: "" },
         { key: 'th', value: "" }
@@ -234,7 +247,7 @@ exports.onUpdate = async function (request, response) {
 
 exports.onDelete = async function (request, response) {
   try {
-    let query = {};
+    let query = { ...request.artworkWriteQuery };
     query._id = new mongo.ObjectId(request.body._id);
     const doc = await Artwork.onDelete(query);
     return ResMessage.sendResponse(response, 0, 20000, doc);

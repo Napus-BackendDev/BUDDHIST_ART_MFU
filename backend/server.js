@@ -28,9 +28,12 @@ app.set('io', io);
 require('./server/routes/socket.js')(io);
 
 // Initialize Cron Jobs
-require('./server/crons/cartTimeout.js')();
-require('./server/crons/submissionDeadline.js')();
-require('./server/crons/postTermSaleDeadline.js')();
+// A local demonstration using the production database must not duplicate its workers.
+if (process.env.RUN_SCHEDULED_JOBS !== 'false') {
+    require('./server/crons/cartTimeout.js')();
+    require('./server/crons/submissionDeadline.js')();
+    require('./server/crons/postTermSaleDeadline.js')();
+}
 
 /**
  * Listen on provided port.

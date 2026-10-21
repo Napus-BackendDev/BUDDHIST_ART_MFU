@@ -27,7 +27,7 @@
         <div class="px-3 py-2" v-if="news">
             <!-- Single Image Display -->
             <div class="news-image-container mb-4" v-if="getFirstImage(news)">
-                <img :src="getFirstImage(news)" class="news-main-image" />
+                <img :src="getFirstImage(news)" :alt="getName($i18n.locale, news.title)" class="news-main-image" />
             </div>
 
             <h3 class="font-weight-bold mb-2">{{ getName('en', news.title) }}</h3>
@@ -88,7 +88,7 @@ export default {
             if (!news) return null;
             if (news.images && news.images.length > 0) return news.images[0];
             if (news.image) return news.image;
-            return 'https://via.placeholder.com/800x400?text=No+Image';
+            return null;
         },
         formatDate(date) {
             if (!date) return '';

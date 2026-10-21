@@ -59,6 +59,7 @@
                         <div class="d-inline-flex align-items-center">
                             <button 
                                 class="action-btn icon-view" 
+                                :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                                 @click="$emit('view', item)"
                             >
@@ -66,6 +67,7 @@
                             </button>
                             <button 
                                 class="action-btn icon-edit ml-2" 
+                                :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 @click="$emit('edit', item)"
                             >
@@ -73,6 +75,7 @@
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
+                                :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="$emit('delete', item)"
                             >
@@ -94,6 +97,7 @@ import * as XLSX from 'xlsx';
 import { mapGetters } from 'vuex'
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import TablePaginationFooter from './TablePaginationFooter.vue';
+import { submissionProgress } from '@/utils/submissionReview';
 
 export default {
     name: 'SubmissionTable',
@@ -141,27 +145,14 @@ export default {
             return item.assignments ? item.assignments.length : 0;
         },
         calculateProgress(item) {
-            if (!item.assignments || item.assignments.length === 0 || !item.artist || item.artist.length === 0) return 0;
-            const totalPossible = item.assignments.length * item.artist.length;
-            let totalSubmitted = 0;
-            item.assignments.forEach(assign => {
-                if (assign.artworks) {
-                    const submittedOwners = new Set();
-                    assign.artworks.forEach(aw => {
-                        const ownerId = (aw.owner?._id || aw.owner || aw.artist?._id || aw.artist)?.toString();
-                        if (ownerId) submittedOwners.add(ownerId);
-                    });
-                    totalSubmitted += submittedOwners.size;
-                }
-            });
-            return Math.min(100, Math.round((totalSubmitted / totalPossible) * 100));
+            return submissionProgress(item);
         },
         pageChange(val) {
             this.activePage = val;
         },
         exportDate(date) {
             // Round-trippable (re-importable) date; blank when absent
-            return date ? moment(date).format('YYYY-MM-DD') : '';
+            return date && moment(date).isValid() ? moment(date).toISOString() : '';
         },
         nameOrBlank(lang, field) {
             // Bilingual value or a truly empty string. The mixin's getName returns 'N/A' for an
@@ -187,8 +178,12 @@ export default {
             return this.nameOrBlank(this.$i18n.locale, cat);
         },
         exportExcel() {
+            const wb = this.createExportWorkbook();
+            XLSX.writeFile(wb, `Submissions_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
+        },
+        createExportWorkbook() {
             const headers = [
-                'SubmissionTitleThai', 'SubmissionTitleEng', 'CourseLevel', 'SubmissionStartDate', 'SubmissionEndDate',
+                'SubmissionTitleThai', 'SubmissionTitleEng', 'CourseLevel', 'AcademicYear', 'SubmissionStartDate', 'SubmissionEndDate',
                 'AssignmentTitleThai', 'AssignmentTitleEng', 'AssignmentStartDate', 'AssignmentEndDate',
                 'ArtistStudentID',
                 'ArtworkTitleThai', 'ArtworkTitleEng', 'ArtworkDescriptionThai', 'ArtworkDescriptionEng', 'Technique', 'Size', 'Price', 'Category'
@@ -200,6 +195,7 @@ export default {
                     this.nameOrBlank('th', sub),
                     this.nameOrBlank('en', sub),
                     sub.courseLevel || '',
+                    sub.academicYear || '',
                     sub.create ? this.exportDate(sub.create.startAt) : '',
                     sub.create ? this.exportDate(sub.create.endAt) : ''
                 ];
@@ -215,11 +211,13 @@ export default {
                         asg.create ? this.exportDate(asg.create.endAt) : ''
                     ];
                     const artworks = asg.artworks || [];
-                    const artists = asg.artist || [];
+                    const artists = asg.artist?.length ? asg.artist : (sub.artist || []);
+                    const submitted = new Set();
 
                     if (artworks.length > 0) {
                         artworks.forEach(aw => {
                             const sid = this.getStudentId(aw.owner);
+                            if (sid) submitted.add(sid);
                             if (sid) represented.add(sid);
                             rows.push([
                                 ...subCols, ...asgCols,
@@ -234,14 +232,14 @@ export default {
                                 this.getCategoryName(aw.category)
                             ]);
                         });
-                    } else if (artists.length > 0) {
-                        // people enrolled in the assignment but no artworks yet -> one row per person
-                        artists.forEach(person => {
-                            const sid = this.getStudentId(person);
-                            if (sid) represented.add(sid);
-                            rows.push([...subCols, ...asgCols, sid, '', '', '', '', '', '', '', '']);
-                        });
-                    } else {
+                    }
+                    // Keep each task enrollment even when other learners have already submitted.
+                    artists.forEach(person => {
+                        const sid = this.getStudentId(person);
+                        if (sid) represented.add(sid);
+                        if (!submitted.has(sid)) rows.push([...subCols, ...asgCols, sid, '', '', '', '', '', '', '', '']);
+                    });
+                    if (artworks.length === 0 && artists.length === 0) {
                         // assignment with neither people nor artworks
                         rows.push([...subCols, ...asgCols, '', '', '', '', '', '', '', '', '']);
                     }
@@ -266,7 +264,7 @@ export default {
             const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Submissions');
-            XLSX.writeFile(wb, `Submissions_Export_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
+            return wb;
         }
     },
     computed: {
@@ -286,15 +284,15 @@ export default {
         filteredItems() {
             if (!this.submissions) return [];
             const list = this.submissions.filter(item => {
-                const title = (this.getName('en', item) || this.getName('th', item) || '').toLowerCase();
-                const matchesSearch = title.includes(this.filters.search.toLowerCase())
+                const search = (this.filters.search || '').toLowerCase();
+                const matchesSearch = ['th', 'en'].some(lang => (this.getName(lang, item) || '').toLowerCase().includes(search));
                 
                 let matchesDate = true
                 if (this.filters.startDate || this.filters.endDate) {
                     const startAt = (item.create && item.create.startAt) ? item.create.startAt : item.createdAt;
                     const itemDate = new Date(startAt);
-                    if (this.filters.startDate && itemDate < this.filters.startDate) matchesDate = false
-                    if (this.filters.endDate && itemDate > this.filters.endDate) matchesDate = false
+                    if (this.filters.startDate && itemDate < new Date(this.filters.startDate).setHours(0, 0, 0, 0)) matchesDate = false
+                    if (this.filters.endDate && itemDate > new Date(this.filters.endDate).setHours(23, 59, 59, 999)) matchesDate = false
                 }
                 
                 return matchesSearch && matchesDate

@@ -1,17 +1,30 @@
 <template>
-  <div class="submissions-detail-premium" v-if="submission">
+  <div class="submissions-detail-premium">
+    <div v-if="loadError" role="alert" class="alert alert-warning">
+      <p>{{ loadMessage }}</p>
+      <button type="button" class="btn btn-warning" :disabled="retryNow < retryAt" @click="fetchSubmission">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+    </div>
+    <p v-if="loading && !submission" role="status">{{ $i18n.locale === 'en' ? 'Loading submission...' : 'กำลังโหลดรายการส่งงาน...' }}</p>
+    <section v-else-if="!submission && !loadError" class="text-center py-5">
+      <h2>{{ $i18n.locale === 'en' ? 'Submission not found' : 'ไม่พบรายการส่งงาน' }}</h2>
+      <p>{{ $i18n.locale === 'en' ? 'This submission is unavailable or is not assigned to your account.' : 'รายการนี้ไม่มีอยู่ หรือไม่ได้มอบหมายให้บัญชีของคุณ' }}</p>
+      <button type="button" class="btn btn-outline-dark" @click="handleBack">{{ $i18n.locale === 'en' ? 'Back to submissions' : 'กลับรายการส่งงาน' }}</button>
+    </section>
+    <template v-if="submission">
     <!-- Header with Back Button -->
     <div class="detail-header-premium d-flex align-items-center mb-4 animate-in">
-      <button class="btn-back-minimal mr-3 shadow-premium-sm" @click="$emit('back')">
+      <button type="button" class="btn-back-minimal mr-3 shadow-premium-sm" :aria-label="$i18n.locale === 'en' ? 'Back to submissions' : 'กลับรายการส่งงาน'" @click="handleBack">
         <CIcon name="cil-arrow-left" size="lg" />
       </button>
       <div>
         <h4 class="mb-0 font-weight-bold text-dark-premium">{{ getName($i18n.locale, submission) }}</h4>
-        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Select an assignment below to submit your artwork or view your submissions.' : 'เลือกงานที่ได้รับมอบหมายด้านล่างเพื่อส่งผลงานหรือดูผลงานของคุณ' }}</p>
+        <p v-if="submission.assignments && submission.assignments.length" class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Select an assignment below to submit your artwork or view your submissions.' : 'เลือกงานที่ได้รับมอบหมายด้านล่างเพื่อส่งผลงานหรือดูผลงานของคุณ' }}</p>
       </div>
     </div>
 
     <!-- Assignment List as Bars -->
+    <p v-if="!isParticipant" class="alert alert-info" role="status">{{ $i18n.locale === 'en' ? 'You are not registered for this submission. Contact an administrator to register before submitting artwork.' : 'คุณยังไม่ได้ลงทะเบียนในรายการส่งงานนี้ กรุณาติดต่อผู้ดูแลเพื่อลงทะเบียนก่อนส่งผลงาน' }}</p>
+    <p v-if="!submission.assignments || !submission.assignments.length" class="text-muted text-center py-4" role="status">{{ $i18n.locale === 'en' ? 'No assignments are available in this submission yet.' : 'ยังไม่มีงานที่มอบหมายในรายการส่งงานนี้' }}</p>
     <div class="assignment-bars-list mt-2">
        <div 
          v-for="(assign, index) in submission.assignments" 
@@ -79,7 +92,7 @@
 
                 <!-- Submit Button if not closed and is started -->
                 <CButton 
-                  v-if="!isClosed(assign) && !isNotStarted(assign)"
+                  v-if="canSubmitAssignment(assign) && !isClosed(assign) && !isNotStarted(assign)"
                   color="info" 
                   shape="pill" 
                   variant="outline" 
@@ -90,6 +103,9 @@
                     ? ($i18n.locale === 'en' ? 'Submit Again' : 'ส่งงานอีกครั้ง')
                     : ($i18n.locale === 'en' ? 'Submit' : 'ส่งงาน') }}
                 </CButton>
+                <span v-if="isParticipant && !canSubmitAssignment(assign)" class="text-muted small">
+                  {{ $i18n.locale === 'en' ? 'This assignment is not assigned to your account.' : 'ใบงานนี้ไม่ได้มอบหมายให้บัญชีของคุณ' }}
+                </span>
 
                 <!-- If Not Open Yet: Show nothing or keep layout -->
                 <template v-if="isNotStarted(assign)">
@@ -142,7 +158,7 @@
                         <div class="d-flex align-items-center ml-md-3 gap-3" style="gap: 12px;">
                           <!-- Resubmit Button for Rejected -->
                           <CButton 
-                            v-if="isOwnArtwork(artwork) && getApprovalStatusClass(artwork) === 'status-closed' && !isClosed(assign) && !isNotStarted(assign)"
+                            v-if="canSubmitAssignment(assign) && isOwnArtwork(artwork) && getApprovalStatusClass(artwork) === 'status-closed' && !isClosed(assign) && !isNotStarted(assign)"
                             color="info" 
                             size="sm"
                             variant="outline"
@@ -197,14 +213,17 @@
     <SubmissionEditModal 
       :show.sync="showEditModal" 
       :artwork="selectedArtworkForEdit" 
+      :loading="submitting"
       @save="handleUpdateArtwork" 
     />
+    </template>
   </div>
 </template>
 
 <script>
 import moment from 'moment'
 import { mapGetters } from 'vuex'
+import { retryAtFromHeaders } from '@/utils/rateLimit'
 import SubmissionModal from './components/modal/SubmissionCreateModal.vue'
 import ArtworkViewModal from './components/modal/ArtworkViewModal.vue'
 import SubmissionEditModal from './components/modal/SubmissionEditModal.vue'
@@ -232,28 +251,41 @@ export default {
             selectedArtwork: null,
             selectedArtworkForEdit: null,
             expandedAssignmentId: null,
-            refreshInterval: null
+            refreshInterval: null,
+            loading: false,
+            loadError: '',
+            retryAt: 0,
+            retryNow: 0,
+            retryTimer: null
         }
     },
     created() {
         this.fetchSubmission();
         // Set up real-time polling every 10 seconds
         this.refreshInterval = setInterval(() => {
-            this.fetchSubmission();
+            if (!this.loadError && !document.hidden) this.fetchSubmission();
         }, 10000);
     },
     beforeDestroy() {
+        clearTimeout(this.retryTimer);
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
         }
     },
     computed: {
+        loadMessage() {
+            if (this.loadError === 'rate') return this.$i18n.locale === 'en' ? 'Too many requests. Please wait before retrying.' : 'มีคำขอถี่เกินกำหนด กรุณารอก่อนลองใหม่';
+            return this.$i18n.locale === 'en' ? 'Unable to load submissions. Please try again.' : 'โหลดรายการส่งงานไม่สำเร็จ กรุณาลองใหม่';
+        },
         ...mapGetters({
             userId: 'auth/userId'
         }),
         submission() {
             const submissionId = this.id || this.$route.params.id;
-            return this.$store.getters['submission/submissions'].find(s => s._id === submissionId);
+            return (this.$store.getters['submission/submissions'] || []).find(s => s._id === submissionId);
+        },
+        isParticipant() {
+            return !!this.userId && (this.submission?.artist || []).some(artist => String(artist?._id || artist) === String(this.userId));
         },
         selectedAssignmentTitle() {
             return this.selectedAssignment ? this.getName('en', this.selectedAssignment) : '';
@@ -283,16 +315,36 @@ export default {
                 }
             ].filter(group => group.items.length > 0);
         },
-        fetchSubmission() {
+        async fetchSubmission() {
+            if (this.loading || Date.now() < this.retryAt) return;
             const submissionId = this.id || this.$route.params.id;
-            if (submissionId) {
-                this.$store.dispatch('submission/get', { _id: submissionId });
-            }
+            if (!submissionId) return;
+            this.loading = true;
+            try {
+                await this.$store.dispatch('submission/get', { _id: submissionId });
+                this.loadError = '';
+            } catch (error) {
+                this.loadError = error.response?.status === 429 ? 'rate' : 'load';
+                if (this.loadError === 'rate') {
+                    this.retryAt = retryAtFromHeaders(error.response.headers);
+                    this.retryNow = Date.now();
+                    clearTimeout(this.retryTimer);
+                    this.retryTimer = setTimeout(() => { this.retryNow = Date.now(); }, Math.max(0, this.retryAt - Date.now()));
+                }
+            } finally { this.loading = false; }
+        },
+        handleBack() {
+            if (this.$route?.name === 'ArtistSubmissionsDetail') this.$router.push({ name: 'ArtistSubmissions' });
+            else this.$emit('back');
         },
         handleBarClick(assign) {
             this.handleViewWork(assign);
         },
+        canSubmitAssignment(assign) {
+            return this.isParticipant && !!assign && assign.isAssigned === true;
+        },
         handleOpenSubmission(assign) {
+            if (!this.canSubmitAssignment(assign)) return;
             this.selectedAssignment = assign;
             this.showSubmissionModal = true;
         },
@@ -308,16 +360,24 @@ export default {
             this.showViewModal = true;
         },
         handleWorkSubmit(artworkData) {
+            if (!this.canSubmitAssignment(this.selectedAssignment)) return Promise.resolve();
             this.submitting = true;
             const payload = {
                 submissionId: this.submission._id,
                 assignmentId: this.selectedAssignment._id,
                 artwork: artworkData
             };
-            this.$store.dispatch('submission/submitWork', payload)
+            return this.$store.dispatch('submission/submitWork', payload)
                 .then(() => {
                     this.showSubmissionModal = false;
                     this.fetchSubmission();
+                })
+                .catch(() => {
+                    this.$store.commit('dialog/showToast', {
+                        title: this.$i18n.locale === 'en' ? 'Could not submit artwork' : 'ส่งผลงานไม่สำเร็จ',
+                        message: this.$i18n.locale === 'en' ? 'Refresh the page and try again.' : 'กรุณารีเฟรชหน้าแล้วลองใหม่',
+                        variant: 'danger'
+                    });
                 })
                 .finally(() => {
                     this.submitting = false;
@@ -325,11 +385,13 @@ export default {
         },
         handleEditArtworkFromView(artwork) {
             this.selectedArtworkForEdit = artwork;
-            this.selectedAssignment = null; // Reset if coming from direct view
+            this.selectedAssignment = this.submission?.assignments?.find(round => round.artworks?.some(item => item._id === artwork._id)) || null;
+            if (!this.canSubmitAssignment(this.selectedAssignment)) return;
             this.showViewModal = false;
             this.showEditModal = true;
         },
         handleResubmit(assign, artwork) {
+            if (!this.canSubmitAssignment(assign)) return;
             this.selectedAssignment = assign;
             this.selectedArtworkForEdit = artwork;
             this.showEditModal = true;
@@ -337,40 +399,23 @@ export default {
         async handleUpdateArtwork(artworkData) {
             this.submitting = true;
             try {
-                // 1. Update the artwork in the main collection if it has an _id (exists in DB)
-                if (artworkData._id) {
-                    await this.$store.dispatch('artwork/update', artworkData);
-                }
-                
-                // 2. If it's a resubmission for an assignment, update the submission entry
-                if (this.selectedAssignment && this.submission) {
-                    const submission = JSON.parse(JSON.stringify(this.submission));
-                    const assign = submission.assignments.find(a => a._id === this.selectedAssignment._id);
-                    
-                    if (assign && assign.artworks) {
-                        const artIndex = assign.artworks.findIndex(a => a._id === artworkData._id);
-                        if (artIndex !== -1) {
-                            // Update artwork data and reset status to Pending (Yellow)
-                            // We use the same status ID for Pending as used in initial submission
-                            assign.artworks[artIndex] = {
-                                ...assign.artworks[artIndex],
-                                ...artworkData,
-                                status: "69677d4de5f76f7a8c42dbf6", // Default Pending Status ID
-                                create: { at: new Date() }
-                            };
-                            
-                            await this.$store.dispatch('submission/update', { 
-                                _id: submission._id, 
-                                assignments: submission.assignments 
-                            });
-                        }
-                    }
-                }
-                
+                const assignment = this.selectedAssignment || this.submission?.assignments?.find(round => round.artworks?.some(item => item._id === artworkData._id));
+                if (!assignment) throw new Error('Submission assignment not found');
+                if (!this.canSubmitAssignment(assignment)) return;
+                await this.$store.dispatch('submission/submitWork', {
+                    submissionId: this.submission._id,
+                    assignmentId: assignment._id,
+                    artwork: artworkData
+                });
                 this.showEditModal = false;
-                this.fetchSubmission();
+                await this.fetchSubmission();
             } catch (error) {
                 console.error("Resubmit Error:", error);
+                this.$store.commit('dialog/showToast', {
+                    title: this.$i18n.locale === 'en' ? 'Could not update artwork' : 'แก้ไขผลงานไม่สำเร็จ',
+                    message: this.$i18n.locale === 'en' ? 'Refresh the page and try again.' : 'กรุณารีเฟรชหน้าแล้วลองใหม่',
+                    variant: 'danger'
+                });
             } finally {
                 this.submitting = false;
                 this.selectedAssignment = null;
@@ -463,13 +508,12 @@ export default {
             const nameEn = (typeof approval === 'string' ? approval : this.getName('en', approval)).toLowerCase();
             const nameTh = typeof approval === 'string' ? '' : this.getName('th', approval);
             
-            // Approved logic
+            // Rejected logic
+            if (nameEn.includes('rejected') || nameEn.includes('ไม่อนุมัติ') || nameEn.includes('ไม่ผ่าน') || nameTh.includes('ไม่นุมัติ') || nameTh.includes('ไม่อนุมัติ') || nameTh.includes('ไม่ผ่าน')) {
+                return 'status-closed';
+            }
             if (nameEn.includes('approved') || nameTh.includes('อนุมัติ') || nameTh.includes('ผ่าน')) {
                 return 'status-open';
-            }
-            // Rejected logic
-            if (nameEn.includes('rejected') || nameTh.includes('ไม่นุมัติ') || nameTh.includes('ไม่อนุมัติ') || nameTh.includes('ไม่ผ่าน')) {
-                return 'status-closed';
             }
             // Default to Pending (upcoming/yellow)
             return 'status-upcoming';
@@ -512,7 +556,7 @@ export default {
 
 <style scoped>
 .submissions-detail-premium {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--app-font-family);
     background-color: #f8fafc;
     min-height: 100vh;
 }

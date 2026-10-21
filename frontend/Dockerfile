@@ -14,6 +14,10 @@ RUN npm install --legacy-peer-deps --ignore-scripts
 
 COPY . .
 
+# Public OAuth client ID and API URL must be available during compilation.
+ARG VUE_APP_CLIENTID
+ARG VUE_APP_API_URL=https://bas.beta.mfu.ac.th
+
 # สร้าง production build
 RUN npm run build
 

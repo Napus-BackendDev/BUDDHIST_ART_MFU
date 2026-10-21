@@ -13,6 +13,7 @@ module.exports = function (app) {
   var path = "/api/v1";
   app.use(path, realtimeMutationEmitter);
   app.use(path + '/google', googleRoutes);
+  app.use(path + '/contact', require('../Project/Contact/contact.routes'));
 
   // app.use(path + '/organization', organizationRoutes); // complete
 

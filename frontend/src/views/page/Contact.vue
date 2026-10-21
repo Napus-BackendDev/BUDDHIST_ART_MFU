@@ -28,7 +28,7 @@
                     <div class="detail-text">
                       <h6 class="detail-label mb-1 font-weight-bold">{{ $i18n.locale === 'en' ? 'Location' : 'ที่อยู่' }}</h6>
                       <p class="detail-value mb-0">
-                        {{ $i18n.locale === 'en' ? 'Academic Services Division, Gen. Sampao Choosri Building (E4), Mae Fah Luang University, 333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'ศูนย์บริการวิชาการ อาคารพลเอกสำเภา ชูศรี (E4) มหาวิทยาลัยแม่ฟ้าหลวง 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
+                        {{ $i18n.locale === 'en' ? 'Center For Academic Success Service, Gen. Sampao Choosri Building (E4), Mae Fah Luang University, 333 Moo 1, Thasud, Muang, Chiang Rai 57100' : 'ศูนย์บริการวิชาการ อาคารพลเอกสำเภา ชูศรี (E4) มหาวิทยาลัยแม่ฟ้าหลวง 333 หมู่ 1 ต.ท่าสุด อ.เมือง จ.เชียงราย 57100' }}
                       </p>
                     </div>
                   </div>
@@ -54,7 +54,7 @@
                     <div class="detail-text">
                       <h6 class="detail-label mb-1 font-weight-bold">{{ $i18n.locale === 'en' ? 'Email Address' : 'อีเมล' }}</h6>
                       <p class="detail-value mb-0">
-                        buddhist.art@mfu.ac.th
+                        <a href="mailto:buddhist.art@mfu.ac.th">buddhist.art@mfu.ac.th</a>
                       </p>
                     </div>
                   </div>
@@ -104,7 +104,7 @@
                 <div class="success-icon-wrapper mb-4">
                   <CIcon name="cil-check-circle" size="custom" class="success-icon" />
                 </div>
-                <h3 class="success-title font-weight-bold mb-3">
+                <h3 ref="contactSuccess" tabindex="-1" class="success-title font-weight-bold mb-3">
                   {{ $i18n.locale === 'en' ? 'Thank You!' : 'ขอบคุณที่ติดต่อเรา!' }}
                 </h3>
                 <p class="success-message text-muted mb-5">
@@ -125,13 +125,14 @@
                     {{ $i18n.locale === 'en' ? 'Fill out the form below and we will contact you back as soon as possible.' : 'กรอกรายละเอียดข้อสงสัยหรือหัวข้อคำถามของท่าน แล้วเราจะรีบตอบกลับโดยเร็วที่สุด' }}
                   </p>
 
-                  <form @submit.prevent="handleSubmit" class="contact-form mt-4">
+                  <form ref="contactForm" @submit.prevent="handleSubmit" class="contact-form mt-4">
                     <!-- Full Name & Email Address Row -->
                     <CRow>
                       <CCol md="6" class="mb-4">
                         <div class="form-group-custom">
-                          <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Full Name' : 'ชื่อ-นามสกุล' }} <span class="required">*</span></label>
+                          <label for="contact-name" class="form-label-custom">{{ $i18n.locale === 'en' ? 'Full Name' : 'ชื่อ-นามสกุล' }} <span class="required">*</span></label>
                           <input 
+                            id="contact-name" ref="contactName" maxlength="150" autocomplete="name"
                             type="text" 
                             v-model="form.name" 
                             required 
@@ -142,8 +143,9 @@
                       </CCol>
                       <CCol md="6" class="mb-4">
                         <div class="form-group-custom">
-                          <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Email Address' : 'อีเมล' }} <span class="required">*</span></label>
+                          <label for="contact-email" class="form-label-custom">{{ $i18n.locale === 'en' ? 'Email Address' : 'อีเมล' }} <span class="required">*</span></label>
                           <input 
+                            id="contact-email" maxlength="254" autocomplete="email"
                             type="email" 
                             v-model="form.email" 
                             required 
@@ -156,8 +158,9 @@
 
                     <!-- Subject -->
                     <div class="form-group-custom mb-4">
-                      <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Subject' : 'หัวข้อเรื่อง' }} <span class="required">*</span></label>
+                      <label for="contact-subject" class="form-label-custom">{{ $i18n.locale === 'en' ? 'Subject' : 'หัวข้อเรื่อง' }} <span class="required">*</span></label>
                       <input 
+                            id="contact-subject" maxlength="200"
                             type="text" 
                             v-model="form.subject" 
                             required 
@@ -168,8 +171,9 @@
 
                     <!-- Message -->
                     <div class="form-group-custom mb-4">
-                      <label class="form-label-custom">{{ $i18n.locale === 'en' ? 'Message' : 'ข้อความรายละเอียด' }} <span class="required">*</span></label>
+                      <label for="contact-message" class="form-label-custom">{{ $i18n.locale === 'en' ? 'Message' : 'ข้อความรายละเอียด' }} <span class="required">*</span></label>
                       <textarea 
+                        id="contact-message" maxlength="5000"
                         v-model="form.message" 
                         required 
                         rows="4"
@@ -181,6 +185,7 @@
                 </div>
 
                 <div class="mt-4">
+                  <p v-if="submitError" ref="contactError" tabindex="-1" class="text-danger" role="alert">{{ submitErrorMessage }}</p>
                   <CButton 
                     @click="handleSubmit"
                     color="danger" 
@@ -206,6 +211,7 @@
           <CCard class="contact-card border-0 shadow-sm overflow-hidden p-0 h-auto">
             <div class="map-container">
               <iframe 
+                :title="$i18n.locale === 'en' ? 'Map of Mae Fah Luang University' : 'แผนที่มหาวิทยาลัยแม่ฟ้าหลวง'"
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3748.243501750697!2d99.8923363!3d20.0461877!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30d700346cbbd9ad%3A0x2863920c841c79a8!2sMae%20Fah%20Luang%20University!5e0!3m2!1sen!2sth!4v1717200000000!5m2!1sen!2sth" 
                 width="100%" 
                 height="450" 
@@ -224,6 +230,7 @@
 
 <script>
 import SectionPageHero from './components/SectionPageHero.vue'
+import Service from '@/service/api'
 
 export default {
   name: 'Contact',
@@ -237,10 +244,16 @@ export default {
         message: ''
       },
       submitting: false,
-      submitted: false
+      submitted: false,
+      submitError: false
     }
   },
   computed: {
+    submitErrorMessage() {
+      return this.$i18n.locale === 'en'
+        ? 'Your message could not be sent. Please try again later or contact us by email.'
+        : 'ยังส่งข้อความไม่สำเร็จ กรุณาลองใหม่ภายหลัง หรือติดต่อทางอีเมล';
+    },
     heroDescription() {
       return this.$i18n.locale === 'en'
         ? 'Contact us for more information about the Buddhist Art Short Course Program at Mae Fah Luang University.'
@@ -248,21 +261,27 @@ export default {
     },
   },
   methods: {
-    handleSubmit() {
-      // Basic validation check
-      if (!this.form.name || !this.form.email || !this.form.subject || !this.form.message) {
-        return;
-      }
-      
+    async handleSubmit() {
+      if (this.submitting || !this.$refs.contactForm.reportValidity()) return;
       this.submitting = true;
-      
-      // Simulate API submit delay
-      setTimeout(() => {
-        this.submitting = false;
+      this.submitError = false;
+      try {
+        const response = await Service.contact({ ...this.form });
+        if (!response.data?.success) throw new Error('Inquiry was not accepted');
         this.submitted = true;
-      }, 1200);
+      } catch (error) {
+        this.submitError = true;
+      } finally {
+        this.submitting = false;
+        await this.$nextTick();
+        const notice = this.submitted ? this.$refs.contactSuccess : this.$refs.contactError;
+        if (notice) {
+          notice.focus({ preventScroll: true });
+          notice.scrollIntoView({ block: 'center' });
+        }
+      }
     },
-    resetForm() {
+    async resetForm() {
       this.form = {
         name: '',
         email: '',
@@ -270,6 +289,9 @@ export default {
         message: ''
       };
       this.submitted = false;
+      this.submitError = false;
+      await this.$nextTick();
+      if (this.$refs.contactName) this.$refs.contactName.focus();
     }
   }
 }
@@ -294,7 +316,7 @@ export default {
 }
 
 .section-title {
-  font-family: 'Cinzel', serif;
+  font-family: var(--app-font-family);
   font-weight: 800;
   color: #4a1d18;
   position: relative;
@@ -343,13 +365,13 @@ export default {
 }
 
 .detail-label {
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--app-font-family);
   color: #4a1d18;
   font-size: 0.95rem;
 }
 
 .detail-value {
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--app-font-family);
   color: #4b5563;
   font-size: 0.95rem;
   line-height: 1.5;
@@ -357,7 +379,7 @@ export default {
 
 /* Social media channels */
 .social-title {
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--app-font-family);
   font-size: 0.8rem;
   color: #9ca3af;
   letter-spacing: 1px;
@@ -368,7 +390,7 @@ export default {
   border: 1px solid #e5e7eb;
   border-radius: 30px;
   padding: 8px 18px;
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--app-font-family);
   font-size: 0.9rem;
   color: #4b5563;
   text-decoration: none;
@@ -403,7 +425,7 @@ export default {
 }
 
 .form-label-custom {
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--app-font-family);
   font-size: 0.9rem;
   font-weight: 600;
   color: #4a1d18;
@@ -415,7 +437,7 @@ export default {
 }
 
 .form-control-custom {
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--app-font-family);
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 12px 16px;
@@ -443,7 +465,7 @@ textarea.form-control-custom {
   border: none;
   border-radius: 30px;
   transition: all 0.3s ease;
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--app-font-family);
   letter-spacing: 0.5px;
 }
 
@@ -480,13 +502,13 @@ textarea.form-control-custom {
 }
 
 .success-title {
-  font-family: 'Cinzel', serif;
+  font-family: var(--app-font-family);
   color: #16a34a;
   font-size: 1.8rem;
 }
 
 .success-message {
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--app-font-family);
   font-size: 1rem;
   max-width: 400px;
   line-height: 1.6;

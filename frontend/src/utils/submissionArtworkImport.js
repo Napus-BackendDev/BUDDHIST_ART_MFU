@@ -81,12 +81,18 @@ export function parseArtworkRows(raw, users = [], categories = []) {
     if (!studentId && !titleTh && !titleEn) return null
     const owners = users.filter(user => text(user.studentId || user.studentID) === studentId)
     const category = text(get('ประเภทผลงาน', 'Category'))
+    const matchedCategoryId = categoryId(category, categories)
+    const otherCategories = categories.filter(item =>
+      ['other', 'others'].includes(normalize(item.code)) || categoryId('อื่น', [item]) ||
+      categoryId('อื่นๆ', [item]) || categoryId('Others', [item]) || categoryId('Other', [item]))
+    const categoryFallback = !!category && !matchedCategoryId && otherCategories.length === 1
     const price = Number(text(get('ราคาผลงาน', 'Price')).replace(/,/g, ''))
     const timestamp = get('ประทับเวลา')
     const submittedAt = timestamp ? new Date(timestamp) : null
     const sourceImage = ['คอลัมน์ 1', 'อัพโหลดภาพผลงานสมบูรณ์', 'ImageURL', 'ArtworkImage', 'Image']
       .map(name => text(get(name))).find(value => imageLink(value)) || ''
-    const remarkTh = [get('วิธีการนำเสนอ / การติดตั้งผลงาน', 'RemarkThai'), get('ผลงานสร้างสรรค์ชิ้นที่')].filter(Boolean).join('\n')
+    const remarkTh = [get('วิธีการนำเสนอ / การติดตั้งผลงาน', 'RemarkThai'), get('ผลงานสร้างสรรค์ชิ้นที่'),
+      categoryFallback ? `ประเภทผลงานตามต้นฉบับ: ${category}` : ''].filter(Boolean).join('\n')
     const result = {
       rowNumber: row.__rowNum__ == null ? index + 2 : row.__rowNum__ + 1,
       studentId, artistName: text(get('ชื่อผู้เรียน')), artistNameEn: text(get('ชื่อผู้เรียน (ภาษาอังกฤษ)')),
@@ -99,7 +105,7 @@ export function parseArtworkRows(raw, users = [], categories = []) {
       sizeTh: text(get('ขนาด', 'SizeThai', 'Size')),
       sizeEn: text(get('SizeEng', 'ขนาด', 'Size')),
       remarkTh, remarkEn: text(get('RemarkEng')), price, category,
-      categoryId: categoryId(category, categories), sourceImage,
+      categoryId: categoryFallback ? otherCategories[0]._id : matchedCategoryId, categoryFallback, sourceImage,
       imageUrl: imageLink(sourceImage),
       imageFilename: text(get('ImageFilename', 'Filename')) || (!imageLink(get('Image', 'ArtworkImage')) ? text(get('Image', 'ArtworkImage')) : ''),
       submittedAt: submittedAt && !isNaN(submittedAt.getTime()) ? submittedAt : null,

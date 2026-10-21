@@ -15,7 +15,8 @@
             >
                 <!-- Image Section -->
                 <div class="card-img-wrapper position-relative">
-                    <div class="card-img-bg h-100 w-100" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + getNewsImage(news) + String.fromCharCode(34) + ')' }"></div>
+                    <div v-if="getNewsImage(news)" class="card-img-bg h-100 w-100" :style="{ backgroundImage: 'url(' + String.fromCharCode(34) + getNewsImage(news) + String.fromCharCode(34) + ')' }"></div>
+                    <div v-else class="h-100 w-100 d-flex align-items-center justify-content-center bg-light text-muted">{{ $i18n.locale === 'en' ? 'No image' : 'ไม่มีภาพประกอบ' }}</div>
                     <div class="card-img-overlay-custom"></div>
                 </div>
 
@@ -33,10 +34,10 @@
                     <p class="news-summary text-muted mb-4">{{ getNewsSummary(news) }}</p>
 
                     <div class="mt-auto">
-                        <div class="read-more-btn">
+                        <router-link class="read-more-btn" :to="{ name: 'NewsDetail', params: { id: news._id } }" :aria-label="($i18n.locale === 'en' ? 'Read article: ' : 'อ่านข่าว: ') + getName($i18n.locale, news.title)" @click.native.stop>
                             <span>{{ isHome ? ($i18n.locale === 'en' ? 'Read More' : 'อ่านต่อ') : ($i18n.locale === 'en' ? 'Read Article' : 'อ่านบทความ') }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2 arrow-icon" />
-                        </div>
+                        </router-link>
                     </div>
                 </CCardBody>
             </CCard>
@@ -65,7 +66,7 @@ export default {
         getNewsImage(news) {
             if (news.images && news.images.length > 0) return news.images[0];
             if (news.image) return news.image;
-            return 'https://via.placeholder.com/800x600?text=No+Image';
+            return '';
         },
         getNewsDate(news) {
             const dateVal = news.create ? news.create.datetime : (news.createdAt || null);
@@ -77,7 +78,7 @@ export default {
                 const year = date.getFullYear();
                 return `${day}/${month}/${year}`;
             } else {
-                return date.toLocaleDateString('th-TH', { 
+                return date.toLocaleDateString(this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH', {
                     day: '2-digit', 
                     month: 'short', 
                     year: 'numeric' 
@@ -100,6 +101,7 @@ export default {
 </script>
 
 <style scoped>
+.read-more-btn:focus-visible { outline: 2px solid #612721; outline-offset: 4px; }
 .news-card {
     background: #ffffff;
     border-radius: 20px;
@@ -188,7 +190,7 @@ export default {
 }
 
 .date-text {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     color: #4a1d18;
     font-weight: 700;
 }
@@ -198,7 +200,7 @@ export default {
 }
 
 .news-title {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 1.15rem;
     font-weight: 700;
     color: #1c1917;
@@ -226,7 +228,7 @@ export default {
 }
 
 .news-summary {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.82rem;
     line-height: 1.6;
     color: #6b7280;
@@ -252,7 +254,7 @@ export default {
     font-size: 0.88rem;
     position: relative;
     padding-bottom: 4px;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     transition: color 0.3s ease;
 }
 

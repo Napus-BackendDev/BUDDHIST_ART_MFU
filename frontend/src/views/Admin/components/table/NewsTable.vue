@@ -8,9 +8,10 @@
                         <template #thumbnail="{ item }">
                             <td>
                                 <div class="thumbnail-wrapper clickable" @click="zoomImg(getFirstImage(item))">
-                                    <img :src="getFirstImage(item) || `https://via.placeholder.com/40/e2e8f0/808080?text=${getName('en', item).charAt(0)}`"
+                                    <img v-if="getFirstImage(item)" :src="getFirstImage(item)"
                                         :alt="getName($i18n.locale, item) || getName('en', item)" class="thumbnail-img">
-                                    <div class="zoom-overlay">
+                                    <span v-else class="d-flex h-100 align-items-center justify-content-center text-muted" :aria-label="$i18n.locale === 'en' ? 'No image' : 'ไม่มีภาพประกอบ'"><CIcon name="cil-newspaper" /></span>
+                                    <div v-if="getFirstImage(item)" class="zoom-overlay">
                                         <CIcon name="cil-search" />
                                     </div>
                                 </div>
@@ -43,13 +44,13 @@
                         <template #actions="{ item }">
                             <td class="text-right">
                                 <div class="d-inline-flex align-items-center">
-                                    <button class="action-btn icon-view" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="onView(item)">
+                                    <button class="action-btn icon-view" :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="onView(item)">
                                         <CIcon name="cilMagnifyingGlass" size="lg" />
                                     </button>
-                                    <button class="action-btn icon-edit ml-2" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
+                                    <button class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
                                         <CIcon name="cil-pencil" size="lg" />
                                     </button>
-                                    <button class="action-btn icon-trash ml-2" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="onDelete(item)">
+                                    <button class="action-btn icon-trash ml-2" :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="onDelete(item)">
                                         <CIcon name="cil-trash" size="lg" />
                                     </button>
                                 </div>
@@ -127,7 +128,7 @@ export default {
 
                 let dateMatch = true;
                 if (this.filters.startDate || this.filters.endDate) {
-                    const itemDate = moment(item.createdAt);
+                    const itemDate = moment(item.create?.datetime || item.createdAt || null);
                     if (this.filters.startDate) dateMatch = dateMatch && itemDate.isSameOrAfter(moment(this.filters.startDate).startOf('day'));
                     if (this.filters.endDate) dateMatch = dateMatch && itemDate.isSameOrBefore(moment(this.filters.endDate).endOf('day'));
                 }

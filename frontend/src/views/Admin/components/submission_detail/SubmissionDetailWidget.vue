@@ -63,6 +63,7 @@
 </template>
 
 <script>
+import { reviewCounts, submissionProgress } from '@/utils/submissionReview'
 export default {
   name: 'SubmissionDetailWidget',
   props: {
@@ -83,30 +84,10 @@ export default {
       return this.submission.artist ? this.submission.artist.length : 0;
     },
     avgProgress() {
-      if (!this.submission.assignments || this.submission.assignments.length === 0 || !this.submission.artist || this.submission.artist.length === 0) return 0;
-      const totalPossible = this.submission.assignments.length * this.submission.artist.length;
-      let totalSubmitted = 0;
-      this.submission.assignments.forEach(assign => {
-        if (assign.artworks) {
-          const submittedOwners = new Set();
-          assign.artworks.forEach(aw => {
-            const ownerId = (aw.owner?._id || aw.owner || aw.artist?._id || aw.artist)?.toString();
-            if (ownerId) submittedOwners.add(ownerId);
-          });
-          totalSubmitted += submittedOwners.size;
-        }
-      });
-      return Math.min(100, Math.round((totalSubmitted / totalPossible) * 100));
+      return submissionProgress(this.submission);
     },
     pendingReviews() {
-        if (!this.submission.assignments) return 0;
-        let pending = 0;
-        this.submission.assignments.forEach(assign => {
-            if (assign.artworks) {
-                pending += assign.artworks.filter(a => a.status === 'Pending').length;
-            }
-        });
-        return pending;
+      return (this.submission.assignments || []).reduce((total, task) => total + reviewCounts(task.artworks || []).pending, 0);
     }
   }
 }

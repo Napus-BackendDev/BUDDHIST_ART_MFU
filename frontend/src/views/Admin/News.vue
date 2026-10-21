@@ -67,6 +67,7 @@ export default {
         async handleSaveNews(newNews) {
             if (this.saving) return;
             this.saving = true;
+            let createdNews = null;
             try {
                 // 1. Create the news entry
                 const response = await this.$store.dispatch('news/create', {
@@ -74,7 +75,7 @@ export default {
                     description: newNews.description
                 });
                 
-                const createdNews = response.data.data;
+                createdNews = response.data.data;
 
                 // 2. Upload images if they exist
                 if (newNews._images && newNews._images.length > 0) {
@@ -100,9 +101,16 @@ export default {
                 this.showCreateModal = false;
             } catch (error) {
                 console.error('Error creating news:', error);
+                if (createdNews) {
+                    this.selectedNews = createdNews;
+                    this.showCreateModal = false;
+                    this.showEditModal = true;
+                }
                 this.$store.commit('dialog/showToast', {
                     title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
-                    message: error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to create news.' : 'ไม่สามารถสร้างข่าวสารได้'),
+                    message: createdNews
+                        ? (this.$i18n.locale === 'en' ? 'News was created, but image upload failed. Attach the images again to this existing article.' : 'สร้างข่าวแล้ว แต่อัปโหลดภาพไม่สำเร็จ กรุณาแนบภาพใหม่ในข่าวเดิมนี้')
+                        : error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to create news.' : 'ไม่สามารถสร้างข่าวสารได้'),
                     variant: 'danger'
                 });
             } finally {

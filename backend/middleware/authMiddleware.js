@@ -23,4 +23,12 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
+// Public profile reads may include a valid session to retrieve one's own details.
+authMiddleware.optional = (req, res, next) => {
+    if (req.headers['x-access-token'] || req.headers.authorization) {
+        return authMiddleware(req, res, next);
+    }
+    return next();
+};
+
 module.exports = authMiddleware;

@@ -4,11 +4,11 @@
       <CRow class="align-items-end">
         <!-- Search Field -->
         <CCol lg="3" md="12" class="mb-3 mb-lg-0">
-          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search Assignments' : 'ค้นหางาน' }}</label>
+          <label for="assignment-title-search" class="filter-label">{{ $i18n.locale === 'en' ? 'Search Assignments' : 'ค้นหางาน' }}</label>
           <div class="search-field-wrapper">
             <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
             <CInput 
-              :value="value.search" 
+              id="assignment-title-search" :value="value.search"
               @input="updateFilter('search', $event)"
               class="m-0 border-0 custom-input-plain"
               :placeholder="$i18n.locale === 'en' ? 'Assignment title...' : 'หัวข้องาน...'" 
@@ -22,15 +22,16 @@
           <CDropdown class="filter-dropdown-small" :caret="false">
             <template #toggler>
               <CButton class="dropdown-trigger-btn-small">
-                {{ value.status }}
+                {{ statusLabel }}
                 <CIcon name="cil-filter" class="filter-icon-small" />
               </CButton>
             </template>
-            <CDropdownMenu>
+            <div>
               <CDropdownItem @click="updateFilter('status', 'All Status')">{{ $i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด' }}</CDropdownItem>
+              <CDropdownItem @click="updateFilter('status', 'Not Open Yet')">{{ $i18n.locale === 'en' ? 'Not Open Yet' : 'ระบบยังไม่เปิด' }}</CDropdownItem>
               <CDropdownItem @click="updateFilter('status', 'In Progress')">{{ $i18n.locale === 'en' ? 'In Progress' : 'กำลังดำเนินการ' }}</CDropdownItem>
               <CDropdownItem @click="updateFilter('status', 'Closed')">{{ $i18n.locale === 'en' ? 'Closed' : 'ปิดแล้ว' }}</CDropdownItem>
-            </CDropdownMenu>
+            </div>
           </CDropdown>
         </CCol>
 
@@ -56,9 +57,9 @@
             <div class="date-input-wrapper">
               <CInput 
                 :type="formattedStartDate ? 'date' : 'text'"
-                placeholder="วัน/เดือน/ปี"
+                :placeholder="$i18n.locale === 'en' ? 'dd/mm/yyyy' : 'วัน/เดือน/ปี'"
                 lang="en-GB"
-                :value="formattedStartDate" 
+                :aria-label="$i18n.locale === 'en' ? 'Start date' : 'วันที่เริ่มต้น'" :value="formattedStartDate"
                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
                 @blur="!$event.target.value && ($event.target.type = 'text')"
                 @input="onDateInput('startDate', $event)"
@@ -70,9 +71,9 @@
             <div class="date-input-wrapper">
               <CInput 
                 :type="formattedEndDate ? 'date' : 'text'"
-                placeholder="วัน/เดือน/ปี"
+                :placeholder="$i18n.locale === 'en' ? 'dd/mm/yyyy' : 'วัน/เดือน/ปี'"
                 lang="en-GB"
-                :value="formattedEndDate" 
+                :aria-label="$i18n.locale === 'en' ? 'End date' : 'วันที่สิ้นสุด'" :value="formattedEndDate"
                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
                 @blur="!$event.target.value && ($event.target.type = 'text')"
                 @input="onDateInput('endDate', $event)"
@@ -88,14 +89,13 @@
 </template>
 
 <script>
-import { CDropdown, CDropdownMenu, CDropdownItem } from '@coreui/vue';
+import { CDropdown, CDropdownItem } from '@coreui/vue';
 import moment from 'moment'
 
 export default {
   name: 'SubmissionDetailFilter',
   components: {
     CDropdown,
-    CDropdownMenu,
     CDropdownItem
   },
   props: {
@@ -105,6 +105,10 @@ export default {
     }
   },
   computed: {
+    statusLabel() {
+      if (this.$i18n.locale === 'en') return this.value.status
+      return { 'All Status': 'สถานะทั้งหมด', 'Not Open Yet': 'ระบบยังไม่เปิด', 'In Progress': 'กำลังดำเนินการ', Closed: 'ปิดแล้ว' }[this.value.status] || this.value.status
+    },
     formattedStartDate() {
       return this.value.startDate ? moment(this.value.startDate).format('YYYY-MM-DD') : ''
     },
@@ -334,7 +338,8 @@ export default {
   border: 1px solid #ebedef;
   border-radius: 8px !important;
   padding: 3px;
-  height: 42px;
+  min-height: 42px;
+  height: auto;
 }
 
 .range-btn {
@@ -345,7 +350,8 @@ export default {
   transition: all 0.2s ease !important;
   flex: 1;
   white-space: nowrap;
-  height: 100% !important;
+  min-height: 34px;
+  height: auto !important;
   box-shadow: none !important;
   padding: 0 4px !important;
 }

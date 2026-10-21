@@ -1,5 +1,5 @@
 <template>
-  <div v-if="form" class="profile-view-bg min-vh-100 pt-5 pb-4">
+  <div v-if="form && !profileLoading && !profileLoadError" class="profile-view-bg min-vh-100 pt-5 pb-4">
     <CContainer class="profile-container-wide">
     <ArtistProfileHeader 
       :user="user" 
@@ -17,8 +17,8 @@
           <CCard class="profile-portfolio-card mt-4 border-0 shadow-premium rounded-xl overflow-hidden">
             <CCardHeader class="portfolio-header bg-white border-0 pt-5 px-4 px-md-5 d-flex justify-content-between align-items-end flex-wrap">
               <div class="header-title-group mb-3 mb-md-0">
-                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ $i18n.locale === 'en' ? 'My Artwork Portfolio' : 'ข้อมูลผลงานของฉัน' }}</h3>
-                <p class="text-muted mb-0 portfolio-subtitle">{{ $i18n.locale === 'en' ? 'Explore and manage your collection of digital and physical art pieces.' : 'สำรวจและจัดการคอลเลกชันผลงานศิลปะดิจิทัลและศิลปะบนผืนผ้าใบของคุณ' }}</p>
+                <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ portfolioHeading }}</h3>
+                <p class="text-muted mb-0 portfolio-subtitle">{{ portfolioDescription }}</p>
               </div>
               <div v-if="!isPublic" class="header-actions-group">
                 <CButton color="primary" shape="pill" class="px-4 py-2 font-weight-bold shadow-sm btn-add-artwork" @click="handleAddNewArtwork">
@@ -72,6 +72,7 @@
               <div class="search-box" style="min-width: 300px;">
                 <CInput 
                   v-model="orderSearch"
+                  :aria-label="$i18n.locale === 'en' ? 'Search orders' : 'ค้นหาคำสั่งซื้อ'"
                   :placeholder="$i18n.locale === 'en' ? 'Search orders...' : 'ค้นหาคำสั่งซื้อ...'" 
                   class="custom-search-input mb-0"
                 >
@@ -107,6 +108,7 @@
                         <div class="font-weight-bold text-dark mb-0 line1" style="max-width: 200px;">
                           {{ item.artwork && item.artwork[0] ? getName($i18n.locale, item.artwork[0]) : '#' + item.orderIdDisplay }}
                         </div>
+                        <div v-if="item.artwork && item.artwork.length" class="small text-muted">{{ item.orderIdDisplay }}</div>
                         <div class="small text-muted d-flex align-items-center">
                           <span v-if="item.artwork && item.artwork.length > 0">
                             {{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getOrderArtists(item) }}
@@ -144,9 +146,10 @@
                   <td class="align-middle text-right px-4" style="white-space: nowrap;">
                     <!-- If not paid (no slip image) -->
                     <button 
+                      type="button"
                       v-if="!item.image && (item.statusName === 'Pending Payment' || item.statusName === 'รอชำระเงิน')"
                       class="btn-quick-pay mr-2" 
-                      v-c-tooltip="$i18n.locale === 'en' ? 'Upload Slip to Pay' : 'ชำระเงิน / ส่งสลิป'"
+                      v-c-tooltip="$i18n.locale === 'en' ? 'Upload Slip to Pay' : 'ชำระเงิน / ส่งหลักฐานการโอนเงิน'"
                       @click="triggerOrderSlipUpload(item)"
                     >
                       <CIcon name="cil-cloud-upload" class="mr-1" />
@@ -154,11 +157,13 @@
                     </button>
 
                     <!-- Paid documents -->
-                    <template v-else-if="item.statusName !== 'Rejected' && item.statusName !== 'ยกเลิก'">
+                    <template v-else-if="!['Rejected', 'Cancelled', 'ยกเลิก', 'ไม่อนุมัติ'].includes(item.statusName)">
                       <!-- Receipt (Slip) -->
                       <button 
+                        type="button"
+                        :aria-label="$i18n.locale === 'en' ? 'Receipt (Slip)' : 'ใบเสร็จ (หลักฐานการโอนเงิน)'"
                         class="action-btn-doc icon-receipt mr-1" 
-                        v-c-tooltip="$i18n.locale === 'en' ? 'Receipt (Slip)' : 'ใบเสร็จ (สลิป)'"
+                        v-c-tooltip="$i18n.locale === 'en' ? 'Receipt (Slip)' : 'ใบเสร็จ (หลักฐานการโอนเงิน)'"
                         @click="downloadReceipt(item)"
                       >
                         <CIcon name="cil-file" size="sm" />
@@ -166,6 +171,8 @@
 
                       <!-- Invoice -->
                       <button 
+                        type="button"
+                        :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
                         class="action-btn-doc icon-invoice mr-1" 
                         v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
                         @click="downloadInvoice(item)"
@@ -175,6 +182,8 @@
 
                       <!-- Certificate (Only if Approved) -->
                       <button 
+                        type="button"
+                        :aria-label="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน')"
                         class="action-btn-doc icon-cert mr-1" 
                         v-c-tooltip="!isApprovedOrder(item) ? ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ') : ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน')"
                         @click="downloadCertificate(item)"
@@ -187,6 +196,8 @@
 
                     <!-- View Details -->
                     <button 
+                        type="button"
+                        :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                         class="action-btn icon-view" 
                         v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'"
                         @click="viewOrderDetails(item)"
@@ -236,9 +247,23 @@
     
     <input type="file" ref="orderSlipInput" class="d-none" @change="handleOrderSlipUpload" accept="image/*" />
   </div>
+  <div v-else class="profile-view-bg min-vh-100 py-5">
+    <CContainer class="profile-container-wide">
+      <p v-if="profileLoading" role="status">{{ $i18n.locale === 'en' ? 'Loading artist profile...' : 'กำลังโหลดโปรไฟล์ศิลปิน...' }}</p>
+      <div v-else-if="profileLoadError" ref="profileLoadNotice" role="alert" tabindex="-1" class="alert alert-danger">
+        <p>{{ $i18n.locale === 'en' ? 'Unable to load artist profile. Please try again.' : 'โหลดโปรไฟล์ไม่สำเร็จ กรุณาลองใหม่' }}</p>
+        <button type="button" class="btn btn-outline-danger" @click="fetchProfile">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+      </div>
+      <div v-else-if="profileNotFound" role="status">
+        <h2>{{ $i18n.locale === 'en' ? 'Artist profile not found' : 'ไม่พบโปรไฟล์ศิลปิน' }}</h2>
+        <router-link to="/artworks">{{ $i18n.locale === 'en' ? 'Back to gallery' : 'กลับสู่แกลเลอรี' }}</router-link>
+      </div>
+    </CContainer>
+  </div>
 </template>
 
 <script>
+import { orderAmounts } from '@/utils/orderAmounts'
 import ArtistProfileHeader from './components/ArtistProfileHeader.vue'
 import ArtworkCard from '@/components/CardArtwork.vue'
 import SubmissionTable from './components/table/SubmissionTable.vue'
@@ -276,6 +301,11 @@ export default {
       orderSearch: '',
       orderActivePage: 1,
       form: null,
+      profileUser: null,
+      profileLoading: false,
+      profileLoadError: false,
+      profileNotFound: false,
+      profileRequest: 0,
       loading: false,
       isEditing: false,
       showArtworkModal: false,
@@ -292,11 +322,20 @@ export default {
   computed: {
     ...mapGetters({
       userId: 'auth/userId',
+      sessionRole: 'auth/role',
       users: 'user/user',
       allArtworks: 'artwork/artworks',
       allOrders: 'order/orders',
       dialogCode: 'dialog/isCode'
     }),
+    portfolioHeading() {
+      if (this.isPublic) return this.$i18n.locale === 'en' ? 'Artist Portfolio' : 'ผลงานของศิลปิน';
+      return this.$i18n.locale === 'en' ? 'My Artwork Portfolio' : 'ข้อมูลผลงานของฉัน';
+    },
+    portfolioDescription() {
+      if (this.isPublic) return this.$i18n.locale === 'en' ? 'Explore this artist’s collection of artworks.' : 'ชมคอลเลกชันผลงานของศิลปิน';
+      return this.$i18n.locale === 'en' ? 'Explore and manage your collection of digital and physical art pieces.' : 'สำรวจและจัดการคอลเลกชันผลงานศิลปะดิจิทัลและศิลปะบนผืนผ้าใบของคุณ';
+    },
     profileUserId() {
       return this.$route.params.id || this.userId;
     },
@@ -304,27 +343,12 @@ export default {
       return this.user ? this.user._id : this.profileUserId;
     },
     isPublic() {
-      if (!this.userId) return true;
+      if (!this.userId || !['artist', 'admin'].includes(String(this.sessionRole || '').trim().toLowerCase())) return true;
       if (!this.$route.params.id) return false;
       return String(this.resolvedArtistId || '').toLowerCase() !== String(this.userId || '').toLowerCase();
     },
     user() {
-      // Find the user identified by profileUserId or matching slugified name
-      if (!this.users) return null;
-      if (!Array.isArray(this.users)) {
-        return this.users;
-      }
-      return this.users.find(u => {
-        if (u._id === this.profileUserId) return true;
-        
-        const nameEn = this.getName('en', u);
-        if (nameEn && nameEn.replace(/\s+/g, '-').toLowerCase() === this.profileUserId.toLowerCase()) return true;
-
-        const nameTh = this.getName('th', u);
-        if (nameTh && nameTh.replace(/\s+/g, '-') === this.profileUserId) return true;
-        
-        return false;
-      });
+      return this.profileUser;
     },
     artistArtworks() {
       if (!this.allArtworks || !Array.isArray(this.allArtworks)) return [];
@@ -368,21 +392,24 @@ export default {
         .filter(order => order.user === this.resolvedArtistId || (order.user && order.user._id === this.resolvedArtistId))
         .map(order => ({
           ...order,
-          orderIdDisplay: order._id.substring(order._id.length - 8).toUpperCase(),
-          dateDisplay: new Date(order.createdAt).toLocaleDateString('en-GB', {
+          orderIdDisplay: order.orderNumber || order._id.substring(order._id.length - 8).toUpperCase(),
+          dateDisplay: new Date(order.createdAt).toLocaleDateString(this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH', {
             day: '2-digit',
             month: 'short',
             year: 'numeric'
           }),
-          totalAmount: order.artwork ? order.artwork.reduce((acc, art) => acc + (art.price || 0), 0) : 0,
+          totalAmount: orderAmounts(order).total,
           statusName: (() => {
             const statusLabel = this.getName('en', order.status);
             const s = statusLabel ? statusLabel.toLowerCase() : '';
             if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) {
               return this.$i18n.locale === 'en' ? 'Approved' : 'เสร็จสิ้น';
             }
-            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) {
-              return this.$i18n.locale === 'en' ? 'Rejected' : 'ยกเลิก';
+            if (s.includes('rejected') || s.includes('fail') || s.includes('ไม่อนุมัติ') || s.includes('ปฏิเสธ')) {
+              return this.$i18n.locale === 'en' ? 'Rejected' : 'ไม่อนุมัติ';
+            }
+            if (s.includes('cancelled') || s.includes('ยกเลิก')) {
+              return this.$i18n.locale === 'en' ? 'Cancelled' : 'ยกเลิก';
             }
             
             if (!order.image) {
@@ -400,6 +427,7 @@ export default {
         const q = this.orderSearch.toLowerCase();
         orders = this.processedOrders.filter(o => 
           o.orderIdDisplay.toLowerCase().includes(q) ||
+          String(o._id || "").slice(-8).toLowerCase().includes(q) ||
           o.statusName.toLowerCase().includes(q) ||
           o.dateDisplay.toLowerCase().includes(q)
         );
@@ -408,15 +436,12 @@ export default {
     }
   },
   async created() {
-    this.$store.dispatch('artwork/get');
-    if (!this.$route.params.id) {
-      this.$store.dispatch('order/get', {});
-    }
     this.timer = setInterval(() => {
       this.now = Date.now();
     }, 1000);
   },
   beforeDestroy() {
+    this.profileRequest++;
     if (this.timer) clearInterval(this.timer);
   },
   methods: {
@@ -498,6 +523,7 @@ export default {
       document.body.removeChild(link);
     },
     isApprovedOrder(item) {
+      if (item?.status?.code) return item.status.code === 'APPROVED';
       const statusLabel = this.getName('en', item.status);
       const s = statusLabel ? statusLabel.toLowerCase() : '';
       return s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success');
@@ -540,7 +566,7 @@ export default {
         this.loading = true;
         this.$store.commit('dialog/showToast', { 
           title: this.$i18n.locale === 'en' ? 'Uploading...' : 'กำลังอัปโหลด...', 
-          message: this.$i18n.locale === 'en' ? 'Please wait while we upload your slip.' : 'โปรดรอสักครู่ขณะระบบกำลังอัปโหลดสลิปของคุณ', 
+          message: this.$i18n.locale === 'en' ? 'Please wait while we upload your slip.' : 'โปรดรอสักครู่ขณะระบบกำลังอัปโหลดหลักฐานการโอนเงินของคุณ',
           variant: 'info' 
         });
         
@@ -551,7 +577,7 @@ export default {
 
         this.$store.commit('dialog/showToast', { 
           title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ', 
-          message: this.$i18n.locale === 'en' ? 'Payment slip uploaded successfully.' : 'อัปโหลดสลิปชำระเงินเรียบร้อยแล้ว', 
+          message: this.$i18n.locale === 'en' ? 'Payment slip uploaded successfully.' : 'อัปโหลดหลักฐานการโอนเงินเรียบร้อยแล้ว',
           variant: 'success' 
         });
 
@@ -618,17 +644,27 @@ export default {
     },
     async fetchProfile() {
       if (!this.profileUserId) return;
-      
+      const request = ++this.profileRequest;
+      const isOwnerRoute = !this.$route.params.id;
+      this.profileLoading = true;
+      this.profileLoadError = false;
+      this.profileNotFound = false;
+      this.form = null;
+      this.profileUser = null;
+      let profileFound = false;
       try {
-        this.loading = true;
         // Fetch specific user profile using explore action (public endpoint)
         const currentUser = await this.$store.dispatch('user/explore', { _id: this.profileUserId });
-        
-        if (currentUser) {
-          // Fetch submissions using the resolved ID (only if not public guest view)
-          if (!this.$route.params.id) {
-            this.$store.dispatch('submission/get', { artist: currentUser._id });
+        if (request !== this.profileRequest) return;
+        if (currentUser && currentUser._id) {
+          profileFound = true;
+          const reads = [this.$store.dispatch('artwork/get')];
+          if (isOwnerRoute) {
+            reads.push(this.$store.dispatch('order/get', {}), this.$store.dispatch('submission/get', { artist: currentUser._id }));
           }
+          await Promise.all(reads);
+          if (request !== this.profileRequest) return;
+          this.profileUser = currentUser;
 
           const getName = (lang) => {
             if (Array.isArray(currentUser.name)) {
@@ -652,12 +688,19 @@ export default {
             addressShipping: currentUser.address ? currentUser.address.shipping : ''
           };
         } else {
-          console.error("Profile Error: User not found in database matching ID/slug:", this.profileUserId);
+          this.profileNotFound = true;
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        if (request !== this.profileRequest) return;
+        this.profileNotFound = !profileFound && !!(error.response && error.response.status === 404);
+        this.profileLoadError = !this.profileNotFound;
       } finally {
-        this.loading = false;
+        if (request === this.profileRequest) {
+          this.profileLoading = false;
+          if (this.profileLoadError) this.$nextTick(() => {
+            if (request === this.profileRequest && this.$refs.profileLoadNotice) this.$refs.profileLoadNotice.focus();
+          });
+        }
       }
     },
     async onProfileSave({ form, file }) {

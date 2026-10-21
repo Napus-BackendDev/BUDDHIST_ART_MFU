@@ -14,7 +14,9 @@ const {
 } = require('../../Artwork/service/artworkCode');
 const { buildPostTermSale } = require('../../Artwork/service/postTermSale');
 const { STATUS_CODES } = require('../../Settings/statusCodes');
+const access = require('../../../../middleware/submissionAccessMiddleware');
 const { processWorkbook, ExcelImportError } = require('./excelImport');
+const hasInvalidSubmissionDates = require('./dateValidation');
 
 /**
  * HELPER FUNCTIONS (Internal)
@@ -89,30 +91,13 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
 
             console.log(`[Submission] Processing NEW approval for Artwork ${artworkId}...`);
 
-            // Send notification ONLY for the newly approved artwork
-            if (email) {
-                const artistName = (artist.name && artist.name[0]?.value) || "Artist";
-                const artworkTitle = (artwork.title && artwork.title[0]?.value) || "Your Artwork";
-                const html = approvedSubmissionMail({
-                    artistName,
-                    submissionTitle: artworkTitle,
-                    approvalDate: new Date().toLocaleString()
-                });
-
-                try {
-                    await sendMail(email, `ผลงานได้รับการอนุมัติ: ${artworkTitle} - พุทธศิลปกรรม มฟล.`, '', html);
-                    console.log(`[Submission] Approval email sent to ${email} for: ${artworkTitle}`);
-                } catch (mailError) {
-                    console.error(`[Submission] Failed to send email to ${email}:`, mailError.message);
-                }
-            }
-
             // Publish to main Artwork collection
             const subTitle = (doc.title && doc.title.find(t => t.key === 'th')?.value) || (doc.title && doc.title[0]?.value) || "";
             const assignTitle = artwork._assignmentTitle || "";
             const combinedPiece = subTitle + (assignTitle ? ` - ${assignTitle}` : "");
 
-            const generatedCode = artwork.artworkCode || await generateArtworkCode({
+            const conflictingCode = artwork.artworkCode && await Artwork.exists({ artworkCode: artwork.artworkCode });
+            const generatedCode = (!conflictingCode && artwork.artworkCode) || await generateArtworkCode({
                 artist,
                 courseLevel: doc.courseLevel,
                 academicYear: doc.academicYear
@@ -152,6 +137,17 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
                 }
             });
             console.log(`[Submission] Successfully published artwork ${artworkId} to main collection.`);
+            // Notify only after publication succeeds, never for a failed insert.
+            if (email) {
+                const artistName = (artist.name && artist.name[0]?.value) || 'Artist';
+                const artworkTitle = (artwork.title && artwork.title[0]?.value) || 'Your Artwork';
+                const html = approvedSubmissionMail({ artistName, submissionTitle: artworkTitle, approvalDate: new Date().toLocaleString() });
+                try {
+                    await sendMail(email, `ผลงานได้รับการอนุมัติ: ${artworkTitle} - พุทธศิลปกรรม มฟล.`, '', html);
+                } catch (mailError) {
+                    console.error('[Submission] Approval notification failed:', mailError.message);
+                }
+            }
         }
     }
 };
@@ -281,7 +277,7 @@ exports.onQuery = async (request, response) => {
                 doc = await Submission.onQuery(query);
             }
         }
-        return ResMessage.sendResponse(response, 0, 20000, doc);
+        return ResMessage.sendResponse(response, 0, 20000, access.visible(request,doc));
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
     }
@@ -289,12 +285,14 @@ exports.onQuery = async (request, response) => {
 
 exports.onQuerys = async (request, response) => {
     try {
-        let docs = await Submission.onQuerys(request.query || {});
+        const query={};
+        if (request.query?._id) query._id=new mongo.ObjectId(request.query._id);
+        let docs = await Submission.onQuerys(query);
         const transitioned = await checkAndTransitionSubmissions(docs);
         if (transitioned) {
-            docs = await Submission.onQuerys(request.query || {});
+            docs = await Submission.onQuerys(query);
         }
-        return ResMessage.sendResponse(response, 0, 20000, docs);
+        return ResMessage.sendResponse(response, 0, 20000, docs.map(doc=>access.visible(request,doc)));
     } catch (err) {
         return ResMessage.sendResponse(response, 0, 40400);
     }
@@ -302,6 +300,10 @@ exports.onQuerys = async (request, response) => {
 
 exports.onCreate = async (request, response) => {
     try {
+        const rows = Array.isArray(request.body) ? request.body : [request.body];
+        if (rows.some(hasInvalidSubmissionDates)) {
+            return response.status(400).json({ code: '40000', message: 'Invalid submission or assignment date range.' });
+        }
         let doc = await Submission.onCreate(request.body);
         if (doc) {
             if (Array.isArray(doc)) {
@@ -330,8 +332,18 @@ exports.onUpdate = async (request, response) => {
         const query = { _id: new mongo.ObjectId(request.body._id) };
         const previousDoc = await Submission.onQuery(query);
         if (!previousDoc) return ResMessage.sendResponse(response, 0, 40400);
-        let doc = await Submission.onUpdate(query, request.body);
-        if (!doc) return ResMessage.sendResponse(response, 0, 40400);
+        if (request.body.updatedAt && new Date(request.body.updatedAt).getTime() !== new Date(previousDoc.updatedAt).getTime()) {
+            return response.status(409).json({code:'40900',message:'The submission changed. Refresh before saving.'});
+        }
+        query.updatedAt = previousDoc.updatedAt;
+        const data={...request.body};
+        delete data._id;
+        delete data.updatedAt;
+        if (hasInvalidSubmissionDates({ ...data, create: data.create ? { ...previousDoc.create, ...data.create } : undefined })) {
+            return response.status(400).json({ code: '40000', message: 'Invalid submission or assignment date range.' });
+        }
+        let doc = await Submission.onUpdate(query, data);
+        if (!doc) return response.status(409).json({code:'40900',message:'The submission changed. Refresh before saving.'});
 
         // Backfill shared identifier for legacy submissions on update.
         doc = await ensureSubmissionCode(doc);
@@ -374,7 +386,7 @@ exports.onUpdate = async (request, response) => {
         ]);
 
         if (statusTransitioned) {
-            doc = await Submission.onQuery(query);
+            doc = await Submission.onQuery({ _id: query._id });
         }
 
         return ResMessage.sendResponse(response, 0, 20000, doc);

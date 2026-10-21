@@ -5,13 +5,23 @@
             :description="$i18n.locale === 'en' ? 'Manage system users, roles, and permissions effectively. Support for manual entry and bulk import.' : 'จัดการผู้ใช้งาน ระบบบทบาท และสิทธิ์การเข้าถึง รองรับการเพิ่มข้อมูลด้วยตนเองและนำเข้าแบบกลุ่ม'" 
             :createButtonText="$i18n.locale === 'en' ? 'Create User' : 'เพิ่มผู้ใช้งาน'"
             icon="cil-people"
-            :showCreateButton="true"
-            :showExportButton="true"
+            :showCreateButton="!usersLoading && !usersLoadError"
+            :showExportButton="!usersLoading && !usersLoadError"
             themeColor="red"
             @create="showChoiceModal = true"
             @export="exportToExcel"
         />
 
+        <p v-if="usersLoading" role="status" class="alert alert-info">
+            {{ $i18n.locale === 'en' ? 'Loading users...' : 'กำลังโหลดข้อมูลผู้ใช้...' }}
+        </p>
+        <div v-else-if="usersLoadError" role="alert" class="alert alert-warning">
+            <p>{{ usersLoadMessage }}</p>
+            <CButton color="warning" :disabled="usersRetryNow < usersRetryAt" @click="fetchUsers">
+                {{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}
+            </CButton>
+        </div>
+        <template v-else>
         <UserWidget v-model="filters.status" :currentRole.sync="filters.role" />
 
         <UserFilter v-model="filters" :roles="roles" :statuses="studentStatuses" />
@@ -23,6 +33,7 @@
             @edit="handleEditUser"
             @delete="handleDeleteUser"
         />
+        </template>
 
         <!-- Choice Modal -->
         <UserCreateChoiceModal 
@@ -71,6 +82,9 @@ import UserCreateModal from './components/modal/user/UserCreateModal.vue';
 import UserViewModal from './components/modal/user/UserViewModal.vue';
 import UserEditModal from './components/modal/user/UserEditModal.vue';
 import { normalizeArtistContact, normalizeStudentId, isArtistRole } from '@/utils/officialEmail';
+import { dedupeRoles, dedupeStatuses } from '@/utils/roles';
+import { learnerImportHeaders, learnerImportRow, resolveLearnerImportStatus } from '@/utils/learnerImport';
+import { retryAtFromHeaders } from '@/utils/rateLimit';
 
 export default {
     name: 'UsersManagement',
@@ -92,6 +106,11 @@ export default {
             showEditModal: false,
             selectedUser: null,
             saving: false,
+            usersLoading: false,
+            usersLoadError: '',
+            usersRetryAt: 0,
+            usersRetryNow: 0,
+            usersRetryTimer: null,
             filters: {
                 search: '',
                 role: 'All Roles',
@@ -100,6 +119,14 @@ export default {
         }
     },
     computed: {
+        usersLoadMessage() {
+            if (this.usersLoadError === 'rate') return this.$i18n.locale === 'en'
+                ? 'Too many requests. Please wait before retrying.'
+                : 'มีคำขอถี่เกินกำหนด กรุณารอก่อนลองใหม่';
+            return this.$i18n.locale === 'en'
+                ? 'Unable to load users. Please try again.'
+                : 'โหลดข้อมูลผู้ใช้ไม่สำเร็จ กรุณาลองใหม่';
+        },
         ...mapGetters({
             rawRoles: 'setting/roles/item',
             isRolesReload: 'setting/roles/isReload',
@@ -107,7 +134,7 @@ export default {
         }),
         roles() {
             if (!this.rawRoles || !Array.isArray(this.rawRoles)) return [];
-            return this.rawRoles.map(r => {
+            const mapped = this.rawRoles.map(r => {
                 if (!r.title || !Array.isArray(r.title)) return null;
                 const lang = this.$i18n.locale || 'en';
                 const titleLang = r.title.find(t => t.key === lang) || r.title.find(t => t.key === 'en');
@@ -116,10 +143,11 @@ export default {
                 const nameEn = titleEn ? titleEn.value : 'Unknown';
                 return { _id: r._id, name, nameEn };
             }).filter(role => role && role.nameEn !== 'Unknown' && role.nameEn !== '');
+            return dedupeRoles(mapped);
         },
         studentStatuses() {
             if (!this.rawStatuses || !Array.isArray(this.rawStatuses)) return [];
-            return this.rawStatuses.filter(s => {
+            const mapped = this.rawStatuses.filter(s => {
                 if (!s.group || !s.group.title || !Array.isArray(s.group.title)) return false;
                 const groupTitleEn = s.group.title.find(t => t.key === 'en');
                 return groupTitleEn && groupTitleEn.value === 'Student Group';
@@ -130,8 +158,9 @@ export default {
                 const name = titleLang ? titleLang.value : (s.title[0] ? s.title[0].value : 'Unknown');
                 const titleEn = s.title.find(t => t.key === 'en');
                 const nameEn = titleEn ? titleEn.value : 'Unknown';
-                return { _id: s._id, name, nameEn };
+                return { _id: s._id, name, nameEn, code: s.code };
             }).filter(s => s && s.nameEn !== 'Unknown');
+            return dedupeStatuses(mapped);
         }
     },
     watch: {
@@ -144,18 +173,40 @@ export default {
     },
     created() {
         this.fetchUsers();
-        this.fetchRoles();
-        this.fetchStatuses();
+    },
+    beforeDestroy() {
+        clearTimeout(this.usersRetryTimer);
     },
     methods: {
-        fetchUsers() {
-            this.$store.dispatch('user/get', {});
+        async fetchUsers() {
+            if (this.usersLoading || Date.now() < this.usersRetryAt) return;
+            this.usersLoading = true;
+            this.usersLoadError = '';
+            try {
+                await Promise.all([
+                    this.$store.dispatch('user/get', {}),
+                    this.fetchRoles(),
+                    this.fetchStatuses()
+                ]);
+            } catch (error) {
+                this.usersLoadError = error.response?.status === 429 ? 'rate' : 'load';
+                if (this.usersLoadError === 'rate') {
+                    this.usersRetryAt = retryAtFromHeaders(error.response.headers);
+                    this.usersRetryNow = Date.now();
+                    clearTimeout(this.usersRetryTimer);
+                    this.usersRetryTimer = setTimeout(() => {
+                        this.usersRetryNow = Date.now();
+                    }, Math.max(0, this.usersRetryAt - Date.now()));
+                }
+            } finally {
+                this.usersLoading = false;
+            }
         },
         fetchRoles() {
-            this.$store.dispatch('setting/roles/config', {});
+            return this.$store.dispatch('setting/roles/config', {});
         },
         fetchStatuses() {
-            this.$store.dispatch('setting/status/get', {});
+            return this.$store.dispatch('setting/status/get', {});
         },
         handleViewUser(user) {
             this.selectedUser = user;
@@ -215,7 +266,7 @@ export default {
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' }).map(learnerImportRow);
 
                     if (jsonData.length === 0) {
                         alert(this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง");
@@ -252,11 +303,9 @@ export default {
                         // Resolve Status from file if provided, else use default active status
                         let statusId = activeStatus ? activeStatus._id : null;
                         if (row['Status']) {
-                            const foundStatus = this.studentStatuses.find(s => 
-                                s.nameEn.toLowerCase() === String(row['Status']).toLowerCase() ||
-                                s.name.toLowerCase() === String(row['Status']).toLowerCase()
-                            );
-                            if (foundStatus) statusId = foundStatus._id;
+                            const foundStatus = resolveLearnerImportStatus(row['Status'], this.rawStatuses || []);
+                            if (!foundStatus) throw Error(`ไม่พบสถานะผู้เรียน: ${row['Status']}`);
+                            statusId = foundStatus._id;
                         }
 
                         const studentId = normalizeStudentId(row['StudentID']);
@@ -282,7 +331,7 @@ export default {
                                 { key: 'en', value: row['UsernameEng'] || '' }
                             ],
                             contact,
-                            password: String(row['Temporary Password'] || '12345678'),
+                            ...(row.Image ? { image: row.Image } : {}),
                             role: roleId,
                             status: statusId
                         };
@@ -295,20 +344,9 @@ export default {
                         return;
                     }
 
-                    const invalidPasswordRows = mappedData
-                        .map((user, index) => ({ user, row: index + 2 }))
-                        .filter(({ user }) => user.password.length < 8);
-                    if (invalidPasswordRows.length) {
-                        const rows = invalidPasswordRows.map(({ row }) => row).join(', ');
-                        alert(this.$i18n.locale === 'en'
-                            ? `Temporary Password must contain at least 8 characters (rows: ${rows}).`
-                            : `รหัสผ่านชั่วคราวต้องมีอย่างน้อย 8 ตัวอักษร (แถว: ${rows})`);
-                        return;
-                    }
-
                     const confirmMsg = this.$i18n.locale === 'en'
                         ? `Detected ${mappedData.length} valid users. Proceed with bulk import?`
-                        : `ตรวจพบผู้ใช้งานที่ถูกต้องจำนวน ${mappedData.length} รายการ ต้องการดำเนินการนำเข้าข้อมูลหรือไม่?`;
+                        : `ตรวจพบผู้ใช้งานที่ถูกต้อง ${mappedData.length} รายการ (ผู้เรียนเก่า ${mappedData.filter(u => u.status === resolveLearnerImportStatus('OldStudent', this.rawStatuses || [])?._id).length} / ผู้เรียนใหม่ ${mappedData.filter(u => u.status === resolveLearnerImportStatus('NewStudent', this.rawStatuses || [])?._id).length}) ข้าม ${jsonData.length - mappedData.length} แถวที่ไม่มีรหัสหรือข้อมูลจำเป็น ไม่บันทึกบัตรประชาชน/Passport ต้องการนำเข้าหรือไม่?`;
 
                     if (confirm(confirmMsg)) {
                         this.$store.dispatch('user/create', mappedData)
@@ -326,23 +364,19 @@ export default {
                     }
                 } catch (error) {
                     console.error("File processing error:", error);
-                    alert(this.$i18n.locale === 'en' ? "Error reading file. Please use a valid .xlsx or .csv file." : "เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาใช้ไฟล์ .xlsx หรือ .csv ที่ถูกต้อง");
+                    alert(error.message || (this.$i18n.locale === 'en' ? "Error reading file. Please use a valid .xlsx or .csv file." : "เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาใช้ไฟล์ .xlsx หรือ .csv ที่ถูกต้อง"));
                 }
             };
             reader.readAsArrayBuffer(file);
         },
         downloadTemplate() {
-            const data = [[
-                "StudentID", "UsernameThai", "UsernameEng", "Official Email", "Personal Email", "Telephone", "Temporary Password", "Role", "Status"
-            ]];
+            const data = [learnerImportHeaders];
             const worksheet = XLSX.utils.aoa_to_sheet(data);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
             
             // Auto-width columns
-            const wscols = [
-                {wch: 15}, {wch: 25}, {wch: 25}, {wch: 30}, {wch: 30}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 15}
-            ];
+            const wscols = [8, 30, 32, 22, 22, 20, 32, 36, 45].map(wch => ({ wch }));
             worksheet['!cols'] = wscols;
 
             XLSX.writeFile(workbook, "User_Import_Template.xlsx");

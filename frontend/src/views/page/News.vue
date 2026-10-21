@@ -11,8 +11,12 @@
                          <CSpinner color="danger" variant="grow" />
                          <p class="mt-3 text-muted">{{ $i18n.locale === 'en' ? 'Loading news...' : 'กำลังโหลดข่าวสาร...' }}</p>
                     </div>
+                    <div v-else-if="loadError" role="alert" class="alert alert-danger">
+                        <p>{{ $i18n.locale === 'en' ? 'Unable to load news. Please try again.' : 'โหลดข่าวสารไม่สำเร็จ กรุณาลองใหม่' }}</p>
+                        <button type="button" class="btn btn-outline-danger" @click="fetchNews">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+                    </div>
                     <div v-else>
-                        <div v-if="filteredNews.length > 0">
+                        <div>
                             <!-- Search & Display Controls Toolbar (Matching Artworks Design) -->
                             <div class="news-toolbar mb-5 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
                                 <!-- Left: Search Box (Matching Artworks Design) -->
@@ -21,14 +25,15 @@
                                         <input 
                                             type="text" 
                                             v-model="searchQuery" 
+                                            :aria-label="$i18n.locale === 'en' ? 'Search news' : 'ค้นหาข่าวสาร'"
                                             :placeholder="$i18n.locale === 'en' ? 'Search news...' : 'ค้นหาข่าวสาร...'"
                                             class="sidebar-search-input"
                                             @input="onSearchChange"
                                         />
-                                        <button v-if="searchQuery" type="button" class="btn-clear-search-box" @click="searchQuery = ''; onSearchChange()" title="Clear">
+                                        <button v-if="searchQuery" type="button" class="btn-clear-search-box" @click="searchQuery = ''; onSearchChange()" :title="$i18n.locale === 'en' ? 'Clear search' : 'ล้างคำค้นหา'" :aria-label="$i18n.locale === 'en' ? 'Clear search' : 'ล้างคำค้นหา'">
                                             <CIcon name="cil-x" size="sm" />
                                         </button>
-                                        <button type="button" class="sidebar-search-btn" title="Search">
+                                        <button type="button" class="sidebar-search-btn" :title="$i18n.locale === 'en' ? 'Search' : 'ค้นหา'" :aria-label="$i18n.locale === 'en' ? 'Search' : 'ค้นหา'">
                                             <CIcon name="cil-magnifying-glass" />
                                         </button>
                                     </div>
@@ -41,7 +46,7 @@
                                         <span class="sort-label mr-2 text-muted small text-uppercase font-weight-bold">
                                             {{ $i18n.locale === 'en' ? 'Show:' : 'แสดง:' }}
                                         </span>
-                                        <select v-model.number="itemsPerPage" @change="currentPage = 1" class="custom-sort-select">
+                                        <select v-model.number="itemsPerPage" @change="currentPage = 1" class="custom-sort-select" :aria-label="$i18n.locale === 'en' ? 'News per page' : 'จำนวนข่าวต่อหน้า'">
                                             <option :value="4">4 {{ $i18n.locale === 'en' ? 'items' : 'ข่าว' }}</option>
                                             <option :value="8">8 {{ $i18n.locale === 'en' ? 'items' : 'ข่าว' }}</option>
                                             <option :value="12">12 {{ $i18n.locale === 'en' ? 'items' : 'ข่าว' }}</option>
@@ -55,7 +60,7 @@
                                         <span class="sort-label mr-2 text-muted small text-uppercase font-weight-bold">
                                             {{ $i18n.locale === 'en' ? 'Sort by:' : 'เรียงลำดับ:' }}
                                         </span>
-                                        <select v-model="sortOrder" @change="currentPage = 1" class="custom-sort-select">
+                                        <select v-model="sortOrder" @change="currentPage = 1" class="custom-sort-select" :aria-label="$i18n.locale === 'en' ? 'Sort news' : 'เรียงลำดับข่าว'">
                                             <option value="newest">{{ $i18n.locale === 'en' ? 'Newest' : 'ใหม่ล่าสุด' }}</option>
                                             <option value="oldest">{{ $i18n.locale === 'en' ? 'Oldest' : 'เก่าที่สุด' }}</option>
                                             <option value="mostViewed">{{ $i18n.locale === 'en' ? 'Most Viewed' : 'ยอดเข้าชม' }}</option>
@@ -64,6 +69,8 @@
                                 </div>
                             </div>
                             
+                        </div>
+                        <div v-if="filteredNews.length > 0">
                             <CardNew :newsList="paginatedNews" />
                             
                             <!-- Pagination Controls (Matching Artworks Page) -->
@@ -139,6 +146,7 @@ export default {
     data() {
         return {
             loading: false,
+            loadError: false,
             searchQuery: '',
             sortOrder: 'newest',
             currentPage: 1,
@@ -201,11 +209,13 @@ export default {
     },
     methods: {
         async fetchNews() {
+            if (this.loading) return;
             this.loading = true;
+            this.loadError = false;
             try {
                 await this.$store.dispatch('news/get');
             } catch (error) {
-                console.error(error);
+                this.loadError = true;
             } finally {
                 this.loading = false;
             }
@@ -269,7 +279,7 @@ export default {
     color: #1f2937;
     background: transparent;
     min-width: 0;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
 }
 
 .sidebar-search-input::placeholder {

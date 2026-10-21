@@ -24,6 +24,8 @@
         </template>
 
         <div class="wizard-body px-3 py-2">
+            <div v-if="uploadError" class="alert alert-danger" role="alert">{{ uploadError }}</div>
+            <div v-if="formError || error" class="alert alert-danger" role="alert">{{ formError || error }}</div>
             <div class="wizard-content-grid">
                 <!-- Left Column: Customer & Order Form -->
                 <div class="wizard-form-column">
@@ -210,7 +212,7 @@
                     <div class="image-column-heading">
                         <span><CIcon name="cil-cloud-upload" size="lg" /></span>
                         <div>
-                            <h6>{{ $i18n.locale === 'en' ? 'Payment Slip & Summary' : 'สลิปการโอนและสรุปยอด' }}</h6>
+                            <h6>{{ $i18n.locale === 'en' ? 'Payment Slip & Summary' : 'หลักฐานการโอนเงินและสรุปยอด' }}</h6>
                             <p>{{ $i18n.locale === 'en' ? 'Upload receipt and review order total.' : 'อัปโหลดหลักฐานการโอนและตรวจสอบยอด' }}</p>
                         </div>
                     </div>
@@ -223,10 +225,10 @@
                                     <CIcon name="cil-cloud-upload" size="xl" class="text-primary" />
                                 </div>
                                 <div class="upload-title font-weight-bold text-dark small mb-1">
-                                    {{ $i18n.locale === 'en' ? 'Click to upload payment slip' : 'คลิกเพื่ออัปโหลดสลิปการโอนเงิน' }}
+                                    {{ $i18n.locale === 'en' ? 'Click to upload payment slip' : 'คลิกเพื่ออัปโหลดหลักฐานการโอนเงิน' }}
                                 </div>
                                 <div class="upload-hint text-muted small">
-                                    {{ $i18n.locale === 'en' ? 'PNG, JPG (Max 2MB)' : 'PNG, JPG (สูงสุด 2MB)' }}
+                                    {{ $i18n.locale === 'en' ? 'PNG, JPG, GIF, WEBP (Max 2MB)' : 'PNG, JPG, GIF, WEBP (สูงสุด 2MB)' }}
                                 </div>
                             </div>
                             <div v-else class="preview-container position-relative w-100 h-100">
@@ -291,7 +293,7 @@
                         color="primary" 
                         @click="handleSave"
                         class="btn-save-modal"
-                        :disabled="form.artworks.length === 0 || !form.contact.name"
+                        :disabled="saving || form.artworks.length === 0 || !form.contact.name.trim()"
                         :loading="saving"
                         :loading-text="$i18n.locale === 'en' ? 'Creating...' : 'กำลังสร้าง...'"
                     >
@@ -305,9 +307,14 @@
 </template>
 
 <script>
+import { orderImageError } from '@/utils/orderImage'
+import { checkoutAmounts } from '@/utils/orderAmounts'
+import { isValidPersonalEmail } from '@/utils/profileEmail'
+import { isArtworkPurchasable } from '@/utils/artworkPurchase'
 export default {
     name: 'OrderCreateModal',
     props: {
+        error: { type: String, default: '' },
         show: {
             type: Boolean,
             default: false
@@ -319,8 +326,9 @@ export default {
     },
     data() {
         return {
+            formError: '',
             artworkSearchQuery: '',
-            searchResults: [],
+            uploadError: '',
             imagePreview: null,
             imageFile: null,
             form: {
@@ -342,32 +350,31 @@ export default {
         show(val) {
             if (val) {
                 this.resetForm();
-                if (this.allArtworks.length === 0) {
-                    this.$store.dispatch('artwork/get');
-                }
+                this.$store.dispatch('artwork/get');
             }
-        },
-        artworkSearchQuery(val) {
+        }
+    },
+    computed: {
+        searchResults() {
+            const val = this.artworkSearchQuery;
             if (val.length < 2) {
-                this.searchResults = [];
-                return;
+                return [];
             }
             const query = val.toLowerCase();
-            this.searchResults = this.allArtworks.filter(art => {
+            return this.allArtworks.filter(art => {
                 const titleEn = this.getName('en', art).toLowerCase();
                 const titleTh = this.getName('th', art).toLowerCase();
                 const artistEn = art.artist ? this.getName('en', art.artist).toLowerCase() : '';
                 const artistTh = art.artist ? this.getName('th', art.artist).toLowerCase() : '';
-                return titleEn.includes(query) || titleTh.includes(query) || artistEn.includes(query) || artistTh.includes(query);
+                return isArtworkPurchasable(art, (lang, value) => this.getName(lang, value)) &&
+                    (titleEn.includes(query) || titleTh.includes(query) || artistEn.includes(query) || artistTh.includes(query));
             }).slice(0, 5);
-        }
-    },
-    computed: {
+        },
         allArtworks() {
             return this.$store.getters['artwork/artworks'] || [];
         },
         totalAmount() {
-            return this.form.artworks.reduce((sum, art) => sum + (parseFloat(art.price) || 0), 0);
+            return checkoutAmounts(this.form.artworks).total;
         }
     },
     methods: {
@@ -409,8 +416,9 @@ export default {
         handleImageUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                if (file.size > 2 * 1024 * 1024) {
-                    alert(this.$i18n.locale === 'en' ? 'Image size exceeds 2MB limit.' : 'ขนาดรูปภาพต้องไม่เกิน 2MB');
+                this.uploadError = orderImageError(file, this.$i18n.locale);
+                if (this.uploadError) {
+                    event.target.value = '';
                     return;
                 }
                 this.imageFile = file;
@@ -429,21 +437,30 @@ export default {
             }
         },
         handleSave() {
-            if (!this.form.contact.name || this.form.artworks.length === 0) {
+            this.formError = '';
+            if (this.saving || !this.form.contact.name.trim() || this.form.artworks.length === 0) {
                 return;
             }
             
+            if (!isValidPersonalEmail(this.form.contact.email)) {
+                this.formError = this.$i18n.locale === 'en' ? 'Please enter a valid email address.' : 'กรุณาระบุอีเมลให้ถูกต้อง';
+                return;
+            }
+            const contact = { ...this.form.contact, name: this.form.contact.name.trim() };
+            if (contact.email && contact.email.trim()) contact.email = contact.email.trim();
+            else delete contact.email;
             const submitData = {
-                contact: { ...this.form.contact },
+                contact,
                 address: { ...this.form.address },
                 artwork: this.form.artworks.map(a => a._id),
                 _image: this.imageFile
             };
             
             this.$emit('save', submitData);
-            this.resetForm();
         },
         resetForm() {
+            this.uploadError = '';
+            this.formError = '';
             this.form = {
                 contact: { name: '', email: '', telephone: '' },
                 address: { bill: '', shipping: '' },
@@ -451,7 +468,6 @@ export default {
                 _image: null
             };
             this.artworkSearchQuery = '';
-            this.searchResults = [];
             this.imagePreview = null;
             this.imageFile = null;
             if (this.$refs.fileInput) {
@@ -556,7 +572,7 @@ export default {
 
 .step-heading > span {
     color: #b7791f;
-    font-family: Georgia, serif;
+    font-family: var(--app-font-family);
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: 0.08em;

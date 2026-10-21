@@ -16,13 +16,18 @@
             <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Order ID' : 'รหัสคำสั่งซื้อ' }}: #{{ displayOrderId }} · {{ dateDisplay }}</p>
           </div>
         </div>
-        <button class="close-btn" @click="localShow = false">
+        <button type="button" class="close-btn" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="localShow = false">
           <CIcon name="cil-x" size="sm" />
         </button>
       </div>
     </template>
 
     <div class="wizard-body px-3 py-2" v-if="order">
+      <div v-if="isRejected || isCancelled" class="alert alert-danger mb-3" role="status">
+        <strong>{{ isCancelled ? ($i18n.locale === 'en' ? 'Order cancelled' : 'คำสั่งซื้อถูกยกเลิก') : ($i18n.locale === 'en' ? 'Order rejected' : 'คำสั่งซื้อถูกปฏิเสธ') }}</strong>
+        <p v-if="order.remark" class="mb-1 rejection-reason">{{ order.remark }}</p>
+        <span>{{ $i18n.locale === 'en' ? 'This reservation has ended. Check availability before placing a new order, or contact our team.' : 'การจองนี้สิ้นสุดแล้ว โปรดตรวจสอบว่าผลงานยังพร้อมขายก่อนทำรายการจองใหม่ หรือติดต่อทีมงาน' }}</span>
+      </div>
       <!-- Time left alert if pending -->
       <div v-if="timeLeftDisplay" class="alert alert-warning text-center mb-3 border-0 shadow-sm rounded-pill py-2">
         <CIcon name="cil-clock" class="mr-2"/>
@@ -129,7 +134,7 @@
                     </div>
                   </div>
                   <div class="text-right flex-shrink-0">
-                    <span class="font-weight-bold text-primary h6 mb-0">฿ {{ formatPrice(art.price) }}</span>
+                    <span class="font-weight-bold text-primary h6 mb-0">฿ {{ formatPrice(orderLinePrice(order, art)) }}</span>
                   </div>
                 </div>
               </div>
@@ -172,12 +177,12 @@
                   <label class="form-label">{{ $i18n.locale === 'en' ? 'Order Status' : 'สถานะคำสั่งซื้อ' }}</label>
                   <div class="custom-display-box bg-white">
                     <div class="d-flex align-items-center">
-                      <CIcon :name="getStatusBadge(order.status).icon" class="mr-2" :class="getStatusTextColor(order.status)" />
+                      <CIcon :name="orderStatusBadge.icon" class="mr-2" :class="getStatusTextColor(order.status)" />
                       <span class="font-weight-500" :class="getStatusTextColor(order.status)">
                         {{ getName($i18n.locale, order.status) || '-' }}
                       </span>
                     </div>
-                    <CBadge :class="['px-3 py-1 font-weight-bold', getStatusBadge(order.status).class]">
+                    <CBadge :class="['px-3 py-1 font-weight-bold', orderStatusBadge.class]">
                       {{ getName($i18n.locale, order.status) || '-' }}
                     </CBadge>
                   </div>
@@ -197,6 +202,11 @@
             </CRow>
           </div>
 
+          <div v-if="order.trackingId" class="form-group-custom">
+            <label class="form-label">{{ $i18n.locale === 'en' ? 'Delivery information' : 'ข้อมูลจัดส่ง' }}</label>
+            <div class="custom-display-box bg-white">{{ order.carrier }} · {{ order.trackingId }}</div>
+          </div>
+
           <!-- Documents Downloads & Total Amount -->
           <div class="storage-location-row">
             <!-- Documents Download Buttons -->
@@ -209,39 +219,41 @@
                   class="doc-pill-btn" 
                   :disabled="!hasReceipt"
                   @click="downloadReceipt"
-                  :title="hasReceipt ? ($i18n.locale === 'en' ? 'View Payment Receipt/Slip' : 'ดูใบเสร็จ/สลิปโอนเงิน') : ($i18n.locale === 'en' ? 'No slip uploaded' : 'ยังไม่มีสลิปการโอน')"
+                  :title="hasReceipt ? ($i18n.locale === 'en' ? 'View Payment Receipt/Slip' : 'ดูใบเสร็จ/หลักฐานการโอนเงิน') : ($i18n.locale === 'en' ? 'No slip uploaded' : 'ยังไม่มีหลักฐานการโอนเงิน')"
                 >
                   <CIcon name="cil-file" class="mr-2 doc-icon" />
-                  <span>{{ $i18n.locale === 'en' ? 'Receipt' : 'ใบเสร็จ (สลิป)' }}</span>
+                  <span>{{ $i18n.locale === 'en' ? 'Receipt' : 'ใบเสร็จ (หลักฐานการโอนเงิน)' }}</span>
                 </button>
 
                 <!-- Certificate -->
                 <button 
                   type="button" 
                   class="doc-pill-btn" 
-                  :disabled="!isApproved"
+                  :disabled="!isApproved || !!downloadingDocument"
                   @click="downloadCertificate"
                   :title="isApproved ? ($i18n.locale === 'en' ? 'Download Certificate' : 'ดาวน์โหลดใบรับรองผลงาน') : ($i18n.locale === 'en' ? 'Locked: Order not approved yet' : 'ล็อก: ยังไม่อนุมัติคำสั่งซื้อ')"
                 >
                   <CIcon name="cil-description" class="mr-2 doc-icon" />
-                  <span>{{ $i18n.locale === 'en' ? 'Certificate' : 'ใบรับรอง' }}</span>
+                  <span>{{ downloadingDocument === 'certificate' ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Certificate' : 'ใบรับรอง') }}</span>
                 </button>
 
                 <!-- Invoice -->
                 <button 
                   type="button" 
                   class="doc-pill-btn" 
+                  :disabled="!!downloadingDocument"
                   @click="downloadInvoice"
                   :title="$i18n.locale === 'en' ? 'Download Invoice PDF' : 'ดาวน์โหลดใบแจ้งหนี้ PDF'"
                 >
                   <CIcon name="cil-cloud-download" class="mr-2 doc-icon" />
-                  <span>{{ $i18n.locale === 'en' ? 'Invoice' : 'ใบแจ้งหนี้' }}</span>
+                  <span>{{ downloadingDocument === 'invoice' ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Invoice' : 'ใบแจ้งหนี้') }}</span>
                 </button>
               </div>
+              <p v-if="documentError" role="alert" class="text-danger small mt-2 mb-0">{{ documentErrorMessage }}</p>
             </div>
 
             <!-- Upload Slip Button if pending without slip -->
-            <div v-if="!hasReceipt && timeLeftDisplay && timeLeftDisplay !== 'Expired' && timeLeftDisplay !== 'หมดเวลา'" class="mt-2">
+            <div v-if="canUploadSlip" class="mt-2">
               <button 
                 type="button" 
                 class="btn-upload-slip w-100" 
@@ -250,10 +262,11 @@
               >
                 <CIcon v-if="isUploading" name="cil-reload" class="mr-2 spinner-animation" />
                 <CIcon v-else name="cil-cloud-upload" class="mr-2" />
-                {{ isUploading ? ($i18n.locale === 'en' ? 'Uploading...' : 'กำลังอัปโหลด...') : ($i18n.locale === 'en' ? 'Upload Payment Slip' : 'อัปโหลดสลิปการโอนเงิน') }}
+                {{ isUploading ? ($i18n.locale === 'en' ? 'Uploading...' : 'กำลังอัปโหลด...') : ($i18n.locale === 'en' ? 'Upload Payment Slip' : 'อัปโหลดหลักฐานการโอนเงิน') }}
               </button>
               <input type="file" ref="fileInput" class="d-none" @change="handleFileUpload" accept="image/*" />
             </div>
+            <p v-if="slipError" role="alert" class="text-danger small mt-2 mb-0">{{ slipErrorMessage }}</p>
 
             <!-- Total Amount Card -->
             <div class="form-group-custom mt-3">
@@ -292,8 +305,10 @@
 </template>
 
 <script>
+import { orderAmounts, orderLinePrice } from '@/utils/orderAmounts'
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import Service from '@/service/api';
+import { canUploadPaymentSlip, paymentSlipIssue, paymentSlipMessage } from '@/utils/paymentSlip';
 
 export default {
   name: 'OrderModal',
@@ -312,10 +327,32 @@ export default {
     return {
       now: Date.now(),
       timer: null,
-      isUploading: false
+      isUploading: false,
+      downloadingDocument: null,
+      documentError: '',
+      slipError: ''
     }
   },
   computed: {
+    orderStatusBadge() {
+      return this.getStatusBadge(this.order?.status?.code || this.getName('en', this.order?.status));
+    },
+    slipErrorMessage() { return paymentSlipMessage(this.slipError, this.$i18n.locale); },
+    canUploadSlip() { return canUploadPaymentSlip(this.order, this.getName, this.now); },
+    documentErrorMessage() {
+      const messages = this.$i18n.locale === 'en'
+        ? {invoice:'Could not download invoice. Please try again.',certificate:'Could not download certificate. Please try again.'}
+        : {invoice:'ไม่สามารถดาวน์โหลดใบแจ้งหนี้ได้ กรุณาลองใหม่อีกครั้ง',certificate:'ไม่สามารถดาวน์โหลดใบรับรองได้ กรุณาลองใหม่อีกครั้ง'};
+      return messages[this.documentError] || '';
+    },
+    isRejected() {
+      const status = this.order?.status?.code || this.getName('en', this.order && this.order.status);
+      return /rejected|ปฏิเสธ|ไม่อนุมัติ|ไม่ผ่าน/i.test(status || '');
+    },
+    isCancelled() {
+      const status = this.order?.status?.code || this.getName('en', this.order && this.order.status);
+      return /cancelled|canceled|ยกเลิก/i.test(status || '');
+    },
     localShow: {
       get() {
         return this.show;
@@ -346,7 +383,7 @@ export default {
     },
     totalAmount() {
       if (!this.order) return 0;
-      return this.order.total || this.order.totalAmount || 0;
+      return orderAmounts(this.order).total;
     },
     hasReceipt() {
       return !!(this.order && (this.order.image || this.order.slip));
@@ -361,13 +398,14 @@ export default {
     timeLeftDisplay() {
       if (!this.order) return '-';
       
-      const statusLabel = this.getName('en', this.order.status);
-      const isPending = statusLabel && (statusLabel.toLowerCase().includes('pending') || statusLabel.toLowerCase().includes('reserved'));
+      const statusLabel = this.order.status?.code || this.getName('en', this.order.status);
+      const isPending = String(statusLabel).toUpperCase() === 'RESERVED';
       const hasNoSlip = !this.order.image;
 
       if (!isPending || !hasNoSlip) return null;
 
       const createdAt = new Date(this.order.createdAt).getTime();
+      if (!Number.isFinite(createdAt)) return null;
       const deadline = createdAt + (24 * 60 * 60 * 1000);
       const diff = deadline - this.now;
 
@@ -381,14 +419,20 @@ export default {
     },
     isApproved() {
       if (!this.order) return false;
+      if (this.order.status?.code) return this.order.status.code === 'APPROVED';
       const statusLabel = this.getName('en', this.order.status);
       const s = statusLabel ? statusLabel.toLowerCase() : '';
       return s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success');
     }
   },
+  beforeDestroy() {
+    this.stopTimer();
+  },
   watch: {
     show(newVal) {
       if (newVal) {
+        this.documentError = '';
+        this.slipError = '';
         this.startTimer();
       } else {
         this.stopTimer();
@@ -397,7 +441,10 @@ export default {
     }
   },
   methods: {
+    orderLinePrice,
     startTimer() {
+      this.stopTimer();
+      this.now = Date.now();
       this.timer = setInterval(() => {
         this.now = Date.now();
       }, 1000);
@@ -438,6 +485,7 @@ export default {
       return '';
     },
     getStatusTextColor(status) {
+      if (status?.code) return { APPROVED: 'text-success', REJECTED: 'text-danger', CANCELLED: 'text-danger' }[status.code] || 'text-warning';
       const statusName = this.getName('en', status);
       const s = String(statusName || '').toLowerCase();
       if (s.includes('approved') || s.includes('success') || s.includes('delivered') || s.includes('เสร็จสิ้น')) return 'text-success';
@@ -450,22 +498,25 @@ export default {
         window.open(receiptUrl, '_blank');
       }
     },
-    async downloadInvoice() {
-      if (!this.order || !this.order._id) return;
-      try {
-        const res = await Service.order('invoice', this.order._id);
-        this.downloadFile(res.data, `Invoice_${this.displayOrderId}.pdf`);
-      } catch (error) {
-        console.error('Download Invoice Error:', error);
-      }
+    downloadInvoice() {
+      return this.downloadDocument('invoice');
     },
-    async downloadCertificate() {
-      if (!this.order || !this.order._id || !this.isApproved) return;
+    downloadCertificate() {
+      if (!this.isApproved) return;
+      return this.downloadDocument('certificate');
+    },
+    async downloadDocument(kind) {
+      if (!this.order?._id || this.downloadingDocument) return;
+      this.downloadingDocument = kind;
+      this.documentError = '';
       try {
-        const res = await Service.order('certificate', this.order._id);
-        this.downloadFile(res.data, `Certificate_${this.displayOrderId}.pdf`);
+        const res = await Service.order(kind, this.order._id);
+        this.downloadFile(res.data, `${kind === 'invoice' ? 'Invoice' : 'Certificate'}_${this.displayOrderId}.pdf`);
       } catch (error) {
-        console.error('Download Certificate Error:', error);
+        console.error('Download document failed:', error);
+        this.documentError = kind;
+      } finally {
+        this.downloadingDocument = null;
       }
     },
     downloadFile(data, fileName) {
@@ -479,27 +530,30 @@ export default {
       window.URL.revokeObjectURL(url);
     },
     triggerUpload() {
+      if (this.isUploading || !canUploadPaymentSlip(this.order, this.getName)) return;
+      this.slipError = '';
       this.$refs.fileInput.click();
     },
     async handleFileUpload(event) {
+      if (this.isUploading) return;
       const file = event.target.files[0];
       if (!file) return;
-
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File size exceeds 10MB limit.');
+      this.slipError = canUploadPaymentSlip(this.order, this.getName) ? paymentSlipIssue(file) : 'expired';
+      if (this.slipError) {
+        event.target.value = '';
         return;
       }
 
       try {
         this.isUploading = true;
-        this.$store.commit('dialog/showToast', { title: 'Uploading...', message: 'Please wait while we upload your slip.', variant: 'info' });
+        this.$store.commit('dialog/showToast', { title: this.$i18n.locale === 'en' ? 'Uploading...' : 'กำลังอัปโหลด...', message: this.$i18n.locale === 'en' ? 'Please wait while we upload your slip.' : 'โปรดรอสักครู่ขณะระบบกำลังอัปโหลดหลักฐานการโอนเงิน', variant: 'info' });
         
         await this.$store.dispatch('order/upload', {
           _id: this.order._id,
           image: file
         });
 
-        this.$store.commit('dialog/showToast', { title: 'Success', message: 'Payment slip uploaded successfully.', variant: 'success' });
+        this.$store.commit('dialog/showToast', { title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ', message: this.$i18n.locale === 'en' ? 'Payment slip uploaded successfully.' : 'อัปโหลดหลักฐานการโอนเงินเรียบร้อยแล้ว', variant: 'success' });
         
         if (this.$refs.fileInput) {
           this.$refs.fileInput.value = '';
@@ -509,7 +563,7 @@ export default {
         this.localShow = false;
       } catch (error) {
         console.error('Upload failed:', error);
-        alert(this.$i18n.locale === 'en' ? 'Upload failed. Please try again.' : 'เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่อีกครั้ง');
+        this.slipError = 'upload';
         if (this.$refs.fileInput) {
           this.$refs.fileInput.value = '';
         }
@@ -615,7 +669,7 @@ export default {
 
 .step-heading > span {
   color: #b7791f;
-  font-family: Georgia, serif;
+  font-family: var(--app-font-family);
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.08em;

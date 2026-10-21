@@ -1,7 +1,7 @@
 <template>
     <CModal 
         :show="show" 
-        @update:show="$emit('update:show', $event)"
+        @update:show="!importing && $emit('update:show', $event)"
         size="lg"
         centered
         class="choice-modal admin-modal"
@@ -17,17 +17,18 @@
                         <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Choose how you would like to add artworks to the gallery.' : 'เลือกวิธีการเพิ่มผลงานศิลปะลงในแกลเลอรี' }}</p>
                     </div>
                 </div>
-                <button class="close-btn" @click="$emit('update:show', false)">
+                <button type="button" class="close-btn" :disabled="importing" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="$emit('update:show', false)">
                     <CIcon name="cil-x" size="sm" />
                 </button>
             </div>
         </template>
 
         <div class="px-3 py-4">
+            <p v-if="error" class="alert alert-danger" role="alert" style="white-space: pre-line">{{ error }}</p>
             <CRow>
                 <!-- Manual Choice -->
                 <CCol md="6">
-                    <div class="choice-card clickable" @click="$emit('manual')">
+                    <button type="button" class="choice-card clickable" :disabled="importing" @click="$emit('manual')">
                         <div class="choice-icon bg-green-light text-green">
                             <CIcon name="cil-pencil" size="xl" />
                         </div>
@@ -37,12 +38,12 @@
                             <span>{{ $i18n.locale === 'en' ? 'Get Started' : 'เริ่มต้นใช้งาน' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
-                    </div>
+                    </button>
                 </CCol>
 
                 <!-- Import Choice -->
                 <CCol md="6">
-                    <div class="choice-card clickable" @click="triggerFileInput">
+                    <button type="button" class="choice-card clickable" :disabled="importing" @click="triggerFileInput">
                         <div class="choice-icon bg-blue-light text-blue">
                             <CIcon name="cil-cloud-upload" size="xl" />
                         </div>
@@ -52,6 +53,7 @@
                             <span>{{ $i18n.locale === 'en' ? 'Upload File' : 'อัปโหลดไฟล์' }}</span>
                             <CIcon name="cil-arrow-right" class="ml-2" />
                         </div>
+                    </button>
                         <input 
                             type="file" 
                             ref="fileInput" 
@@ -59,9 +61,12 @@
                             accept=".xlsx, .xls, .csv"
                             @change="handleFileChange"
                         >
-                    </div>
                 </CCol>
             </CRow>
+            <div v-if="importCount" class="mt-4 text-center">
+                <p>{{ $i18n.locale === 'en' ? `Detected ${importCount} artworks. Confirm import?` : `ตรวจพบผลงาน ${importCount} ชิ้น ยืนยันการนำเข้าหรือไม่?` }}</p>
+                <CButton color="primary" :disabled="importing" @click="$emit('confirm-import')">{{ importing ? ($i18n.locale === 'en' ? 'Importing...' : 'กำลังนำเข้า...') : ($i18n.locale === 'en' ? 'Confirm Import' : 'ยืนยันการนำเข้า') }}</CButton>
+            </div>
         </div>
 
         <template #footer>
@@ -84,7 +89,10 @@ export default {
         show: {
             type: Boolean,
             default: false
-        }
+        },
+        error: { type: String, default: '' },
+        importCount: { type: Number, default: 0 },
+        importing: { type: Boolean, default: false }
     },
     methods: {
         triggerFileInput() {
@@ -94,7 +102,6 @@ export default {
             const file = event.target.files[0];
             if (file) {
                 this.$emit('import', file);
-                this.$emit('update:show', false);
                 // Clear the input so the same file can be selected again
                 event.target.value = '';
             }
@@ -123,6 +130,9 @@ export default {
 .text-green { color: #10b981; }
 
 .choice-card {
+    width: 100%;
+    font: inherit;
+    color: inherit;
     background: #ffffff;
     border: 1px solid #f1f5f9;
     border-radius: 20px;
@@ -141,6 +151,9 @@ export default {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
     border-color: #3b82f633;
 }
+
+.choice-card:focus-visible { outline: 3px solid #3b82f6; outline-offset: 3px; }
+.choice-card:disabled { opacity: 0.65; cursor: wait; }
 
 .choice-icon {
     width: 80px;

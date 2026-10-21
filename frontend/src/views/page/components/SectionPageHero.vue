@@ -91,7 +91,7 @@ export default {
 }
 
 .hero-title {
-  font-family: 'Cinzel', serif;
+  font-family: var(--app-font-family);
   font-size: 3.6rem;
   font-weight: 700;
   line-height: 1.08;

@@ -2,7 +2,7 @@
     <div class="featured-section py-5">
         <CContainer>
             <div class="text-center mb-5">
-                <h2 class="font-weight-bold mb-3 section-title-home-centered" style="color: #612721; font-family: 'Cinzel', serif; font-size: 2.2rem;">
+                <h2 class="font-weight-bold mb-3 section-title-home-centered" style="color: #612721; font-family: var(--app-font-family); font-size: 2.2rem;">
                     {{ $i18n.locale === 'en' ? 'Latest Popular Artworks' : 'ผลงานยอดนิยมล่าสุด' }}
                 </h2>
                 <div class="mx-auto" style="width: 60px; height: 3px; background-color: #612721; border-radius: 2px;"></div>
@@ -13,6 +13,10 @@
                 <p class="mt-3 text-muted">{{ $i18n.locale === 'en' ? 'Loading masterpieces...' : 'กำลังโหลดผลงานยอดนิยม...' }}</p>
             </div>
 
+            <div v-else-if="loadError" role="alert" class="alert alert-danger">
+                <p>{{ $i18n.locale === 'en' ? 'Unable to load popular artworks. Please try again.' : 'โหลดผลงานยอดนิยมไม่สำเร็จ กรุณาลองใหม่' }}</p>
+                <button type="button" class="btn btn-outline-danger" :disabled="fetching" @click="fetchArtworks(false)">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+            </div>
             <template v-else>
                 <div v-if="filteredArtworks.length > 0">
                     <CardArtworks :artworks="filteredArtworks" />
@@ -38,6 +42,8 @@ export default {
     data() {
         return {
             loading: true,
+            loadError: false,
+            fetching: false,
             polling: null
         }
     },
@@ -64,10 +70,17 @@ export default {
     },
     methods: {
         async fetchArtworks(silent = false) {
+            if (this.fetching) return;
+            this.fetching = true;
             if (!silent) this.loading = true;
+            if (!silent) this.loadError = false;
             try {
                 await this.$store.dispatch('artwork/get');
+                this.loadError = false;
+            } catch (error) {
+                this.loadError = true;
             } finally {
+                this.fetching = false;
                 if (!silent) this.loading = false;
             }
         },

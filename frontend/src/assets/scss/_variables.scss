@@ -10,6 +10,11 @@ $navbar-brand-padding-y: math.div($nav-link-height - $navbar-brand-height, 2);
 $navbar-padding-y: math.div($spacer, 2);
 
 // ---------- Typography ----------
+$font-family-sans-serif: "Sarabun", sans-serif;
+$font-family-monospace: $font-family-sans-serif;
+$font-family-base: $font-family-sans-serif;
+$headings-font-family: $font-family-sans-serif;
+$headings-font-weight: 700;
 $headings-margin-bottom: math.div($spacer, 2);
 
 // ---------- Inputs / Forms ----------

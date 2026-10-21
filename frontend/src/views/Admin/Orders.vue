@@ -4,8 +4,8 @@
         <OrderWidget v-model="filters.status" :orders="orders" />
         <OrderFilter v-model="filters" />
         <OrderTable ref="orderTable" :filters="filters" :items="orders" :loadingItems="loadingItems" @view-order="onViewOrder" @edit-order="onEditOrder" @approve="handleApproveOrder" @reject="handleRejectOrder"/>
-        <OrderCreateModal :show.sync="showCreateModal" :saving="loading" @save="handleSaveOrder" />
-        <OrderViewModal :show.sync="showViewModal" :order="selectedOrder" />
+        <OrderCreateModal :show.sync="showCreateModal" :saving="loading" :error="createError" @save="handleSaveOrder" />
+        <OrderViewModal :requested-document="requestedDocument" :show.sync="showViewModal" :order="selectedOrder" />
         <OrderEditModal :show.sync="showEditModal" :order="selectedOrder" :saving="loading" @save="handleUpdateOrder" />
         
         <!-- Rejection Reason Modal -->
@@ -55,6 +55,8 @@ export default {
     data() {
         return {
             showCreateModal: false,
+            createError: '',
+            requestedDocument: '',
             showViewModal: false,
             showEditModal: false,
             selectedOrder: null,
@@ -74,31 +76,26 @@ export default {
     computed: {
         orders() {
             const allOrders = this.$store.getters['order/orders'] || [];
-            return allOrders.filter(item => {
-                if (!item.status) return false;
-                let statusStr = '';
-                if (typeof item.status === 'string') {
-                    statusStr = item.status.toLowerCase();
-                } else if (item.status && Array.isArray(item.status.title)) {
-                    const enVal = item.status.title.find(t => t.key === 'en')?.value || '';
-                    const thVal = item.status.title.find(t => t.key === 'th')?.value || '';
-                    statusStr = (enVal + ' ' + thVal).toLowerCase();
-                } else if (item.status && item.status.title) {
-                    statusStr = String(item.status.title).toLowerCase();
-                }
-                
-                // Exclude Pending Payment (รอชำระเงิน) / Reserved / payment
-                const isPendingPayment = statusStr.includes('รอชำระเงิน') || 
-                                         statusStr.includes('payment') || 
-                                         statusStr.includes('reserved');
-                return !isPendingPayment;
-            });
+            return allOrders.filter(item => item.status);
         }
     },
-    created() {
-        this.fetchOrders();
+    async created() {
+        await this.fetchOrders();
+        await this.openDocumentFromQuery();
+    },
+    watch: {
+        '$route.query'() { this.openDocumentFromQuery(); }
     },
     methods: {
+        async openDocumentFromQuery() {
+            const query = this.$route?.query || {};
+            if (typeof query.order !== 'string' || !['invoice', 'certificate'].includes(query.document)) return;
+            const order = (this.$store.getters['order/orders'] || []).find(item => item._id === query.order);
+            if (!order) return;
+            this.selectedOrder = order;
+            this.showViewModal = true;
+            this.requestedDocument = query.document;
+        },
         async fetchOrders() {
             try {
                 await this.$store.dispatch('order/get');
@@ -107,9 +104,11 @@ export default {
             }
         },
         onCreateOrder() {
+            this.createError = '';
             this.showCreateModal = true;
         },
         onViewOrder(order) {
+            this.requestedDocument = '';
             this.selectedOrder = order;
             this.showViewModal = true;
         },
@@ -118,6 +117,9 @@ export default {
             this.showEditModal = true;
         },
         async handleSaveOrder(newOrder) {
+            if (this.loading) return;
+            this.createError = '';
+            let createdOrder = null;
             try {
                 this.loading = true;
                 // 1. Create the order
@@ -127,7 +129,7 @@ export default {
                     artwork: newOrder.artwork
                 });
                 
-                const createdOrder = response.data.data;
+                createdOrder = response.data.data;
 
                 // 2. Upload image if exists
                 if (newOrder._image) {
@@ -149,9 +151,18 @@ export default {
                 this.showCreateModal = false;
             } catch (error) {
                 console.error('Error creating order:', error);
+                if (createdOrder) {
+                    this.showCreateModal = false;
+                    await this.fetchOrders();
+                    const saved = this.$store.getters?.['order/orders']?.find(order => order._id === createdOrder._id);
+                    this.onEditOrder(saved || createdOrder);
+                }
+                this.createError = createdOrder
+                    ? (this.$i18n.locale === 'en' ? 'Order saved, but slip upload failed. Open Edit to retry the upload for this order.' : 'สร้างคำสั่งซื้อแล้ว แต่อัปโหลดหลักฐานไม่สำเร็จ กรุณาแนบใหม่ในหน้าต่างแก้ไขคำสั่งซื้อนี้')
+                    : (this.$i18n.locale === 'en' ? 'Could not create the order. Your entries are preserved; check artwork availability and try again.' : 'สร้างคำสั่งซื้อไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจสอบว่าผลงานยังพร้อมขายแล้วลองอีกครั้ง');
                 this.$store.commit('dialog/showToast', {
                     title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
-                    message: error.response?.data?.message || (this.$i18n.locale === 'en' ? 'Failed to create order.' : 'ไม่สามารถสร้างคำสั่งซื้อได้'),
+                    message: this.createError,
                     variant: 'danger'
                 });
             } finally {

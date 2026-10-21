@@ -30,11 +30,11 @@
               
               <div class="text-left mt-4 border-top pt-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                  <label class="section-label mb-0">{{ $i18n.locale === 'en' ? 'Biography' : 'ประวัติส่วนตัว' }}</label>
+                  <label for="artist-profile-bio" class="section-label mb-0">{{ $i18n.locale === 'en' ? 'Biography' : 'ประวัติส่วนตัว' }}</label>
                   <small class="text-muted">{{ localForm.bio ? localForm.bio.length : 0 }} / 200</small>
                 </div>
                 <CTextarea 
-                  v-model="localForm.bio"
+                  id="artist-profile-bio" v-model="localForm.bio"
                   :placeholder="$i18n.locale === 'en' ? 'Tell us about yourself and your artistic style...' : 'บอกเล่าเกี่ยวกับตัวคุณและสไตล์ศิลปะของคุณ...'"
                   class="bio-textarea"
                   rows="4"
@@ -55,39 +55,40 @@
               <CRow>
                 <!-- Name Fields -->
                 <CCol md="6" class="mb-4">
-                  <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
-                  <CInput v-model="localForm.nameTh" placeholder="ชื่อ-นามสกุล" class="custom-input shadow-none" />
+                  <label for="artist-profile-nameth" class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (Thai)' : 'ชื่อ-นามสกุล (ภาษาไทย)' }}</label>
+                  <CInput id="artist-profile-nameth" v-model="localForm.nameTh" placeholder="ชื่อ-นามสกุล" class="custom-input shadow-none" />
                 </CCol>
                 <CCol md="6" class="mb-4">
-                  <label class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
-                  <CInput v-model="localForm.nameEn" placeholder="Full Name" class="custom-input shadow-none" />
+                  <label for="artist-profile-nameen" class="form-label">{{ $i18n.locale === 'en' ? 'Full Name (English)' : 'ชื่อ-นามสกุล (ภาษาอังกฤษ)' }}</label>
+                  <CInput id="artist-profile-nameen" v-model="localForm.nameEn" placeholder="Full Name" class="custom-input shadow-none" />
                 </CCol>
 
                 <!-- Email Fields -->
                 <CCol md="6" class="mb-4">
-                  <label class="form-label">{{ $i18n.locale === 'en' ? 'University Email' : 'อีเมลมหาวิทยาลัย' }}</label>
-                  <CInput v-model="localForm.email" placeholder="student@lamduan.mfu.ac.th" disabled class="custom-input shadow-none bg-light" />
+                  <label for="artist-profile-email" class="form-label">{{ $i18n.locale === 'en' ? 'University Email' : 'อีเมลมหาวิทยาลัย' }}</label>
+                  <CInput id="artist-profile-email" v-model="localForm.email" placeholder="student@lamduan.mfu.ac.th" disabled class="custom-input shadow-none bg-light" />
                   <small class="text-muted">{{ $i18n.locale === 'en' ? 'Cannot be changed' : 'ไม่สามารถแก้ไขได้' }}</small>
                 </CCol>
                 <CCol md="6" class="mb-4">
-                  <label class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
-                  <CInput v-model="localForm.personalEmail" placeholder="example@gmail.com" class="custom-input shadow-none" />
+                  <label for="artist-personal-email" class="form-label">{{ $i18n.locale === 'en' ? 'Personal Email' : 'อีเมลส่วนตัว' }}</label>
+                  <CInput id="artist-personal-email" v-model="localForm.personalEmail" placeholder="example@gmail.com" type="email" maxlength="254" class="custom-input shadow-none" />
+                  <div v-if="validationError" class="text-danger mt-2" role="alert">{{ validationError }}</div>
                 </CCol>
 
                 <!-- Phone & ID -->
                 <CCol md="6" class="mb-4">
-                  <label class="form-label">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
-                  <CInput v-model="localForm.telephone" placeholder="08x-xxx-xxxx" class="custom-input shadow-none" />
+                  <label for="artist-profile-telephone" class="form-label">{{ $i18n.locale === 'en' ? 'Telephone' : 'เบอร์โทรศัพท์' }}</label>
+                  <CInput id="artist-profile-telephone" v-model="localForm.telephone" placeholder="08x-xxx-xxxx" class="custom-input shadow-none" />
                 </CCol>
                 <CCol md="6" class="mb-4">
-                  <label class="form-label">{{ $i18n.locale === 'en' ? 'Artist ID / Student ID' : 'รหัสศิลปิน / รหัสนักศึกษา' }}</label>
-                  <CInput v-model="localForm.studentId" placeholder="64xxxxxxx" disabled class="custom-input shadow-none bg-light" />
+                  <label for="artist-profile-studentid" class="form-label">{{ $i18n.locale === 'en' ? 'Artist ID / Student ID' : 'รหัสศิลปิน / รหัสนักศึกษา' }}</label>
+                  <CInput id="artist-profile-studentid" v-model="localForm.studentId" placeholder="64xxxxxxx" disabled class="custom-input shadow-none bg-light" />
                 </CCol>
 
                 <!-- Address Fields -->
                 <CCol md="6" class="mb-4">
-                  <label class="form-label">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่สำหรับออกใบเสร็จ' }}</label>
-                  <CTextarea 
+                  <label for="artist-profile-addressbill" class="form-label">{{ $i18n.locale === 'en' ? 'Billing Address' : 'ที่อยู่สำหรับออกใบเสร็จ' }}</label>
+                  <CTextarea id="artist-profile-addressbill"
                     v-model="localForm.addressBill" 
                     :placeholder="$i18n.locale === 'en' ? 'Your billing address...' : 'ที่อยู่สำหรับออกใบเสร็จของคุณ...'" 
                     class="bio-textarea shadow-none" 
@@ -95,8 +96,8 @@
                   />
                 </CCol>
                 <CCol md="6" class="mb-4">
-                  <label class="form-label">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่สำหรับจัดส่ง' }}</label>
-                  <CTextarea 
+                  <label for="artist-profile-addressshipping" class="form-label">{{ $i18n.locale === 'en' ? 'Shipping Address' : 'ที่อยู่สำหรับจัดส่ง' }}</label>
+                  <CTextarea id="artist-profile-addressshipping"
                     v-model="localForm.addressShipping" 
                     :placeholder="$i18n.locale === 'en' ? 'Your shipping address...' : 'ที่อยู่สำหรับจัดส่งของคุณ...'" 
                     class="bio-textarea shadow-none" 
@@ -126,6 +127,7 @@
 </template>
 
 <script>
+import { isValidPersonalEmail } from '@/utils/profileEmail'
 export default {
   name: 'EditProfileModal',
   props: {
@@ -145,7 +147,8 @@ export default {
   data() {
     return {
       localForm: null,
-      selectedFile: null
+      selectedFile: null,
+      validationError: ''
     }
   },
   watch: {
@@ -153,6 +156,7 @@ export default {
       if (newVal) {
         this.localForm = JSON.parse(JSON.stringify(this.initialData));
         this.selectedFile = null;
+        this.validationError = '';
       }
     }
   },
@@ -203,6 +207,11 @@ export default {
       this.$emit('cancel');
     },
     handleSave() {
+      this.validationError = '';
+      if (!isValidPersonalEmail(this.localForm.personalEmail)) {
+        this.validationError = this.$i18n.locale === 'en' ? 'Enter a valid personal email address.' : 'กรุณากรอกอีเมลส่วนตัวให้ถูกต้อง';
+        return;
+      }
       this.$emit('save', {
         form: this.localForm,
         file: this.selectedFile

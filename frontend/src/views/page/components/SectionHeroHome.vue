@@ -72,7 +72,7 @@ export default {
 }
 
 .hero-title {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 3.6rem;
     font-weight: 900;
     line-height: 1.15;
@@ -103,7 +103,7 @@ export default {
 }
 
 .hero-subtitle {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 1.22rem;
     font-weight: 600;
     color: #4a5568;

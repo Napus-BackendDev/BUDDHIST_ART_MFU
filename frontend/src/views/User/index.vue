@@ -7,15 +7,20 @@
         <p class="text-muted">{{ $i18n.locale === 'en' ? 'Manage your personal information and track your orders.' : 'จัดการข้อมูลส่วนตัวและติดตามคำสั่งซื้อของคุณ' }}</p>
       </div>
 
-      <CRow>
+      <p v-if="profileLoading" role="status" class="text-center py-4">{{ $i18n.locale === 'en' ? 'Loading profile and orders...' : 'กำลังโหลดโปรไฟล์และคำสั่งซื้อ...' }}</p>
+      <div v-if="profileLoadError" ref="profileLoadNotice" role="alert" tabindex="-1" class="alert alert-danger">
+        <p class="mb-2">{{ $i18n.locale === 'en' ? 'Unable to load your profile and orders. Please try again.' : 'โหลดโปรไฟล์และคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่' }}</p>
+        <button type="button" class="btn btn-outline-danger" :disabled="profileLoading" @click="loadProfile">{{ $i18n.locale === 'en' ? 'Try again' : 'ลองใหม่' }}</button>
+      </div>
+      <CRow v-if="!profileLoading && !profileLoadError && form._id">
         <!-- Left Column: Avatar & Bio -->
         <CCol lg="4" class="mb-4">
           <CCard class="profile-card border-0 shadow-premium rounded-xl h-100 mb-0 position-relative overflow-hidden">
              <div class="card-accent-bar"></div>
             <CCardBody class="text-center p-4 p-md-5 z-index-2 position-relative">
-              <div class="avatar-upload-wrapper mb-4 mx-auto" @click="triggerUpload" style="cursor: pointer;" title="Click to change photo">
+              <button type="button" :disabled="photoUploading || savingProfile" :aria-busy="photoUploading ? 'true' : 'false'" class="avatar-upload-wrapper mb-4 mx-auto p-0 border-0 bg-transparent" @click="triggerUpload" :aria-label="$i18n.locale === 'en' ? 'Change profile photo' : 'เปลี่ยนรูปโปรไฟล์'">
                 <div class="avatar-preview shadow-lg position-relative overflow-hidden">
-                  <img v-if="form.image" :src="form.image" class="w-100 h-100" style="object-fit: cover;" />
+                  <img v-if="form.image" :src="form.image" :alt="fullName" class="w-100 h-100" style="object-fit: cover;" />
                   <div v-else class="d-flex align-items-center justify-content-center h-100 w-100 bg-light text-secondary">
                     <CIcon name="cil-user" size="2xl" />
                   </div>
@@ -23,8 +28,11 @@
                       <CIcon name="cil-camera" size="xl" class="text-white" />
                   </div>
                 </div>
-                <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept="image/*" />
-              </div>
+              </button>
+              <input type="file" ref="fileInput" class="d-none" @change="onFileChange" accept=".png,.jpg,.jpeg,.gif,.webp" />
+              <p v-if="photoUploading" role="status">{{ $i18n.locale === 'en' ? 'Uploading profile photo...' : 'กำลังอัปโหลดรูปโปรไฟล์...' }}</p>
+              <p v-if="photoError" ref="photoErrorNotice" tabindex="-1" role="alert" class="alert alert-danger">{{ photoErrorMessage }}</p>
+              <p class="small text-muted">PNG, JPG, GIF, WEBP · {{ $i18n.locale === 'en' ? 'Up to 10 MB' : 'ขนาดไม่เกิน 10 MB' }}</p>
               <h4 class="font-weight-bold mb-3 text-dark">{{ fullName }}</h4>
               <CBadge color="primary" class="badge-premium px-3 py-2">{{ $i18n.locale === 'en' ? 'Customer' : 'ผู้สะสมผลงานศิลปะ' }}</CBadge>
               <div class="text-left mt-4 border-top pt-4">
@@ -59,7 +67,7 @@
                       </div>
                   </div>
               </div>
-              <CButton color="dark" shape="pill" class="btn-premium w-100 mt-4 shadow-sm hover-lift" @click="isEditing = true">
+              <CButton color="dark" :disabled="photoUploading || savingProfile" shape="pill" class="btn-premium w-100 mt-4 shadow-sm hover-lift" @click="isEditing = true">
                 <CIcon name="cil-pencil" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Edit Profile' : 'แก้ไขโปรไฟล์' }}
               </CButton>
             </CCardBody>
@@ -124,7 +132,8 @@
                                         <div class="d-flex align-items-center">
                                             <div class="artwork-thumb mr-3 shadow-sm rounded overflow-hidden" style="width: 50px; height: 50px; background-color: #f0f0f0;">
                                                 <img v-if="order.artwork && order.artwork[0] && order.artwork[0].image" 
-                                                     :src="order.artwork[0].image" 
+                                                     :src="order.artwork[0].image"
+                                                     :alt="getName($i18n.locale, order.artwork[0])"
                                                      class="w-100 h-100" 
                                                      style="object-fit: cover;" />
                                                 <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
@@ -184,6 +193,8 @@
     <ProfileModal 
       :show.sync="isEditing" 
       :form="form" 
+      :saving="savingProfile"
+      :save-error="profileSaveError"
       @save="handleSave" 
       @cancel="cancelEdit" 
     />
@@ -191,6 +202,8 @@
 </template>
 
 <script>
+import { orderAmounts } from '@/utils/orderAmounts'
+import { decodeImageFile } from '@/utils/artworkImage'
 import { mapGetters } from 'vuex';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import OrderModal from './components/modal/OrderModal.vue';
@@ -206,6 +219,12 @@ export default {
   data() {
     return {
       isEditing: false,
+      savingProfile: false,
+      profileSaveError: false,
+      profileLoading: false,
+      profileLoadError: false,
+      photoUploading: false,
+      photoError: '',
       form: {
         _id: '',
         nameTh: '',
@@ -224,6 +243,13 @@ export default {
     }
   },
   computed: {
+    photoErrorMessage() {
+      const en = this.$i18n.locale === 'en';
+      if (this.photoError === 'type') return en ? 'Choose a PNG, JPG, GIF or WEBP image.' : 'กรุณาเลือกรูป PNG, JPG, GIF หรือ WEBP';
+      if (this.photoError === 'size') return en ? 'Image size must not exceed 10 MB.' : 'ขนาดรูปภาพต้องไม่เกิน 10 MB';
+      if (this.photoError === 'invalid') return en ? 'Unable to read this image. Please choose another file.' : 'ไม่สามารถอ่านรูปภาพนี้ได้ กรุณาเลือกไฟล์อื่น';
+      return en ? 'Could not update your profile photo. Your previous photo has been kept. Choose the file to try again.' : 'อัปโหลดรูปโปรไฟล์ไม่สำเร็จ รูปเดิมยังอยู่ กรุณาเลือกไฟล์เพื่อลองใหม่';
+    },
     ...mapGetters({
       userId: 'auth/userId',
       users: 'user/user',
@@ -240,17 +266,18 @@ export default {
         .map(order => ({
           ...order,
           orderId: order._id.substring(order._id.length - 8).toUpperCase(),
-          date: new Date(order.createdAt).toLocaleDateString('en-GB', {
+          date: new Date(order.createdAt).toLocaleDateString(this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH', {
             day: '2-digit',
             month: 'short',
             year: 'numeric'
           }),
-          total: order.artwork ? order.artwork.reduce((acc, art) => acc + (art.price || 0), 0) : 0,
+          total: orderAmounts(order).total,
           statusName: (() => {
-            const statusLabel = this.getName('en', order.status);
+            const statusLabel = order.status?.code || this.getName('en', order.status);
             const s = statusLabel ? statusLabel.toLowerCase() : '';
-            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'ยืนยันข้อมูล';
-            if (s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail')) return this.$i18n.locale === 'en' ? 'Rejected' : 'ยกเลิก';
+            if (s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success')) return this.$i18n.locale === 'en' ? 'Approved' : 'อนุมัติ';
+            if (s.includes('cancelled') || s.includes('ยกเลิก')) return this.$i18n.locale === 'en' ? 'Cancelled' : 'ยกเลิก';
+            if (s.includes('rejected') || s.includes('fail') || s.includes('ปฏิเสธ') || s.includes('ไม่อนุมัติ')) return this.$i18n.locale === 'en' ? 'Rejected' : 'ปฏิเสธ';
             
             if (!order.image) {
                 return this.$i18n.locale === 'en' ? 'Pending Payment' : 'รอชำระเงิน';
@@ -262,7 +289,7 @@ export default {
     },
     pendingPaymentOrders() {
       return this.orders.filter(order => {
-        const statusLabel = this.getName('en', order.status);
+        const statusLabel = order.status?.code || this.getName('en', order.status);
         const s = statusLabel ? statusLabel.toLowerCase() : '';
         
         const isCompletedOrCancelled = s.includes('delivered') || s.includes('เสร็จสิ้น') || s.includes('approved') || s.includes('success') || s.includes('cancelled') || s.includes('ยกเลิก') || s.includes('rejected') || s.includes('fail');
@@ -321,18 +348,37 @@ export default {
       return 'N/A';
     }
   },
+  watch: {
+    profileLoadError(value) {
+      if (value) this.$nextTick(() => this.$refs.profileLoadNotice && this.$refs.profileLoadNotice.focus());
+    },
+    photoError(value) {
+      if (value) this.$nextTick(() => this.$refs.photoErrorNotice && this.$refs.photoErrorNotice.focus());
+    }
+  },
   async created() {
-    await this.fetchProfile();
-    await this.$store.dispatch('order/get', {});
     this.timer = setInterval(() => {
       this.now = Date.now();
     }, 1000);
-    console.log('DEBUG: allOrders', this.allOrders);
+    await this.loadProfile();
   },
   beforeDestroy() {
     if (this.timer) clearInterval(this.timer);
   },
   methods: {
+    async loadProfile() {
+      if (this.profileLoading) return;
+      this.profileLoading = true;
+      this.profileLoadError = false;
+      try {
+        if (!await this.fetchProfile()) throw new Error('Profile unavailable');
+        await this.$store.dispatch('order/get', {});
+      } catch (error) {
+        this.profileLoadError = true;
+      } finally {
+        this.profileLoading = false;
+      }
+    },
     viewOrder(order) {
       this.selectedOrder = order;
       this.showOrderModal = true;
@@ -361,39 +407,45 @@ export default {
             bill: currentUser.address ? currentUser.address.bill : '',
             shipping: currentUser.address ? currentUser.address.shipping : ''
           };
+          return true;
         }
+        return false;
       } catch (error) {
         console.error('Error fetching profile:', error);
+        return false;
       }
     },
     async cancelEdit() {
+      if (this.savingProfile) return;
       this.isEditing = false;
+      this.profileSaveError = false;
       this.selectedFile = null;
       await this.fetchProfile();
     },
     async handleSave(updatedForm) {
-      if (updatedForm) {
-        this.form = { ...updatedForm };
-      }
+      if (this.savingProfile) return;
+      const draft = { ...(updatedForm || this.form) };
+      this.savingProfile = true;
+      this.profileSaveError = false;
       try {
         const payload = {
-          _id: this.form._id,
+          _id: draft._id,
           name: [
-            { key: 'th', value: this.form.nameTh },
-            { key: 'en', value: this.form.nameEn }
+            { key: 'th', value: draft.nameTh },
+            { key: 'en', value: draft.nameEn }
           ],
           contact: {
-            personalEmail: this.form.personalEmail,
-            telephone: this.form.telephone
+            personalEmail: draft.personalEmail,
+            telephone: draft.telephone
           },
           address: {
-            bill: this.form.bill,
-            shipping: this.form.shipping
+            bill: draft.bill,
+            shipping: draft.shipping
           }
         };
 
-        if (this.form.image && !this.selectedFile) {
-          payload.image = this.form.image;
+        if (draft.image && !this.selectedFile) {
+          payload.image = draft.image;
         }
 
         await this.$store.dispatch('user/update', payload);
@@ -407,39 +459,57 @@ export default {
           this.selectedFile = null;
         }
 
+        this.form = { ...draft };
         this.isEditing = false;
         await this.fetchProfile();
       } catch (err) {
-        console.error('Error updating profile:', err);
-      }
+        this.profileSaveError = true;
+      } finally { this.savingProfile = false; }
     },
 
     async onFileChange(e) {
+      if (this.photoUploading || this.savingProfile) return;
       const file = e.target.files[0];
-      if (file) {
-        this.form.image = URL.createObjectURL(file);
-        this.selectedFile = file;
-        this.$refs.fileInput.value = '';
-
-        // Auto-save the image when uploaded directly from the card
-        try {
-          const formData = new FormData();
-          formData.append('_id', this.userId);
-          formData.append('image', this.selectedFile);
-
-          await this.$store.dispatch('user/upload', formData);
-          this.selectedFile = null;
-          await this.fetchProfile();
-          
-          if (this.$store.commit) {
-            this.$store.commit('dialog/showToast', { title: 'Success', message: 'Profile photo updated successfully!', variant: 'success' });
-          }
-        } catch (err) {
-          console.error('Error uploading photo:', err);
+      if (!file) return;
+      this.photoError = '';
+      if (!/^image\/(png|jpeg|jpg|gif|webp)$/i.test(file.type || '') || !/\.(png|jpe?g|gif|webp)$/i.test(file.name || '')) {
+        this.photoError = 'type';
+        e.target.value = '';
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        this.photoError = 'size';
+        e.target.value = '';
+        return;
+      }
+      this.photoUploading = true;
+      let decoded = false;
+      try {
+        await decodeImageFile(file, this.$i18n.locale);
+        decoded = true;
+        const formData = new FormData();
+        formData.append('_id', this.userId);
+        formData.append('image', file);
+        const response = await this.$store.dispatch('user/upload', formData);
+        const updated = Array.isArray(response?.data) ? response.data[0] : response?.data;
+        if (updated?.image) this.form.image = updated.image;
+        await this.fetchProfile();
+        if (this.$store.commit) {
+          this.$store.commit('dialog/showToast', {
+            title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
+            message: this.$i18n.locale === 'en' ? 'Profile photo updated successfully!' : 'อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว',
+            variant: 'success'
+          });
         }
+      } catch (err) {
+        this.photoError = decoded ? 'upload' : 'invalid';
+      } finally {
+        this.photoUploading = false;
+        e.target.value = '';
       }
     },
     triggerUpload() {
+      if (this.photoUploading || this.savingProfile) return;
       this.$refs.fileInput.click();
     }
   }
@@ -452,7 +522,7 @@ export default {
 }
 
 .section-title {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 2.2rem;
     color: #2c3e50;
     letter-spacing: 1px;

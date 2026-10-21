@@ -21,7 +21,7 @@
                 class="avatar-main shadow-sm"
                 :style="{ backgroundColor: user && user.image ? 'transparent' : '#8c1515' }"
               >
-                <img v-if="user && user.image" :src="user.image" class="avatar-image" />
+                <img v-if="user && user.image" :src="user.image" :alt="displayName" class="avatar-image" />
                 <CIcon v-else name="cil-user" size="2xl" class="text-white" />
               </div>
             </div>
@@ -38,7 +38,7 @@
             </div>
             
             <p class="profile-bio text-muted mb-0">
-              {{ bio || ($i18n.locale === 'en' ? 'No biography provided yet. Express your unique artistic vision in your profile.' : 'ยังไม่มีข้อมูลประวัติส่วนตัว โปรดระบุข้อมูลเพื่อแสดงความเป็นเอกลักษณ์ทางศิลปะของคุณในโปรไฟล์') }}
+              {{ bio || (isPublic ? ($i18n.locale === 'en' ? 'No biography provided yet.' : 'ยังไม่มีข้อมูลประวัติศิลปิน') : ($i18n.locale === 'en' ? 'No biography provided yet. Express your unique artistic vision in your profile.' : 'ยังไม่มีข้อมูลประวัติส่วนตัว โปรดระบุข้อมูลเพื่อแสดงความเป็นเอกลักษณ์ทางศิลปะของคุณในโปรไฟล์')) }}
             </p>
           </div>
           
@@ -111,8 +111,11 @@
 </template>
 
 <script>
+import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+
 export default {
   name: 'ArtistProfileHeader',
+  mixins: [statusBadgeMixin],
   props: {
     user: {
       type: Object,
@@ -143,12 +146,12 @@ export default {
     statusName() {
       if (!this.user || !this.user.status) return this.$i18n.locale === 'en' ? 'New Learner' : 'ผู้เรียนใหม่';
       const status = this.user.status;
-      if (typeof status === 'string') return status;
+      if (typeof status === 'string') return this.getStatusBadge(status).label;
       if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
         const titleLang = status.title.find(t => t.key === (this.$i18n.locale || 'en'));
-        if (titleLang) return titleLang.value;
+        if (titleLang) return this.getStatusBadge(titleLang.value).label;
         const titleEn = status.title.find(t => t.key === 'en');
-        return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Status');
+        return this.getStatusBadge(titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Status')).label;
       }
       return this.$i18n.locale === 'en' ? 'Learner' : 'ผู้เรียน';
     },

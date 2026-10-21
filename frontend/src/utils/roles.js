@@ -15,4 +15,15 @@ export const dedupeRoles = (roles) => {
   });
 };
 
+export const dedupeStatuses = (statuses) => {
+  const seen = new Set();
+  return (Array.isArray(statuses) ? statuses : []).filter((status) => {
+    if (!status) return false;
+    const key = String(status.nameEn || status.name || status._id || '').trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 export default dedupeRoles;

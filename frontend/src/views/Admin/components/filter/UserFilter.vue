@@ -4,14 +4,14 @@
       <CRow class="align-items-end">
         <!-- Search Field -->
         <CCol lg="6" md="12" class="mb-3 mb-lg-0">
-          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search Users' : 'ค้นหาผู้ใช้งาน' }}</label>
+          <label for="user-filter-search" class="filter-label">{{ $i18n.locale === 'en' ? 'Search Users' : 'ค้นหาผู้ใช้งาน' }}</label>
           <div class="search-field-wrapper">
             <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
-            <CInput 
-              :value="value.search" 
+            <CInput id="user-filter-search"
+              :value="value.search"
               @input="updateFilter('search', $event)"
               class="m-0 border-0 custom-input-plain"
-              :placeholder="$i18n.locale === 'en' ? 'Name, Email or Student ID...' : 'ชื่อ อีเมล หรือรหัสนักศึกษา...'" 
+              :placeholder="$i18n.locale === 'en' ? 'Name, Email or Student ID...' : 'ชื่อ อีเมล หรือรหัสนักศึกษา...'"
             />
           </div>
         </CCol>
@@ -26,13 +26,13 @@
                 <CIcon name="cil-user" class="filter-icon-small" />
               </CButton>
             </template>
-            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+            <div class="w-100 shadow-sm border-0 mt-1">
               <CDropdownItem @click="updateFilter('role', 'All Roles')">{{ $i18n.locale === 'en' ? 'All Roles' : 'บทบาททั้งหมด' }}</CDropdownItem>
-              <CDropdownItem v-for="r in roles" :key="r._id" @click="updateFilter('role', r._id)">
+              <CDropdownItem v-for="r in roles" :key="r._id || r.nameEn" @click="updateFilter('role', r.nameEn || r.name)">
                 {{ r.name }}
               </CDropdownItem>
               <CDropdownItem v-if="roles.length === 0" disabled class="small text-muted">{{ $i18n.locale === 'en' ? 'No Roles Available' : 'ไม่มีบทบาท' }}</CDropdownItem>
-            </CDropdownMenu>
+            </div>
           </CDropdown>
         </CCol>
 
@@ -46,13 +46,13 @@
                 <CIcon name="cil-filter" class="filter-icon-small" />
               </CButton>
             </template>
-            <CDropdownMenu class="w-100 shadow-sm border-0 mt-1">
+            <div class="w-100 shadow-sm border-0 mt-1">
               <CDropdownItem @click="updateFilter('status', 'All Status')">{{ $i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด' }}</CDropdownItem>
-              <CDropdownItem v-for="s in statuses" :key="s._id" @click="updateFilter('status', s._id)">
+              <CDropdownItem v-for="s in statuses" :key="s._id || s.nameEn" @click="updateFilter('status', s.nameEn || s.name)">
                 {{ s.name }}
               </CDropdownItem>
               <CDropdownItem v-if="statuses.length === 0" disabled class="small text-muted">{{ $i18n.locale === 'en' ? 'No Status Available' : 'ไม่มีสถานะ' }}</CDropdownItem>
-            </CDropdownMenu>
+            </div>
           </CDropdown>
         </CCol>
       </CRow>
@@ -79,18 +79,50 @@ export default {
   },
   computed: {
     getSelectedRoleLabel() {
-      if (this.value.role === 'All Roles') {
+      if (!this.value.role || this.value.role === 'All Roles') {
         return this.$i18n.locale === 'en' ? 'All Roles' : 'บทบาททั้งหมด';
       }
-      const role = this.roles.find(r => r._id === this.value.role);
-      return role ? role.name : this.value.role;
+      const valLower = String(this.value.role).trim().toLowerCase();
+      const role = this.roles.find(r =>
+        (r.nameEn && r.nameEn.toLowerCase() === valLower) ||
+        String(r._id) === this.value.role ||
+        (r.name && r.name.toLowerCase() === valLower)
+      );
+      if (role) {
+        return role.name;
+      }
+      if (valLower === 'admin' || valLower === 'ผู้ดูแลระบบ') {
+        return this.$i18n.locale === 'en' ? 'Admin' : 'ผู้ดูแลระบบ';
+      }
+      if (valLower === 'artist' || valLower === 'ศิลปิน') {
+        return this.$i18n.locale === 'en' ? 'Artist' : 'ศิลปิน';
+      }
+      if (valLower === 'customer' || valLower === 'user' || valLower === 'ลูกค้า') {
+        return this.$i18n.locale === 'en' ? 'Customer' : 'ลูกค้า';
+      }
+      return this.value.role;
     },
     getSelectedStatusLabel() {
-      if (this.value.status === 'All Status') {
+      if (!this.value.status || this.value.status === 'All Status') {
         return this.$i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด';
       }
-      const status = this.statuses.find(s => s._id === this.value.status);
-      return status ? status.name : this.value.status;
+      const valLower = String(this.value.status).trim().toLowerCase();
+      const status = this.statuses.find(s =>
+        (s.nameEn && s.nameEn.toLowerCase() === valLower) ||
+        String(s._id) === this.value.status ||
+        (s.name && s.name.toLowerCase() === valLower) ||
+        (s.code && s.code.toLowerCase() === valLower)
+      );
+      if (status) {
+        return status.name;
+      }
+      if (valLower.includes('newstudent') || valLower.includes('new_student') || valLower.includes('ผู้เรียนใหม่')) {
+        return this.$i18n.locale === 'en' ? 'NewStudent' : 'ผู้เรียนใหม่';
+      }
+      if (valLower.includes('oldstudent') || valLower.includes('old_student') || valLower.includes('ผู้เรียนเก่า')) {
+        return this.$i18n.locale === 'en' ? 'OldStudent' : 'ผู้เรียนเก่า';
+      }
+      return this.value.status;
     }
   },
   methods: {

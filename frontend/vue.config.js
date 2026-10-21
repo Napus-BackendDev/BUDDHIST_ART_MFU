@@ -1,9 +1,9 @@
 const fs = require('fs')
 const path = require('path')
 
-// Local development keeps Google OAuth credentials in backend/.env.
-// Only copy public client ID into frontend build when frontend/.env leaves it blank.
-if (!process.env.VUE_APP_CLIENTID) {
+// Local development may reuse the public client ID from the backend checkout.
+// Production builds must provide their own frontend environment.
+if (process.env.NODE_ENV !== 'production' && !process.env.VUE_APP_CLIENTID) {
   const backendEnvPath = path.resolve(__dirname, '../backend/.env')
   if (fs.existsSync(backendEnvPath)) {
     const clientIdLine = fs.readFileSync(backendEnvPath, 'utf8')
@@ -13,6 +13,11 @@ if (!process.env.VUE_APP_CLIENTID) {
       process.env.VUE_APP_CLIENTID = clientIdLine.slice('GOOGLE_CLIENT_ID='.length).trim()
     }
   }
+}
+
+if (process.env.NODE_ENV === 'production' &&
+    !/^[\w-]+\.apps\.googleusercontent\.com$/.test(String(process.env.VUE_APP_CLIENTID || '').trim())) {
+  throw new Error('Production build requires a valid VUE_APP_CLIENTID. Set it in frontend/.env.production or the build environment.')
 }
 
 module.exports = {

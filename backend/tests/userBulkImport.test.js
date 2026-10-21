@@ -3,7 +3,6 @@ const User = require('../server/Project/User/models/user.model');
 const Role = require('../server/Project/Settings/models/role.model');
 const Status = require('../server/Project/Settings/models/status.model');
 const userService = require('../server/Project/User/service/user');
-const { isPasswordHash } = require('../server/Project/User/service/password');
 const { buildOfficialEmail } = require('../server/Project/User/service/officialEmail');
 
 describe('Bulk user import', () => {
@@ -92,7 +91,7 @@ describe('Bulk user import', () => {
     const created = await User.findOne({ studentId: newStudentId }).select('+password').lean();
     const createdStatus = await Status.findById(created.status).lean();
     expect(createdStatus.title.some(item => item.value === 'NewStudent')).toBe(true);
-    expect(isPasswordHash(created.password)).toBe(true);
+    expect(created.password).toBeFalsy();
     expect(created.contact.studentEmail).toBe(buildOfficialEmail(newStudentId));
     expect(created.contact.personalEmail).toBe(newEmail);
   });
@@ -191,5 +190,23 @@ describe('Bulk user import', () => {
     expect(updatedArtist.contact.studentEmail).toBe(buildOfficialEmail(artistNextStudentId));
     expect(updatedArtist.contact.personalEmail).toBe('artist@example.com');
     expect(updatedAdmin.contact.studentEmail).toBe(adminEmail);
+  });
+  it('preserves an explicit old learner status on create and repeat import', async () => {
+    const oldStatus = await Status.findOne({ 'title.value': 'OldStudent' });
+    const studentId = `TEST-${Date.now()}-OLD-IMPORT`;
+    const invoke = () => new Promise((resolve, reject) => {
+      userService.onCreate({ body: [{
+        studentId, name: [{ key: 'th', value: 'ผู้เรียนเดิมทดสอบ' }],
+        role: artistRole._id, status: oldStatus._id, password: 'test-secret',
+        contact: { personalEmail: 'old@example.com' },
+        image: 'https://mfudrive.mfu.ac.th/s/test/download'
+      }] }, { status(code) { return { json(payload) { resolve({ code, payload }); } }; } }).catch(reject);
+    });
+    expect((await invoke()).code).toBe(200);
+    expect((await invoke()).code).toBe(200);
+    const imported = await User.findOne({ studentId }).lean();
+    expect(String(imported.status)).toBe(String(oldStatus._id));
+    expect(imported.image).toBe('https://mfudrive.mfu.ac.th/s/test/download');
+    expect(await User.countDocuments({ studentId })).toBe(1);
   });
 });

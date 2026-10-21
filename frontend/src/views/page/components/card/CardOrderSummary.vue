@@ -6,7 +6,7 @@
                 <h5 class="font-weight-bold mb-4">{{ $i18n.locale === 'en' ? 'Order Summary' : 'สรุปคำสั่งซื้อ' }}</h5>
 
                 <div v-for="(item, index) in cartItems" :key="item._id" class="d-flex mb-4 align-items-center">
-                    <img :src="item.image" class="rounded mr-3 shadow-sm"
+                    <img :src="item.image" :alt="getName($i18n.locale, item.title)" class="rounded mr-3 shadow-sm"
                         style="width: 80px; height: 80px; object-fit: cover;">
                     <div class="w-100">
                         <div class="d-flex justify-content-between">
@@ -18,15 +18,17 @@
                         </div>
                         <small class="text-muted d-block mb-2" v-if="item.artist">{{ $i18n.locale === 'en' ? 'by' : 'โดย' }} {{ getName($i18n.locale, item.artist) }}</small>
                         <div class="d-flex justify-content-between align-items-center mt-1">
-                            <div class="text-danger small font-weight-bold" v-if="item.addedAt">
+                            <div class="text-danger small font-weight-bold" v-if="reservationStart !== null">
                                 <CIcon name="cil-clock" size="sm" class="mr-1"/> 
-                                <CartItemTimer :addedAt="item.addedAt" />
+                                <span>{{ $i18n.locale === 'en' ? 'Payment time remaining: ' : 'เวลาชำระเงินที่เหลือ: ' }}</span>
+                                <CartItemTimer :addedAt="reservationStart" />
                             </div>
                             <div v-else></div>
-                            <CLink href="#" @click.prevent="removeItem(item._id)"
-                                class="text-danger small text-decoration-none d-flex align-items-center">
+                            <button type="button" @click="removeItem(item._id)"
+                                :aria-label="($i18n.locale === 'en' ? 'Remove from cart: ' : 'ลบออกจากตะกร้า: ') + getName($i18n.locale, item.title)"
+                                class="btn btn-link p-0 text-danger small text-decoration-none d-flex align-items-center">
                                 <CIcon name="cil-trash" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Remove' : 'ลบ' }}
-                            </CLink>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -68,7 +70,15 @@ export default {
     components: {
         CartItemTimer
     },
+    props: {
+        createdOrder: { type: Object, default: null }
+    },
     computed: {
+        reservationStart() {
+            if (!this.createdOrder?._id || !this.createdOrder.createdAt) return null;
+            const start = new Date(this.createdOrder.createdAt).getTime();
+            return Number.isFinite(start) ? start : null;
+        },
         ...mapGetters('cart', ['cartItems', 'cartTotal', 'cartShippingCost', 'cartFinalTotal']),
         subtotal() {
             return this.cartTotal || 0;

@@ -4,14 +4,14 @@
             <CRow class="align-items-end">
                 <!-- Search Field -->
                 <CCol lg="4" md="12" class="mb-3 mb-lg-0">
-                    <label class="filter-label">{{ $i18n.locale === 'en' ? 'Search News' : 'ค้นหาข่าวสาร' }}</label>
+                    <label for="news-filter-search" class="filter-label">{{ $i18n.locale === 'en' ? 'Search News' : 'ค้นหาข่าวสาร' }}</label>
                     <div class="search-field-wrapper">
                         <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
-                        <CInput 
-                            :value="value.search" 
+                        <CInput id="news-filter-search"
+                            :value="value.search"
                             @input="updateFilter('search', $event)"
                             class="m-0 border-0 custom-input-plain"
-                            :placeholder="$i18n.locale === 'en' ? 'Title, Content...' : 'หัวข้อ, เนื้อหา...'" 
+                            :placeholder="$i18n.locale === 'en' ? 'Title, Content...' : 'หัวข้อ, เนื้อหา...'"
                         />
                     </div>
                 </CCol>
@@ -20,8 +20,8 @@
                 <CCol lg="4" md="12" class="mb-3 mb-lg-0">
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Quick Range' : 'ช่วงเวลาด่วน' }}</label>
                     <CButtonGroup class="w-100 quick-range-group">
-                        <CButton 
-                            v-for="range in [ 'All Time' , 'Today', 'This Month', 'This Year']" 
+                        <CButton
+                            v-for="range in [ 'All Time' , 'Today', 'This Month', 'This Year']"
                             :key="range"
                             @click="setQuickRange(range)"
                             :class="['range-btn', { 'active': value.quickRange === range }]"
@@ -36,29 +36,31 @@
                     <label class="filter-label">{{ $i18n.locale === 'en' ? 'Time Range' : 'ช่วงเวลา' }}</label>
                     <div class="date-range-group d-flex align-items-center">
                         <div class="date-input-wrapper">
-                            <CInput 
+                            <CInput
                                 :type="formattedStartDate ? 'date' : 'text'"
-                                placeholder="วัน/เดือน/ปี"
+                                :aria-label="$i18n.locale === 'en' ? 'Start date' : 'วันที่เริ่มต้น'"
+                                :placeholder="$i18n.locale === 'en' ? 'dd/mm/yyyy' : 'วัน/เดือน/ปี'"
                                 lang="en-GB"
-                                :value="formattedStartDate" 
+                                :value="formattedStartDate"
                                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
                                 @blur="!$event.target.value && ($event.target.type = 'text')"
                                 @input="onDateInput('startDate', $event)"
-                                class="mb-0 custom-date-field" 
+                                class="mb-0 custom-date-field"
                             />
                             <CIcon name="cil-calendar" class="date-icon-right" />
                         </div>
                         <span class="date-range-separator mx-2 text-muted" aria-hidden="true">&ndash;</span>
                         <div class="date-input-wrapper">
-                            <CInput 
+                            <CInput
                                 :type="formattedEndDate ? 'date' : 'text'"
-                                placeholder="วัน/เดือน/ปี"
+                                :aria-label="$i18n.locale === 'en' ? 'End date' : 'วันที่สิ้นสุด'"
+                                :placeholder="$i18n.locale === 'en' ? 'dd/mm/yyyy' : 'วัน/เดือน/ปี'"
                                 lang="en-GB"
-                                :value="formattedEndDate" 
+                                :value="formattedEndDate"
                                 @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
                                 @blur="!$event.target.value && ($event.target.type = 'text')"
                                 @input="onDateInput('endDate', $event)"
-                                class="mb-0 custom-date-field" 
+                                class="mb-0 custom-date-field"
                             />
                             <CIcon name="cil-calendar" class="date-icon-right" />
                         </div>
@@ -119,8 +121,8 @@ export default {
         },
         onDateInput(type, val) {
             const dateVal = val ? moment(val).toDate() : null
-            const newFilters = { 
-                ...this.value, 
+            const newFilters = {
+                ...this.value,
                 [type]: dateVal,
                 quickRange: 'Custom'
             }

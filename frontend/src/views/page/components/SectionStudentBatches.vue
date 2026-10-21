@@ -5,7 +5,7 @@
                 <span class="badge text-uppercase font-weight-bold px-3 py-2 mb-3" style="color: #612721; background-color: rgba(97,39,33,0.08); border-radius: 50px; font-size: 0.8rem; letter-spacing: 1px;">
                     {{ $i18n.locale === 'en' ? 'Academic Cohort Directory' : 'ทำเนียบรุ่นวิชาการ' }}
                 </span>
-                <h2 class="font-weight-bold mb-3" style="color: #2c3e50; font-family: 'Cinzel', serif; font-size: 2.2rem; letter-spacing: 0.5px;">
+                <h2 class="font-weight-bold mb-3" style="color: #2c3e50; font-family: var(--app-font-family); font-size: 2.2rem; letter-spacing: 0.5px;">
                     {{ $i18n.locale === 'en' ? 'Cohort and Student Artwork Exhibition Registry' : 'ทะเบียนรุ่นและนิทรรศการผลงานศึกษา' }}
                 </h2>
                 <div class="mx-auto" style="width: 50px; height: 3px; background-color: #612721; border-radius: 2px;"></div>
@@ -173,7 +173,7 @@ export default {
 }
 
 .plaque-code {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 0.78rem;
     color: #a6845e;
     letter-spacing: 2px;
@@ -181,7 +181,7 @@ export default {
 }
 
 .plaque-year {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 0.78rem;
     color: #bfa081;
 }
@@ -193,20 +193,20 @@ export default {
 }
 
 .plaque-title {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 1.15rem;
     line-height: 1.4;
     color: #1a1a1a !important;
 }
 
 .plaque-subtitle {
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     font-size: 0.82rem;
     letter-spacing: 0.5px;
 }
 
 .plaque-batch-name {
-    font-family: 'Cinzel', serif;
+    font-family: var(--app-font-family);
     font-size: 0.88rem;
     color: #612721;
     letter-spacing: 0.5px;
@@ -221,7 +221,7 @@ export default {
     color: #ffffff !important;
     border-radius: 4px;
     font-size: 0.75rem;
-    font-family: 'Sarabun', sans-serif;
+    font-family: var(--app-font-family);
     letter-spacing: 0.5px;
     font-weight: 500;
 }

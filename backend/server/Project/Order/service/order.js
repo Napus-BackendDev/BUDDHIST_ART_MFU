@@ -16,6 +16,8 @@ const { generateOrderCode } = require('../../Artwork/service/artworkCode');
 const { isPostTermPurchasable, getEffectiveMode, constants } = require('../../Artwork/service/postTermSale');
 const { STATUS_CODES, LEGACY_NAMES, hasCode, queryForCode } = require('../../Settings/statusCodes');
 const mfuDrive = require('../../../../helpers/mfuDrive');
+const { getImageBuffer } = require('../../Submission/service/image');
+const { calculateOrderAmounts, getOrderAmounts, getLinePrice } = require('./amounts');
 
 // Keep fire-and-forget invoice/mail work observable so shutdown and tests can
 // drain it before closing MongoDB. The customer response remains non-blocking.
@@ -55,6 +57,14 @@ const titleValue = (value) => {
 const idString = (value) => value && (value._id || value).toString();
 
 const isValidObjectId = (value) => mongo.ObjectId.isValid(value);
+
+const normalizeContactEmail = (body) => {
+    if (body?.contact?.email === undefined) return true;
+    const email = body.contact.email;
+    if (typeof email !== 'string' || email.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return false;
+    body.contact = { ...body.contact, email: email.trim() };
+    return true;
+};
 
 const loadStatuses = async () => {
     const docs = await StatusModel.find({ $or: [{ code: { $in: Object.values(STATUS_CODES) } }, { 'title.value': { $in: STATUS_NAMES } }] }).lean();
@@ -99,7 +109,7 @@ exports.onQuery = async function (request, response) {
 
 exports.onQuerys = async function (request, response) {
     try {
-        let query = {};
+        let query = request.orderQuery || {};
         const doc = await Order.onQuerys(query);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
@@ -108,6 +118,7 @@ exports.onQuerys = async function (request, response) {
 };
 
 exports.onCreate = async function (request, response) {
+    if (!normalizeContactEmail(request.body)) return sendBusinessError(response, 40000, 'INVALID_CONTACT_EMAIL');
     const mongoose = require('mongoose');
     const lockedArtworks = [];
     let createdOrder = null;
@@ -178,10 +189,11 @@ exports.onCreate = async function (request, response) {
         request.body.status = reservedStatus._id;
         const artworkIds = normalizedArtworkIds;
         const orderArtworks = await ArtworkModel.find({ _id: { $in: normalizedArtworkIds } })
-            .select('_id artworkCode artist courseLevel status.approval status.sale').lean();
+            .select('_id artworkCode artist courseLevel price status.approval status.sale').lean();
         if (orderArtworks.length !== normalizedArtworkIds.length || orderArtworks.some(art => !art.artworkCode)) {
             return sendBusinessError(response, 40000, 'ORDER_ARTWORK_NOT_FOUND_OR_UNCODED');
         }
+        request.body.amounts = calculateOrderAmounts(orderArtworks);
         request.body.artworkReferences = orderArtworks.map(art => ({
             artwork: art._id,
             artworkCode: art.artworkCode
@@ -313,12 +325,14 @@ exports.onCreate = async function (request, response) {
                 return {
                     title: title,
                     artist: artistName,
-                    price: art.price || 0,
+                    price: getLinePrice(doc, art),
                     image: art.image
                 };
             });
         }
 
+        const { subtotal, shipping, total } = getOrderAmounts(doc);
+        Object.assign(invoiceData, { subtotal, shipping, total });
         const pdfBuffer = await pdfService.generateInvoice(invoiceData);
 
         const sanitize = (text) => {
@@ -467,6 +481,10 @@ exports.onUpload = async function (request, response) {
         if (!hasCode(currentStatus, STATUS_CODES.RESERVED)) {
             return sendBusinessError(response, 40900, 'ORDER_NOT_AWAITING_PAYMENT');
         }
+        const createdAt = new Date(currentOrder.createdAt).getTime();
+        if (!Number.isFinite(createdAt) || createdAt <= Date.now() - 24 * 60 * 60 * 1000) {
+            return sendBusinessError(response, 40900, 'PAYMENT_DEADLINE_EXPIRED');
+        }
         // Compare-and-set the payment upload against the Reserved/no-slip state.
         // This prevents a timeout cron claim from being overwritten by a late upload.
         query.status = idString(currentOrder.status);
@@ -492,19 +510,20 @@ exports.onUpload = async function (request, response) {
         }
 
         console.log(`[Backend Checkout Flow 6.2] Saving payment slip image path: ${imagePath} for order ID: ${request.body._id}`);
+        query.createdAt = { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) };
         const doc = await Order.onUpdate(query, updateData, [], "image status");
         if (!doc) return sendBusinessError(response, 40900, 'ORDER_NOT_AWAITING_PAYMENT');
         
-        // --- 📧 ส่งเมลแจ้งเมื่อได้รับสลิป (Bil) ---
+        // --- 📧 ส่งเมลแจ้งเมื่อได้รับหลักฐานการโอนเงิน (Bil) ---
         try {
-            const fullDoc = await Order.onQuery(query); // ดึงข้อมูลแบบเต็มเพื่อส่งเมล
+            const fullDoc = await Order.onQuery({ _id: query._id });
             if (fullDoc && fullDoc.contact?.email) {
                 const buyerName = fullDoc.contact?.name || "Customer";
                 const orderId = fullDoc.orderNumber || fullDoc._id;
                 const artworkTitle = fullDoc.artwork && fullDoc.artwork[0] 
                     ? (fullDoc.artwork[0].title.find(t => t.key === 'en')?.value || fullDoc.artwork[0].title[0]?.value || "Artwork")
                     : "Artwork";
-                const price = fullDoc.artwork ? fullDoc.artwork.reduce((sum, art) => sum + (art.price || 0), 0) : 0;
+                const price = getOrderAmounts(fullDoc).total;
                 const orderDate = fullDoc.createdAt ? new Date(fullDoc.createdAt).toLocaleString('th-TH') : new Date().toLocaleString('th-TH');
 
                 const html = confirmationOrderMail({
@@ -519,7 +538,7 @@ exports.onUpload = async function (request, response) {
                 const attachments = [];
 
                 // 1. แนบ Invoice (ถ้ามีไฟล์อยู่แล้วในเครื่อง)
-                if (fullDoc.invoiceFile) {
+                if (fullDoc.invoiceFile && !(fullDoc.amounts?.shipping > 0)) {
                     const buyerFolderName = sanitize(fullDoc.contact?.name || (fullDoc.user && fullDoc.user.name) || "Customer");
                     const buyerId = fullDoc.user ? (fullDoc.user._id || fullDoc.user) : "Guest";
                     const invoicePath = path.join(root, `account/User/${buyerId}_${buyerFolderName}/Invoice/${fullDoc.invoiceFile}`);
@@ -530,8 +549,8 @@ exports.onUpload = async function (request, response) {
                 }
 
                 // 2. แนบ Slip (Bil) ที่เพิ่งอัปโหลด
-                let slipPath = "";
-                if (imagePath) {
+                let slipPath = request.file.path || path.join(request.file.destination, request.file.filename);
+                if (!fs.existsSync(slipPath) && imagePath) {
                     let cleanUrl = decodeURIComponent(imagePath.replace(/^https?:\/\/[^/]+/, ""));
                     let slipRelPath = "";
                     if (cleanUrl.includes('/data/uploads/')) {
@@ -567,11 +586,12 @@ exports.onUpload = async function (request, response) {
 };
 
 exports.onUpdate = async function (request, response) {
+    if (!normalizeContactEmail(request.body)) return sendBusinessError(response, 40000, 'INVALID_CONTACT_EMAIL');
     try {
         if (!isValidObjectId(request.body?._id)) {
             return sendBusinessError(response, 40000, 'ORDER_ID_REQUIRED');
         }
-        const query = { _id: new mongo.ObjectId(request.body._id) };
+        const query = { _id: new mongo.ObjectId(request.body._id), ...request.orderWriteQuery };
         const beforeDoc = await Order.onQuery(query);
         if (!beforeDoc) return ResMessage.sendResponse(response, 0, 40400);
 
@@ -610,6 +630,7 @@ exports.onUpdate = async function (request, response) {
         if (doc && statusChanged && doc.status && doc.status.title) {
             const isRejected = hasCode(doc.status, STATUS_CODES.REJECTED) || doc.status.title.some(t => t.value === 'Rejected' || t.value === 'ไม่นุมัติ');
             const isApproved = hasCode(doc.status, STATUS_CODES.APPROVED) || doc.status.title.some(t => t.value === 'Approved' || t.value === 'อนุมัติ');
+            const isCancelled = hasCode(doc.status, STATUS_CODES.CANCELLED);
 
             if (isApproved) {
                 // Update artwork status to Sold Out and Approved
@@ -686,7 +707,7 @@ exports.onUpdate = async function (request, response) {
                         }
 
                         // 3. Invoice (from disk)
-                        if (fullDoc.invoiceFile) {
+                        if (fullDoc.invoiceFile && !(fullDoc.amounts?.shipping > 0)) {
                             const invoicePath = path.join(root, `account/User/${buyerId}_${buyerName}/Invoice/${fullDoc.invoiceFile}`);
                             if (fs.existsSync(invoicePath)) {
                                 attachments.push({ filename: fullDoc.invoiceFile, path: invoicePath });
@@ -733,10 +754,10 @@ exports.onUpdate = async function (request, response) {
                 }
             }
 
-            if (isRejected) {
+            if (isRejected || isCancelled) {
                 // --- 📧 Send Rejected Email ---
                 const buyerEmail = doc.contact?.email;
-                if (buyerEmail) {
+                if (isRejected && buyerEmail) {
                     const artworkTitle = doc.artwork && doc.artwork[0] 
                         ? (doc.artwork[0].title.find(t => t.key === 'en')?.value || doc.artwork[0].title[0]?.value || "Artwork")
                         : "Artwork";
@@ -748,7 +769,7 @@ exports.onUpdate = async function (request, response) {
                         reason: request.body.remark || "The provided payment evidence could not be verified."
                     });
 
-                    await sendMail(buyerEmail, 'ข้อมูลอัปเดตคำสั่งซื้อ: โปรดอัปโหลดหลักฐานการชำระเงินใหม่ - พุทธศิลปกรรม มฟล.', '', html);
+                    await sendMail(buyerEmail, 'คำสั่งซื้อถูกปฏิเสธและสิ้นสุดการจอง - พุทธศิลปกรรม มฟล.', '', html);
                 }
 
                 if (doc.artwork && doc.artwork.length > 0) {
@@ -807,7 +828,7 @@ exports.onDownloadInvoice = async function (request, response) {
         }
 
         // Check if file already exists on server
-        if (doc.invoiceFile) {
+        if (doc.invoiceFile && !(doc.amounts?.shipping > 0)) {
             const sanitize = (text) => {
                 if (!text) return "";
                 if (Array.isArray(text)) {
@@ -868,12 +889,14 @@ exports.onDownloadInvoice = async function (request, response) {
                 return {
                     title: title,
                     artist: artistName,
-                    price: art.price || 0,
+                    price: getLinePrice(doc, art),
                     image: art.image
                 };
             });
         }
 
+        const { subtotal, shipping, total } = getOrderAmounts(doc);
+        Object.assign(invoiceData, { subtotal, shipping, total });
         const pdfBuffer = await pdfService.generateInvoice(invoiceData);
 
         // Send PDF back to client
@@ -901,7 +924,9 @@ exports.onDownloadCertificate = async function (request, response) {
         }
 
         // --- 🛡️ Status Check: Only allow if 'Approved' ---
-        const isApproved = doc.status?.title?.some(t => t.value === 'Approved' || t.value === 'อนุมัติ');
+        const isApproved = doc.status?.code
+            ? doc.status.code === STATUS_CODES.APPROVED
+            : doc.status?.title?.some(t => t.value === 'Approved' || t.value === 'อนุมัติ');
         if (!isApproved) {
             return ResMessage.sendResponse(response, 0, 40300, "Certificate is only available for Approved orders");
         }
@@ -987,10 +1012,10 @@ async function generateAndSaveCertificateFile(doc) {
         const artworkImage = await resolveStoredPublicFileAsync(art.image, root);
         const artworkLocalPath = artworkImage?.filePath || '';
 
-        if (!artworkLocalPath || !fs.existsSync(artworkLocalPath)) {
-            console.warn(`[SKIP] Artwork image NOT FOUND at: ${artworkLocalPath}`);
-            continue;
-        }
+        // Imported images may use a public Drive share outside the upload root.
+        // Fail the whole certificate if any image is unavailable, rather than omit a purchased artwork.
+        const artworkBuffer = artworkLocalPath && fs.existsSync(artworkLocalPath)
+            ? null : await getImageBuffer(art.image);
 
         // 2. Prepare Info
         const getVal = (arr, key = 'en') => {
@@ -1018,6 +1043,7 @@ async function generateAndSaveCertificateFile(doc) {
             // 3. Generate the same Certificate of Authenticity layout used in the email.
             const certBytes = await PdfService.generateCertificateOfAuthenticity({
                 artworkPath: artworkLocalPath,
+                artworkBuffer,
                 info
             });
 
