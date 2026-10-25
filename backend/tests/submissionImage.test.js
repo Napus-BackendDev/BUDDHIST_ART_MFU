@@ -71,12 +71,12 @@ test('serves large MFU Drive originals above 20 MB as bounded JPEG previews', as
     expect(metadata.format).toBe('jpeg');
     expect(metadata.width).toBe(1600);
     expect(metadata.height).toBe(1600);
-    expect(axios.get.mock.calls[0][1].maxContentLength).toBe(25 * 1024 * 1024);
+    expect(axios.get.mock.calls[0][1].maxContentLength).toBe(50 * 1024 * 1024);
 });
 
-test('rejects provider images above the 25 MB preview download limit', async () => {
+test('rejects provider images above the 50 MB preview download limit', async () => {
     stored('https://mfudrive.mfu.ac.th/s/oversized-test/download');
-    axios.get.mockResolvedValue({ status: 200, headers: { 'content-type': 'image/png' }, data: Buffer.alloc(25 * 1024 * 1024 + 1) });
+    axios.get.mockResolvedValue({ status: 200, headers: { 'content-type': 'image/png' }, data: Buffer.alloc(50 * 1024 * 1024 + 1) });
     await request(app).get(`/image/${id}`).expect(502);
 });
 
