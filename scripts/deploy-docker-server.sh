@@ -32,7 +32,9 @@ rsync -az --delete \
   --exclude='node_modules' \
   --exclude='*/node_modules' \
   --exclude='frontend/dist' \
-  --exclude='.env*' \
+  --exclude='/.env' \
+  --exclude='/.env.local' \
+  --exclude='backend/.env' \
   --exclude='.DS_Store' \
   --exclude='*/.DS_Store' \
   --exclude='backend/tmp' \
@@ -46,6 +48,9 @@ rsync -az --delete \
 echo "--> Step 3: Copying production environment configuration..."
 scp -i "$DEPLOY_SSH_KEY" -P "$DEPLOY_SSH_PORT" .env.production "${DEPLOY_USER}@${DEPLOY_HOST}:${REMOTE_RELEASE_DIR}/.env.production"
 "${ssh_command[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" "cp '${REMOTE_RELEASE_DIR}/.env.production' '${REMOTE_BASE}/.env.production'"
+if [ -f frontend/.env.production ]; then
+  scp -i "$DEPLOY_SSH_KEY" -P "$DEPLOY_SSH_PORT" frontend/.env.production "${DEPLOY_USER}@${DEPLOY_HOST}:${REMOTE_RELEASE_DIR}/frontend/.env.production"
+fi
 
 echo "--> Step 4: Building and launching Docker Compose on remote host..."
 "${ssh_command[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s -- "$RELEASE_SHA" "$REMOTE_RELEASE_DIR" "$DEPLOY_HOST" "$PUBLISHED_PORT" "$PUBLIC_DOMAIN" <<'REMOTE'

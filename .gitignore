@@ -18,6 +18,7 @@ playwright-report/
 .env
 .env.*
 !.env.example
+!frontend/.env.production
 
 # Logs
 *.log

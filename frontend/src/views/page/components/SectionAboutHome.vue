@@ -27,7 +27,7 @@
                 <CCol lg="6" class="d-flex justify-content-center">
                     <div class="about-img-wrapper position-relative">
                         <div class="about-img-bg-deco"></div>
-                        <img :src="require('@/assets/images/about_us_home.png')" alt="Lanna Art Studio" class="img-fluid about-main-img">
+                        <img :src="require('@/assets/images/about_us_home.png')" alt="Lanna Art Studio" class="img-fluid about-main-img" loading="lazy" decoding="async">
                     </div>
                 </CCol>
             </CRow>

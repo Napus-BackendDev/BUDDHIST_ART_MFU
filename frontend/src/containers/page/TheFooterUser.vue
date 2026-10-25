@@ -113,7 +113,7 @@
                                         :title="getAltText(partner)"
                                         :aria-label="getAltText(partner)"
                                     >
-                                        <img :src="partner.img" :alt="getAltText(partner)" class="partner-logo-img" />
+                                        <img :src="partner.img" :alt="getAltText(partner)" class="partner-logo-img" loading="lazy" decoding="async" />
                                     </div>
                                 </div>
                             </div>

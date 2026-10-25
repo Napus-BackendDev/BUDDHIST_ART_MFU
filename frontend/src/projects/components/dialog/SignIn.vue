@@ -126,14 +126,16 @@
                 throw new Error('Google Identity Services is unavailable');
               }
 
+              if (!this.googleInitialized) {
                 window.google.accounts.id.initialize({
-                client_id: clientId,
-                callback: this.onGoogleCredential,
-                auto_select: false,
-                cancel_on_tap_outside: true,
+                  client_id: clientId,
+                  callback: this.onGoogleCredential,
+                  auto_select: false,
+                  cancel_on_tap_outside: true,
                   context: 'signin'
                 });
                 this.googleInitialized = true;
+              }
 
               this.renderGoogleButton();
               this.googleIssue = '';
@@ -172,6 +174,7 @@
               await this.$store.dispatch('auth/onGoogleLogin', { token: response.credential });
             } catch (err) {
               console.error('Google sign-in error:', err);
+              this.googleIssue = 'unavailable';
             }
           }
         },
@@ -180,7 +183,12 @@
             this.renderGoogleButton();
           },
           isAuthe(value) {
-            if (value) this.$nextTick(() => this.initializeGoogleSignIn());
+            if (value) {
+              this.googleIssue = '';
+              this.$nextTick(() => {
+                this.initializeGoogleSignIn();
+              });
+            }
           }
         },
         computed: {

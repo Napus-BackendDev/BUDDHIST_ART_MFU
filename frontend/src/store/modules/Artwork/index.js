@@ -1,6 +1,8 @@
 import Service from "@/service/api";
 import store from "@/store/store";
 
+let getArtworksInFlight = null;
+
 const ArtworkModule = {
     namespaced: true,
     state: {
@@ -19,11 +21,22 @@ const ArtworkModule = {
 
     actions: {
         get({ commit }, data) {
-            return Service.artwork('get', data, {})
+            const hasQuery = data && typeof data === 'object' && Object.keys(data).length > 0;
+            if (!hasQuery && getArtworksInFlight) {
+                return getArtworksInFlight;
+            }
+
+            const reqPromise = Service.artwork('get', data, {})
                 .then((response) => {
                     commit("artworks", response.data.data);
                     return response.data.data;
+                })
+                .finally(() => {
+                    if (!hasQuery) getArtworksInFlight = null;
                 });
+
+            if (!hasQuery) getArtworksInFlight = reqPromise;
+            return reqPromise;
         },
         explore({ commit }, data) {
             return Service.artwork('exp', data, {})

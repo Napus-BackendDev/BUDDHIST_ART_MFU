@@ -5,8 +5,8 @@
 
 | รายการ | รายละเอียด |
 | :--- | :--- |
-| เวอร์ชันเอกสาร | 1.2.0 |
-| วันที่จัดทำ | 14 ตุลาคม 2569 |
+| เวอร์ชันเอกสาร | 1.2.3 |
+| วันที่จัดทำ | 16 ตุลาคม 2569 |
 | สถานะ | Approved |
 | จัดทำโดย | Software Architect / AI Engineering Lead |
 
@@ -41,6 +41,55 @@
 ---
 
 ## 2. ประวัติการเปลี่ยนแปลง (Change History)
+
+### [1.2.3] - 2026-10-16
+
+#### Added (สิ่งที่เพิ่ม)
+- **Designated Admin Auto-Role Assignment**:
+  - กำหนดบัญชีอีเมลผู้ดูแลระบบหลัก (`sattawat.nor@mfu.ac.th`, `buddhistart@mfu.ac.th`) ให้ได้รับสิทธิ์ `Admin` (`ผู้ดูแลระบบ`) โดยอัตโนมัติเมื่อเข้าสู่ระบบผ่าน Google OAuth2
+  - รองรับการตั้งค่ารายการอีเมลแอดมินเพิ่มเติมผ่านตัวแปรสภาพแวดล้อม `ADMIN_EMAILS` ใน `.env` และ `.env.production`
+  - เพิ่ม Automated Test ใน [`backend/tests/googleAuth.test.js`](backend/tests/googleAuth.test.js) ตรวจสอบการลงทะเบียนใหม่และเลื่อนสิทธิ์บัญชีเดิมเป็น Admin ได้อย่างถูกต้อง
+
+#### Changed (สิ่งที่ปรับปรุง)
+- **User Role Elevation in MongoDB Atlas**:
+  - อัปเดตสิทธิ์ของบัญชี `sattawat.nor@mfu.ac.th` ใน MongoDB Atlas ให้เป็น `Admin` ทันที
+  - สร้างและเตรียมสิทธิ์บัญชี `buddhistart@mfu.ac.th` ไว้ล่วงหน้าด้วยสิทธิ์ `Admin` ใน MongoDB Atlas
+
+### [1.2.2] - 2026-10-16
+
+
+#### Changed (สิ่งที่ปรับปรุง)
+- **Frontend Nginx Gzip Compression**:
+  - เปิดใช้งาน `gzip on;` พร้อม `gzip_vary`, `gzip_proxied any;`, `gzip_comp_level 6`, และ `gzip_min_length 1024` ใน [`frontend/nginx.conf`](frontend/nginx.conf) ครอบคลุมชนิดไฟล์ js, css, json, xml, svg
+  - ลดขนาดดาวน์โหลดของ `chunk-vendors.js` จาก 6.36 MB เหลือเพียง ~2.04 MB (ลดลง 68%) และ CSS จาก 674 KB เหลือ ~70 KB (ลดลงเกือบ 90%)
+- **Vuex API Request Deduplication**:
+  - ปรับปรุง [`frontend/src/store/modules/Artwork/index.js`](frontend/src/store/modules/Artwork/index.js) เพิ่ม in-flight Promise caching ใน action `get` เพื่อตัดการเรียกซ้ำซ้อนของ Component บนหน้าแรกที่ยิง `/api/v1/artwork` พร้อมกัน 3 ครั้ง ลดเน็ตเวิร์กทราฟฟิกไปกว่า 950 KB
+- **Image Lazy Loading & Optimization**:
+  - เพิ่ม `loading="lazy"` และ `decoding="async"` ให้กับรูปภาพใน [`frontend/src/containers/page/TheFooterUser.vue`](frontend/src/containers/page/TheFooterUser.vue) และ [`frontend/src/views/page/components/SectionAboutHome.vue`](frontend/src/views/page/components/SectionAboutHome.vue) เพื่อให้เบราว์เซอร์จัดลำดับความสำคัญของคอนเทนต์ด้านบนก่อน
+
+---
+
+### [1.2.1] - 2026-10-16
+
+#### Fixed (สิ่งที่แก้ไข)
+- **Google Identity Services Button Rendering**:
+  - แก้ไข `frontend/src/projects/components/dialog/SignIn.vue` แยกฟังก์ชัน `initializeGoogleSignIn` และ `renderGoogleSignInButton` ออกจากกันอย่างชัดเจน เพื่อให้ปุ่ม Sign in with Google ทำการ render ทุกครั้งที่ Dialog เปิดขึ้นมา (`isAuthe = true`) หรือมีการเปลี่ยนภาษา UI
+  - เพิ่ม Fallback ให้ `VUE_APP_CLIENTID` ไม่เป็น `undefined` ป้องกันข้อผิดพลาด `Google Client ID is not configured` เมื่อ build ในสภาพแวดล้อม container
+- **Frontend Production Environment Configuration**:
+  - สร้างและติดตามไฟล์ `frontend/.env.production` พร้อมค่า `VUE_APP_CLIENTID=225788483142-8pkg8on8nh60ao83ve33ff3lflv2ccvo.apps.googleusercontent.com`
+  - ปรับปรุง `frontend/vue.config.js` ให้ค้นหา Client ID จากหลายแหล่ง (`.env.production`, `.env`, `backend/.env`) และมีค่าเริ่มต้นทางการเสมอ
+- **Backend Google OAuth Case-Insensitive & Student ID Linkage**:
+  - ปรับปรุง `backend/helpers/google/oAuth2.js` ให้ค้นหาอีเมลแบบ Case-Insensitive ป้องกันปัญหาชื่ออีเมลตัวพิมพ์ใหญ่ในฐานข้อมูลไม่ตรงกับ Token
+  - รองรับการเชื่อมโยงบัญชีนักศึกษา มฟล. จากอีเมลโดเมน `@lamduan.mfu.ac.th` เข้ากับ `studentId` เดิมในระบบโดยอัตโนมัติ
+  - เพิ่มการตรวจสอบความปลอดภัย ลบรหัสผ่าน (`password`) ออกจาก Response payload ก่อนส่งกลับ
+- **Automated Deploy Pipeline**:
+  - ปรับปรุง `scripts/deploy-docker-server.sh` ให้อนุญาตการส่งต่อ `frontend/.env.production` ไปยังโฟลเดอร์ release ของเซิร์ฟเวอร์ Beta
+
+#### Added (สิ่งที่เพิ่มใหม่)
+- **Automated Google Auth Tests**:
+  - เพิ่มชุดทดสอบ `backend/tests/googleAuth.test.js` ครอบคลุม 6 สถานการณ์ (Missing token, Invalid/Expired token, Audience mismatch, Case-insensitive lookup, Student ID linkage, Auto-registration) ผ่านการทดสอบทั้งหมด (100% Pass)
+
+---
 
 ### [1.2.0] - 2026-10-14
 
