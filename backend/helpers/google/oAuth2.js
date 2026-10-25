@@ -155,7 +155,7 @@ exports.onQuery = async function (request, response, next) {
             user = await User.findById(user._id).populate('role');
         }
 
-        return exports.issueSession(user, email, response);
+        return await exports.issueSession(user, trimmedEmail, response);
 
     } catch (err) {
         console.error("Google Auth Error:", err);
@@ -169,7 +169,8 @@ exports.onQuery = async function (request, response, next) {
 };
 
 // Shared by Google sign-in and the guarded local QA login (server/qa/qaLogin.routes.js).
-exports.issueSession = function (user, email, response) {
+exports.issueSession = async function (user, email, response) {
+        const trimmedEmail = String(email || '').trim();
         // 4. Prepare Role Name for JWT and Frontend
         let roleName = 'Customer';
         if (user.role && Array.isArray(user.role.title)) {
