@@ -64,6 +64,7 @@ describe('Bulk user import', () => {
           name: [{ key: 'en', value: 'Existing User Updated' }],
           contact: { studentEmail: existingEmail, telephone: '0800000000' },
           password: 'should-not-replace',
+          course: 'พุทธศิลป์พื้นฐาน',
           role: artistRole._id,
           status: newStatus._id
         },
@@ -72,6 +73,7 @@ describe('Bulk user import', () => {
           name: [{ key: 'en', value: 'New User' }],
           contact: { studentEmail: newEmail },
           password: 'new-secret',
+          course: 'พุุทธศิลป์สร้างสรรค์',
           role: artistRole._id,
           status: newStatus._id
         }
@@ -87,6 +89,7 @@ describe('Bulk user import', () => {
     expect(existing.password).toBe('existing-secret');
     expect(existing.contact.studentEmail).toBe(buildOfficialEmail(existingStudentId));
     expect(existing.contact.personalEmail).toBe(existingEmail);
+    expect(existing.course).toBe('พุทธศิลป์พื้นฐาน');
 
     const created = await User.findOne({ studentId: newStudentId }).select('+password').lean();
     const createdStatus = await Status.findById(created.status).lean();
@@ -94,6 +97,7 @@ describe('Bulk user import', () => {
     expect(created.password).toBeFalsy();
     expect(created.contact.studentEmail).toBe(buildOfficialEmail(newStudentId));
     expect(created.contact.personalEmail).toBe(newEmail);
+    expect(created.course).toBe('พุทธศิลป์สร้างสรรค์');
   });
 
   it('derives an Artist email when Official Email is missing and leaves non-Artist email rules unchanged', async () => {

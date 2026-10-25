@@ -59,7 +59,7 @@
                             :type="form.startDate ? 'date' : 'text'"
                             placeholder="วัน/เดือน/ปี"
                             lang="en-GB"
-                            @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @focus="$event.target.type = 'date'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                             @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
@@ -73,7 +73,7 @@
                             :type="form.dueDate ? 'date' : 'text'"
                             placeholder="วัน/เดือน/ปี"
                             lang="en-GB"
-                            @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @focus="$event.target.type = 'date'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                             @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
@@ -125,7 +125,7 @@
                                 </div>
                                 <span class="tag-name mr-2 text-truncate">{{ getStudentName(student) }}</span>
                                 <button type="button" :aria-label="($i18n.locale === 'en' ? 'Remove learner: ' : 'นำผู้เรียนออก: ') + getStudentName(student)" class="btn-remove-tag" @click="toggleStudent(student)">
-                                    <CIcon name="cil-x" size="custom-sm" />
+                                    <CIcon name="cil-x" size="sm" />
                                 </button>
                             </div>
                         </div>
@@ -260,7 +260,7 @@
                                             placeholder="วัน/เดือน/ปี --:--"
                                             lang="en-GB"
                                             v-model="assignment.startDateTime" :aria-label="($i18n.locale === 'en' ? 'Task start ' : 'วันเริ่มใบงานที่ ') + (index + 1)"
-                                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                                             @blur="!$event.target.value && ($event.target.type = 'text')"
                                             class="mini-date-input"
                                         />
@@ -274,7 +274,7 @@
                                             placeholder="วัน/เดือน/ปี --:--"
                                             lang="en-GB"
                                             v-model="assignment.endDateTime" :aria-label="($i18n.locale === 'en' ? 'Task deadline ' : 'กำหนดส่งใบงานที่ ') + (index + 1)"
-                                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                                             @blur="!$event.target.value && ($event.target.type = 'text')"
                                             class="mini-date-input"
                                         />
@@ -512,8 +512,9 @@ export default {
                 ],
                 courseLevel: this.form.courseLevel || '1',
                 create: {
-                    startAt: this.form.startDate,
-                    endAt: this.form.dueDate
+                    // Date-only inputs mean the whole local day: open at 00:00 and close at 23:59:59 (not UTC midnight).
+                    startAt: new Date(`${this.form.startDate}T00:00:00`).toISOString(),
+                    endAt: new Date(`${this.form.dueDate}T23:59:59`).toISOString()
                 },
                 artist: this.selectedStudents,
                 assignments: this.form.assignments.map(a => ({

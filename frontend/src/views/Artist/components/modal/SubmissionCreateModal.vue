@@ -47,6 +47,7 @@
     </div>
 
     <template #footer>
+      <MissingFieldsHint class="w-100 mb-2" :labels="missingFields" />
       <div class="wizard-footer w-100 d-flex justify-content-between align-items-center">
         <CButton variant="ghost" :class="currentStep === 1 ? 'btn-cancel' : 'btn-back'" @click="currentStep === 1 ? $emit('update:show', false) : currentStep = 1"><CIcon v-if="currentStep === 2" name="cil-arrow-left" class="mr-1" />{{ currentStep === 1 ? ($i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก') : ($i18n.locale === 'en' ? 'Back' : 'ย้อนกลับ') }}</CButton>
         <div><CButton v-if="currentStep === 1" color="primary" class="btn-submit" @click="currentStep = 2">{{ $i18n.locale === 'en' ? 'Next' : 'ถัดไป' }} <CIcon name="cil-arrow-right" class="ml-1" /></CButton><CButton v-else color="primary" class="btn-submit" :disabled="!isFormValid || loading" @click="handleSave"><CSpinner v-if="loading" size="sm" class="mr-2" />{{ loading ? ($i18n.locale === 'en' ? 'Submitting...' : 'กำลังส่งผลงาน...') : ($i18n.locale === 'en' ? 'Submit artwork' : 'ส่งผลงาน') }}</CButton></div>
@@ -58,10 +59,13 @@
 <script>
 import { mapGetters } from 'vuex'
 import artistImageInput from '@/mixins/artistImageInput'
+import MissingFieldsHint from '@/components/MissingFieldsHint.vue';
+import { missingLabels, dimensionsOk, priceOk } from '@/utils/missingFields';
 
 export default {
   name: 'SubmissionCreateModal',
   mixins: [artistImageInput],
+  components: { MissingFieldsHint },
   props: { show: Boolean, loading: Boolean, assignmentTitle: String },
   data: () => ({
     currentStep: 1, categories: [], storages: [], statuses: [], imagePreview: null,
@@ -80,6 +84,18 @@ export default {
     storageLabelEn () { return this.selectedStorage ? this.getName('en', this.selectedStorage) : 'Select storage location' },
     getUnitLabel () { const unit = this.units.find(item => item.en === this.form.unit); return unit ? unit.th : this.form.unit },
     is3D () { const name = this.getName('en', this.selectedCategory || {}).toLowerCase(); return name.includes('sculpture') || name.includes('installation') },
+    missingFields () {
+      if (this.currentStep === 1) return []
+      return missingLabels([
+        ['imageBusy', !this.isProcessingImage],
+        ['titleTh', !!this.form.title.th.trim()],
+        ['titleEn', !!this.form.title.en.trim()],
+        ['category', !!this.form.category],
+        ['image', !!this.imagePreview],
+        ['size', dimensionsOk(this.form, this.is3D)],
+        ['price', priceOk(this.form.price)]
+      ], this.$i18n.locale)
+    },
     isFormValid () {
       const dimensions = [this.form.width, this.form.height, ...(this.is3D ? [this.form.depth] : [])];
       return Boolean(!this.isProcessingImage && this.form.title.th.trim() && this.form.title.en.trim() && this.form.category && this.imagePreview &&
@@ -115,5 +131,20 @@ export default {
 .custom-select-btn { width:100%; min-height:52px; display:flex; align-items:center; justify-content:space-between; border:1px solid #eef1f4; background:#f8fafc; border-radius:12px; padding:.75rem 1rem; color:#475569; transition:all .3s cubic-bezier(.4,0,.2,1); }.custom-select-btn:hover { background:#fff; border-color:#e2e8f0; }.unit-dropdown-wrap { flex:0 0 auto!important; }.unit-select-btn { min-width:96px; }.dropdown-icon { width:14px; color:#94a3b8; }.dimensions { display:flex; align-items:center; gap:.55rem; }.dimensions > div { flex:1; }.dimensions b { color:#94a3b8; }
 .image-upload-panel { aspect-ratio:1; border:2px dashed #dccdc8; border-radius:16px; overflow:hidden; background:linear-gradient(145deg,#fffdfb,#f8f5f3); }.image-upload-panel input { display:none; }.image-upload-panel label { width:100%; height:100%; margin:0; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.45rem; color:#344155; text-align:center; }.image-upload-panel i { display:grid; place-items:center; width:66px; height:66px; border-radius:50%; background:#fff; color:#8c1515; box-shadow:0 10px 25px rgba(140,21,21,.12); }.image-upload-panel small { color:#94a3b8; }.image-upload-panel em { font-style:normal; font-size:.68rem; font-weight:700; color:#9a681d; background:rgba(183,121,31,.1); border-radius:99px; padding:.25rem .6rem; }.image-upload-panel img { width:100%; height:calc(100% - 27px); object-fit:contain; padding:.5rem; }.image-upload-panel label span { font-size:.78rem; color:#8c1515; font-weight:700; }.sale-box { margin-top:1.15rem; padding-top:1.15rem; border-top:1px solid #eee7e4; }
 .btn-cancel,.btn-back { color:#64748b!important; font-weight:700; }.btn-submit { border-radius:999px!important; padding:.65rem 1.7rem!important; background:#8c1515!important; border-color:#8c1515!important; font-weight:700; }
-@media (max-width: 767px) { ::v-deep .modal-body { padding:1.25rem; }.wizard-grid { grid-template-columns:1fr; }.wizard-image-column { position:static; padding:1.5rem 0 0; border-left:0; border-top:1px solid #eee7e4; }.dimensions { flex-wrap:wrap; }.dimensions > div { min-width:40%; } }
+@media (max-width: 991.98px) {
+  .wizard-grid { grid-template-columns: 1fr; }
+  .wizard-image-column { position: static; padding: 1.25rem 0 0; border-left: 0; border-top: 1px solid #eee7e4; }
+}
+@media (max-width: 767.98px) {
+  ::v-deep .modal-dialog { width: calc(100% - 1rem); margin: 0.5rem auto; }
+  ::v-deep .modal-header { padding: 1rem 1.1rem; }
+  ::v-deep .modal-body { padding: 1rem 1.1rem; max-height: calc(100dvh - 160px); }
+  ::v-deep .modal-footer { padding: 0.75rem 1.1rem; flex-wrap: wrap; gap: 0.5rem; }
+  .dimensions { flex-wrap: wrap; }
+  .dimensions > div { min-width: 40%; }
+}
+@media (max-width: 480px) {
+  ::v-deep .modal-footer > div { flex-direction: column-reverse; width: 100%; gap: 0.5rem; }
+  .btn-submit, .btn-cancel, .btn-back { width: 100% !important; min-height: 44px; }
+}
 </style>

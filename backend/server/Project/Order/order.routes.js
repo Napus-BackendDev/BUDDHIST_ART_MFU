@@ -13,6 +13,7 @@ router.get("", auth, access.scopeList, orderService.onQuerys);
 router.post("/order", auth, access.scopeList, orderService.onQuerys);
 router.post("", auth, access.create, orderService.onCreate);
 router.put("/upload", auth, uploadImage("order", "image"), orderService.onUpload);
+router.put("/replace-slip", admin, uploadImage("order", "image", false, 10, access.authorizeReplaceSlip), orderService.onReplaceSlip);
 router.put("", auth, access.update, orderService.onUpdate);
 router.delete("", admin, orderService.onDelete);
 

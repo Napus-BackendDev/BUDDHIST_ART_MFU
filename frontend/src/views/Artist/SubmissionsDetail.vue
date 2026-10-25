@@ -359,8 +359,19 @@ export default {
             this.selectedArtwork = artwork;
             this.showViewModal = true;
         },
+        // Say why the server refused instead of always asking for a refresh.
+        submitFailureMessage(error) {
+            const en = this.$i18n.locale === 'en';
+            const status = error && error.response && error.response.status;
+            const text = String((error && error.response && error.response.data && error.response.data.message) || '');
+            if (status === 403 && /period is not open/i.test(text)) {
+                return en ? 'This submission period is not open (or has closed). Check the start and due dates.' : 'ช่วงเวลาส่งงานนี้ยังไม่เปิดหรือปิดแล้ว กรุณาตรวจสอบวันเริ่มและวันครบกำหนด';
+            }
+            if (status === 403) return en ? 'You do not have permission to submit to this round.' : 'คุณไม่มีสิทธิ์ส่งงานในรอบนี้';
+            return en ? 'Refresh the page and try again.' : 'กรุณารีเฟรชหน้าแล้วลองใหม่';
+        },
         handleWorkSubmit(artworkData) {
-            if (!this.canSubmitAssignment(this.selectedAssignment)) return Promise.resolve();
+            if (this.submitting || !this.canSubmitAssignment(this.selectedAssignment)) return Promise.resolve();
             this.submitting = true;
             const payload = {
                 submissionId: this.submission._id,
@@ -372,10 +383,10 @@ export default {
                     this.showSubmissionModal = false;
                     this.fetchSubmission();
                 })
-                .catch(() => {
+                .catch(error => {
                     this.$store.commit('dialog/showToast', {
                         title: this.$i18n.locale === 'en' ? 'Could not submit artwork' : 'ส่งผลงานไม่สำเร็จ',
-                        message: this.$i18n.locale === 'en' ? 'Refresh the page and try again.' : 'กรุณารีเฟรชหน้าแล้วลองใหม่',
+                        message: this.submitFailureMessage(error),
                         variant: 'danger'
                     });
                 })
@@ -397,6 +408,7 @@ export default {
             this.showEditModal = true;
         },
         async handleUpdateArtwork(artworkData) {
+            if (this.submitting) return;
             this.submitting = true;
             try {
                 const assignment = this.selectedAssignment || this.submission?.assignments?.find(round => round.artworks?.some(item => item._id === artworkData._id));
@@ -413,7 +425,7 @@ export default {
                 console.error("Resubmit Error:", error);
                 this.$store.commit('dialog/showToast', {
                     title: this.$i18n.locale === 'en' ? 'Could not update artwork' : 'แก้ไขผลงานไม่สำเร็จ',
-                    message: this.$i18n.locale === 'en' ? 'Refresh the page and try again.' : 'กรุณารีเฟรชหน้าแล้วลองใหม่',
+                    message: this.submitFailureMessage(error),
                     variant: 'danger'
                 });
             } finally {

@@ -895,4 +895,40 @@ export default {
     box-shadow: 0 10px 15px -3px rgba(140, 21, 21, 0.2);
 }
 
+@media (max-width: 767.98px) {
+    ::v-deep .modal-dialog {
+        width: calc(100% - 1rem);
+        margin: 0.5rem auto;
+    }
+    ::v-deep .modal-header {
+        padding: 1rem 1.1rem;
+    }
+    ::v-deep .modal-body {
+        padding: 1rem 1.1rem;
+        max-height: calc(100dvh - 160px);
+        overflow-y: auto;
+    }
+    ::v-deep .modal-footer {
+        padding: 0.75rem 1.1rem;
+    }
+    .btn-save-artwork {
+        padding: 0.75rem 1.5rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    ::v-deep .modal-footer > div {
+        flex-direction: column-reverse;
+        width: 100%;
+        gap: 0.5rem;
+    }
+    .btn-save-artwork,
+    .btn-cancel {
+        width: 100% !important;
+        text-align: center;
+        justify-content: center;
+        min-height: 44px;
+    }
+}
+
 </style>

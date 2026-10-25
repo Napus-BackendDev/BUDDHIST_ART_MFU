@@ -120,6 +120,14 @@
                   <CIcon name="cil-cloud-upload" class="mr-1" />
                   {{ $i18n.locale === 'en' ? 'Pay' : 'ชำระเงิน' }}
                 </button>
+                <button type="button"
+                  v-if="canUploadSlip(item)"
+                  class="btn btn-sm btn-outline-danger mr-2"
+                  :disabled="cancellingOrder || slipUploading"
+                  @click="cancelOwnOrder(item, refreshAfterCancel)"
+                >
+                  {{ $i18n.locale === 'en' ? 'Cancel order' : 'ยกเลิกคำสั่งซื้อ' }}
+                </button>
 
                 <!-- Paid documents -->
                 <template v-else-if="(item.image || isApprovedOrder(item)) && !['Rejected', 'Cancelled', 'ยกเลิก', 'ปฏิเสธ'].includes(item.statusName)">
@@ -207,13 +215,14 @@ import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import OrderModal from './components/modal/OrderModal.vue';
 import Service from '@/service/api';
 import { canUploadPaymentSlip, paymentSlipIssue, paymentSlipMessage } from '@/utils/paymentSlip';
+import cancelOwnOrder from '@/mixins/cancelOwnOrder';
 
 export default {
   name: 'UserOrders',
   components: {
     OrderModal
   },
-  mixins: [statusBadgeMixin],
+  mixins: [statusBadgeMixin, cancelOwnOrder],
   data() {
     return {
       showModal: false,
@@ -351,6 +360,10 @@ export default {
     viewDetails(item) {
       this.selectedOrder = item;
       this.showModal = true;
+    },
+    async refreshAfterCancel() {
+      await this.fetchOrders();
+      this.tableKey += 1;
     },
     canUploadSlip(order) {
       return canUploadPaymentSlip(order, this.getName);

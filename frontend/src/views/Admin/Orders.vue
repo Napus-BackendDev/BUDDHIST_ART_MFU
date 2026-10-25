@@ -3,11 +3,25 @@
         <HeaderHero :title="$i18n.locale === 'en' ? 'Order Management' : 'จัดการคำสั่งซื้อ'" :description="$i18n.locale === 'en' ? 'Overview and track all customer orders, payments and fulfillment statuses in real-time.' : 'ภาพรวมและติดตามคำสั่งซื้อของลูกค้า การชำระเงิน และสถานะการจัดส่งแบบเรียลไทม์'" icon="cil-cart" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Order' : 'สร้างคำสั่งซื้อ'" themeColor="blue" @create="onCreateOrder" @export="handleExport" />
         <OrderWidget v-model="filters.status" :orders="orders" />
         <OrderFilter v-model="filters" />
-        <OrderTable ref="orderTable" :filters="filters" :items="orders" :loadingItems="loadingItems" @view-order="onViewOrder" @edit-order="onEditOrder" @approve="handleApproveOrder" @reject="handleRejectOrder"/>
+        <OrderTable ref="orderTable" :filters="filters" :items="orders" :loadingItems="loadingItems" :loadingActions="loadingActions" @view-order="onViewOrder" @edit-order="onEditOrder" @approve="handleApproveOrder" @reject="handleRejectOrder"/>
         <OrderCreateModal :show.sync="showCreateModal" :saving="loading" :error="createError" @save="handleSaveOrder" />
         <OrderViewModal :requested-document="requestedDocument" :show.sync="showViewModal" :order="selectedOrder" />
         <OrderEditModal :show.sync="showEditModal" :order="selectedOrder" :saving="loading" @save="handleUpdateOrder" />
         
+        <!-- Approval confirmation: approving sells the artwork and emails documents to the buyer -->
+        <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Approve Order' : 'อนุมัติคำสั่งซื้อ'" :show.sync="showApproveModal" color="success">
+            <div class="p-3">
+                <p class="mb-0">
+                    {{ $i18n.locale === 'en' ? 'Approving marks the artwork as sold and emails the invoice and certificate to the buyer. This cannot be undone.' : 'การอนุมัติจะเปลี่ยนผลงานเป็นขายแล้ว และส่งใบแจ้งหนี้กับใบรับรองให้ผู้ซื้อทางอีเมล ไม่สามารถย้อนกลับได้' }}
+                </p>
+                <p class="font-weight-bold mt-2 mb-0" v-if="selectedOrder">#{{ selectedOrder.orderNumber || selectedOrder._id }}</p>
+            </div>
+            <template #footer>
+                <CButton color="secondary" @click="showApproveModal = false" :disabled="loading">{{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}</CButton>
+                <CButton color="success" @click="confirmApprove" :disabled="loading">{{ loading ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังดำเนินการ...') : ($i18n.locale === 'en' ? 'Confirm Approve' : 'ยืนยันการอนุมัติ') }}</CButton>
+            </template>
+        </CModal>
+
         <!-- Rejection Reason Modal -->
         <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Reject Order' : 'ปฏิเสธคำสั่งซื้อ'" :show.sync="showRejectModal" color="danger" size="lg">
             <div class="p-3">
@@ -68,9 +82,11 @@ export default {
                 quickRange: 'All Time'
             },
             showRejectModal: false,
+            showApproveModal: false,
             rejectRemark: '',
             loading: false,
-            loadingItems: []
+            loadingItems: [],
+            loadingActions: {}
         }
     },
     computed: {
@@ -181,6 +197,13 @@ export default {
                     });
                 }
 
+                if (updatedOrder._replaceImage) {
+                    await this.$store.dispatch('order/replaceSlip', {
+                        _id: updatedOrder._id,
+                        image: updatedOrder._replaceImage
+                    });
+                }
+
                 this.$store.commit('dialog/showToast', {
                     title: this.$i18n.locale === 'en' ? 'Success' : 'สำเร็จ',
                     message: this.$i18n.locale === 'en' ? 'Order updated successfully.' : 'อัปเดตคำสั่งซื้อเรียบร้อยแล้ว',
@@ -200,8 +223,14 @@ export default {
                 this.loading = false;
             }
         },
-        async handleApproveOrder(order) {
-            await this.updateStatus(order, 'Approved');
+        handleApproveOrder(order) {
+            this.selectedOrder = order;
+            this.showApproveModal = true;
+        },
+        async confirmApprove() {
+            if (!this.selectedOrder || this.loading) return;
+            await this.updateStatus(this.selectedOrder, 'Approved');
+            this.showApproveModal = false;
         },
         async handleRejectOrder(order) {
             this.selectedOrder = order;
@@ -217,6 +246,7 @@ export default {
             try {
                 this.loading = true;
                 this.loadingItems.push(order._id);
+                this.$set(this.loadingActions, order._id, statusName);
                 await this.$store.dispatch('setting/status/get');
                 const statuses = this.$store.getters['setting/status/item'] || [];
                 const targetStatus = statuses.find(s => {
@@ -264,6 +294,7 @@ export default {
             } finally {
                 this.loading = false;
                 this.loadingItems = this.loadingItems.filter(id => id !== order._id);
+                this.$delete(this.loadingActions, order._id);
             }
         },
         async handleExport() {

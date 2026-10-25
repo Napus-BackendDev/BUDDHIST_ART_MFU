@@ -195,6 +195,9 @@
                         <!-- Documents Download Buttons -->
                         <div class="form-group-custom">
                             <label class="form-label">{{ $i18n.locale === 'en' ? 'Documents' : 'เอกสารที่เกี่ยวข้อง' }}</label>
+                            <p v-if="order.invoiceStatus === 'Failed'" role="alert" class="invoice-failed small text-danger mb-2">
+                                {{ $i18n.locale === 'en' ? 'Invoice creation failed earlier. Press Invoice to generate it again.' : 'สร้างใบแจ้งหนี้ไม่สำเร็จก่อนหน้านี้ กดปุ่มใบแจ้งหนี้เพื่อสร้างใหม่' }}
+                            </p>
                             <div class="document-buttons-grid">
                                 <!-- Receipt / Slip -->
                                 <button 

@@ -141,7 +141,7 @@ const processApprovals = async (doc, approvedArtworks, statuses) => {
             if (email) {
                 const artistName = (artist.name && artist.name[0]?.value) || 'Artist';
                 const artworkTitle = (artwork.title && artwork.title[0]?.value) || 'Your Artwork';
-                const html = approvedSubmissionMail({ artistName, submissionTitle: artworkTitle, approvalDate: new Date().toLocaleString() });
+                const html = approvedSubmissionMail({ artistName, submissionTitle: artworkTitle, approvalDate: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) });
                 try {
                     await sendMail(email, `ผลงานได้รับการอนุมัติ: ${artworkTitle} - พุทธศิลปกรรม มฟล.`, '', html);
                 } catch (mailError) {

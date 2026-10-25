@@ -65,3 +65,10 @@ test.each(['th', 'en'])('news read action is a native link with an article-speci
   expect(push).toHaveBeenCalledTimes(1)
   wrapper.destroy()
 })
+
+test.each([['th', 'จองแล้ว'], ['en', 'Reserved']])('reserved artwork footer says reserved, not "not for sale" (%s)', (locale, label) => {
+  const reserved = { ...art, status: { approval: status('Reserved'), sale: status('Available') } }
+  const { wrapper } = setup(Artwork, { artworks: [reserved], isPublic: true }, locale)
+  expect(wrapper.find('.price-value.exhibition-only').text()).toBe(label)
+  wrapper.destroy()
+})

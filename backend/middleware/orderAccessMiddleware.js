@@ -74,4 +74,13 @@ const authorizeUpload = async req => {
     }
 };
 
-module.exports = { scopeList, create, read, update, authorizeUpload };
+// Only administrators may swap the slip, and only while the payment is still under review.
+const authorizeReplaceSlip = async req => {
+    if (!isAdmin(req)) throw fail(403, 'Only administrators can replace a payment slip.');
+    const order = await findOwnedOrder(req, req.body._id);
+    if (!order.image || !hasCode(order.status, STATUS_CODES.PENDING)) {
+        throw fail(409, 'Only a pending order that already has a slip can have it replaced.');
+    }
+};
+
+module.exports = { scopeList, create, read, update, authorizeUpload, authorizeReplaceSlip };

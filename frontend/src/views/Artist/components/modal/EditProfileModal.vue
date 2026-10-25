@@ -112,8 +112,8 @@
     </div>
 
     <template #footer>
-      <div class="d-flex w-100 justify-content-end p-2">
-        <CButton @click="cancelEdit" variant="outline" shape="pill" class="btn-modal-action mr-3">
+      <div class="d-flex w-100 justify-content-end flex-column-reverse flex-sm-row p-2" style="gap: 0.65rem;">
+        <CButton @click="cancelEdit" variant="outline" shape="pill" class="btn-modal-action">
           {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
         </CButton>
         <CButton @click="handleSave" :disabled="loading" shape="pill" class="btn-modal-action btn-save-action font-weight-bold">
@@ -127,7 +127,7 @@
 </template>
 
 <script>
-import { isValidPersonalEmail } from '@/utils/profileEmail'
+import { isValidPersonalEmail, isValidTelephone } from '@/utils/profileEmail'
 export default {
   name: 'EditProfileModal',
   props: {
@@ -210,6 +210,10 @@ export default {
       this.validationError = '';
       if (!isValidPersonalEmail(this.localForm.personalEmail)) {
         this.validationError = this.$i18n.locale === 'en' ? 'Enter a valid personal email address.' : 'กรุณากรอกอีเมลส่วนตัวให้ถูกต้อง';
+        return;
+      }
+      if (!isValidTelephone(this.localForm.telephone)) {
+        this.validationError = this.$i18n.locale === 'en' ? 'Enter a valid phone number (9-15 digits).' : 'กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (ตัวเลข 9-15 หลัก)';
         return;
       }
       this.$emit('save', {
@@ -309,11 +313,19 @@ export default {
 }
 
 .btn-modal-action {
-  padding: 0.75rem 2.5rem !important;
+  padding: 0.75rem 1.75rem !important;
   font-size: 0.95rem !important;
-  min-width: 180px;
+  min-width: 140px;
   transition: all 0.3s ease;
   border-width: 2px !important;
+}
+
+@media (max-width: 575.98px) {
+  .btn-modal-action {
+    min-width: 0 !important;
+    width: 100%;
+    padding: 0.65rem 1rem !important;
+  }
 }
 
 .btn-modal-action:not(.btn-save-action) {

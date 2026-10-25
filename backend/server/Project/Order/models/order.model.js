@@ -39,6 +39,12 @@ var objsSchema = new Schema({
     certificateError: { type: String, default: "" },
     orderNumber: { type: String, default: null },
     remark: { type: String, default: "" },
+    // Earlier payment slips replaced by an administrator (newest last).
+    slipHistory: [{
+        image: { type: String, default: "" },
+        replacedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        replacedAt: { type: Date, default: Date.now }
+    }],
 }, { timestamps: true });
 
 objsSchema.index(

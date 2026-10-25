@@ -168,12 +168,14 @@
                                         <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? 'Sold Out' : 'จำหน่ายแล้ว' }}</span>
                                         <span v-else-if="isPostTermDisplayOnly">{{ $i18n.locale === 'en' ? 'Display only' : 'แสดงเฉย ๆ' }}</span>
                                         <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? 'Exhibition Only' : 'โชว์เท่านั้น' }}</span>
+                                        <span v-else-if="isApprovalReserved">{{ $i18n.locale === 'en' ? 'Reserved' : 'จองแล้ว' }}</span>
                                         <span v-else>{{ $i18n.locale === 'en' ? 'Not for Sale' : 'ไม่ขาย' }}</span>
                                     </div>
                                     <p class="exhibition-desc mb-0">
                                         <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? 'This artwork has been sold and is no longer available.' : 'ผลงานชิ้นนี้ขายไปแล้วและไม่มีจำหน่ายในขณะนี้' }}</span>
                                         <span v-else-if="isPostTermDisplayOnly">{{ $i18n.locale === 'en' ? 'This artwork remains in the public portfolio but is not available for purchase.' : 'ผลงานชิ้นนี้ยังแสดงในพอร์ต แต่ไม่เปิดให้ซื้อ' }}</span>
                                         <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? 'This artwork is curated for exhibition and is currently not available for purchase.' : 'ผลงานศิลปะชิ้นนี้ได้รับการจัดสรรเพื่อร่วมแสดงนิทรรศการและไม่ได้เปิดให้สั่งซื้อในขณะนี้' }}</span>
+                                        <span v-else-if="isApprovalReserved">{{ $i18n.locale === 'en' ? 'Another buyer is completing payment for this artwork. It returns to sale if the order expires.' : 'มีผู้ซื้อกำลังชำระเงินสำหรับผลงานนี้ หากคำสั่งซื้อหมดอายุ ผลงานจะกลับมาเปิดขาย' }}</span>
                                         <span v-else>{{ $i18n.locale === 'en' ? 'This artwork is currently not available for purchase.' : 'ผลงานชิ้นนี้ไม่มีจำหน่ายหรือเพื่อการสะสมในขณะนี้' }}</span>
                                     </p>
                                 </div>

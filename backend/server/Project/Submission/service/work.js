@@ -30,7 +30,7 @@ exports.onUpdate = async (req,res,next) => {
             if (artwork.create?.at) roundMatch.artworks.$elemMatch['create.at']=artwork.create.at;
             filters.push({'work._id':artwork._id,'work.owner':new mongoose.Types.ObjectId(req.user.userId)});
             const prefix='assignments.$[round].artworks.$[work].';
-            mutation={$set:Object.fromEntries(Object.entries({...data,status:pending._id,'create.at':new Date()}).map(([key,value])=>[prefix+key,value]))};
+            mutation={$set:Object.fromEntries(Object.entries({...data,status:pending._id,rejectionReason:null,'create.at':new Date()}).map(([key,value])=>[prefix+key,value]))};
         } else {
             mutation={$push:{'assignments.$[round].artworks':{...data,owner:req.user.userId,status:pending._id,create:{at:new Date()}}}};
         }

@@ -87,6 +87,19 @@
                 </CCol>
             </CRow>
 
+            <!-- Course Row -->
+            <CRow v-if="isArtist">
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label" for="user-edit-course">{{ $i18n.locale === 'en' ? 'Course' : 'หลักสูตร' }}</label>
+                        <select id="user-edit-course" v-model="form.course" class="form-control custom-input">
+                            <option value="">{{ $i18n.locale === 'en' ? 'Not specified' : 'ไม่ระบุ' }}</option>
+                            <option v-for="c in courses" :key="c.value" :value="c.value">{{ $i18n.locale === 'en' ? c.en : c.th }}</option>
+                        </select>
+                    </div>
+                </CCol>
+            </CRow>
+
             <!-- Names Row -->
             <CRow>
                 <CCol :md="form.roleNameEn === 'Customer' ? '12' : '6'">
@@ -165,6 +178,7 @@
         </div>
 
         <template #footer>
+            <MissingFieldsHint class="w-100 mb-2" :labels="missingFields" />
             <div class="w-100 d-flex justify-content-end align-items-center py-2">
                 <CButton 
                     variant="ghost" 
@@ -192,9 +206,13 @@
 <script>
 import { buildOfficialEmail, isArtistRole } from '@/utils/officialEmail';
 import { dedupeRoles } from '@/utils/roles';
+import { COURSES, normalizeCourse } from '@/utils/courses';
+import MissingFieldsHint from '@/components/MissingFieldsHint.vue';
+import { missingLabels, dimensionsOk, priceOk } from '@/utils/missingFields';
 
 export default {
     name: 'UserEditModal',
+    components: { MissingFieldsHint },
     props: {
         show: {
             type: Boolean,
@@ -219,6 +237,7 @@ export default {
     },
     data() {
         return {
+            courses: COURSES,
             form: null
         }
     },
@@ -244,6 +263,18 @@ export default {
             return this.isArtist
                 ? buildOfficialEmail(this.form.studentId)
                 : this.form.email;
+        },
+        missingFields() {
+            if (!this.form) return [];
+            const name = this.isCustomer ? this.form.nameTh : this.form.nameEn;
+            const email = this.isCustomer ? this.form.personalEmail : this.officialEmail;
+            return missingLabels([
+                ['studentId', String(this.form.studentId).trim() !== ''],
+                ['role', !!this.form.roleId],
+                ...(this.isArtist ? [['status', !!this.form.statusId]] : []),
+                ['name', String(name || '').trim() !== ''],
+                ['email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim())]
+            ], this.$i18n.locale);
         },
         isFormValid() {
             if (!this.form) return false;
@@ -346,6 +377,7 @@ export default {
                 roleId: roleInfo.id,
                 roleName: roleInfo.name,
                 roleNameEn: roleInfo.nameEn,
+                course: normalizeCourse(this.user.course),
                 statusId: statusInfo.id,
                 statusName: statusInfo.name,
                 statusNameEn: statusInfo.nameEn,
@@ -364,6 +396,7 @@ export default {
                 studentId: this.form.studentId,
                 role: this.form.roleId, // Always send ObjectID
                 status: this.form.statusId || null, // Always send ObjectID or null
+                course: normalizeCourse(this.form.course),
                 name: [
                     { key: 'th', value: this.form.nameTh },
                     { key: 'en', value: this.form.nameEn || (this.isCustomer ? this.form.nameTh : '') }

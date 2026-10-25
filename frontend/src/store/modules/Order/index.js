@@ -46,6 +46,21 @@ const OrderModule = {
             formData.append('image', data.image);
             return Service.order('upload', formData, {});
         },
+        // Administrator swaps the payment slip of a pending order (the old one stays in slipHistory).
+        replaceSlip({ commit }, data) {
+            const formData = new FormData();
+            formData.append('_id', data._id);
+            formData.append('image', data.image);
+            return Service.order('replace-slip', formData, {});
+        },
+        // Buyer cancels their own unpaid (Reserved) order; the server releases the artwork.
+        async cancel({ dispatch, rootGetters }, orderId) {
+            await dispatch('setting/status/get', null, { root: true });
+            const statuses = rootGetters['setting/status/item'] || [];
+            const cancelled = statuses.find(item => String(item.code || '').toUpperCase() === 'CANCELLED');
+            if (!cancelled) throw new Error('CANCELLED_STATUS_MISSING');
+            return Service.order('put', { _id: orderId, status: cancelled._id }, {});
+        },
         getInvoice({ commit }, orderId) {
             return Service.order('invoice', orderId, {});
         }

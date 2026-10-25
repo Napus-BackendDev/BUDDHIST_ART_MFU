@@ -34,6 +34,11 @@
                 :disabled="googleInitializing" @click="initializeGoogleSignIn">
                 {{ $i18n.locale === 'en' ? 'Try again' : 'ลองอีกครั้ง' }}
               </button>
+              <div v-if="qaAccounts" class="mt-4 pt-3 border-top" data-qa="qa-login">
+                <p class="text-muted small mb-2">QA local login</p>
+                <button v-for="account in qaAccounts" :key="account.email" type="button"
+                  class="btn btn-outline-dark btn-sm m-1" @click="qaLogin(account.email)">{{ account.label }}</button>
+              </div>
             </div>
           </template>
           <template #footer-wrapper>
@@ -53,7 +58,11 @@
               googleIssue: '',
               googleInitialized: false,
               googleInitializing: false,
-              googleDisposed: false
+              googleDisposed: false,
+              // Dev-only QA accounts; the production build compiles this to null.
+              qaAccounts: process.env.NODE_ENV !== 'production' && process.env.VUE_APP_QA_LOGIN === 'true'
+                ? [{ label: 'Customer', email: 'qa-customer@local.test' }, { label: 'Artist', email: 'qa-artist@local.test' }, { label: 'Admin', email: 'qa-admin@local.test' }]
+                : null
             }
         },
         mounted() {
@@ -63,6 +72,9 @@
           this.googleDisposed = true;
         },
         methods: {
+          qaLogin(email) {
+            return this.$store.dispatch('auth/onGoogleLogin', { qaEmail: email }).catch(() => {});
+          },
           async loadGoogleIdentity() {
             if (window.google && window.google.accounts && window.google.accounts.id) return;
 

@@ -117,25 +117,33 @@ async function request(method, url, data, headers = {}) {
     return response;
 }
 
+async function mkcol(url) {
+    const response = await axios({ method: 'MKCOL', url, ...requestOptions(assertConfigured(), { 'Content-Length': '0' }) });
+    if (!EXISTING_COLLECTION_STATUS.has(response.status)) {
+        const error = new Error(`MFU Drive MKCOL failed with HTTP ${response.status}.`);
+        error.status = response.status;
+        error.response = response;
+        throw error;
+    }
+}
+
 async function ensureCollection(relativeDirectory) {
     const directory = normalizeRelativePath(relativeDirectory);
     const segments = directory.split('/');
     let current = '';
 
+    // The configured base folder (e.g. .../<share>/qa-ui-YYYYMMDD) may not exist yet; a share root answers 405.
+    // Best effort: a refusal here (permissions, share-root quirks) must not block uploads;
+    // the nested MKCOL and the PUT below still fail loudly if the folder really is missing.
+    if (!knownCollections.has('')) {
+        await mkcol(assertConfigured().webDavUrl).catch(() => {});
+        knownCollections.add('');
+    }
+
     for (const segment of segments) {
         current = current ? `${current}/${segment}` : segment;
         if (knownCollections.has(current)) continue;
-        const response = await axios({
-            method: 'MKCOL',
-            url: webDavFileUrl(current),
-            ...requestOptions(assertConfigured(), { 'Content-Length': '0' })
-        });
-        if (!EXISTING_COLLECTION_STATUS.has(response.status)) {
-            const error = new Error(`MFU Drive MKCOL failed with HTTP ${response.status}.`);
-            error.status = response.status;
-            error.response = response;
-            throw error;
-        }
+        await mkcol(webDavFileUrl(current));
         knownCollections.add(current);
     }
 }

@@ -22,6 +22,7 @@ const { calculateOrderAmounts, getOrderAmounts, getLinePrice } = require('./amou
 // Keep fire-and-forget invoice/mail work observable so shutdown and tests can
 // drain it before closing MongoDB. The customer response remains non-blocking.
 const postCreateTasks = new Set();
+const postCreateByOrder = new Map();
 const schedulePostCreate = (task) => {
     let resolveTask;
     const taskPromise = new Promise(resolve => { resolveTask = resolve; });
@@ -54,6 +55,11 @@ const titleValue = (value) => {
     return value.title ? titleValue(value.title) : String(value);
 };
 
+// Emails cover every artwork in the order, not just the first one (Thai title first).
+const orderArtworkTitles = (artworks = []) => artworks
+    .map(art => (art && art.title && (art.title.find(t => t.key === 'th')?.value || art.title[0]?.value)) || '')
+    .filter(Boolean).join(', ') || 'Artwork';
+
 const idString = (value) => value && (value._id || value).toString();
 
 const isValidObjectId = (value) => mongo.ObjectId.isValid(value);
@@ -63,6 +69,15 @@ const normalizeContactEmail = (body) => {
     const email = body.contact.email;
     if (typeof email !== 'string' || email.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return false;
     body.contact = { ...body.contact, email: email.trim() };
+    return true;
+};
+
+// Telephone stays optional; when present it must be a phone number (9-15 digits).
+const normalizeContactTelephone = (body) => {
+    const telephone = body?.contact?.telephone;
+    if (telephone === undefined || telephone === null || telephone === '') return true;
+    if (typeof telephone !== 'string' || !/^\+?[\d\s()-]+$/.test(telephone.trim()) || !/^\d{9,15}$/.test(telephone.replace(/\D/g, ''))) return false;
+    body.contact = { ...body.contact, telephone: telephone.trim() };
     return true;
 };
 
@@ -119,6 +134,7 @@ exports.onQuerys = async function (request, response) {
 
 exports.onCreate = async function (request, response) {
     if (!normalizeContactEmail(request.body)) return sendBusinessError(response, 40000, 'INVALID_CONTACT_EMAIL');
+    if (!normalizeContactTelephone(request.body)) return sendBusinessError(response, 40000, 'INVALID_CONTACT_TELEPHONE');
     const mongoose = require('mongoose');
     const lockedArtworks = [];
     let createdOrder = null;
@@ -287,7 +303,7 @@ exports.onCreate = async function (request, response) {
         // The order is already reserved and persisted. Do not make the customer wait
         // for Puppeteer or an external SMTP server before moving to payment.
         console.log(`[Backend Checkout Flow 5.4] Order created; queued invoice/email follow-up.`);
-        schedulePostCreate(async () => {
+        const followUp = schedulePostCreate(async () => {
         let mailFailed = false;
         let invoiceCompleted = false;
         try {
@@ -368,7 +384,7 @@ exports.onCreate = async function (request, response) {
         const buyerName = doc.contact?.name || "Customer";
         const to = doc.contact?.email;
         const orderId = doc._id;
-        const artworkTitle = invoiceData.items.length > 0 ? invoiceData.items[0].title : "Artwork";
+        const artworkTitle = invoiceData.items.map(item => item.title).filter(Boolean).join(', ') || "Artwork";
         const price = invoiceData.total;
         let orderDate = doc.createdAt ? new Date(doc.createdAt).toLocaleString('th-TH') : new Date().toLocaleString('th-TH');
 
@@ -448,6 +464,10 @@ exports.onCreate = async function (request, response) {
             ).catch(statusErr => console.error('[Backend Checkout] Could not record mail failure:', statusErr));
         }
         });
+        // A slip uploaded right after creation (admin proxy order) must wait for the invoice PDF.
+        const key = String(doc._id);
+        postCreateByOrder.set(key, followUp);
+        followUp.then(() => postCreateByOrder.delete(key));
 
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
@@ -515,14 +535,20 @@ exports.onUpload = async function (request, response) {
         if (!doc) return sendBusinessError(response, 40900, 'ORDER_NOT_AWAITING_PAYMENT');
         
         // --- 📧 ส่งเมลแจ้งเมื่อได้รับหลักฐานการโอนเงิน (Bil) ---
+        // Sent in the background so the buyer reaches the receipt step without waiting for the invoice PDF.
+        schedulePostCreate(async () => {
         try {
+            // Wait only for the invoice PDF (not the follow-up emails) when the order was created moments ago.
+            for (let waited = 0; postCreateByOrder.has(String(query._id)) && waited < 60000; waited += 500) {
+                const current = await Order.onQuery({ _id: query._id });
+                if (current && current.invoiceStatus !== 'Pending') break;
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
             const fullDoc = await Order.onQuery({ _id: query._id });
             if (fullDoc && fullDoc.contact?.email) {
                 const buyerName = fullDoc.contact?.name || "Customer";
                 const orderId = fullDoc.orderNumber || fullDoc._id;
-                const artworkTitle = fullDoc.artwork && fullDoc.artwork[0] 
-                    ? (fullDoc.artwork[0].title.find(t => t.key === 'en')?.value || fullDoc.artwork[0].title[0]?.value || "Artwork")
-                    : "Artwork";
+                const artworkTitle = orderArtworkTitles(fullDoc.artwork);
                 const price = getOrderAmounts(fullDoc).total;
                 const orderDate = fullDoc.createdAt ? new Date(fullDoc.createdAt).toLocaleString('th-TH') : new Date().toLocaleString('th-TH');
 
@@ -531,7 +557,8 @@ exports.onUpload = async function (request, response) {
                     orderId,
                     artworkTitle,
                     price,
-                    orderDate
+                    orderDate,
+                    paymentReceived: true
                 });
 
                 const root = path.join(__dirname, '../../../../public');
@@ -576,6 +603,7 @@ exports.onUpload = async function (request, response) {
         } catch (emailErr) {
             console.error(`[Backend Checkout Flow 6 - Email Error]`, emailErr);
         }
+        });
 
         console.log(`[Backend Checkout Flow 6.3 - Success] Payment slip uploaded successfully.`);
         return ResMessage.sendResponse(response, 0, 20000, doc);
@@ -585,8 +613,34 @@ exports.onUpload = async function (request, response) {
     }
 };
 
+exports.onReplaceSlip = async function (request, response) {
+    try {
+        if (!isValidObjectId(request.body?._id) || !request.file) {
+            return sendBusinessError(response, 40000, 'PAYMENT_SLIP_AND_ORDER_REQUIRED');
+        }
+        const current = await Order.onQuery({ _id: new mongo.ObjectId(request.body._id) });
+        if (!current || !current.image) return ResMessage.sendResponse(response, 0, 40400);
+        const imagePath = Order.getImageUrl(request, request.file.destination, request.file.filename);
+        // Compare-and-set on the slip we saw, so two admins cannot silently overwrite each other.
+        const doc = await Order.onUpdate(
+            { _id: current._id, image: current.image },
+            {
+                image: imagePath,
+                $push: { slipHistory: { image: current.image, replacedBy: request.user && request.user.userId, replacedAt: new Date() } }
+            },
+            [], 'image slipHistory'
+        );
+        if (!doc) return sendBusinessError(response, 40900, 'SLIP_CHANGED_BY_ANOTHER_ADMIN');
+        return ResMessage.sendResponse(response, 0, 20000, doc);
+    } catch (err) {
+        console.error('[Order] Replace slip failed:', err);
+        return ResMessage.sendResponse(response, 0, 40400);
+    }
+};
+
 exports.onUpdate = async function (request, response) {
     if (!normalizeContactEmail(request.body)) return sendBusinessError(response, 40000, 'INVALID_CONTACT_EMAIL');
+    if (!normalizeContactTelephone(request.body)) return sendBusinessError(response, 40000, 'INVALID_CONTACT_TELEPHONE');
     try {
         if (!isValidObjectId(request.body?._id)) {
             return sendBusinessError(response, 40000, 'ORDER_ID_REQUIRED');
@@ -662,9 +716,7 @@ exports.onUpdate = async function (request, response) {
                     const buyerEmail = fullDoc.contact?.email;
                     if (buyerEmail) {
                         const artwork = fullDoc.artwork && fullDoc.artwork[0] ? fullDoc.artwork[0] : {};
-                        const artworkTitle = artwork.title?.find(t => t.key === 'en')?.value
-                            || artwork.title?.[0]?.value
-                            || "Artwork";
+                        const artworkTitle = orderArtworkTitles(fullDoc.artwork);
                         const orderIdentifier = fullDoc.orderNumber ? fullDoc.orderNumber.replace(/-/g, '_') : fullDoc._id;
                         const root = path.join(__dirname, '../../../../public');
                         const buyerName = sanitize(fullDoc.contact?.name || (fullDoc.user && fullDoc.user.name) || "Customer");
@@ -681,7 +733,7 @@ exports.onUpdate = async function (request, response) {
                             buyerName: fullDoc.contact?.name || "Customer",
                             orderId: fullDoc.orderNumber || fullDoc._id,
                             artworkTitle,
-                            price: artwork.price || 0,
+                            price: getOrderAmounts(fullDoc).total,
                             artwork,
                             imageCid: artworkImageCid
                         });
@@ -758,9 +810,7 @@ exports.onUpdate = async function (request, response) {
                 // --- 📧 Send Rejected Email ---
                 const buyerEmail = doc.contact?.email;
                 if (isRejected && buyerEmail) {
-                    const artworkTitle = doc.artwork && doc.artwork[0] 
-                        ? (doc.artwork[0].title.find(t => t.key === 'en')?.value || doc.artwork[0].title[0]?.value || "Artwork")
-                        : "Artwork";
+                    const artworkTitle = orderArtworkTitles(doc.artwork);
 
                     const html = rejectedOrderMail({
                         buyerName: doc.contact?.name || "Customer",
@@ -898,6 +948,11 @@ exports.onDownloadInvoice = async function (request, response) {
         const { subtotal, shipping, total } = getOrderAmounts(doc);
         Object.assign(invoiceData, { subtotal, shipping, total });
         const pdfBuffer = await pdfService.generateInvoice(invoiceData);
+
+        // A manual regeneration clears an earlier failure so the order stops looking broken.
+        if (doc.invoiceStatus === 'Failed') {
+            await Order.onUpdate({ _id: doc._id }, { invoiceStatus: 'Completed', invoiceError: '' }).catch(() => {});
+        }
 
         // Send PDF back to client
         response.setHeader('Content-Type', 'application/pdf');

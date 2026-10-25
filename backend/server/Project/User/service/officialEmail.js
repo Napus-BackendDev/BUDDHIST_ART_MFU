@@ -3,6 +3,12 @@
 const OFFICIAL_EMAIL_DOMAIN = 'lamduan.mfu.ac.th';
 
 const normalizeStudentId = (value) => String(value == null ? '' : value).trim();
+// Course names come from spreadsheets: drop zero-width characters and doubled Thai vowel marks (e.g. "พุุทธ").
+const normalizeCourse = (value) => String(value == null ? '' : value)
+    .replace(/[​-‍⁠﻿]/g, '')
+    .replace(/([ัิ-ฺ็-๎])\1+/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 const normalizeEmail = (value) => {
     const email = String(value == null ? '' : value).trim();
@@ -69,6 +75,7 @@ const normalizeArtistContact = (studentId, incomingContact = {}, existingContact
 module.exports = {
     OFFICIAL_EMAIL_DOMAIN,
     normalizeStudentId,
+    normalizeCourse,
     normalizeEmail,
     buildOfficialEmail,
     isOfficialEmail,

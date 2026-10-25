@@ -179,15 +179,18 @@ export default {
       return this.user && this.user.contact ? this.user.contact.telephone : '';
     },
     joinedDate() {
-      if (this.user && this.user.createdAt) {
-        const date = new Date(this.user.createdAt);
+      // Legacy/imported users may lack createdAt; the ObjectId still carries the real creation time.
+      const id = this.user && String(this.user._id || '');
+      const created = this.user && (this.user.createdAt || (/^[0-9a-f]{24}$/.test(id) && parseInt(id.slice(0, 8), 16) * 1000));
+      if (created) {
+        const date = new Date(created);
         const lang = this.$i18n ? this.$i18n.locale : 'en';
         return date.toLocaleDateString(lang === 'en' ? 'en-US' : 'th-TH', {
           year: 'numeric',
           month: 'long'
         });
       }
-      return this.$i18n && this.$i18n.locale === 'th' ? 'มกราคม 2567' : 'January 2024';
+      return '-';
     }
   },
   methods: {

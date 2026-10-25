@@ -168,6 +168,10 @@ export default {
                 return instance.delete("/api/v1/order", { data: data });
             case 'exp':
                 return instance.post("/api/v1/order/explore", data);
+            case 'replace-slip':
+                return instance.put("/api/v1/order/replace-slip", data, {
+                    headers: { 'Content-Type': undefined }
+                });
             case 'upload':
                 return instance.put("/api/v1/order/upload", data, {
                     headers: { 'Content-Type': undefined }
@@ -319,6 +323,8 @@ export default {
                 return instance.post("/api/v1/user/auth/2fa-send", data);
             case 'google-auth':
                 return instance.post("/api/v1/google/auth", data);
+            case 'qa-login':
+                return instance.post("/api/v1/qa/login", data);
             default:
                 break;
         }

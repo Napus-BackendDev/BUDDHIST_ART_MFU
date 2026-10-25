@@ -435,6 +435,7 @@
         </div>
 
         <template #footer>
+            <MissingFieldsHint class="w-100 mb-2" :labels="missingFields" />
             <div class="wizard-footer w-100 d-flex justify-content-between align-items-center py-2">
                 <CButton 
                     variant="ghost" 
@@ -480,13 +481,16 @@
 import { CDropdown, CDropdownItem } from '@coreui/vue';
 import { mapGetters } from 'vuex';
 import artistImageInput from '@/mixins/artistImageInput';
+import MissingFieldsHint from '@/components/MissingFieldsHint.vue';
+import { missingLabels, dimensionsOk, priceOk } from '@/utils/missingFields';
 
 export default {
     name: 'ArtworkCreateModal',
     mixins: [artistImageInput],
     components: {
         CDropdown,
-        CDropdownItem
+        CDropdownItem,
+        MissingFieldsHint
     },
     props: {
         show: {
@@ -566,6 +570,21 @@ export default {
                    this.form.artist !== '' &&
                    this.form.category !== '' &&
                    dimensionsValid;
+        },
+        missingFields() {
+            const stepOne = [
+                ['titleTh', this.form.title.th.trim() !== ''],
+                ['artist', this.form.artist !== ''],
+                ['category', this.form.category !== ''],
+                ['size', dimensionsOk(this.form, this.is3D)]
+            ];
+            if (this.currentStep === 1) return missingLabels(stepOne, this.$i18n.locale);
+            return missingLabels([
+                ['imageBusy', !this.isProcessingImage],
+                ['titleEn', this.form.title.en.trim() !== ''],
+                ['image', this.imagePreview !== null],
+                ...(this.isPriceVisible ? [['price', priceOk(this.form.price)]] : [])
+            ], this.$i18n.locale);
         },
         isFormValid() {
             const basicValid = !this.isProcessingImage && this.isStepOneValid &&

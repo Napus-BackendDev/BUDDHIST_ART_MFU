@@ -62,6 +62,15 @@ describe('User resource authorization', () => {
     expect(stored.contact.telephone).toBe('0800000000');
     expect(stored.contact.personalEmail).toBe('personal@example.test');
   });
+  it('rejects a malformed telephone on profile update and keeps the stored one', async () => {
+    const bad = await call('put', buyerToken).send({ _id: buyer._id, contact: { telephone: 'abc' } });
+    expect(bad.status).toBe(400);
+    expect((await User.findById(buyer._id).lean()).contact.telephone).toBe('0800000000');
+    const ok = await call('put', buyerToken).send({ _id: buyer._id, contact: { telephone: '081-234-5678' } });
+    expect(ok.status).toBe(200);
+    expect((await User.findById(buyer._id).lean()).contact.telephone).toBe('081-234-5678');
+    await User.updateOne({ _id: buyer._id }, { 'contact.telephone': '0800000000' });
+  });
   it('requires admin for account creation and deletion', async () => {
     expect((await call('post', buyerToken).send({ studentId: 'QA-FORBIDDEN' })).status).toBe(403);
     expect((await call('delete', buyerToken).send({ _id: admin._id })).status).toBe(403);
@@ -83,5 +92,13 @@ describe('User resource authorization', () => {
       .field('_id', String(admin._id)).attach('image', Buffer.from('not-an-image'), 'test.png');
     expect(result.status).toBe(403);
     expect((await User.findById(admin._id)).image).toBeFalsy();
+  });
+  it('lets only administrators set the course, normalised', async () => {
+    const own = await call('put', buyerToken).send({ _id: buyer._id, course: 'พุทธศิลป์พื้นฐาน' });
+    expect(own.status).toBe(200);
+    expect((await User.findById(buyer._id).lean()).course || '').toBe('');
+    const set = await call('put', adminToken).send({ _id: buyer._id, course: ' พุุทธศิลป์สร้างสรรค์​' });
+    expect(set.status).toBe(200);
+    expect((await User.findById(buyer._id).lean()).course).toBe('พุทธศิลป์สร้างสรรค์');
   });
 });

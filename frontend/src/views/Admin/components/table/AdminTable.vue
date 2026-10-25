@@ -104,7 +104,7 @@
                                 :aria-label="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติ')" v-c-tooltip="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติ')"
                                 @click="onApprove(item)"
                             >
-                                <CIcon v-if="loadingItems.includes(item._id)" name="cil-reload" size="lg" class="spinner-animation" />
+                                <CIcon v-if="loadingActions[item._id] === 'Approved'" name="cil-reload" size="lg" class="spinner-animation" />
                                 <CIcon v-else name="cil-check" size="lg" />
                             </button>
                             <button 
@@ -113,7 +113,8 @@
                                 :aria-label="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ')" v-c-tooltip="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ')"
                                 @click="onReject(item)"
                             >
-                                <CIcon name="cil-x" size="lg" />
+                                <CIcon v-if="loadingActions[item._id] === 'Rejected'" name="cil-reload" size="lg" class="spinner-animation" />
+                                <CIcon v-else name="cil-x" size="lg" />
                             </button>
                             <button 
                                 class="action-btn icon-trash ml-2" 
@@ -216,6 +217,11 @@ export default {
         loadingItems: {
             type: Array,
             default: () => []
+        },
+        // id -> 'Approved' | 'Rejected': which action is running, so only that button spins.
+        loadingActions: {
+            type: Object,
+            default: () => ({})
         }
     },
     data() {

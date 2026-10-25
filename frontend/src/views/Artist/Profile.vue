@@ -155,6 +155,15 @@
                       <CIcon name="cil-cloud-upload" class="mr-1" />
                       {{ $i18n.locale === 'en' ? 'Pay' : 'ชำระเงิน' }}
                     </button>
+                    <button
+                      type="button"
+                      v-if="!item.image && (item.statusName === 'Pending Payment' || item.statusName === 'รอชำระเงิน')"
+                      class="btn btn-sm btn-outline-danger mr-2"
+                      :disabled="cancellingOrder"
+                      @click="cancelOwnOrder(item, refreshOrdersAfterCancel)"
+                    >
+                      {{ $i18n.locale === 'en' ? 'Cancel order' : 'ยกเลิกคำสั่งซื้อ' }}
+                    </button>
 
                     <!-- Paid documents -->
                     <template v-else-if="!['Rejected', 'Cancelled', 'ยกเลิก', 'ไม่อนุมัติ'].includes(item.statusName)">
@@ -276,10 +285,11 @@ import EditProfileModal from './components/modal/EditProfileModal.vue'
 import PostTermSaleNotice from './components/PostTermSaleNotice.vue'
 import { mapGetters } from 'vuex';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import cancelOwnOrder from '@/mixins/cancelOwnOrder';
 
 export default {
   name: 'ArtistProfile',
-  mixins: [statusBadgeMixin],
+  mixins: [statusBadgeMixin, cancelOwnOrder],
   components: {
     ArtistProfileHeader,
     ArtworkCard,
@@ -309,6 +319,7 @@ export default {
       loading: false,
       isEditing: false,
       showArtworkModal: false,
+      pendingArtworkId: null,
       showEditModal: false,
       selectedArtwork: null,
       selectedFile: null,
@@ -545,6 +556,9 @@ export default {
       this.selectedOrder = item;
       this.showOrderModal = true;
     },
+    async refreshOrdersAfterCancel() {
+      await this.$store.dispatch('order/get', {});
+    },
     triggerOrderSlipUpload(item) {
       this.selectedOrder = item;
       this.$nextTick(() => {
@@ -752,9 +766,11 @@ export default {
       }
     },
     handleAddNewArtwork() {
+      this.pendingArtworkId = null;
       this.showArtworkModal = true;
     },
     async handleArtworkSave(payload) {
+      if (this.loading) return;
       try {
         this.loading = true;
         
@@ -778,11 +794,15 @@ export default {
           variant: 'info'
         });
 
-        const createResponse = await this.$store.dispatch('artwork/create', createPayload);
-        
-        // Extract the created ID (assuming backend returns { data: { data: { _id: ... } } })
-        const artworkId = createResponse.data.data._id;
-        
+        // A retry after a failed image upload reuses the record already created (no duplicates).
+        if (!this.pendingArtworkId) {
+          const createResponse = await this.$store.dispatch('artwork/create', createPayload);
+
+          // Extract the created ID (assuming backend returns { data: { data: { _id: ... } } })
+          this.pendingArtworkId = createResponse.data.data._id;
+        }
+        const artworkId = this.pendingArtworkId;
+
         if (!artworkId) throw new Error('Failed to retrieve artwork ID');
 
         // --- STEP 2: UPLOAD ARTWORK IMAGE (MULTIPART) ---
@@ -806,18 +826,21 @@ export default {
           variant: 'success'
         });
         
+        this.pendingArtworkId = null;
         this.showArtworkModal = false;
         
-        // Refresh artwork list
-        await this.$store.dispatch('artwork/get');
+        // Refresh artwork list (a failed refresh must not read as a failed save)
+        await this.$store.dispatch('artwork/get').catch(refreshError => console.error('Artwork list refresh failed:', refreshError));
         
       } catch (error) {
         console.error('Error in artwork creation flow:', error);
         
         // Attempt to show more specific error if available from backend
-        const errorMessage = error.response && error.response.data && error.response.data.message
-          ? error.response.data.message
-          : 'Failed to add artwork. Please check your connection and try again.';
+        const errorMessage = this.pendingArtworkId
+          ? 'The artwork record is saved, but the image upload failed. Press Save again to retry the upload.'
+          : (error.response && error.response.data && error.response.data.message
+            ? error.response.data.message
+            : 'Failed to add artwork. Please check your connection and try again.');
 
         this.$store.commit('dialog/showToast', {
           title: 'Error',

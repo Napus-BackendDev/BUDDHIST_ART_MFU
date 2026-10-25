@@ -17,7 +17,9 @@ test.each(['en','th'].flatMap(locale => [
   expect(wrapper.find('.close-btn').attributes('aria-label')).toBe(locale === 'en' ? 'Close' : 'ปิด')
   expect(wrapper.find('.search-box-container').exists()).toBe(false)
   expect(wrapper.find('.btn-remove').exists()).toBe(false)
-  expect(wrapper.find('input[type="file"]').exists()).toBe(upload)
+  // Only a pending order that already has a slip shows the admin "Replace slip" input (and not the first-upload one).
+  expect(wrapper.find('input[type="file"]').exists()).toBe(upload || (code === 'PENDING' && !!image))
+  expect(wrapper.find('.upload-dropzone').exists()).toBe(upload)
   expect(wrapper.find('.preview-overlay').exists()).toBe(false)
   wrapper.vm.handleSave()
   expect(wrapper.emitted('save')[0][0].artwork).toBeUndefined()

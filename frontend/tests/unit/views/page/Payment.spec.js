@@ -98,6 +98,18 @@ describe('Payment checkout guards', () => {
     wrapper.destroy();
   });
 
+  it.each([['', true], ['https://drive/slip.png', false]])('receipt reminds buyer to upload a missing slip (image=%p)', (image, shown) => {
+    const lastOrder = {createdAt:'2026-10-17T15:32:15.685Z',items:[],amounts:{subtotal:0},status:{code:'RESERVED'},image};
+    const wrapper = shallowMount({...Payment,created(){},mounted(){}},{
+      data:()=>({currentStep:3}),
+      computed:{lastOrder:()=>lastOrder,cartItems:()=>[],reservationEnded:()=>false,hasReservedItems:()=>false},
+      mocks:{$i18n:{locale:'th'},$store:{getters:{}}},
+      stubs:{CContainer:{template:'<div><slot/></div>'},CCard:{template:'<div><slot/></div>'},CCardHeader:{template:'<div><slot/></div>'},CCardBody:{template:'<div><slot/></div>'},CIcon:true,CLink:{template:'<a><slot/></a>'}}
+    });
+    expect(wrapper.text().includes('ยังไม่ได้แนบหลักฐานการชำระเงิน')).toBe(shown);
+    wrapper.destroy();
+  });
+
   beforeEach(() => {
     global.alert = jest.fn();
   });
@@ -176,6 +188,15 @@ describe('Payment checkout guards', () => {
     expect(Payment.computed.reservationEnded.call(vm)).toBe(true);
   });
 
+  it('does not warn about our own reserved item while the pending order is still being looked up', async () => {
+    const vm = makeVm(jest.fn()); vm.cartItems = [{ _id: 'art-1', status: { approval: 'reserved' } }];
+    vm.getName = jest.fn(() => 'Reserved'); vm.checkingPendingOrder = true;
+    expect(Payment.computed.hasReservedItems.call(vm)).toBe(false);
+    vm.refreshStatuses = jest.fn().mockResolvedValue(); await Payment.methods.fetchInitialData.call(vm);
+    expect(vm.checkingPendingOrder).toBe(false);
+    expect(Payment.computed.hasReservedItems.call(vm)).toBe(true);
+  });
+
   it('blocks an unpaid reservation past its deadline before the cron runs', () => {
     const vm = makeVm(jest.fn()); vm.createdOrder = { status: { code: 'RESERVED' }, createdAt: new Date(Date.now() - 25 * 3600000).toISOString() };
     expect(Payment.computed.reservationEnded.call(vm)).toBe(true);
@@ -190,6 +211,22 @@ describe('Payment checkout guards', () => {
     await Payment.methods.handleSubmitPayment.call(vm, { paymentMethod: 'transfer', paymentProofFile: null });
     expect(vm.currentStep).toBe(3);
     expect(vm.$store.dispatch).toHaveBeenCalledWith('cart/clearCart');
+  });
+
+  it('reloads the order after the slip upload so the receipt shows the saved slip', async () => {
+    const saved = { _id: 'order-1', image: 'https://drive/slip.png', status: { code: 'PENDING' }, createdAt: new Date().toISOString() };
+    let uploaded = false;
+    const vm = makeVm(jest.fn(type => {
+      if (type === 'order/upload') { uploaded = true; return Promise.resolve(); }
+      if (type === 'order/get') return Promise.resolve([uploaded ? saved : { _id: 'order-1', status: { code: 'RESERVED' }, createdAt: saved.createdAt }]);
+      return Promise.resolve();
+    }));
+    vm.createdOrder = { _id: 'order-1', status: { code: 'RESERVED' }, createdAt: saved.createdAt };
+    vm.refreshCheckoutOrder = () => Payment.methods.refreshCheckoutOrder.call(vm);
+    Object.defineProperty(vm, 'reservationEnded', { get: () => Payment.computed.reservationEnded.call(vm) });
+    await Payment.methods.handleSubmitPayment.call(vm, { paymentMethod: 'transfer', paymentProofFile: new Blob(['slip'], { type: 'image/jpeg' }) });
+    expect(vm.currentStep).toBe(3);
+    expect(vm.$store.dispatch).toHaveBeenCalledWith('cart/setLastOrder', expect.objectContaining({ image: saved.image }));
   });
 
   it('never renders the success receipt or bank form for an ended reservation', () => {

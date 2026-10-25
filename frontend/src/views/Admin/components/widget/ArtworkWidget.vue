@@ -112,7 +112,8 @@ export default {
             }
 
             // Normalize
-            if (status === 'Approved' || status === 'Success') return 'Approved';
+            // Reserved = approved work held by a buyer's order; it is not waiting for review.
+            if (status === 'Approved' || status === 'Success' || status === 'Reserved') return 'Approved';
             if (status === 'Rejected' || status === 'Cancelled') return 'Rejected';
             if (status === 'Pending') return 'Pending';
             

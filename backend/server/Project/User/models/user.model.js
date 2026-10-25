@@ -12,6 +12,7 @@ var objsSchema = new Schema({
     }],
     role: { type: mongoose.Schema.Types.ObjectId, ref: 'Setting_Role', default: null },
     bio: { type: String, default: null },
+    course: { type: String, default: '' },
     contact: {
         telephone: { type: String, default: null },
         studentEmail: { type: String, unique: true, sparse: true },

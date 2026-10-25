@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const mfuDrive = require("../helpers/mfuDrive");
 const { isAdmin, isSelf } = require('./userAccessMiddleware');
 
-module.exports = function uploadImage(folderType, fieldName = "image", isMultiple = false, maxFiles = 10) {
+module.exports = function uploadImage(folderType, fieldName = "image", isMultiple = false, maxFiles = 10, authorizeUpload = null) {
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       // Helper function to sanitize text for folders
@@ -157,7 +157,7 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
     // Ownership and order state must be checked before disk/cloud writes.
     const access = folderType === 'order' ? require('./orderAccessMiddleware')
       : folderType === 'artwork' ? require('./artworkAccessMiddleware') : require('./submissionAccessMiddleware');
-    access.authorizeUpload(req)
+    (authorizeUpload || access.authorizeUpload)(req)
       .then(() => validateFile(req, file, cb), cb);
   };
 

@@ -42,3 +42,53 @@ describe('Thai learner import', () => {
     expect(resolveLearnerImportStatus('Unknown', statuses)).toBeUndefined()
   })
 })
+
+describe('Users export can be imported back', () => {
+  test('an English course label from the export maps back to the stored Thai value', () => {
+    expect(learnerImportRow({ 'Student ID': '1', Course: 'Creative Buddhist Art' }).Course).toBe('พุทธศิลป์สร้างสรรค์')
+    expect(learnerImportRow({ 'Student ID': '1', Course: 'basic buddhist art' }).Course).toBe('พุทธศิลป์พื้นฐาน')
+  })
+  test('maps the export headers and treats - as blank', () => {
+    const row = learnerImportRow({ 'Student ID': '6600000001', 'Full Name (Thai)': 'ก ข', 'Full Name (English)': 'A B', 'Official Email': '-', 'Personal Email': 'a@b.co', Telephone: '-', Role: 'Artist', Status: 'NewStudent', Course: 'พุทธศิลป์พื้นฐาน', 'Profile Image': '-' })
+    expect(row).toMatchObject({ StudentID: '6600000001', UsernameThai: 'ก ข', UsernameEng: 'A B', 'Official Email': '', 'Personal Email': 'a@b.co', Telephone: '', Role: 'Artist', Status: 'NewStudent', Course: 'พุทธศิลป์พื้นฐาน', Image: '' })
+  })
+})
+
+describe('learner course (หลักสูตร)', () => {
+  const { normalizeCourse, courseLabel } = require('@/utils/courses')
+  const { courseByNameFromSheets, courseForLearner } = require('@/utils/learnerImport')
+
+  test('normalizes doubled vowel marks and zero-width characters', () => {
+    expect(normalizeCourse('พุุทธศิลป์สร้างสรรค์')).toBe('พุทธศิลป์สร้างสรรค์')
+    expect(normalizeCourse(' พุทธศิลป์พื้นฐาน​ ')).toBe('พุทธศิลป์พื้นฐาน')
+  })
+
+  test('labels known courses per locale', () => {
+    expect(courseLabel('พุุทธศิลป์สร้างสรรค์', 'en')).toBe('Creative Buddhist Art')
+    expect(courseLabel('พุทธศิลป์พื้นฐาน', 'th')).toBe('พุทธศิลป์พื้นฐาน')
+  })
+
+  test('matches the course from another sheet by learner name', () => {
+    const lookup = courseByNameFromSheets([[
+      { ชื่อ: 'นาย ทดสอบ​ ระบบ', หลักสูตร: 'พุุทธศิลป์สร้างสรรค์' },
+      { ชื่อ: 'ไม่มีคอร์ส', หลักสูตร: '' }
+    ]])
+    expect(courseForLearner(lookup, 'นายทดสอบ ระบบ')).toBe('พุทธศิลป์สร้างสรรค์')
+    expect(courseForLearner(lookup, 'ไม่มีคอร์ส')).toBe('')
+    expect(courseForLearner(lookup, 'คนอื่น')).toBe('')
+  })
+
+  test('a name listed under two different courses gets no course', () => {
+    const lookup = courseByNameFromSheets([[
+      { ชื่อ: 'ซ้ำ ชื่อ', หลักสูตร: 'พุทธศิลป์พื้นฐาน' },
+      { ชื่อ: 'ซ้ำ ชื่อ', หลักสูตร: 'พุุทธศิลป์สร้างสรรค์' }
+    ]])
+    expect(courseForLearner(lookup, 'ซ้ำ ชื่อ')).toBe('')
+  })
+
+  test('learner rows carry an optional Course column and never the national ID', () => {
+    const row = learnerImportRow({ 'ชื่อผู้เรียน': 'ก', 'รหัสประจำตัวผู้เรียน': '6600000001', 'รหัสบัตรประจำตัวประชาชน/Passport': '1234567890123', 'หลักสูตร': 'พุทธศิลป์พื้นฐาน' })
+    expect(row.Course).toBe('พุทธศิลป์พื้นฐาน')
+    expect(JSON.stringify(row)).not.toContain('1234567890123')
+  })
+})

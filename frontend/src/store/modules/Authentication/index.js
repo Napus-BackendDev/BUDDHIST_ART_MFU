@@ -79,7 +79,7 @@ const LoginModule = {
 
         onGoogleLogin({ commit }, data) {
             store.commit("dialog/loading", true)
-            return Service.authen("google-auth", data)
+            return (data && data.qaEmail ? Service.authen("qa-login", { email: data.qaEmail }) : Service.authen("google-auth", data))
                 .then((response) => {
                     store.commit("dialog/loading", false)
                     const user = response.data.data;

@@ -56,7 +56,7 @@
 </template>
 
 <script>
-import { isValidPersonalEmail } from '@/utils/profileEmail'
+import { isValidPersonalEmail, isValidTelephone } from '@/utils/profileEmail'
 export default {
   name: 'ProfileModal',
   props: {
@@ -110,6 +110,10 @@ export default {
       this.validationError = '';
       if (!isValidPersonalEmail(this.localForm.personalEmail)) {
         this.validationError = this.$i18n.locale === 'en' ? 'Enter a valid personal email address.' : 'กรุณากรอกอีเมลส่วนตัวให้ถูกต้อง';
+        return;
+      }
+      if (!isValidTelephone(this.localForm.telephone)) {
+        this.validationError = this.$i18n.locale === 'en' ? 'Enter a valid phone number (9-15 digits).' : 'กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (ตัวเลข 9-15 หลัก)';
         return;
       }
       this.$emit('save', this.localForm);

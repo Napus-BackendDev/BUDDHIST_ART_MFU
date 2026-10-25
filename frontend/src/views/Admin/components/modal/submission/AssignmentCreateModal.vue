@@ -49,7 +49,7 @@
                             :type="form.startDateTime ? 'datetime-local' : 'text'"
                             placeholder="วัน/เดือน/ปี --:--"
                             lang="en-GB"
-                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                             @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
@@ -63,7 +63,7 @@
                             :type="form.endDateTime ? 'datetime-local' : 'text'"
                             placeholder="วัน/เดือน/ปี --:--"
                             lang="en-GB"
-                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                             @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />

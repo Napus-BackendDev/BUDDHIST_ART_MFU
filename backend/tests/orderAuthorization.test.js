@@ -119,4 +119,22 @@ describe('Order resource authorization', () => {
     expect(String(restored.status.approval)).toBe(String(approved._id));
     expect(String(restored.status.sale)).toBe(String(available._id));
   });
+  it('lets only an administrator replace the slip of a pending order and keeps the old one in history', async () => {
+    const pending = await Status.create({ code: 'PENDING', title: [{ key: 'en', value: 'Pending' }] });
+    const imageUrl = jest.spyOn(require('../server/Project/Order/controller/order'), 'getImageUrl')
+      .mockReturnValue('https://drive.example.test/new-slip.png');
+    try {
+      const withSlip = await Order.create({ user: buyer._id, status: pending._id, image: 'https://drive.example.test/old-slip.png' });
+      const png = { filename: 'slip.png', contentType: 'image/png' };
+      await call('put', buyerToken, '/api/v1/order/replace-slip').field('_id', String(withSlip._id)).attach('image', Buffer.from('x'), png).expect(403);
+      await call('put', adminToken, '/api/v1/order/replace-slip').field('_id', String(otherOrder._id)).attach('image', Buffer.from('x'), png).expect(409);
+      await call('put', adminToken, '/api/v1/order/replace-slip').field('_id', String(withSlip._id)).attach('image', Buffer.from('x'), png).expect(200);
+      const saved = await Order.findById(withSlip._id).lean();
+      expect(saved.image).toBe('https://drive.example.test/new-slip.png');
+      expect(saved.slipHistory).toHaveLength(1);
+      expect(saved.slipHistory[0].image).toBe('https://drive.example.test/old-slip.png');
+      expect(String(saved.slipHistory[0].replacedBy)).toBe(String(other._id));
+      expect(String(saved.status)).toBe(String(pending._id));
+    } finally { imageUrl.mockRestore(); }
+  });
 });

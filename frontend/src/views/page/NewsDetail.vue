@@ -171,7 +171,11 @@ export default {
                 this.currentNews = (Array.isArray(news) ? news.find(n => n._id === id) : null) || null;
                 if (this.currentNews) {
                     // View tracking must not hide an article when that request fails.
-                    try { await this.$store.dispatch('news/updateView', id); } catch (_) { /* Reading remains available. */ }
+                    try {
+                        const res = await this.$store.dispatch('news/updateView', id);
+                        const views = res && res.data && res.data.data && res.data.data.views;
+                        if (sequence === this.fetchSequence && typeof views === 'number') this.currentNews = { ...this.currentNews, views };
+                    } catch (_) { /* Reading remains available. */ }
                 }
             } catch (error) {
                 if (sequence === this.fetchSequence) this.loadError = true;

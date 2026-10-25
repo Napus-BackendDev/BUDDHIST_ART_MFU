@@ -4,7 +4,7 @@
         <p v-if="importFeedback" class="alert alert-success" role="status">{{ importFeedback }}</p>
         <ArtworkWidget v-model="filters.status" :items="artworks" />
         <ArtworkFilter v-model="filters" :categories="categories" />
-        <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
+        <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" :loadingActions="loadingActions" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
         <ArtworkCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSaveArtwork"/>
         <ArtworkCreateChoiceModal :show.sync="showChoiceModal" :error="importError" :import-count="pendingImport.length" :importing="importing" @manual="handleChoiceManual" @import="handleChoiceImport" @confirm-import="confirmArtworkImport" @download-template="downloadTemplate"/>
         <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView"/>
@@ -79,6 +79,7 @@ export default {
             },
             categories: [],
             loadingItems: [],
+            loadingActions: {},
             showRejectModal: false,
             rejectRemark: '',
             loading: false,
@@ -423,6 +424,7 @@ export default {
         async updateStatus(artwork, statusName, toastTitle, toastMsg, rejectionReason = null) {
             try {
                 this.loadingItems.push(artwork._id);
+                this.$set(this.loadingActions, artwork._id, statusName);
                 const statuses = this.$store.getters['setting/status/item'] || [];
                 const statusCode = { Approved: 'APPROVED', Rejected: 'REJECTED', Pending: 'PENDING' }[statusName];
                 const targetStatus = statuses.find(s => statusCode && s.code === statusCode) || statuses.find(s => this.getName('en', s) === statusName);
@@ -460,17 +462,11 @@ export default {
                 });
             } finally {
                 this.loadingItems = this.loadingItems.filter(id => id !== artwork._id);
+                this.$delete(this.loadingActions, artwork._id);
             }
         },
+        // AdminTable already asks for confirmation before emitting `delete`.
         async handleDeleteArtwork(artwork) {
-            const confirmMsg = this.$i18n.locale === 'en'
-                ? `Are you sure you want to delete artwork "${this.getName('en', artwork)}"?`
-                : `คุณแน่ใจหรือว่าต้องการลบผลงาน "${this.getName('th', artwork)}"?`;
-            
-            if (!confirm(confirmMsg)) {
-                return;
-            }
-
             try {
                 await this.$store.dispatch('artwork/delete', { _id: artwork._id });
                 this.fetchArtworks();

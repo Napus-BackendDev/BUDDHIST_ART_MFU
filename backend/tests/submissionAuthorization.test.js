@@ -122,6 +122,12 @@ describe('Submission ownership and atomic work updates', () => {
     await call('put','Artist').send(work({_id:own._id,status:approved._id})).expect(403);
     expect(String((await Submission.findById(submission._id)).assignments[0].artworks[0].status)).toBe(String(pending._id));
   });
+  it('clears the previous rejection reason when a rejected work is resubmitted', async () => {
+    await Submission.updateOne({ _id: submission._id }, { $set: { 'assignments.0.artworks.0.rejectionReason': 'too dark' } });
+    await call('put','Artist').send(work({_id:own._id,title:[{key:'en',value:'Brighter'}]})).expect(200);
+    const doc=await Submission.findById(submission._id).lean();
+    expect(doc.assignments[0].artworks[0].rejectionReason).toBeNull();
+  });
   it('edits only the targeted work and preserves all peer rows and notes', async () => {
     const original=JSON.stringify(other.toObject());
     await call('put','Artist').send(work({_id:own._id,title:[{key:'en',value:'Resubmitted'}]})).expect(200);

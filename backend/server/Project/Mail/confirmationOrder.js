@@ -1,4 +1,5 @@
-module.exports = function confirmationOrderMailTemplate({ buyerName, orderId, artworkTitle, price, orderDate }) {
+// paymentReceived: sent after the buyer uploads a slip, so it must not ask them to pay again.
+module.exports = function confirmationOrderMailTemplate({ buyerName, orderId, artworkTitle, price, orderDate, paymentReceived = false }) {
     return `
     <!DOCTYPE html>
     <html>
@@ -71,7 +72,7 @@ module.exports = function confirmationOrderMailTemplate({ buyerName, orderId, ar
         <div class="email-container">
             <div class="header">
                 <h1>ขอขอบพระคุณเป็นอย่างยิ่ง!</h1>
-                <p>เราได้รับคำสั่งซื้อ/จองผลงานของท่านเรียบร้อยแล้ว</p>
+                <p>${paymentReceived ? 'เราได้รับหลักฐานการชำระเงินของท่านเรียบร้อยแล้ว' : 'เราได้รับคำสั่งซื้อ/จองผลงานของท่านเรียบร้อยแล้ว'}</p>
             </div>
             <div class="content">
                 <p>เรียน คุณ <strong>${buyerName}</strong>,</p>
@@ -100,10 +101,10 @@ module.exports = function confirmationOrderMailTemplate({ buyerName, orderId, ar
                 </table>
 
                 <div style="text-align: center; margin: 30px 0;">
-                    <span class="status-badge">ยืนยันคำสั่งซื้อจองสำเร็จ - ${orderDate}</span>
+                    <span class="status-badge">${paymentReceived ? 'ได้รับหลักฐานการชำระเงิน' : 'ยืนยันคำสั่งซื้อจองสำเร็จ'} - ${orderDate}</span>
                 </div>
 
-                <p>กรุณาดำเนินการชำระเงินและอัปโหลดหลักฐานการโอนเงินภายใน 24 ชั่วโมง เพื่อป้องกันรายการจองหมดอายุ หากท่านมีข้อสงสัยหรือต้องการความช่วยเหลือเพิ่มเติม สามารถติดต่อทีมงานได้โดยตรงด้วยการตอบกลับอีเมลฉบับนี้</p>
+                <p>${paymentReceived ? 'เจ้าหน้าที่จะตรวจสอบหลักฐานการชำระเงินและแจ้งผลทางอีเมล ใบแจ้งหนี้และหลักฐานการชำระเงินแนบมากับอีเมลฉบับนี้' : 'กรุณาดำเนินการชำระเงินและอัปโหลดหลักฐานการโอนเงินภายใน 24 ชั่วโมง เพื่อป้องกันรายการจองหมดอายุ'} หากท่านมีข้อสงสัยหรือต้องการความช่วยเหลือเพิ่มเติม สามารถติดต่อทีมงานได้โดยตรงด้วยการตอบกลับอีเมลฉบับนี้</p>
                 
                 <p>ขอแสดงความนับถือ,<br/><strong>โครงการพุทธศิลปกรรม มฟล.</strong></p>
             </div>

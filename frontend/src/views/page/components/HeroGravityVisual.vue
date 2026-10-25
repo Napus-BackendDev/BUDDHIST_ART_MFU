@@ -77,6 +77,12 @@ export default {
 @keyframes dash { to { stroke-dashoffset:-160; } }
 @keyframes nodePulse { 50% { opacity:.45; } }
 @media (max-width:991.98px) { .gravity-visual { width:42%; opacity:.72; } .meaning-label { display:none; } }
-@media (max-width:575.98px) { .gravity-visual { width:100%; opacity:.22; } .art-frame { right:5%; } }
+@media (max-width:575.98px) {
+  .gravity-visual { width:100%; opacity:.22; overflow:hidden; max-width:100vw; }
+  .gravity-glow { width:260px; height:260px; }
+  .orbit-one { width:240px; height:240px; }
+  .orbit-two { width:300px; height:300px; }
+  .art-frame { right:5%; }
+}
 @media (prefers-reduced-motion:reduce) { .gravity-visual * { animation:none !important; } }
 </style>

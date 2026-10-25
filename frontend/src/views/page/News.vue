@@ -374,8 +374,8 @@ export default {
 }
 
 .pagination-btn {
-    min-width: 40px;
-    height: 40px;
+    min-width: 44px;
+    height: 44px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
     background-color: #ffffff;

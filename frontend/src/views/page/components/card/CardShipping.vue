@@ -168,7 +168,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import { isValidPersonalEmail } from '@/utils/profileEmail';
+import { isValidPersonalEmail, isValidTelephone } from '@/utils/profileEmail';
 import { paymentSlipIssue, paymentSlipMessage } from '@/utils/paymentSlip';
 
 export default {
@@ -214,8 +214,8 @@ export default {
         slipErrorMessage() { return paymentSlipMessage(this.slipError, this.$i18n.locale); },
         formErrorMessage() {
             const messages = this.$i18n.locale === 'en'
-                ? { required: 'Please fill in all required shipping information.', email: 'Please enter a valid email address.' }
-                : { required: 'กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน', email: 'กรุณาระบุอีเมลให้ถูกต้อง' };
+                ? { required: 'Please fill in all required shipping information.', email: 'Please enter a valid email address.', telephone: 'Please enter a valid phone number (9-15 digits).' }
+                : { required: 'กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน', email: 'กรุณาระบุอีเมลให้ถูกต้อง', telephone: 'กรุณาระบุเบอร์โทรศัพท์ให้ถูกต้อง (ตัวเลข 9-15 หลัก)' };
             return messages[this.formError] || '';
         },
         ...mapGetters('cart', ['cartFinalTotal']),
@@ -349,7 +349,11 @@ export default {
                 this.formError = 'email';
                 return;
             }
-            this.$emit('create-order', { ...this.form, email: this.form.email.trim() });
+            if (!isValidTelephone(this.form.telephone)) {
+                this.formError = 'telephone';
+                return;
+            }
+            this.$emit('create-order', { ...this.form, email: this.form.email.trim(), telephone: (this.form.telephone || '').trim() });
         },
         onConfirmPayment() {
             if (this.loading || this.hasReservedItems) return;
@@ -508,7 +512,7 @@ export default {
     font-weight: 600;
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 991.98px) {
     .payment-method-combined {
         padding: 1rem;
     }

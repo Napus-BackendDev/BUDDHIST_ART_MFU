@@ -103,6 +103,10 @@
                     <p class="text-muted mb-4 max-w-md mx-auto">
                         {{ $i18n.locale === 'en' ? 'Thank you for your purchase. Your order' : 'ขอบคุณสำหรับการสั่งซื้อ หมายเลขคำสั่งซื้อของคุณ' }} <span class="font-weight-bold text-dark">{{ order.orderNumber || order._id }}</span> {{ $i18n.locale === 'en' ? 'has been received and is being processed.' : 'ได้รับการยืนยันและกำลังดำเนินการ' }}
                     </p>
+                    <div v-if="!order.image" role="status" class="alert alert-warning mx-auto mb-4 text-left" style="max-width: 550px;">
+                        {{ $i18n.locale === 'en' ? 'Payment proof has not been uploaded yet. Please upload your slip from Purchase History within 24 hours of ordering, or the reservation will expire.' : 'ยังไม่ได้แนบหลักฐานการชำระเงิน กรุณาอัปโหลดสลิปที่หน้าประวัติคำสั่งซื้อภายใน 24 ชั่วโมงหลังสั่งซื้อ มิฉะนั้นการจองจะหมดอายุ' }}
+                        <CLink :to="{ name: 'UserOrder' }" class="d-block mt-1 font-weight-bold">{{ $i18n.locale === 'en' ? 'Go to Purchase History' : 'ไปที่ประวัติคำสั่งซื้อ' }}</CLink>
+                    </div>
 
                     <!-- Order Details Card -->
                     <CCard class="border-0 shadow-lg mx-auto mb-5 text-left" style="max-width: 550px; border-radius: 16px; overflow: hidden;">
@@ -200,6 +204,8 @@ export default {
         return {
             loading: false,
             createdOrder: null,
+            // Until our own pending order is looked up, a Reserved cart item may be ours.
+            checkingPendingOrder: true,
             currentStep: 1,
             syncTimer: null,
             submittingOrder: false,
@@ -280,6 +286,7 @@ export default {
             // If the order has already been successfully created for THIS user in Step 1,
             // the items are "Reserved" for us! So we don't show the warning.
             if (this.createdOrder) return this.reservationEnded;
+            if (this.checkingPendingOrder) return false;
 
             return this.cartItems.some(item => {
                 if (!item.status) return false;
@@ -300,8 +307,12 @@ export default {
             this.createdOrder = latest;
         },
         async fetchInitialData() {
-            await this.refreshStatuses();
-            await this.checkExistingPendingOrder();
+            try {
+                await this.refreshStatuses();
+                await this.checkExistingPendingOrder();
+            } finally {
+                this.checkingPendingOrder = false;
+            }
         },
         async checkExistingPendingOrder() {
             if (this.cartItems.length === 0) return;
@@ -477,6 +488,8 @@ export default {
                         _id: this.createdOrder._id,
                         image: payload.paymentProofFile
                     });
+                    // Reload the order so the receipt shows the saved slip and Pending status.
+                    await this.refreshCheckoutOrder().catch(() => {});
                 }
 
                 // Construct finalized order details for receipt display
@@ -699,5 +712,21 @@ export default {
 
 .extra-small {
     font-size: 0.75rem;
+}
+
+@media (max-width: 575.98px) {
+    .wizard-progress-bar {
+        padding: 1rem 0.75rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    .step-icon-circle {
+        width: 36px;
+        height: 36px;
+        font-size: 0.95rem;
+    }
+    .step-label {
+        font-size: 0.72rem;
+        margin-top: 0.35rem !important;
+    }
 }
 </style>

@@ -153,4 +153,28 @@ describe('Post-term sale lifecycle', () => {
     expect(second.reminded).toBe(0);
     expect(updated.postTermSale.notifications.day30SentAt).toBeTruthy();
   });
+
+  it('reminder emails link to the artist portal (CLIENT_URL first, production site as fallback)', async () => {
+    const mail = require('../helpers/google/Mail');
+    const spy = jest.spyOn(mail, 'sendMail').mockResolvedValue();
+    const emailed = await User.create({ studentId: 'POSTTERM-MAIL', name: [{ key: 'en', value: 'Mail Artist' }], contact: { studentEmail: 'posttermmail@example.test' } });
+    await Artwork.create({
+      title: [{ key: 'en', value: 'Link Work' }],
+      artworkCode: 'BA-POSTTERM-LINK',
+      artist: emailed._id,
+      status: { approval: statuses.Approved._id, sale: statuses.Available._id },
+      postTermSale: { ...buildPostTermSale(new Date(Date.now() - 345 * 86400000)), initialSaleEndsAt: new Date(Date.now() + 5 * 86400000), applicable: true, mode: constants.MODES.INITIAL, decision: constants.DECISIONS.PENDING }
+    });
+    const before = process.env.CLIENT_URL;
+    process.env.CLIENT_URL = 'https://site.example.test/, https://other.example.test';
+    try {
+      await runJob(new Date());
+    } finally {
+      if (before === undefined) delete process.env.CLIENT_URL; else process.env.CLIENT_URL = before;
+    }
+    const call = spy.mock.calls.find(args => args[0] === 'posttermmail@example.test');
+    expect(call[3]).toContain('https://site.example.test/artist/profile');
+    expect(require('../server/Project/Artwork/service/postTermSale').appBaseUrl()).toBe('https://buddhistart.mfu.ac.th');
+    spy.mockRestore();
+  });
 });

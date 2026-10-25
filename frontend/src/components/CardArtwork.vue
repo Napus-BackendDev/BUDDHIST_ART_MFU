@@ -78,6 +78,7 @@
                                     <div class="price-value exhibition-only">
                                         <span v-if="isExhibition(art)">{{ currentLocale === 'en' ? 'Exhibition Only' : 'จัดโชว์เพียงเท่านั้น' }}</span>
                                         <span v-else-if="isSoldOut(art)">{{ currentLocale === 'en' ? 'Sold Out' : 'จำหน่ายแล้ว' }}</span>
+                                        <span v-else-if="isApprovalReserved(art)">{{ currentLocale === 'en' ? 'Reserved' : 'จองแล้ว' }}</span>
                                         <span v-else>{{ currentLocale === 'en' ? 'Not for Sale' : 'ไม่ขาย' }}</span>
                                     </div>
                                 </template>

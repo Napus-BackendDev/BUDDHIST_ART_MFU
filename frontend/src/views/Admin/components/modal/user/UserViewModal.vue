@@ -41,6 +41,7 @@
                         {{ getLocalizedRoleName() }}
                     </CBadge>
                 </div>
+                <div v-if="user.course" class="font-weight-bold text-muted mb-2">{{ courseText }}</div>
                 <div class="text-muted small">
                     <CIcon name="cil-id-card" size="sm" class="mr-1" />
                     ID: {{ user.studentId || 'N/A' }} • Joined: {{ user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A' }}
@@ -133,6 +134,8 @@
 </template>
 
 <script>
+import { courseLabel } from '@/utils/courses';
+
 export default {
     name: 'UserViewModal',
     props: {
@@ -146,6 +149,9 @@ export default {
         }
     },
     computed: {
+        courseText() {
+            return courseLabel(this.user && this.user.course, this.$i18n.locale);
+        },
         isCustomer() {
             if (!this.user || !this.user.role) return false;
             

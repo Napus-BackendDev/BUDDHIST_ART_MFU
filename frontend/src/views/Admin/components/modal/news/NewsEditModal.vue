@@ -24,7 +24,10 @@
             </div>
         </template>
 
-        <div class="px-3 py-2" v-if="form">
+        <div class="px-3 py-2" v-if="form && previewing">
+            <NewsPreviewPanel :title="form.title" :html="form.description" :images="[...existingImages, ...imagePreviews]" :cover-index="coverIndex" />
+        </div>
+        <div class="px-3 py-2" v-if="form" v-show="!previewing">
             <!-- Title Row -->
             <CRow>
                 <CCol md="12">
@@ -128,6 +131,9 @@
 
         <template #footer>
             <div class="w-100 d-flex justify-content-end align-items-center py-2">
+                <CButton variant="outline" color="secondary" class="mr-auto news-preview-toggle" :disabled="saving" @click="previewing = !previewing">
+                    {{ previewing ? ($i18n.locale === 'en' ? 'Back to edit' : 'กลับไปแก้ไข') : ($i18n.locale === 'en' ? 'Preview' : 'ดูตัวอย่าง') }}
+                </CButton>
                 <LoadingButton 
                     variant="ghost" 
                     @click="$emit('update:show', false)"
@@ -154,11 +160,13 @@
 <script>
 import { quillEditor } from 'vue-quill-editor'
 import 'quill/dist/quill.snow.css'
+import NewsPreviewPanel from './NewsPreviewPanel.vue'
 
 export default {
     name: 'NewsEditModal',
     components: {
-        quillEditor
+        quillEditor,
+        NewsPreviewPanel
     },
     props: {
         show: { type: Boolean, default: false },
@@ -167,6 +175,7 @@ export default {
     },
     data() {
         return {
+            previewing: false,
             imagePreviews: [],
             existingImages: [],
             coverIndex: 0,
@@ -192,7 +201,7 @@ export default {
     },
     watch: {
         show(value) {
-            if (value) this.resetForm(this.news);
+            if (value) { this.resetForm(this.news); this.previewing = false; }
         },
         news: {
             immediate: true,

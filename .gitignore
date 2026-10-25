@@ -28,6 +28,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+/.tmp-*
 
 # Large local-only artifacts
 Buddhist_Art_MFU_User_Manual.pdf
@@ -52,13 +53,10 @@ Desktop.ini
 *~
 
 # AI / Workspace Agent Instructions
-.agents/
-!.agents/
-!.agents/skills/
-!.agents/skills/**
-!.agents/rules/
-!.agents/rules/**
-.agents/skills.zip
+# Keep only shared skills and rules; agent run folders (briefs, handoffs, progress) stay local.
+/.agents/*
+!/.agents/skills/
+!/.agents/rules/
 .agents/**/.DS_Store
 screenshots/
 backend/tmp/
@@ -75,3 +73,9 @@ information.md
 log.md
 deploy/
 docker-compose.production.yml
+
+# Generated presentation artifacts (brochures, diagram exports, capture scripts); large binaries, not part of the app
+/docs/brochures/
+/docs/diagrams/
+/docs/BROCHURES.html
+/docs/SYSTEM_DIAGRAMS.html

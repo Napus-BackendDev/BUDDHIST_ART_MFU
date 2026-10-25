@@ -653,15 +653,18 @@ export default {
 .cart-sidebar {
     position: fixed;
     top: 0;
-    right: -400px;
-    width: 400px;
+    right: 0;
+    width: min(400px, 100vw);
+    max-width: 100vw;
     height: 100vh;
+    height: 100dvh;
     z-index: 2050;
-    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cart-sidebar.open {
-    right: 0;
+    transform: translateX(0);
 }
 
 .mobile-nav-overlay {
@@ -675,7 +678,8 @@ export default {
 }
 
 .mobile-menu-content {
-    width: 300px;
+    width: min(300px, calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
 }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }

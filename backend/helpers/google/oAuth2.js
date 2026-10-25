@@ -95,6 +95,21 @@ exports.onQuery = async function (request, response, next) {
             user = await User.findById(user._id).populate('role');
         }
 
+        return exports.issueSession(user, email, response);
+
+    } catch (err) {
+        console.error("Google Auth Error:", err);
+        if (err.response) console.error("Response Data:", err.response.data);
+
+        return response.status(401).json({
+            message: "Google Authentication failed",
+            error: err.message
+        });
+    }
+};
+
+// Shared by Google sign-in and the guarded local QA login (server/qa/qaLogin.routes.js).
+exports.issueSession = function (user, email, response) {
         // 4. Prepare Role Name for JWT and Frontend
         let roleName = 'Customer';
         if (user.role && user.role.title) {
@@ -120,16 +135,6 @@ exports.onQuery = async function (request, response, next) {
         userData.token = systemToken; // Real JWT!
         
         return ResMessage.sendResponse(response, 0, 20000, userData);
-
-    } catch (err) {
-        console.error("Google Auth Error:", err);
-        if (err.response) console.error("Response Data:", err.response.data);
-        
-        return response.status(401).json({ 
-            message: "Google Authentication failed", 
-            error: err.message 
-        });
-    }
 };
 
 exports.onDistance = async function (request, response, next) {

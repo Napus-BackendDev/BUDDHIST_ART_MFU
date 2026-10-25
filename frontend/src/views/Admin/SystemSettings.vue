@@ -356,6 +356,7 @@
       </div>
 
       <template #footer>
+        <MissingFieldsHint class="w-100 mb-2" :labels="missingFields" />
         <CButton color="secondary" variant="outline" class="px-4 font-weight-bold" :disabled="saving" @click="formModal = false">
           {{ locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
         </CButton>
@@ -430,6 +431,8 @@
 <script>
 import Service from '@/service/api.js';
 import HeaderHero from './components/HeaderHero.vue';
+import MissingFieldsHint from '@/components/MissingFieldsHint.vue';
+import { missingLabels } from '@/utils/missingFields';
 
 const localized = value => {
   const list = Array.isArray(value) ? value : [];
@@ -442,7 +445,8 @@ const localized = value => {
 export default {
   name: 'SystemSettings',
   components: {
-    HeaderHero
+    HeaderHero,
+    MissingFieldsHint
   },
   data() { 
     return { 
@@ -473,6 +477,13 @@ export default {
     }; 
   },
   computed: {
+    missingFields() {
+      return missingLabels([
+        ['nameTh', !!this.form.title.th],
+        ['nameEn', !!this.form.title.en],
+        ...(this.formType === 'status' ? [['group', !!this.form.group]] : [])
+      ], this.locale);
+    },
     locale() { return this.$i18n.locale === 'en' ? 'en' : 'th'; },
     selectedGroup() { return this.groups.find(item => item._id === this.selectedGroupId) || null; },
     filteredGroups() { 

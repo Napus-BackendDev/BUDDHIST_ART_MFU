@@ -67,7 +67,7 @@ test('resubmission edits the nested Submission work rather than calling the main
 
 test('failed resubmission leaves the edit form open and reports an error',async()=>{
  const submission=sample();submission.assignments[0].isAssigned=true
- const vm={submission,isParticipant:true,canSubmitAssignment:Detail.methods.canSubmitAssignment,selectedAssignment:null,$store:{dispatch:jest.fn().mockRejectedValue(new Error('Conflict')),commit:jest.fn()},
+ const vm={submission,isParticipant:true,canSubmitAssignment:Detail.methods.canSubmitAssignment,submitFailureMessage:Detail.methods.submitFailureMessage,selectedAssignment:null,$store:{dispatch:jest.fn().mockRejectedValue(new Error('Conflict')),commit:jest.fn()},
    $i18n:{locale:'th'},fetchSubmission:jest.fn(),showEditModal:true,submitting:false}
  const error=jest.spyOn(console,'error').mockImplementation(()=>{})
  await Detail.methods.handleUpdateArtwork.call(vm,{_id:'own-work'})

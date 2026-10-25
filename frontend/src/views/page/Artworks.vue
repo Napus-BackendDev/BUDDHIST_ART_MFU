@@ -1252,12 +1252,31 @@ export default {
 }
 
 .pagination-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 6px;
+    max-width: 100%;
+}
+
+@media (max-width: 575.98px) {
+    .pagination-wrapper {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 1rem;
+        text-align: center;
+    }
+    .pagination-btn {
+        min-width: 44px;
+        height: 44px;
+        padding: 0 6px;
+        font-size: 0.82rem;
+    }
 }
 
 .pagination-btn {
-    min-width: 40px;
-    height: 40px;
+    min-width: 44px;
+    height: 44px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
     background-color: #ffffff;

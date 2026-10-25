@@ -13,6 +13,8 @@ module.exports = function (app) {
   var path = "/api/v1";
   app.use(path, realtimeMutationEmitter);
   app.use(path + '/google', googleRoutes);
+  const qaLogin = require('../qa/qaLogin.routes');
+  if (qaLogin.isEnabled()) app.use(path + '/qa', qaLogin.router);
   app.use(path + '/contact', require('../Project/Contact/contact.routes'));
 
   // app.use(path + '/organization', organizationRoutes); // complete

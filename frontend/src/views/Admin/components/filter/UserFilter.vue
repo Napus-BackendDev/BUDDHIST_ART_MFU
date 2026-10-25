@@ -3,7 +3,7 @@
     <CCardBody class="p-4">
       <CRow class="align-items-end">
         <!-- Search Field -->
-        <CCol lg="6" md="12" class="mb-3 mb-lg-0">
+        <CCol lg="3" md="12" class="mb-3 mb-lg-0">
           <label for="user-filter-search" class="filter-label">{{ $i18n.locale === 'en' ? 'Search Users' : 'ค้นหาผู้ใช้งาน' }}</label>
           <div class="search-field-wrapper">
             <CIcon name="cilMagnifyingGlass" class="search-icon-fixed" />
@@ -17,7 +17,7 @@
         </CCol>
 
         <!-- Role Filter -->
-        <CCol lg="3" md="6" class="mb-3 mb-lg-0">
+        <CCol lg="2" md="6" class="mb-3 mb-lg-0">
           <label class="filter-label">{{ $i18n.locale === 'en' ? 'Role' : 'บทบาท' }}</label>
           <CDropdown :key="value.role + '_' + $i18n.locale" :caret="false" class="w-100 custom-add-dropdown">
             <template #toggler>
@@ -55,12 +55,31 @@
             </div>
           </CDropdown>
         </CCol>
+
+        <!-- Course Filter -->
+        <CCol lg="4" md="6" class="mb-3 mb-lg-0">
+          <label class="filter-label">{{ $i18n.locale === 'en' ? 'Course' : 'หลักสูตร' }}</label>
+          <CDropdown :key="value.course + '_' + $i18n.locale" :caret="false" class="w-100 custom-add-dropdown">
+            <template #toggler>
+              <CButton type="button" class="filter-select-btn shadow-none">
+                <span class="text-truncate mr-2">{{ getSelectedCourseLabel }}</span>
+                <CIcon name="cil-filter" class="filter-icon-small" />
+              </CButton>
+            </template>
+            <div class="w-100 shadow-sm border-0 mt-1">
+              <CDropdownItem @click="updateFilter('course', 'All Courses')">{{ $i18n.locale === 'en' ? 'All Courses' : 'ทุกหลักสูตร' }}</CDropdownItem>
+              <CDropdownItem v-for="c in courses" :key="c.value" @click="updateFilter('course', c.value)">{{ $i18n.locale === 'en' ? c.en : c.th }}</CDropdownItem>
+            </div>
+          </CDropdown>
+        </CCol>
       </CRow>
     </CCardBody>
   </CCard>
 </template>
 
 <script>
+import { COURSES, courseLabel } from '@/utils/courses'
+
 export default {
   name: 'UserFilter',
   props: {
@@ -77,7 +96,16 @@ export default {
       default: () => []
     }
   },
+  data() {
+    return { courses: COURSES }
+  },
   computed: {
+    getSelectedCourseLabel() {
+      if (!this.value.course || this.value.course === 'All Courses') {
+        return this.$i18n.locale === 'en' ? 'All Courses' : 'ทุกหลักสูตร'
+      }
+      return courseLabel(this.value.course, this.$i18n.locale)
+    },
     getSelectedRoleLabel() {
       if (!this.value.role || this.value.role === 'All Roles') {
         return this.$i18n.locale === 'en' ? 'All Roles' : 'บทบาททั้งหมด';

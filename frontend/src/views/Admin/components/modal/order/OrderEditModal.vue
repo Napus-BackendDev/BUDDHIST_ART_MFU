@@ -246,6 +246,16 @@
                             <div v-else class="text-muted p-3">{{ $i18n.locale === 'en' ? 'No payment slip uploaded' : 'ยังไม่มีหลักฐานการโอนเงิน' }}</div>
                             <input v-if="canUploadImage" type="file" ref="fileInput" class="d-none" @change="handleImageUpload" accept="image/*">
                         </div>
+                        <div v-if="canReplaceImage" class="mt-2">
+                            <input type="file" ref="replaceInput" class="d-none" accept="image/*" @change="handleReplaceSelect">
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="$refs.replaceInput.click()">
+                                <CIcon name="cil-reload" size="sm" class="mr-1" />
+                                {{ $i18n.locale === 'en' ? 'Replace slip' : 'เปลี่ยนสลิป' }}
+                            </button>
+                            <p v-if="replaceFile" role="status" class="small text-muted mt-1 mb-0">
+                                {{ $i18n.locale === 'en' ? 'New slip selected: ' : 'เลือกสลิปใหม่แล้ว: ' }}{{ replaceFile.name }} {{ $i18n.locale === 'en' ? '(saved with Save Changes; the old slip is kept in history)' : '(บันทึกเมื่อกด Save Changes ระบบเก็บสลิปเดิมไว้ในประวัติ)' }}
+                            </p>
+                        </div>
                     </div>
 
                     <!-- Fulfillment / Tracking Information -->
@@ -345,6 +355,7 @@ export default {
             uploadError: '',
             imagePreview: null,
             imageFile: null,
+            replaceFile: null,
             carrierOptions: [
                 { value: 'Thailand Post', label: 'Thailand Post (ไปรษณีย์ไทย)' },
                 { value: 'Flash Express', label: 'Flash Express' },
@@ -404,6 +415,12 @@ export default {
             const createdAt = new Date(order.createdAt).getTime();
             return reserved && Number.isFinite(createdAt) && createdAt + 24 * 60 * 60 * 1000 > Date.now();
         },
+        // An administrator may swap the slip while the payment is still under review (Pending).
+        canReplaceImage() {
+            const order = this.order;
+            if (!order?._id || !order.image) return false;
+            return String(order.status?.code || '').toUpperCase() === 'PENDING' || this.getName('en', order.status) === 'Pending';
+        },
         allArtworks() {
             return this.$store.getters['artwork/artworks'] || [];
         },
@@ -434,6 +451,7 @@ export default {
                 this.uploadError = '';
                 this.imagePreview = this.order.image || null;
                 this.imageFile = null;
+                this.replaceFile = null;
                 this.artworkSearchQuery = '';
                 this.searchResults = [];
             }
@@ -491,6 +509,19 @@ export default {
                 reader.readAsDataURL(file);
             }
         },
+        handleReplaceSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            this.uploadError = orderImageError(file, this.$i18n.locale);
+            if (this.uploadError) {
+                event.target.value = '';
+                return;
+            }
+            this.replaceFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => { this.imagePreview = e.target.result; };
+            reader.readAsDataURL(file);
+        },
         removeImage() {
             this.imagePreview = null;
             this.imageFile = null;
@@ -509,7 +540,8 @@ export default {
                 carrier: this.form.carrier,
                 trackingId: this.form.trackingId,
                 deliveryDate: this.form.deliveryDate,
-                _image: this.canUploadImage ? this.imageFile : null
+                _image: this.canUploadImage ? this.imageFile : null,
+                _replaceImage: this.canReplaceImage ? this.replaceFile : null
             };
             
             this.$emit('save', {

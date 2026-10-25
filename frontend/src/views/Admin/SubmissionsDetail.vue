@@ -182,9 +182,19 @@ export default {
         },
         handleDelete(item) {
             const title = this.getName(this.$i18n.locale, item);
-            const confirmMsg = this.$i18n.locale === 'en'
+            const submitted = (item.artworks || []).length;
+            const warning = submitted
+                ? (this.$i18n.locale === 'en'
+                    ? `
+
+This assignment has ${submitted} submitted artwork(s). They will be removed from this submission.`
+                    : `
+
+งานมอบหมายนี้มีผลงานที่ส่งแล้ว ${submitted} ชิ้น ผลงานเหล่านี้จะถูกนำออกจากรอบส่งงานนี้`)
+                : '';
+            const confirmMsg = (this.$i18n.locale === 'en'
                 ? `Are you sure you want to delete assignment "${title}"?`
-                : `คุณแน่ใจหรือว่าต้องการลบงานมอบหมาย "${title}"?`;
+                : `คุณแน่ใจหรือว่าต้องการลบงานมอบหมาย "${title}"?`) + warning;
 
             if (confirm(confirmMsg)) {
                 const updatedSubmission = { ...this.submission };

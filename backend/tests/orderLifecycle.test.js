@@ -133,6 +133,16 @@ describe('Order Lifecycle', () => {
     } finally { exists.mockRestore(); }
   });
 
+  it('regenerating a failed invoice clears the failed status', async () => {
+    const art = await makeArtwork(500);
+    const order = await Order.create({ artwork: [art._id], status: reservedStatus._id, invoiceStatus: 'Failed', invoiceError: 'PDF_FAILED',
+      amounts: { subtotal: 500, shipping: 0, total: 500, items: [{ artwork: art._id, price: 500 }] } });
+    await request(app).get(`/api/v1/order/invoice/${order._id}`).set('Authorization', `Bearer ${token}`).expect(200);
+    const saved = await Order.findById(order._id).lean();
+    expect(saved.invoiceStatus).toBe('Completed');
+    expect(saved.invoiceError).toBe('');
+  });
+
   it('sends the payment-slip confirmation after the Reserved-to-Pending transition using the saved total', async () => {
     const art = await makeArtwork(1000);
     const order = await Order.create({ artwork: [art._id], status: reservedStatus._id,
@@ -145,8 +155,25 @@ describe('Order Lifecycle', () => {
         .field('_id', String(order._id)).attach('image', Buffer.from('QA test image'), 'qa.png').expect(200);
     } finally { imageUrl.mockRestore(); }
     expect(String((await Order.findById(order._id)).status)).toBe(String(pendingStatus._id));
+    await orderService.waitForPostCreateTasks();
     expect(sendMail).toHaveBeenCalledWith('buyer@example.test', expect.any(String), '', expect.stringContaining('1,000'), expect.any(Array));
     expect(sendMail.mock.calls[0][4]).toEqual(expect.arrayContaining([expect.objectContaining({ filename: expect.stringMatching(/^Payment_Slip_/), path: expect.any(String) })]));
+  });
+
+  it('attaches the invoice to the slip email when the slip is uploaded right after order creation', async () => {
+    const art = await makeArtwork(1000);
+    const created = await request(app).post('/api/v1/order').set('Authorization', `Bearer ${token}`)
+      .send({ artwork: [art._id], contact: { name: 'QA Proxy', email: 'proxy@example.test' } }).expect(200);
+    sendMail.mockClear();
+    const imageUrl = jest.spyOn(require('../server/Project/Order/controller/order'), 'getImageUrl')
+      .mockReturnValue('https://mfudrive.mfu.ac.th/public.php/dav/files/qa-test/qa-slip.png');
+    try {
+      await request(app).put('/api/v1/order/upload').set('Authorization', `Bearer ${token}`)
+        .field('_id', created.body.data._id).attach('image', Buffer.from('QA test image'), 'qa.png').expect(200);
+    } finally { imageUrl.mockRestore(); }
+    await orderService.waitForPostCreateTasks();
+    const slipMail = sendMail.mock.calls.find(call => call[1].includes('หลักฐานการชำระเงิน'));
+    expect(slipMail[4]).toEqual(expect.arrayContaining([expect.objectContaining({ filename: expect.stringMatching(/\.pdf$/) })]));
   });
 
   it('rejects empty and duplicate artwork carts before any reservation', async () => {
@@ -236,6 +263,30 @@ describe('Order Lifecycle', () => {
     expect(res1.body.data.orderNumber).toBe('ORD-65-06-016-01');
     expect(res2.body.data.orderNumber).toBe('ORD-65-06-016-02');
     expect(res1.body.data.orderNumber).toMatch(/^ORD-\d{2}-\d{2}-\d{3}-\d{2}$/);
+  });
+
+  it('reservation email names every artwork in a multi-item order', async () => {
+    const a = await makeArtwork(1000), b = await makeArtwork(2000);
+    await Artwork.updateOne({ _id: b._id }, { title: [{ key: 'en', value: 'Second' }, { key: 'th', value: 'ชิ้นที่สอง' }] });
+    sendMail.mockClear();
+    const res = await request(app).post('/api/v1/order').set('Authorization', `Bearer ${token}`)
+      .send({ artwork: [a._id, b._id], contact: { name: 'Multi', email: 'multi@example.com' } });
+    expect(res.status).toBe(200);
+    for (let i = 0; i < 40 && !sendMail.mock.calls.some(call => call[0] === 'multi@example.com'); i++) await new Promise(r => setTimeout(r, 50));
+    const buyerMail = sendMail.mock.calls.find(call => call[0] === 'multi@example.com');
+    expect(buyerMail[3]).toContain('ชิ้นที่สอง');
+    expect(buyerMail[3]).toContain('3,000');
+  });
+
+  it('rejects a malformed contact telephone but accepts a real or empty one', async () => {
+    const art = await makeArtwork();
+    const bad = await request(app).post('/api/v1/order').set('Authorization', `Bearer ${token}`)
+      .send({ artwork: [art._id], contact: { name: 'A', email: 'a@example.com', telephone: '12ab' } });
+    expect(bad.status).toBe(400);
+    expect(await Order.countDocuments({ 'contact.telephone': '12ab' })).toBe(0);
+    const ok = await request(app).post('/api/v1/order').set('Authorization', `Bearer ${token}`)
+      .send({ artwork: [art._id], contact: { name: 'A', email: 'a@example.com', telephone: ' 081-234-5678 ' } });
+    expect(ok.body.data.contact.telephone).toBe('081-234-5678');
   });
 
   // ---- 3a. Approving an order -> artwork Sold Out + order Approved ---------

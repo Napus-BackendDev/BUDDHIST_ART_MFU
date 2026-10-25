@@ -93,6 +93,10 @@ const setSaleStatusForMode = async (artwork, mode, statuses = {}) => {
     ).lean();
 };
 
+// Public site address for links in emails: first CLIENT_URL entry, else the production site.
+const appBaseUrl = () => (String(process.env.CLIENT_URL || '').split(',')[0].trim() || 'https://buddhistart.mfu.ac.th').replace(/\/+$/, '');
+const portalLink = () => `${appBaseUrl()}/artist/profile`;
+
 const sendDecisionMail = async (artwork, decision) => {
     const email = artwork?.artist?.contact?.studentEmail || artwork?.artist?.contact?.personalEmail;
     if (!email) return;
@@ -102,7 +106,7 @@ const sendDecisionMail = async (artwork, decision) => {
             || artwork.title?.find(item => item.key === 'en')?.value
             || 'Artwork';
         const choice = decision === DECISIONS.CONTINUE ? 'วางขายต่อแบบปกติ / Continue regular sale' : 'แสดงเฉย ๆ / Display only';
-        const html = `<p>บันทึกความประสงค์สำหรับผลงาน <strong>${title}</strong> แล้ว</p><p>ผลการเลือก: <strong>${choice}</strong></p>`;
+        const html = `<p>บันทึกความประสงค์สำหรับผลงาน <strong>${title}</strong> แล้ว</p><p>ผลการเลือก: <strong>${choice}</strong></p><p><a href="${portalLink()}">${portalLink()}</a></p>`;
         await sendMail(email, 'ยืนยันการขายผลงานครบสิทธิ์ 1 ปี - พุทธศิลปกรรม มฟล.', '', html);
     } catch (error) {
         console.error('[PostTermSale] Decision email failed:', error.message);
@@ -120,7 +124,8 @@ const sendReminderMail = async (artwork, kind) => {
         const suffix = kind === 'expired'
             ? 'ครบกำหนดแล้ว ระบบหยุดรับคำสั่งซื้อใหม่จนกว่าจะได้รับความประสงค์'
             : `สิทธิ์ขายจะครบกำหนดใน ${kind} วัน กรุณาเลือกขายต่อแบบปกติหรือแสดงเฉย ๆ`;
-        await sendMail(email, 'แจ้งเตือนการขายผลงานครบสิทธิ์ 1 ปี - พุทธศิลปกรรม มฟล.', '', `<p>${title}</p><p>${suffix}</p>`);
+        const link = portalLink();
+        await sendMail(email, 'แจ้งเตือนการขายผลงานครบสิทธิ์ 1 ปี - พุทธศิลปกรรม มฟล.', '', `<p>${title}</p><p>${suffix}</p><p><a href="${link}">เข้าสู่ระบบเพื่อเลือกความประสงค์ / Sign in to choose: ${link}</a></p>`);
     } catch (error) {
         console.error('[PostTermSale] Reminder email failed:', error.message);
     }
@@ -234,6 +239,7 @@ const applyDecision = async ({ artworkId, decision, request }) => {
 
 const sendJson = async (response, code, data) => ResMessage.sendResponse(response, 0, code, data);
 
+exports.appBaseUrl = appBaseUrl;
 exports.constants = { MODES, DECISIONS, addCalendarYear, buildPostTermSale, getEffectiveMode, isPostTermPurchasable, isAdminUser, requestUserId };
 exports.getEffectiveMode = getEffectiveMode;
 exports.isPostTermPurchasable = isPostTermPurchasable;

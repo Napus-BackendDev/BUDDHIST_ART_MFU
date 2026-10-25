@@ -7,6 +7,7 @@ const { isAdmin, isSelf } = require('../../../../middleware/userAccessMiddleware
 const ResMessage = require("../../Settings/service/message");
 const {
     normalizeStudentId,
+    normalizeCourse,
     isArtistRole,
     normalizeArtistContact
 } = require('./officialEmail');
@@ -94,6 +95,7 @@ exports.onCreate = async function (request, response) {
         }));
         const data = input.map(item => {
             const value = { ...item, studentId: normalizeStudentId(item && item.studentId) };
+            if (value.course !== undefined) value.course = normalizeCourse(value.course);
             delete value.password;
             return value;
         });
@@ -151,6 +153,7 @@ exports.onCreate = async function (request, response) {
                         update.contact = normalizeArtistContact(studentId, item.contact, existing.contact);
                     }
                     if (item.image) update.image = item.image;
+                    if (item.course) update.course = item.course;
                     // Do not overwrite a user's existing password or role on repeat import.
                     if (!existing.role && item.role) update.role = item.role;
                     const updated = await UserModel.findByIdAndUpdate(
@@ -206,7 +209,16 @@ exports.onUpdate = async function (request, response) {
             }
             data.contact = { ...data.contact, personalEmail: email.trim() };
         }
+        if (data.contact && Object.prototype.hasOwnProperty.call(data.contact, 'telephone')) {
+            const phone = data.contact.telephone === null ? '' : data.contact.telephone;
+            if (typeof phone !== 'string' || (phone.trim() && (!/^\+?[\d\s()-]+$/.test(phone.trim()) || !/^\d{9,15}$/.test(phone.replace(/\D/g, ''))))) {
+                return response.status(400).json({ code: '40000', message: 'Invalid telephone number.' });
+            }
+            data.contact = { ...data.contact, telephone: phone.trim() };
+        }
         delete data.password;
+        if (!isAdmin(request)) delete data.course;
+        else if (data.course !== undefined) data.course = normalizeCourse(data.course);
         if (data.studentId !== undefined) data.studentId = normalizeStudentId(data.studentId);
         const existing = await UserModel.findById(query._id).populate('role').lean();
         if (data.contact && existing) data.contact = { ...existing.contact, ...data.contact };

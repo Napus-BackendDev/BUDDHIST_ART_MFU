@@ -60,7 +60,7 @@
                                 placeholder="วัน/เดือน/ปี"
                                 lang="en-GB"
                                 v-model="form.date" 
-                                @focus="$event.target.type = 'date'; if ($event.target.showPicker) $event.target.showPicker();"
+                                @focus="$event.target.type = 'date'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                                 @blur="!$event.target.value && ($event.target.type = 'text')"
                                 class="custom-input w-100" 
                             />

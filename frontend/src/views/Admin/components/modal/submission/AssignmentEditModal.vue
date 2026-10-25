@@ -40,7 +40,7 @@
             </CRow>
 
             <!-- Dates Row -->
-            <CRow>
+            <CRow class="mb-4">
                 <CCol md="6">
                     <div class="form-group-custom">
                         <label for="assignment-edit-startDateTime" class="form-label">{{ $i18n.locale === 'en' ? 'Start Date & Time' : 'วันและเวลาเริ่มต้น' }}</label>
@@ -49,7 +49,7 @@
                             :type="form.startDateTime ? 'datetime-local' : 'text'"
                             placeholder="วัน/เดือน/ปี --:--"
                             lang="en-GB"
-                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                             @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
@@ -63,13 +63,108 @@
                             :type="form.endDateTime ? 'datetime-local' : 'text'"
                             placeholder="วัน/เดือน/ปี --:--"
                             lang="en-GB"
-                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker) $event.target.showPicker();"
+                            @focus="$event.target.type = 'datetime-local'; if ($event.target.showPicker && navigator.userActivation && navigator.userActivation.isActive) $event.target.showPicker();"
                             @blur="!$event.target.value && ($event.target.type = 'text')"
                             class="custom-input mb-0"
                         />
                     </div>
                 </CCol>
             </CRow>
+
+            <!-- Enrollment Metric -->
+            <CRow class="mb-4">
+                <CCol md="12">
+                    <div class="form-group-custom mb-3">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Target Students' : 'กลุ่มเป้าหมายนักศึกษา' }}</label>
+                        <div class="custom-input-readonly d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <span class="font-weight-bold text-orange h5 mb-0 mr-2">{{ selectedStudents.length }}</span>
+                                <span class="text-muted small uppercase font-weight-bold">{{ $i18n.locale === 'en' ? 'Students targeted for this task' : 'จำนวนนักศึกษาสำหรับส่งงานนี้' }}</span>
+                            </div>
+                            
+                            <!-- Selected Avatars Preview -->
+                            <div v-if="selectedStudents.length > 0" class="selected-avatars-preview d-flex align-items-center">
+                                <div class="avatar-stack mr-2">
+                                    <div 
+                                        v-for="(student, idx) in selectedStudentDetails.slice(0, 5)" 
+                                        :key="student._id"
+                                        class="avatar-preview-sm"
+                                        :style="{ backgroundColor: getAvatarColor(getStudentName(student)), zIndex: 10 - idx }"
+                                        v-c-tooltip="getStudentName(student)"
+                                    >
+                                        {{ getInitials(getStudentName(student)) }}
+                                    </div>
+                                    <div v-if="selectedStudents.length > 5" class="avatar-more-sm">
+                                        +{{ selectedStudents.length - 5 }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Selection Box (Wrapping) -->
+                    <div v-if="selectedStudents.length > 0" class="selection-summary-box mb-4 animate-in">
+                        <div class="d-flex flex-wrap py-1 px-1">
+                            <div 
+                                v-for="student in selectedStudentDetails" 
+                                :key="'sel-' + student._id"
+                                class="selected-tag mr-2 mb-2 d-flex align-items-center"
+                            >
+                                <div class="avatar-xs mr-2" :style="{ backgroundColor: getAvatarColor(getStudentName(student)) }">
+                                    {{ getInitials(getStudentName(student)) }}
+                                </div>
+                                <span class="tag-name mr-2 text-truncate">{{ getStudentName(student) }}</span>
+                                <button type="button" :aria-label="($i18n.locale === 'en' ? 'Remove learner: ' : 'นำผู้เรียนออก: ') + getStudentName(student)" class="btn-remove-tag" @click="toggleStudent(student)">
+                                    <CIcon name="cil-x" size="sm" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </CCol>
+            </CRow>
+
+            <!-- Student Selection Section -->
+            <div class="student-selection-wrapper mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <label class="form-label mb-0">{{ $i18n.locale === 'en' ? 'Assign to Students' : 'มอบหมายให้นักศึกษา' }}</label>
+                    <button type="button" class="select-all-toggle" @click="toggleSelectAll">
+                        <span class="text-orange small font-weight-bold pointer">{{ allSelected ? ($i18n.locale === 'en' ? 'Deselect All' : 'ยกเลิกเลือกทั้งหมด') : ($i18n.locale === 'en' ? 'Select All' : 'เลือกทั้งหมด') }}</span>
+                    </button>
+                </div>
+                
+                <div class="search-box-orange mb-3">
+                    <CIcon name="cil-search" class="search-icon-orange" />
+                    <input 
+                        type="text" 
+                        v-model="studentSearch" :aria-label="$i18n.locale === 'en' ? 'Search learners' : 'ค้นหาผู้เรียน'"
+                        :placeholder="$i18n.locale === 'en' ? 'Search students by name or ID...' : 'ค้นหานักศึกษาจากชื่อหรือรหัส...'"
+                        class="search-input-orange"
+                    />
+                </div>
+
+                <div class="student-list-container">
+                    <button type="button" :aria-pressed="isSelected(student._id) ? 'true' : 'false'"
+                        v-for="student in filteredStudents" 
+                        :key="student._id"
+                        class="student-item"
+                        :class="{ 'selected': isSelected(student._id) }"
+                        @click="toggleStudent(student)"
+                    >
+                        <div class="d-flex align-items-center">
+                            <div class="check-box-custom mr-3" :class="{ 'checked': isSelected(student._id) }">
+                                <CIcon v-if="isSelected(student._id)" name="cil-check" size="sm" />
+                            </div>
+                            <div class="avatar-sm mr-3" :style="{ backgroundColor: getAvatarColor(getStudentName(student)) }">
+                                {{ getInitials(getStudentName(student)) }}
+                            </div>
+                            <div>
+                                <div class="student-name-text">{{ getStudentName(student) }}</div>
+                                <div class="student-id-text">ID: {{ student.studentId || student.username || student._id }}</div>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <template #footer>
@@ -193,7 +288,7 @@ export default {
                 description: data.description || ''
             };
             // Map artist from backend to selectedStudents used in local form
-            this.selectedStudents = data.artist ? [...data.artist] : 
+            this.selectedStudents = data.artist ? data.artist.map(s => (typeof s === 'object' && s !== null && s._id ? s._id : s)) : 
                                     (data.selectedStudents ? [...data.selectedStudents] : 
                                     (this.enrolledStudents ? this.enrolledStudents.map(s => s._id) : []));
         },

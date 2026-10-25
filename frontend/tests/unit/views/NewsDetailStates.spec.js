@@ -72,3 +72,11 @@ test('invalid cached preview data leaves a recoverable error instead of a perman
     expect(w.find('[role="alert"]').exists()).toBe(true)
   } finally {w.destroy(); localStorage.removeItem('news_preview_data')}
 })
+
+test('shows the incremented view count returned by the view request', async () => {
+  const dispatch = jest.fn(type => type === 'news/get' ? Promise.resolve([{...article, views: 4}]) : Promise.resolve({data: {data: {...article, views: 5}}}))
+  const w = mountPage(dispatch)
+  await flush(); await flush()
+  expect(w.text()).toContain('5 Views')
+  w.destroy()
+})

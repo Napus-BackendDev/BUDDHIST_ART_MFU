@@ -61,6 +61,7 @@
                             <CIcon :name="getStatusBadge(getStatusNameEn(item.status)).icon" size="sm" class="status-icon" />
                             {{ getStatusName(item.status) }}
                         </div>
+                        <div v-if="item.course" class="small text-muted font-weight-bold mt-1 course-tag">{{ courseText(item.course) }}</div>
                     </td>
                 </template>
                 <template #role="{ item }">
@@ -121,6 +122,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import { normalizeCourse, courseLabel } from '@/utils/courses';
 
 export default {
     name: 'UsersTable',
@@ -131,7 +133,8 @@ export default {
             default: () => ({
                 search: '',
                 role: 'All Roles',
-                status: 'All Status'
+                status: 'All Status',
+                course: 'All Courses'
             })
         }
     },
@@ -198,12 +201,18 @@ export default {
                     (selectedStatus === 'newstudent' && (userStatusNameEn.toLowerCase().includes('new') || userStatusCode.toLowerCase().includes('new'))) ||
                     (selectedStatus === 'oldstudent' && (userStatusNameEn.toLowerCase().includes('old') || userStatusCode.toLowerCase().includes('old')));
 
-                return searchMatch && roleMatch && statusMatch;
+                const courseMatch = !this.filters.course || this.filters.course === 'All Courses' ||
+                    normalizeCourse(user.course) === this.filters.course;
+
+                return searchMatch && roleMatch && statusMatch && courseMatch;
             });
             return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         }
     },
     methods: {
+        courseText(course) {
+            return courseLabel(course, this.$i18n.locale);
+        },
         handleImageError(id) {
             this.$set(this.failedImages, id, true);
         },

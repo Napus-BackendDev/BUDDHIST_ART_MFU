@@ -431,6 +431,7 @@
         </div>
 
         <template #footer>
+            <MissingFieldsHint class="w-100 mb-2" :labels="missingFields" />
             <div class="wizard-footer w-100 d-flex justify-content-between align-items-center py-2">
                 <CButton 
                     variant="ghost" 
@@ -470,11 +471,12 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import MissingFieldsHint from '@/components/MissingFieldsHint.vue';
+import { missingLabels, dimensionsOk, priceOk } from '@/utils/missingFields';
 
 export default {
     name: 'ArtworkCreateModal',
-    components: {
-    },
+    components: { MissingFieldsHint },
     props: {
         show: {
             type: Boolean,
@@ -539,6 +541,24 @@ export default {
                    this.form.artist !== '' &&
                    this.form.category !== '' &&
                    dimensionsValid;
+        },
+        missingFields() {
+            const stepOne = [
+                ['titleTh', this.form.title.th.trim() !== ''],
+                ['artist', this.form.artist !== ''],
+                ['category', this.form.category !== ''],
+                ['size', dimensionsOk(this.form, this.is3D)]
+            ];
+            if (this.currentStep === 1) return missingLabels(stepOne, this.$i18n.locale);
+            return missingLabels([
+                ['imageBusy', !this.isProcessingImage],
+                ['title', this.form.title.en.trim() !== '' || this.form.title.th.trim() !== ''],
+                ['artist', this.form.artist !== ''],
+                ['size', dimensionsOk(this.form, this.is3D)],
+                ['price', priceOk(this.form.price)],
+                ['image', this.imagePreview !== null],
+                ['storageDetail', !this.isUniversityStorageSelected || this.form.storageDetail.trim() !== '']
+            ], this.$i18n.locale);
         },
         isFormValid() {
             const dimensionsValid = [this.form.width, this.form.height, ...(this.is3D ? [this.form.depth] : [])]

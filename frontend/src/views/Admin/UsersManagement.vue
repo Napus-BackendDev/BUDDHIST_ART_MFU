@@ -48,6 +48,7 @@
             :roles="roles"
             :statuses="studentStatuses"
             :saving="saving"
+            :error="createError"
             @save="handleSaveUser"
         />
 
@@ -83,7 +84,8 @@ import UserViewModal from './components/modal/user/UserViewModal.vue';
 import UserEditModal from './components/modal/user/UserEditModal.vue';
 import { normalizeArtistContact, normalizeStudentId, isArtistRole } from '@/utils/officialEmail';
 import { dedupeRoles, dedupeStatuses } from '@/utils/roles';
-import { learnerImportHeaders, learnerImportRow, resolveLearnerImportStatus } from '@/utils/learnerImport';
+import { learnerImportHeaders, learnerImportRow, resolveLearnerImportStatus, courseByNameFromSheets, courseForLearner } from '@/utils/learnerImport';
+import { courseLabel } from '@/utils/courses';
 import { retryAtFromHeaders } from '@/utils/rateLimit';
 
 export default {
@@ -106,6 +108,7 @@ export default {
             showEditModal: false,
             selectedUser: null,
             saving: false,
+            createError: '',
             usersLoading: false,
             usersLoadError: '',
             usersRetryAt: 0,
@@ -114,7 +117,8 @@ export default {
             filters: {
                 search: '',
                 role: 'All Roles',
-                status: 'All Status'
+                status: 'All Status',
+                course: 'All Courses'
             }
         }
     },
@@ -254,6 +258,7 @@ export default {
         },
         handleManualChoice() {
             this.showChoiceModal = false;
+            this.createError = '';
             this.showManualImportModal = true;
         },
         handleFileUpload(file) {
@@ -266,7 +271,17 @@ export default {
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' }).map(learnerImportRow);
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' }).map((row, index) => {
+                        try {
+                            return learnerImportRow(row);
+                        } catch (rowError) {
+                            // Tell the admin which spreadsheet row to fix (row 1 is the header).
+                            throw Error(`${this.$i18n.locale === 'en' ? 'Row' : 'แถวที่'} ${index + 2}: ${rowError.message}`);
+                        }
+                    });
+                    // The course (หลักสูตร) may live on another sheet of the same workbook; match by learner name.
+                    const courseLookup = courseByNameFromSheets(workbook.SheetNames.slice(1)
+                        .map(name => XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: '' })));
 
                     if (jsonData.length === 0) {
                         alert(this.$i18n.locale === 'en' ? "The file is empty or invalid." : "ไฟล์ว่างเปล่าหรือไม่ถูกต้อง");
@@ -302,7 +317,8 @@ export default {
 
                         // Resolve Status from file if provided, else use default active status
                         let statusId = activeStatus ? activeStatus._id : null;
-                        if (row['Status']) {
+                        // Only learners (Artist role) carry a learner status; accounts exported as 'Active' are not learners.
+                        if (row['Status'] && isArtistRole(roleNameEn)) {
                             const foundStatus = resolveLearnerImportStatus(row['Status'], this.rawStatuses || []);
                             if (!foundStatus) throw Error(`ไม่พบสถานะผู้เรียน: ${row['Status']}`);
                             statusId = foundStatus._id;
@@ -332,6 +348,7 @@ export default {
                             ],
                             contact,
                             ...(row.Image ? { image: row.Image } : {}),
+                            ...(row.Course || courseForLearner(courseLookup, row['UsernameThai']) ? { course: row.Course || courseForLearner(courseLookup, row['UsernameThai']) } : {}),
                             role: roleId,
                             status: statusId
                         };
@@ -348,7 +365,20 @@ export default {
                         ? `Detected ${mappedData.length} valid users. Proceed with bulk import?`
                         : `ตรวจพบผู้ใช้งานที่ถูกต้อง ${mappedData.length} รายการ (ผู้เรียนเก่า ${mappedData.filter(u => u.status === resolveLearnerImportStatus('OldStudent', this.rawStatuses || [])?._id).length} / ผู้เรียนใหม่ ${mappedData.filter(u => u.status === resolveLearnerImportStatus('NewStudent', this.rawStatuses || [])?._id).length}) ข้าม ${jsonData.length - mappedData.length} แถวที่ไม่มีรหัสหรือข้อมูลจำเป็น ไม่บันทึกบัตรประชาชน/Passport ต้องการนำเข้าหรือไม่?`;
 
-                    if (confirm(confirmMsg)) {
+                    // Re-importing a Student ID updates that user (name, contact, status): say so before saving.
+                    const knownIds = new Set((this.$store.getters['user/user'] || []).map(u => String(u.studentId || '')));
+                    const updating = mappedData.filter(u => knownIds.has(String(u.studentId))).length;
+                    const updateNote = updating
+                        ? (this.$i18n.locale === 'en'
+                            ? `
+
+${updating} of them already exist and will be UPDATED (name, contact and status are overwritten).`
+                            : `
+
+ในจำนวนนี้ ${updating} รายการมีอยู่ในระบบแล้ว และจะถูกอัปเดตทับ (ชื่อ ข้อมูลติดต่อ และสถานะ)`)
+                        : '';
+
+                    if (confirm(confirmMsg + updateNote)) {
                         this.$store.dispatch('user/create', mappedData)
                             .then(() => {
                                 alert(this.$i18n.locale === 'en' ? "Bulk import completed successfully!" : "นำเข้าข้อมูลผู้ใช้งานจำนวนมากเสร็จเรียบร้อยแล้ว!");
@@ -384,6 +414,7 @@ export default {
         handleSaveUser(userData) {
             if (this.saving) return;
             this.saving = true;
+            this.createError = '';
             this.$store.dispatch('user/create', userData)
                 .then(() => {
                     this.fetchUsers();
@@ -392,7 +423,11 @@ export default {
                 })
                 .catch(err => {
                     console.error('Create user error:', err);
-                    alert(this.$i18n.locale === 'en' ? "Failed to create user." : "ไม่สามารถสร้างผู้ใช้งานได้");
+                    // Keep the form open with its draft and say why, instead of a generic alert.
+                    const duplicate = [404, 409].includes(err && err.response && err.response.status);
+                    this.createError = this.$i18n.locale === 'en'
+                        ? (duplicate ? 'This student ID or email already exists. Change it and try again.' : 'Failed to create user. Please try again.')
+                        : (duplicate ? 'รหัสนักศึกษาหรืออีเมลนี้มีอยู่แล้ว กรุณาแก้ไขแล้วลองใหม่' : 'ไม่สามารถสร้างผู้ใช้งานได้ กรุณาลองใหม่');
                 })
                 .finally(() => {
                     this.saving = false;
@@ -424,6 +459,7 @@ export default {
                     'Telephone': (user.contact && user.contact.telephone) || '-',
                     'Role': this.getRoleName(user.role),
                     'Status': this.getStatusName(user.status),
+                    'Course': courseLabel(user.course, this.$i18n.locale) || '-',
                     'Profile Image': user.image || '-'
                 };
             });
@@ -442,6 +478,7 @@ export default {
                 {wch: 15}, // Telephone
                 {wch: 15}, // Role
                 {wch: 15}, // Status
+                {wch: 22}, // Course
                 {wch: 50}  // Profile Image (Longer for URL)
             ];
             worksheet['!cols'] = wscols;

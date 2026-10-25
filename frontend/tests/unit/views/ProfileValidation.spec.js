@@ -14,3 +14,19 @@ describe.each([['buyer', Buyer], ['artist', Artist]])('%s profile email', (name,
     expect(vm.$emit).toHaveBeenCalledWith('save', expect.any(Object))
   })
 })
+
+describe.each([['buyer', Buyer], ['artist', Artist]])('%s profile telephone', (name, component) => {
+  const run = telephone => {
+    const vm = { localForm: { personalEmail: '', telephone }, selectedFile: null, $i18n: { locale: 'en' }, $emit: jest.fn(), validationError: '' }
+    component.methods.handleSave.call(vm)
+    return vm
+  }
+  test.each(['abc', '12ab', '123', '1'.repeat(16)])('blocks malformed telephone %s', telephone => {
+    const vm = run(telephone)
+    expect(vm.$emit).not.toHaveBeenCalled()
+    expect(vm.validationError).toMatch(/phone/i)
+  })
+  test.each(['', '0812345678', '081-234-5678', '+66 81 234 5678'])('accepts telephone %p', telephone => {
+    expect(run(telephone).$emit).toHaveBeenCalled()
+  })
+})
