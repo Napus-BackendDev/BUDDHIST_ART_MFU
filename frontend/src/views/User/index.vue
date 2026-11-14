@@ -749,4 +749,24 @@ export default {
         opacity: 1;
     }
 }
+@media (max-width: 767.98px) {
+    .premium-hover:hover {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .contact-info-item {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .btn-premium,
+    .btn-outline-dark,
+    .btn-outline-primary {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
 </style>

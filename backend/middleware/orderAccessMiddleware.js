@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 const Order = require('../server/Project/Order/models/order.model');
 const Status = require('../server/Project/Settings/models/status.model');
 const { STATUS_CODES, hasCode } = require('../server/Project/Settings/statusCodes');
-const { isAdmin } = require('./userAccessMiddleware');
+const { canReadTab, canEditTab } = require('./userAccessMiddleware');
+const canReadOrders = req => canReadTab(req, 'orders') || canReadTab(req, 'overview') || canReadTab(req, 'analytics');
+const canEditOrders = req => canEditTab(req, 'orders');
 
 const identity = req => req.user && req.user.userId;
 const fail = (status, message) => Object.assign(new Error(message), { status });
@@ -14,22 +16,22 @@ async function findOwnedOrder(req, id) {
     if (!mongoose.isValidObjectId(id)) throw fail(400, 'A valid order ID is required.');
     const order = await Order.findById(id).populate('status').lean();
     if (!order) throw fail(404, 'Order not found.');
-    if (!isAdmin(req) && (!identity(req) || String(order.user) !== String(identity(req)))) {
+    if (!canReadOrders(req) && (!identity(req) || String(order.user) !== String(identity(req)))) {
         throw fail(403, 'Access to this order is not allowed.');
     }
     return order;
 }
 
 const scopeList = (req, res, next) => {
-    if (!isAdmin(req) && !mongoose.isValidObjectId(identity(req))) {
+    if (!canReadOrders(req) && !mongoose.isValidObjectId(identity(req))) {
         return respond(res, fail(403, 'Account identity required.'), next);
     }
-    req.orderQuery = isAdmin(req) ? {} : { user: identity(req) };
+    req.orderQuery = canReadOrders(req) ? {} : { user: identity(req) };
     return next();
 };
 
 const create = (req, res, next) => {
-    if (isAdmin(req)) return next();
+    if (canEditOrders(req)) return next();
     if (!mongoose.isValidObjectId(identity(req)) || (req.body.user && String(req.body.user) !== String(identity(req)))) {
         return respond(res, fail(403, 'An order must belong to the signed-in buyer.'), next);
     }
@@ -46,7 +48,7 @@ const read = async (req, res, next) => {
 };
 
 const update = async (req, res, next) => {
-    if (isAdmin(req)) return next();
+    if (canEditOrders(req)) return next();
     try {
         const order = await findOwnedOrder(req, req.body._id);
         const allowed = new Set(['_id', 'contact', 'address', 'status']);
@@ -76,7 +78,7 @@ const authorizeUpload = async req => {
 
 // Only administrators may swap the slip, and only while the payment is still under review.
 const authorizeReplaceSlip = async req => {
-    if (!isAdmin(req)) throw fail(403, 'Only administrators can replace a payment slip.');
+    if (!canEditOrders(req)) throw fail(403, 'Only administrators can replace a payment slip.');
     const order = await findOwnedOrder(req, req.body._id);
     if (!order.image || !hasCode(order.status, STATUS_CODES.PENDING)) {
         throw fail(409, 'Only a pending order that already has a slip can have it replaced.');

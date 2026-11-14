@@ -27,9 +27,13 @@
             themeColor="green"
             @export="handleExport"
         />
+        <div v-if="!canEdit" class="alert alert-warning d-flex align-items-center mb-3" role="note">
+            <CIcon name="cil-lock-locked" class="mr-2" />
+            <span>{{ $i18n.locale === 'en' ? 'View-Only access: you can inspect artwork details, but approving, rejecting, editing location, or deleting is disabled.' : 'สิทธิ์ดูอย่างเดียว (View Only): สามารถตรวจดูรายละเอียดผลงานได้ แต่ไม่สามารถอนุมัติ ปฏิเสธ แก้ไขสถานที่ หรือลบได้' }}</span>
+        </div>
         <AssignmentWidget v-model="filters.status" :stats="stats" />
         <AssignmentFilter v-model="filters" />
-        <AssignmentTable :filters="filters" :items="mappedArtworks" :location-options="storageLocationOptions" :update-status="handleStatusUpdate" @update-location="handleLocationUpdate" @delete="handleDeleteArtwork" />
+        <AssignmentTable :filters="filters" :items="mappedArtworks" :location-options="storageLocationOptions" :update-status="handleStatusUpdate" :read-only="!canEdit" @update-location="handleLocationUpdate" @delete="handleDeleteArtwork" />
 
         <!-- Rejection Reason Modal -->
         <CModal class="admin-modal" :title="$i18n.locale === 'en' ? 'Reject Submission' : 'ปฏิเสธงานส่งของนักศึกษา'" :show.sync="showRejectModal" color="danger" size="lg">
@@ -65,6 +69,7 @@ import moment from 'moment'
 import { reviewCode } from '@/utils/submissionReview'
 import * as XLSX from 'xlsx'
 import { submissionImageUrl } from '@/utils/submissionArtworkImport'
+import { hasTabPermission } from '@/utils/permissions'
 
 export default {
     name: 'Assignment',
@@ -98,6 +103,9 @@ export default {
     },
     watch: { '$route.fullPath'() { this.fetchSubmission(); } },
     computed: {
+        canEdit() {
+            return hasTabPermission(this, 'submissions', 'edit');
+        },
         allStatuses() {
             return this.$store.getters['setting/status/item'] || [];
         },

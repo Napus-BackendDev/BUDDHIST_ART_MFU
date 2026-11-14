@@ -18,11 +18,15 @@
             </CLink>
         </div>
 
-        <HeaderHero :title="getName($i18n.locale, submission)" :description="($i18n.locale === 'en' ? 'Managing assignments and tracking progress for ' : 'จัดการงานและติดตามความคืบหน้าของผู้เรียนจำนวน ') + (submission.artist ? submission.artist.length : 0) + ($i18n.locale === 'en' ? ' learners.' : ' รูป/คน')" icon="cil-list" :showCreateButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Assignment' : 'สร้างงานมอบหมาย'" :showExportButton="true" themeColor="green" @create="addAssignment" @export="handleExport" />
+        <HeaderHero :title="getName($i18n.locale, submission)" :description="($i18n.locale === 'en' ? 'Managing assignments and tracking progress for ' : 'จัดการงานและติดตามความคืบหน้าของผู้เรียนจำนวน ') + (submission.artist ? submission.artist.length : 0) + ($i18n.locale === 'en' ? ' learners.' : ' รูป/คน')" icon="cil-list" :showCreateButton="canEdit" :createButtonText="$i18n.locale === 'en' ? 'Create Assignment' : 'สร้างงานมอบหมาย'" :showExportButton="true" themeColor="green" @create="addAssignment" @export="handleExport" />
+        <div v-if="!canEdit" class="alert alert-warning d-flex align-items-center mb-3" role="note">
+            <CIcon name="cil-lock-locked" class="mr-2" />
+            <span>{{ $i18n.locale === 'en' ? 'View-Only access: creating, editing, or deleting assignments is disabled.' : 'สิทธิ์ดูอย่างเดียว (View Only): สามารถดูรายการและรายละเอียดงานได้ แต่ไม่สามารถสร้าง แก้ไข หรือลบได้' }}</span>
+        </div>
         <p v-if="saveFeedback" class="alert alert-success" role="status">{{ saveFeedback }}</p>
         <SubmissionDetailWidget :submission="submission" v-model="filters.status" />
-        <SubmissionDetailFilter v-model="filters" @create="addAssignment" />
-        <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
+        <SubmissionDetailFilter v-model="filters" @create="canEdit && addAssignment()" />
+        <SubmissionDetailTable :items="submission.assignments || []" :totalStudents="submission.artist ? submission.artist.length : 0" :filters="filters" :read-only="!canEdit" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
         <AssignmentCreateModal :show.sync="showAssignmentModal" :enrolledStudents="submission.artist || []" :saving="saving" :error="saveError" @save="handleAssignmentSave" />
         <AssignmentEditModal :show.sync="showEditAssignmentModal" :assignmentData="selectedAssignment" :enrolledStudents="submission.artist || []" :saving="saving" :error="saveError" @update="handleAssignmentUpdate" />
     </div>
@@ -39,6 +43,7 @@ import HeaderHero from './components/HeaderHero.vue'
 import * as XLSX from 'xlsx'
 import moment from 'moment'
 import { reviewCounts } from '@/utils/submissionReview'
+import { hasTabPermission } from '@/utils/permissions'
 
 export default {
     name: 'SubmissionsDetail',
@@ -74,6 +79,9 @@ export default {
     },
     watch: { '$route.fullPath'() { this.fetchSubmission(); } },
     computed: {
+        canEdit() {
+            return hasTabPermission(this, 'submissions', 'edit');
+        },
         submission() {
             return (this.$store.getters['submission/submissions'] || []).find(s => s._id === this.$route.params.id);
         }

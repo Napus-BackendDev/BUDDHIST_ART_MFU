@@ -29,6 +29,6 @@ test('path navigation still resolves default pages, protected children and fallb
   expect(router.match('/admin').name).toBe('Overview')
   const orders = router.match('/admin/orders')
   expect(orders.name).toBe('OrdersAdmin')
-  expect(orders.matched.some(record => record.meta.requiresAuth && record.meta.roles.includes('admin'))).toBe(true)
+  expect(orders.matched.some(record => record.meta.requiresAuth && (record.meta.requiresAdminAccess || (record.meta.roles || []).includes('admin')))).toBe(true)
   expect(router.match('/qa-missing-page').matched).toHaveLength(2)
 })

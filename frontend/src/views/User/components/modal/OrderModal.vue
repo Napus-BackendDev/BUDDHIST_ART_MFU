@@ -243,10 +243,10 @@
                   class="doc-pill-btn" 
                   :disabled="!!downloadingDocument"
                   @click="downloadInvoice"
-                  :title="$i18n.locale === 'en' ? 'Download Invoice PDF' : 'ดาวน์โหลดใบแจ้งหนี้ PDF'"
+                  :title="$i18n.locale === 'en' ? 'Download Invoice PDF' : 'ดาวน์โหลดใบยืนยันการจอง PDF'"
                 >
                   <CIcon name="cil-cloud-download" class="mr-2 doc-icon" />
-                  <span>{{ downloadingDocument === 'invoice' ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Invoice' : 'ใบแจ้งหนี้') }}</span>
+                  <span>{{ downloadingDocument === 'invoice' ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Invoice' : 'ใบยืนยันการจอง') }}</span>
                 </button>
               </div>
               <p v-if="documentError" role="alert" class="text-danger small mt-2 mb-0">{{ documentErrorMessage }}</p>
@@ -342,7 +342,7 @@ export default {
     documentErrorMessage() {
       const messages = this.$i18n.locale === 'en'
         ? {invoice:'Could not download invoice. Please try again.',certificate:'Could not download certificate. Please try again.'}
-        : {invoice:'ไม่สามารถดาวน์โหลดใบแจ้งหนี้ได้ กรุณาลองใหม่อีกครั้ง',certificate:'ไม่สามารถดาวน์โหลดใบรับรองได้ กรุณาลองใหม่อีกครั้ง'};
+        : {invoice:'ไม่สามารถดาวน์โหลดใบยืนยันการจองได้ กรุณาลองใหม่อีกครั้ง',certificate:'ไม่สามารถดาวน์โหลดใบรับรองได้ กรุณาลองใหม่อีกครั้ง'};
       return messages[this.documentError] || '';
     },
     isRejected() {

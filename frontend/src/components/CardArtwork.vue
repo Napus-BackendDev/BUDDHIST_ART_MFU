@@ -51,10 +51,10 @@
                                 <span>{{ currentLocale === 'en' ? 'By ' : 'โดย ' }}</span> 
                                 <strong>{{ art.artist ? getName(currentLocale, art.artist) : (currentLocale === 'en' ? 'Anonymous' : 'ศิลปินนิรนาม') }}</strong>
                             </p>
-                            <!-- Category Badge under Artwork Title/Artist -->
+                            <!-- Cohort & Category Tags under Artwork Title/Artist -->
                             <div class="art-meta-tags d-flex align-items-center flex-wrap gap-2">
-                                <span class="badge-category-tag" v-if="art.category">
-                                    {{ getName(currentLocale, art.category) }}
+                                <span class="badge-cohort-tag">
+                                    {{ getCohortLabel(art) }}<template v-if="art.category">, {{ getName(currentLocale, art.category) }}</template>
                                 </span>
                                 <span class="art-technique text-truncate" v-if="art.technique">
                                     {{ getName(currentLocale, art.technique) }}
@@ -73,7 +73,14 @@
                         <!-- Footer (Price & Action) -->
                         <div class="card-footer-box">
                             <div class="price-container">
-                                <template v-if="!isPurchasable(art)">
+                                <template v-if="isArchivedCard(art)">
+                                    <div class="price-label">{{ currentLocale === 'en' ? 'Status' : 'สถานะ' }}</div>
+                                    <div class="price-value exhibition-only">
+                                        <span v-if="isSoldOut(art)">{{ currentLocale === 'en' ? 'Sold Out' : 'จำหน่ายแล้ว' }}</span>
+                                        <span v-else>{{ currentLocale === 'en' ? 'Archive' : 'จัดแสดง / Archive' }}</span>
+                                    </div>
+                                </template>
+                                <template v-else-if="!isPurchasable(art)">
                                     <div class="price-label">{{ currentLocale === 'en' ? 'Status' : 'สถานะ' }}</div>
                                     <div class="price-value exhibition-only">
                                         <span v-if="isExhibition(art)">{{ currentLocale === 'en' ? 'Exhibition Only' : 'จัดโชว์เพียงเท่านั้น' }}</span>
@@ -100,8 +107,8 @@
                                     <span class="view-number">{{ formatViews(art.views) }}</span>
                                 </div>
 
-                                <!-- Add to Cart Button (Only in Public Mode AND if For Sale) -->
-                                <div v-if="isPublic && isPurchasable(art)" class="action-btn-wrapper" @click.stop="handleCartAction(art)">
+                                <!-- Add to Cart Button (Only in Public Mode, Not Archived, AND For Sale) -->
+                                <div v-if="isPublic && !isArchivedCard(art) && isPurchasable(art)" class="action-btn-wrapper" @click.stop="handleCartAction(art)">
                                     <!-- Loading State -->
                                     <button 
                                         v-if="loadingItems.includes(art._id)"
@@ -176,7 +183,7 @@
 </template>
 
 <script>
-import { isArtworkPurchasable } from '@/utils/artworkPurchase';
+import { isArtworkPurchasable, isArtworkArchived, formatArtworkCohortTag } from '@/utils/artworkPurchase';
 import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 export default {
     name: 'CardArtwork',
@@ -192,6 +199,10 @@ export default {
         cols: {
             type: Number,
             default: 4
+        },
+        archiveMode: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -207,6 +218,9 @@ export default {
     },
     methods: {
         artworkImageUrl,
+        getCohortLabel(art) {
+            return formatArtworkCohortTag(art, this.currentLocale);
+        },
         getDetail(art) {
             this.$router.push(`/artwork/${art._id}`);
         },
@@ -259,6 +273,7 @@ export default {
                     if (!this.isPurchasable(latest)) return;
                     this.$store.dispatch('cart/addToCart', latest);
                     this.showAddedModal = true;
+                    Promise.resolve(this.$store.dispatch('artwork/updateView', latest._id)).catch(() => {});
                 } else {
                     this.$store.dispatch('cart/removeFromCart', art._id);
                 }
@@ -277,6 +292,9 @@ export default {
         },
         isPurchasable(art) {
             return isArtworkPurchasable(art, this.getName);
+        },
+        isArchivedCard(art) {
+            return this.archiveMode || isArtworkArchived(art, this.getName);
         },
         isExhibition(art) {
             if (!art || !art.status || !art.status.sale) return false;
@@ -443,7 +461,7 @@ export default {
     gap: 6px;
 }
 
-.badge-category-tag {
+.badge-cohort-tag {
     display: inline-flex;
     align-items: center;
     background-color: #fbf7f1;
@@ -459,7 +477,7 @@ export default {
     user-select: none;
 }
 
-.badge-category-tag:hover {
+.badge-cohort-tag:hover {
     background-color: #4a1d18;
     border-color: #4a1d18;
     color: #ffffff;

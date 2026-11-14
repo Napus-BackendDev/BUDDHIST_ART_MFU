@@ -53,12 +53,11 @@ Desktop.ini
 *.swo
 *~
 
-# AI / Workspace Agent Instructions
-# Keep only shared skills and rules; agent run folders (briefs, handoffs, progress) stay local.
-/.agents/*
-!/.agents/skills/
-!/.agents/rules/
-.agents/**/.DS_Store
+# AI / Workspace Agent Instructions & Non-Production Artifacts
+/.agents/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
 screenshots/
 backend/tmp/
 backend/coverage/
@@ -72,11 +71,22 @@ frontend/coverage/
 /tmp/
 information.md
 log.md
+/CHANGELOG.md
+/Design.md
+/ORIGINAL_REQUEST.md
+/PROJECT.md
+/SECURITY_UI_AUDIT.md
+/TEST_INFRA.md
+/system_specification.md
 deploy/
 docker-compose.production.yml
 
-# Generated presentation artifacts (brochures, diagram exports, capture scripts); large binaries, not part of the app
-/docs/brochures/
-/docs/diagrams/
-/docs/BROCHURES.html
-/docs/SYSTEM_DIAGRAMS.html
+# Local developer / mock seed scripts & dev env
+/backend/scripts/seedLocalDemo.js
+/backend/scripts/seedMockOrders.js
+/backend/scripts/seedPostTermSaleMock.js
+/frontend/.env
+
+# Non-runtime docs, QA reports, TOR captures & helper scripts
+/docs/
+/scripts/

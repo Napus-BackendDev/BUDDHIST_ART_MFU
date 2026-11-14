@@ -1,76 +1,49 @@
 'use strict';
 
+const fs = require('fs');
 const mongoose = require('mongoose');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env.dev') });
 
-const Role = require('../server/Project/Settings/models/role.model');
+const envCandidates = [
+    path.join(__dirname, '../.env.development'),
+    path.join(__dirname, '../.env.dev'),
+    path.join(__dirname, '../.env'),
+];
+for (const envPath of envCandidates) {
+    if (fs.existsSync(envPath)) {
+        require('dotenv').config({ path: envPath });
+        break;
+    }
+}
+
+const { ensureDefaultRoles } = require('../server/Project/Settings/service/role');
 
 async function seedRoles() {
+    let exitCode = 0;
     try {
-        const mongoURI = process.env.MONGODB;
-        if (!mongoURI) {
-            throw new Error('MONGODB URI not found in .env.dev');
-        }
-
+        const mongoURI = process.env.MONGODB || process.env.MONGO_URI || 'mongodb://localhost:27017/Buddhist';
         console.log('Connecting to MongoDB...');
         await mongoose.connect(mongoURI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             useFindAndModify: false,
-            useCreateIndex: true
+            useCreateIndex: true,
         });
-        console.log('Connected successfully.');
+        console.log('Connected successfully. Running idempotent role upsert...');
 
-        // 1. Clear existing data
-        console.log('Clearing existing Roles...');
-        await Role.deleteMany({});
-
-        // 2. Define Roles
-        const roles = [
-            {
-                title: [
-                    { key: 'en', value: 'Admin' },
-                    { key: 'th', value: 'ผู้ดูแลระบบ' }
-                ],
-                description: [
-                    { key: 'en', value: 'Full access to all administrative features' },
-                    { key: 'th', value: 'เข้าถึงฟีเจอร์การดูแลระบบทั้งหมด' }
-                ]
-            },
-            {
-                title: [
-                    { key: 'en', value: 'Artist' },
-                    { key: 'th', value: 'ศิลปิน' }
-                ],
-                description: [
-                    { key: 'en', value: 'Can manage their own profile and artworks' },
-                    { key: 'th', value: 'สามารถจัดการข้อมูลส่วนตัวและผลงานศิลปะของตนเอง' }
-                ]
-            },
-            {
-                title: [
-                    { key: 'en', value: 'Customer' },
-                    { key: 'th', value: 'ลูกค้า/นักศึกษา' }
-                ],
-                description: [
-                    { key: 'en', value: 'Standard user access for browsing and ordering' },
-                    { key: 'th', value: 'การเข้าถึงของผู้ใช้ปกติสำหรับการเรียกดูและสั่งซื้อ' }
-                ]
-            }
-        ];
-
-        // 3. Create Roles
-        console.log('Seeding Roles...');
-        await Role.insertMany(roles);
-        console.log('All roles seeded successfully!');
-
+        const results = await ensureDefaultRoles();
+        for (const item of results) {
+            const titleEn = (item.role && Array.isArray(item.role.title) && (item.role.title.find(t => t.key === 'en') || {}).value) || 'Unknown';
+            console.log(`- [${item.action}] ${titleEn} (isSystem=${Boolean(item.role && item.role.isSystem)})`);
+        }
+        console.log('Role upsert completed cleanly without removing existing IDs.');
     } catch (error) {
+        exitCode = 1;
         console.error('Error seeding data:', error);
     } finally {
         await mongoose.disconnect();
         console.log('Disconnected from MongoDB.');
-        process.exit();
+        process.exit(exitCode);
     }
 }
 

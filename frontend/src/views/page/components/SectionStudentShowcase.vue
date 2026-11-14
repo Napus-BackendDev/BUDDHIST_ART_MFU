@@ -4,7 +4,7 @@
             <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between mb-5">
                 <div class="text-left mb-3 mb-md-0">
                     <span class="badge text-uppercase font-weight-bold px-3 py-2 mb-3" style="color: #612721; background-color: rgba(97,39,33,0.08); border-radius: 50px; font-size: 0.8rem; letter-spacing: 1px;">
-                        {{ $i18n.locale === 'en' ? 'Artwork Gallery' : 'ผลงานศิลปะ' }}
+                        {{ $i18n.locale === 'en' ? 'Artworks' : 'ผลงานศิลปะ' }}
                     </span>
                     <!-- hidden per client 2026-07: showcase H2 + description hidden; badge & artworks grid kept -->
                     <!--
@@ -18,9 +18,14 @@
                     </p>
                     -->
                 </div>
-                <CButton color="danger" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold btn-view-all align-self-start align-self-md-end" @click="$router.push('/artworks')">
-                    {{ $i18n.locale === 'en' ? 'Explore Learner Works' : 'ดูผลงานผู้เรียนทั้งหมด' }}
-                </CButton>
+                <div class="d-flex flex-wrap align-items-center" style="gap: 10px;">
+                    <CButton v-if="hasArchivedArtworks" color="secondary" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold btn-view-archive align-self-start align-self-md-end" @click="$router.push('/archive')">
+                        {{ $i18n.locale === 'en' ? 'Past Cohort Archive' : 'คลังผลงาน' }}
+                    </CButton>
+                    <CButton color="danger" variant="outline" shape="pill" class="px-4 py-2 font-weight-bold btn-view-all align-self-start align-self-md-end" @click="$router.push('/artworks')">
+                        {{ $i18n.locale === 'en' ? 'Explore Learner Works' : 'ดูผลงานผู้เรียนทั้งหมด' }}
+                    </CButton>
+                </div>
             </div>
 
             <div v-if="loading" class="text-center py-5">
@@ -48,6 +53,29 @@
 
 <script>
 import CardArtworks from '@/components/CardArtwork.vue'
+import {
+    isArtworkArchived,
+    getArtworkCohortLevel,
+    getArtworkCohortRank,
+    getArtworkTimestamp,
+    isLearnerArtwork,
+    getDailyVisitSeed,
+    prioritizePurchasableWithShuffle
+} from '@/utils/artworkPurchase'
+
+function collectSubmissionArtworkIds(sub) {
+    const ids = [];
+    if (sub && sub.assignments) {
+        sub.assignments.forEach(assign => {
+            if (assign.artworks) {
+                assign.artworks.forEach(art => {
+                    if (art && art._id) ids.push(art._id.toString());
+                });
+            }
+        });
+    }
+    return ids;
+}
 
 export default {
     name: 'SectionStudentShowcase',
@@ -58,77 +86,70 @@ export default {
         return {
             loading: true,
             loadError: false,
-            latestArtworkIds: []
+            submissions: [],
+            visitSeed: getDailyVisitSeed()
         }
     },
     computed: {
         allArtworks() {
             return this.$store.getters['artwork/artworks'] || [];
         },
-        filteredStudentWorks() {
-            // Only show approved artworks
-            let result = this.allArtworks.filter(art => {
+        hasArchivedArtworks() {
+            return this.allArtworks.some(art => {
                 const status = this.getStatusLabel(art);
-                const isApproved = ['Approved', 'Success', 'Reserved'].includes(status);
-                
-                // Show artworks belonging to the latest student batch
-                const isLatestBatch = art.submissionArtworkId && this.latestArtworkIds.includes(art.submissionArtworkId.toString());
-                
-                return isApproved && isLatestBatch;
+                return ['Approved', 'Success', 'Reserved'].includes(status) && isArtworkArchived(art, this.getName);
             });
-            
-            // Fallback: if latest batch has no approved works yet, show any student work
-            if (result.length === 0) {
-                result = this.allArtworks.filter(art => {
-                    const status = this.getStatusLabel(art);
-                    const isApproved = ['Approved', 'Success', 'Reserved'].includes(status);
-                    const isStudentWork = art.submissionArtworkId || art.artworkPiece;
-                    return isApproved && isStudentWork;
-                });
+        },
+        filteredStudentWorks() {
+            const approved = this.allArtworks.filter(art => {
+                return ['Approved', 'Success', 'Reserved'].includes(this.getStatusLabel(art)) && !isArtworkArchived(art, this.getName);
+            });
+
+            let result = [];
+            const sortedSubmissions = [...this.submissions].sort((a, b) => {
+                return (getArtworkCohortRank(b) - getArtworkCohortRank(a)) || (getArtworkTimestamp(b) - getArtworkTimestamp(a));
+            });
+
+            const matchedSub = sortedSubmissions.find(sub => {
+                const ids = collectSubmissionArtworkIds(sub);
+                return approved.some(art => art.submissionArtworkId && ids.includes(art.submissionArtworkId.toString()));
+            });
+
+            if (matchedSub) {
+                const targetRank = getArtworkCohortRank(matchedSub);
+                const cohortIds = new Set();
+                sortedSubmissions
+                    .filter(sub => getArtworkCohortRank(sub) === targetRank)
+                    .forEach(sub => collectSubmissionArtworkIds(sub).forEach(id => cohortIds.add(id)));
+                result = approved.filter(art => art.submissionArtworkId && cohortIds.has(art.submissionArtworkId.toString()));
             }
-            
-            // Sort by views count descending (most viewed first)
-            let sorted = [...result].sort((a, b) => {
-                return (b.views || 0) - (a.views || 0);
-            });
-            
-            // Limit to top 8 (2 rows of 4 on standard grids)
-            return sorted.slice(0, 8);
+
+            if (result.length === 0) {
+                const learnerWorks = approved.filter(isLearnerArtwork);
+                const rankedWorks = learnerWorks.filter(art => getArtworkCohortLevel(art));
+                if (rankedWorks.length > 0) {
+                    const topRank = Math.max(...rankedWorks.map(getArtworkCohortRank));
+                    result = rankedWorks.filter(art => getArtworkCohortRank(art) === topRank);
+                } else {
+                    result = learnerWorks;
+                }
+            }
+
+            return prioritizePurchasableWithShuffle(
+                result,
+                this.getName,
+                `${this.visitSeed || 'default'}:showcase`
+            ).slice(0, 12);
         }
     },
     methods: {
         async fetchArtworks() {
             this.loading = true;
             this.loadError = false;
-            this.latestArtworkIds = [];
+            this.submissions = [];
             try {
                 await this.$store.dispatch('artwork/get');
-                // Fetch submissions to identify the latest batch
-                const submissions = await this.$store.dispatch('submission/get') || [];
-                const finishedSubmissions = submissions.filter(sub => {
-                    if (!sub.create || !sub.create.endAt) return true; // fallback if no date is set (mock/old data)
-                    return new Date(sub.create.endAt) < new Date();
-                });
-                
-                if (finishedSubmissions.length > 0) {
-                    const sortedSubmissions = [...finishedSubmissions].sort((a, b) => {
-                        return (parseInt(b.courseLevel) || 0) - (parseInt(a.courseLevel) || 0);
-                    });
-                    const latestSubmission = sortedSubmissions[0];
-                    const ids = [];
-                    if (latestSubmission && latestSubmission.assignments) {
-                        latestSubmission.assignments.forEach(assign => {
-                            if (assign.artworks) {
-                                assign.artworks.forEach(art => {
-                                    if (art._id) {
-                                        ids.push(art._id.toString());
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    this.latestArtworkIds = ids;
-                }
+                this.submissions = await this.$store.dispatch('submission/get') || [];
             } catch (err) {
                 this.loadError = true;
             } finally {

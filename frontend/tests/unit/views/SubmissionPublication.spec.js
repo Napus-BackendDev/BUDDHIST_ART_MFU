@@ -1,8 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import Table from '@/views/Admin/components/table/AdminTable.vue'
 import Notice from '@/views/Artist/components/PostTermSaleNotice.vue'
-import Submissions from '@/views/Admin/Submissions.vue'
-import Service from '@/service/api'
 import Create from '@/views/Admin/components/modal/submission/SubmissionCreateModal.vue'
 import Edit from '@/views/Admin/components/modal/submission/SubmissionEditModal.vue'
 import AssignmentCreate from '@/views/Admin/components/modal/submission/AssignmentCreateModal.vue'
@@ -52,21 +50,6 @@ describe.each([['create', Create], ['edit', Edit]])('Submission %s dates', (_, c
     vm.form.assignments[0].endDateTime = '2026-10-15T09:00'
     expect(Boolean(component.computed.isFormValid.call(vm))).toBe(false)
   })
-})
-
-test('admin attention badge excludes next-year and already-decided works', async () => {
-  const now = Date.now(), day = 86400000
-  const item = (days, decision = 'pending') => ({ postTermSale: {
-    initialSaleEndsAt: new Date(now + days * day).toISOString(), decision
-  } })
-  const spy = jest.spyOn(Service, 'artwork').mockResolvedValue({ data: { data: [
-    item(365), item(31), item(30), item(-1), item(-1, 'continue_sale'),
-    { postTermSale: { needsReview: true } }
-  ] } })
-  const vm = { postTermDueCount: 0 }
-  await Submissions.methods.fetchPostTermAlerts.call(vm)
-  expect(vm.postTermDueCount).toBe(3)
-  spy.mockRestore()
 })
 
 test('published submission storage detail is visible even without a storage category', () => {

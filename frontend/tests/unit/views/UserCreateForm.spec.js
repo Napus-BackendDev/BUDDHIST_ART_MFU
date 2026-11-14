@@ -58,3 +58,29 @@ test('customer edit uses visible fields and remains open until the request succe
  expect(w.emitted('update:show')).toBeUndefined()
  w.destroy()
 })
+test('custom role edit clears stale learner status and course on save',async()=>{
+ const w=shallowMount(Editor,{propsData:{show:true},mocks:{$i18n:{locale:'th'}},stubs:{CModal:{template:'<div><slot/><slot name="footer"/></div>'},CIcon:true}})
+ await w.setData({
+  form:{
+   _id:'qa-rev-1',
+   studentId:'QA-REV-01',
+   roleId:'role-rev',
+   roleName:'อาจารย์ตรวจผลงาน',
+   roleNameEn:'Reviewer',
+   statusId:'old-status-id',
+   course:'batch9',
+   nameTh:'อ.สมศักดิ์',
+   nameEn:'Assoc. Prof. Somsak',
+   email:'qa-reviewer@local.test',
+   personalEmail:'qa-reviewer@local.test',
+   telephone:'0812345601'
+  }
+ })
+ expect(Boolean(w.vm.isFormValid)).toBe(true)
+ w.vm.handleSave()
+ const payload=w.emitted('save')[0][0]
+ expect(payload.role).toBe('role-rev')
+ expect(payload.status).toBeNull()
+ expect(payload.course).toBe('')
+ w.destroy()
+})

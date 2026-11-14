@@ -9,6 +9,8 @@ const safeRedirect = () => {
         : null;
 };
 
+import { firstAllowedAdminRoute, hasAdminAccess, normalizePermissions } from '@/utils/permissions';
+
 const LoginModule = {
     namespaced: true,
     state: {
@@ -17,6 +19,7 @@ const LoginModule = {
         is2FA: false,
         userId: null,
         role: null,
+        permissions: null,
         postLoginContext: null
 
     },
@@ -48,6 +51,10 @@ const LoginModule = {
             state.role = value;
         },
 
+        permissions(state, value) {
+            state.permissions = value;
+        },
+
 
     },
 
@@ -59,6 +66,7 @@ const LoginModule = {
                     store.commit('xAccessToken', objs.xAccessToken);
                     commit('userId', objs.accounts);
                     commit('role', objs.role || null);
+                    commit('permissions', normalizePermissions(objs.permissions, objs.role));
                     let pendingCheckout = null;
                     try {
                         pendingCheckout = JSON.parse(localStorage.getItem('pendingCheckout') || 'null');
@@ -84,19 +92,22 @@ const LoginModule = {
                     store.commit("dialog/loading", false)
                     const user = response.data.data;
                     const role = user.role || 'Customer';
+                    const permissions = normalizePermissions(user.permissions, role);
 
                     const token = response.data.token || response.data.data.token;
                     // Store user data properly
                     localStorage.setItem('objs', JSON.stringify({
                         xAccessToken: token,
                         accounts: user._id,
-                        role: role
+                        role: role,
+                        permissions: permissions
                     }));
 
                     store.commit('xAccessToken', token); // Update root store immediately
                     store.commit("auth/showSignInModal", false);
                     store.commit("auth/userId", user._id);
                     store.commit("auth/role", role);
+                    store.commit("auth/permissions", permissions);
 
                     const postLoginContext = store.getters['auth/postLoginContext'];
 
@@ -124,8 +135,11 @@ const LoginModule = {
                         let target = safeRedirect() || '/user';
 
                         if (!safeRedirect()) {
-                            if (userRole === 'admin') target = '/admin';
-                            else if (userRole === 'artist' || userRole === 'evaluator') target = '/artist/profile';
+                            if (hasAdminAccess({ role, permissions })) {
+                                target = firstAllowedAdminRoute({ role, permissions });
+                            } else if (userRole === 'artist' || userRole === 'evaluator') {
+                                target = '/artist/profile';
+                            }
                         }
 
                         if (router.currentRoute.path !== target) {
@@ -213,6 +227,9 @@ const LoginModule = {
         },
         role(state) {
             return state.role;
+        },
+        permissions(state) {
+            return state.permissions;
         },
         postLoginContext(state) {
             return state.postLoginContext;

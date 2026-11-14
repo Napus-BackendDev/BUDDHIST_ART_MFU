@@ -14,7 +14,7 @@
                     </div>
                     <div>
                         <h5 class="modal-title font-weight-bold">{{ $i18n.locale === 'en' ? 'Add New Artwork' : 'เพิ่มผลงานศิลปะใหม่' }}</h5>
-                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Choose how you would like to add artworks to the gallery.' : 'เลือกวิธีการเพิ่มผลงานศิลปะลงในแกลเลอรี' }}</p>
+                        <p class="text-muted small mb-0">{{ $i18n.locale === 'en' ? 'Choose how you would like to add artworks.' : 'เลือกวิธีการเพิ่มผลงานศิลปะ' }}</p>
                     </div>
                 </div>
                 <button type="button" class="close-btn" :disabled="importing" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="$emit('update:show', false)">

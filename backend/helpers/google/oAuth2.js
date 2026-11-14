@@ -171,23 +171,20 @@ exports.onQuery = async function (request, response, next) {
 // Shared by Google sign-in and the guarded local QA login (server/qa/qaLogin.routes.js).
 exports.issueSession = async function (user, email, response) {
         const trimmedEmail = String(email || '').trim();
-        // 4. Prepare Role Name for JWT and Frontend
+        const { normalizePermissions, extractEnglishRoleTitle } = require('../rolePermissions');
+
+        // 4. Prepare Role Name & Permissions for JWT and Frontend
         let roleName = 'Customer';
+        let roleDoc = null;
         if (user.role && Array.isArray(user.role.title)) {
-            const roleObj = user.role.title.find(t => t.key === 'en');
-            if (roleObj && roleObj.value) roleName = roleObj.value;
-        } else if (user.role && user.role._id) {
-            if (Array.isArray(user.role.title)) {
-                const roleObj = user.role.title.find(t => t.key === 'en');
-                if (roleObj && roleObj.value) roleName = roleObj.value;
-            }
+            roleDoc = user.role;
+            roleName = extractEnglishRoleTitle(roleDoc) || 'Customer';
         } else if (user.role) {
-            const roleDoc = await Role.findById(user.role);
-            if (roleDoc && Array.isArray(roleDoc.title)) {
-                const roleObj = roleDoc.title.find(t => t.key === 'en');
-                if (roleObj && roleObj.value) roleName = roleObj.value;
-            }
+            roleDoc = await Role.findById(user.role).lean();
+            roleName = extractEnglishRoleTitle(roleDoc) || 'Customer';
         }
+
+        const permissions = normalizePermissions(roleDoc && roleDoc.permissions, roleName);
 
         // 5. Generate a SECURE JWT
         const systemToken = jwt.sign(
@@ -202,6 +199,7 @@ exports.issueSession = async function (user, email, response) {
 
         const userData = JSON.parse(JSON.stringify(user));
         userData.role = roleName;
+        userData.permissions = permissions;
         userData.token = systemToken; // Real JWT!
         delete userData.password;
         

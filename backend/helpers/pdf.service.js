@@ -18,9 +18,16 @@ class PdfService {
         return this.browser;
     }
 
+    readLogoDataUri() {
+        const logoFilePath = path.resolve(__dirname, '../public/assets/img/logo.png');
+        if (!fs.existsSync(logoFilePath)) return '';
+        const logoData = fs.readFileSync(logoFilePath);
+        return `data:image/png;base64,${logoData.toString('base64')}`;
+    }
+
     /**
-     * Generate a PDF invoice using Puppeteer
-     * @param {Object} data - Invoice data (order, customer, items)
+     * Generate a PDF reservation confirmation using Puppeteer
+     * @param {Object} data - Reservation confirmation data (order, customer, items)
      * @returns {Promise<Buffer>} - PDF buffer
      */
     async generateInvoice(data) {
@@ -29,16 +36,16 @@ class PdfService {
         try {
             const page = await browser.newPage();
 
-            // Load logo and convert to Base64
-            const logoFilePath = path.resolve(__dirname, '../public/assets/img/logo.png');
-            let logoBase64 = '';
-            if (fs.existsSync(logoFilePath)) {
-                const logoData = fs.readFileSync(logoFilePath);
-                const contentType = 'image/png';
-                logoBase64 = `data:${contentType};base64,${logoData.toString('base64')}`;
-            }
+            const logoBase64 = this.readLogoDataUri();
 
             const fontPath = `file://${path.join(__dirname, '../public/assets/fonts/mfu.ttf').replace(/\\/g, '/')}`;
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
 
             // Basic Invoice Template
             const htmlContent = `
@@ -112,28 +119,22 @@ class PdfService {
                         object-fit: cover;
                         border-radius: 4px;
                     }
-                    .payment-info, .terms {
+                    .artwork-preview-empty {
+                        width: 80px;
+                        height: 80px;
+                        border-radius: 4px;
+                        background-color: #f3f0e9;
+                        color: #8b8b8b;
+                        font-size: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .terms {
                         font-size: 14px;
                         margin-top: 30px;
                         page-break-inside: avoid;
-                    }
-                    .signature-section {
-                        margin-top: 40px;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: flex-end;
-                        page-break-inside: avoid;
-                    }
-                    .signature-box {
-                        text-align: center;
-                        width: 45%;
-                        position: relative;
-                    }
-                    .line {
-                        border-bottom: 1px dotted #333;
-                        margin-bottom: 5px;
-                        width: 100%;
-                        display: inline-block;
                     }
                     .text-right {
                         text-align: right;
@@ -144,15 +145,15 @@ class PdfService {
                 <div class="header">
                     <div class="logo"></div>
                     <div class="text-right">
-                        <div class="invoice-title">ใบสั่งจองผลงานศิลปะ</div>
-                        <div>เลขที่: ${data.orderId || '............'}</div>
+                        <div class="invoice-title">ใบยืนยันการจองผลงานศิลปะ</div>
+                        <div>เลขที่: ${escapeHtml(data.orderId || '............')}</div>
                         <div>วันที่: ${new Date().toLocaleDateString('th-TH')}</div>
                     </div>
                 </div>
 
-                <div class="section-title">ข้อมูลผู้สั่งจอง (Customer Information)</div>
-                <div>ชื่อ-นามสกุล: ${data.customerName || '............................................................'}</div>
-                <div>ที่อยู่: ${data.customerAddress || '........................................................................................................................'}</div>
+                <div class="section-title">ข้อมูลผู้สั่งซื้อ (Customer Information)</div>
+                <div>ชื่อ-นามสกุล: ${escapeHtml(data.customerName || '............................................................')}</div>
+                <div>ที่อยู่: ${escapeHtml(data.customerAddress || '........................................................................................................................')}</div>
 
                 <table>
                     <thead>
@@ -165,50 +166,34 @@ class PdfService {
                     <tbody>
                         ${data.items.map(item => `
                             <tr>
-                                <td><img src="${item.image}" class="artwork-preview" /></td>
+                                <td>${item.image && String(item.image).trim() && String(item.image).trim() !== 'null'
+                                    ? `<img src="${escapeHtml(item.image)}" class="artwork-preview" />`
+                                    : `<div class="artwork-preview-empty">ไม่มีรูปภาพ</div>`}</td>
                                 <td>
-                                    <strong>ชื่อผลงาน:</strong> ${item.title}<br/>
-                                    <strong>ศิลปิน:</strong> ${item.artist}
+                                    <strong>ชื่อผลงาน:</strong> ${escapeHtml(item.title || '-')}<br/>
+                                    <strong>ศิลปิน:</strong> ${escapeHtml(item.artist || '-')}<br/>
+                                    <strong>ขนาด:</strong> ${escapeHtml(item.size || '-')}<br/>
+                                    <strong>เทคนิค:</strong> ${escapeHtml(item.technique || '-')}
                                 </td>
-                                <td class="text-right">${Number(item.price).toLocaleString()} บาท</td>
+                                <td class="text-right">${Number(item.price || 0).toLocaleString()} บาท</td>
                             </tr>
                         `).join('')}
                     </tbody>
                     <tfoot>
                         <tr>
                             <td colspan="2" class="text-right"><strong>รวมทั้งสิ้น (Grand Total)</strong></td>
-                            <td class="text-right"><strong>${Number(data.total).toLocaleString()} บาท</strong></td>
+                            <td class="text-right"><strong>${Number(data.total || 0).toLocaleString()} บาท</strong></td>
                         </tr>
                     </tfoot>
                 </table>
 
-                <div class="payment-info">
-                    <strong>ช่องทางการชำระเงิน (Payment Methods)</strong><br/>
-                    ชื่อบัญชี: ${data.accountName || '............................................................'}<br/>
-                    ธนาคาร: ${data.bankName || '............................................................'} เลขที่บัญชี: ${data.accountNo || '...............................................'}
-                </div>
-
                 <div class="terms">
                     <strong>ข้อกำหนดและเงื่อนไข (Terms & Conditions)</strong>
                     <ul>
-                        <li>การสั่งจองจะสมบูรณ์เมื่อผู้จองชำระเงินและส่งหลักฐานการโอนเงินเรียบร้อยแล้ว</li>
-                        <li>การจัดส่ง: ดำเนินการจัดส่งผลงานตามที่อยู่ที่ระบุข้างต้น</li>
-                        <li>มหาวิทยาลัยจะออกใบเสร็จรับเงินอย่างเป็นทางการหลังจากได้รับชำระเงินครบถ้วน</li>
+                        <li>การสั่งจองจะสมบูรณ์เมื่อท่านได้รับ E-mail ยืนยันการสั่งซื้อผลงานพุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง</li>
+                        <li>การจัดส่ง มหาวิทยาลัยจะดำเนินการประสานการจัดส่งผลงานตามที่อยู่ที่ระบุข้างต้น</li>
+                        <li>ใบเสร็จรับเงินออกโดยมหาวิทยาลัยแม่ฟ้าหลวง และจัดส่งไปพร้อมกับผลงานตามที่อยู่ที่ระบุข้างต้น</li>
                     </ul>
-                </div>
-
-                <div class="signature-section">
-                    <div class="signature-box">
-                        <div style="height: 50px;"></div>
-                        (ลงชื่อ)............................................................ ผู้สั่งจอง<br/>
-                        ( ${data.customerName || '............................................................'} )
-                    </div>
-                    <div class="signature-box">
-                        <div style="height: 50px;"></div>
-                        (ลงชื่อ)............................................................<br/>
-                        ( นาย ณภัทร เสมือนโพธิ์ )<br/>
-                        เจ้าหน้าที่/ผู้รับจอง
-                    </div>
                 </div>
             </body>
             </html>
@@ -253,17 +238,29 @@ class PdfService {
                 imageSrc = `data:${mimeType};base64,${artworkData.toString('base64')}`;
             }
 
-            const info = data?.info || {};
+            const logoSrc = this.readLogoDataUri();
+            const fontPath = `file://${path.join(__dirname, '../public/assets/fonts/mfu.ttf').replace(/\\/g, '/')}`;
+            const fontCss = `@font-face { font-family: 'MFUFont'; src: url('${fontPath}'); }`;
+            const info = data?.info || data || {};
             const htmlContent = certificateOfAuthenticityMail({
                 imageSrc,
+                logoSrc,
+                fontCss,
+                title: info.title,
                 titleEN: info.titleEN || info.artworkNameEN,
                 titleTH: info.titleTH || info.artworkNameTH,
+                artist: info.artist,
                 artistEN: info.artistEN || info.artistNameEN,
                 artistTH: info.artistTH || info.artistName,
                 size: info.size,
+                category: info.category,
+                is3D: info.is3D,
+                measurementLabel: info.measurementLabel,
                 year: info.year,
-                techniqueEN: info.techniqueEN || info.technique,
+                technique: info.technique,
+                techniqueEN: info.techniqueEN,
                 techniqueTH: info.techniqueTH,
+                edition: info.edition,
                 artworkCode: info.artworkCode
             });
 

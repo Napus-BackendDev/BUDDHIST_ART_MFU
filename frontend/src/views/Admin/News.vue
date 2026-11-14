@@ -1,11 +1,15 @@
 <template>
     <div class="news-dashboard">
-        <HeaderHero :title="$i18n.locale === 'en' ? 'News Management' : 'จัดการข่าวสาร'" :description="$i18n.locale === 'en' ? 'Manage your news articles, announcements, and updates for the community.' : 'จัดการบทความข่าว ประกาศ และอัปเดตสำหรับชุมชน'" icon="cil-newspaper" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create News' : 'สร้างข่าวสาร'" themeColor="gray" @create="onAddNews" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'News Management' : 'จัดการข่าวสาร'" :description="$i18n.locale === 'en' ? 'Manage your news articles, announcements, and updates for the community.' : 'จัดการบทความข่าว ประกาศ และอัปเดตสำหรับชุมชน'" icon="cil-newspaper" :showCreateButton="canEdit" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create News' : 'สร้างข่าวสาร'" themeColor="gray" @create="onAddNews" @export="handleExport" />
+        <div v-if="!canEdit" class="alert alert-warning d-flex align-items-center mb-3" role="note">
+            <CIcon name="cil-lock-locked" class="mr-2" />
+            <span>{{ $i18n.locale === 'en' ? 'View-Only access: creating, editing, or deleting news is disabled.' : 'สิทธิ์ดูอย่างเดียว (View Only): ไม่สามารถสร้าง แก้ไข หรือลบข่าวสารได้' }}</span>
+        </div>
         <NewsWidget v-model="filters.status" :items="newsItems" />
         <NewsFilter v-model="filters" />
-        <NewsTable ref="adminTable" :filters="filters" :items="newsItems" @view="handleViewNews" @edit="handleEditNews" @delete="handleDeleteNews" />
+        <NewsTable ref="adminTable" :filters="filters" :items="newsItems" :read-only="!canEdit" @view="handleViewNews" @edit="handleEditNews" @delete="handleDeleteNews" />
         <NewsCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSaveNews"/>
-        <NewsViewModal :show.sync="showViewModal" :news="selectedNews" @edit="handleEditNewsFromView"/>
+        <NewsViewModal :show.sync="showViewModal" :news="selectedNews" :read-only="!canEdit" @edit="handleEditNewsFromView"/>
         <NewsEditModal :show.sync="showEditModal" :news="selectedNews" :saving="saving" @save="handleUpdateNews"/>
     </div>
 </template>
@@ -18,6 +22,7 @@ import NewsFilter from './components/filter/NewsFilter.vue';
 import NewsCreateModal from './components/modal/news/NewsCreateModal.vue';
 import NewsViewModal from './components/modal/news/NewsViewModal.vue';
 import NewsEditModal from './components/modal/news/NewsEditModal.vue';
+import { hasTabPermission } from '@/utils/permissions';
 
 export default {
     name: 'News',
@@ -49,6 +54,9 @@ export default {
         this.fetchNews();
     },
     computed: {
+        canEdit() {
+            return hasTabPermission(this, 'news', 'edit');
+        },
         newsItems() {
             return this.$store.getters['news/news'] || [];
         }

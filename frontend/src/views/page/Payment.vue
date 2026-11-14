@@ -112,12 +112,12 @@
                     <CCard class="border-0 shadow-lg mx-auto mb-5 text-left" style="max-width: 550px; border-radius: 16px; overflow: hidden;">
                         <!-- Colored Top Border -->
                         <div style="height: 6px; background: linear-gradient(90deg, #612721, #FEC260); border-radius: 16px 16px 0 0;"></div>
-                        <CCardHeader class="bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                        <CCardHeader class="bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center flex-wrap order-card-header">
                             <h5 class="font-weight-bold mb-0 text-dark">{{ $i18n.locale === 'en' ? 'Order Details' : 'รายละเอียดคำสั่งซื้อ' }}</h5>
                             <button type="button" class="btn btn-link p-0 text-danger small font-weight-bold text-decoration-none d-flex align-items-center" :disabled="isDownloading" @click="downloadBilling">
                                 <CSpinner v-if="isDownloading" size="sm" class="mr-1" />
                                 <CIcon v-else name="cil-cloud-download" size="sm" class="mr-1" />
-                                {{ isDownloading ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้') }}
+                                {{ isDownloading ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง') }}
                             </button>
                         </CCardHeader>
                         <CCardBody class="p-4">
@@ -170,14 +170,14 @@
                     <p v-if="paymentError === 'invoice'" role="alert" class="text-danger mb-3">{{ paymentErrorMessage }}</p>
 
                     <!-- Action Buttons -->
-                    <div class="d-flex justify-content-center">
-                        <CButton color="danger" class="px-5 py-2 font-weight-bold shadow hover-lift mr-3 btn-main" style="min-width: 160px; border-radius: 50px;" to="/">
+                    <div class="d-flex justify-content-center flex-wrap step-actions-row">
+                        <CButton color="danger" class="px-4 px-sm-5 py-2 font-weight-bold shadow hover-lift btn-main step-action-btn" style="border-radius: 50px;" to="/">
                             {{ $i18n.locale === 'en' ? 'Return to Home' : 'กลับหน้าหลัก' }}
                         </CButton>
-                        <CButton color="white" class="px-5 py-2 font-weight-bold shadow-sm border hover-lift btn-outline-dark" style="min-width: 160px; border-radius: 50px;" :disabled="isDownloading" @click="downloadBilling">
+                        <CButton color="white" class="px-4 px-sm-5 py-2 font-weight-bold shadow-sm border hover-lift btn-outline-dark step-action-btn" style="border-radius: 50px;" :disabled="isDownloading" @click="downloadBilling">
                             <CSpinner v-if="isDownloading" size="sm" class="mr-2" />
                             <CIcon v-else name="cil-cloud-download" class="mr-2" />
-                            {{ isDownloading ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้') }}
+                            {{ isDownloading ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง') }}
                         </CButton>
                     </div>
                 </div>
@@ -243,7 +243,7 @@ export default {
         paymentErrorMessage() {
             const messages = this.$i18n.locale === 'en'
                 ? {missing:'Order not found. Check your order history.',submit:'Could not complete this step. Your order is saved. Check your order history and try again.',invoice:'Could not download invoice. Please try again.'}
-                : {missing:'ไม่พบคำสั่งซื้อ กรุณาตรวจสอบประวัติคำสั่งซื้อ',submit:'ดำเนินการไม่สำเร็จ คำสั่งซื้อบันทึกไว้แล้ว กรุณาตรวจสอบประวัติคำสั่งซื้อและลองใหม่อีกครั้ง',invoice:'ไม่สามารถดาวน์โหลดใบแจ้งหนี้ได้ กรุณาลองใหม่อีกครั้ง'};
+                : {missing:'ไม่พบคำสั่งซื้อ กรุณาตรวจสอบประวัติคำสั่งซื้อ',submit:'ดำเนินการไม่สำเร็จ คำสั่งซื้อบันทึกไว้แล้ว กรุณาตรวจสอบประวัติคำสั่งซื้อและลองใหม่อีกครั้ง',invoice:'ไม่สามารถดาวน์โหลดใบยืนยันการจองได้ กรุณาลองใหม่อีกครั้ง'};
             return messages[this.paymentError] || '';
         },
         ...mapGetters('cart', ['cartItems', 'cartTotal', 'cartShippingCost', 'cartFinalTotal', 'lastOrder']),
@@ -727,6 +727,34 @@ export default {
     .step-label {
         font-size: 0.72rem;
         margin-top: 0.35rem !important;
+    }
+}
+.order-card-header {
+    gap: 0.5rem 1rem;
+}
+
+.step-actions-row {
+    gap: 0.75rem 1rem;
+}
+
+.step-action-btn {
+    min-width: 160px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+    .step-actions-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .step-action-btn {
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
     }
 }
 </style>

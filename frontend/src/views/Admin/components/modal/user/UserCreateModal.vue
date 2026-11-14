@@ -314,11 +314,15 @@ export default {
             this.$set(this.form, 'roleId', role._id);
             this.$set(this.form, 'roleName', role.name);
             this.$set(this.form, 'roleNameEn', role.nameEn);
-            // If the role is not Artist, clear the status fields so validation holds
+            // Non-Artist roles do not carry learner statuses or cohort courses
             if (!isArtistRole(role.nameEn)) {
                 this.$set(this.form, 'statusId', '');
                 this.$set(this.form, 'statusName', '');
                 this.$set(this.form, 'statusNameEn', '');
+                this.$set(this.form, 'course', '');
+            } else if (!this.form.statusId && Array.isArray(this.statuses) && this.statuses.length) {
+                const defaultLearnerStatus = this.statuses.find(s => String(s.nameEn || '').toLowerCase().includes('new')) || this.statuses[0];
+                if (defaultLearnerStatus) this.handleStatusSelect(defaultLearnerStatus);
             }
         },
         handleStatusSelect(status) {
@@ -340,8 +344,8 @@ export default {
                     personalEmail: this.form.personalEmail,
                     telephone: this.form.telephone
                 },
-                status: this.form.statusId || null,
-                ...(normalizeCourse(this.form.course) ? { course: normalizeCourse(this.form.course) } : {})
+                status: this.isArtist ? (this.form.statusId || null) : null,
+                ...(this.isArtist && normalizeCourse(this.form.course) ? { course: normalizeCourse(this.form.course) } : {})
             };
 
             this.$emit('save', payload);

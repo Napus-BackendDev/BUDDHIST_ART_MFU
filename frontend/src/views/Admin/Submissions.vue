@@ -1,28 +1,14 @@
 <template>
     <div class="submissions-dashboard">
-        <HeaderHero :title="$i18n.locale === 'en' ? 'Submission Management' : 'จัดการการส่งงาน'" :description="$i18n.locale === 'en' ? 'Track and manage all artwork submissions, student assignments, and digital portfolios.' : 'ติดตามและจัดการการส่งผลงานศิลปะ งานที่ได้รับมอบหมาย และพอร์ตโฟลิโอดิจิทัลทั้งหมด'" icon="cil-list" :showCreateButton="activeSection === 'submissions'" :showExportButton="activeSection === 'submissions'" :createButtonText="$i18n.locale === 'en' ? 'Add Submission' : 'เพิ่มการส่งงาน'" themeColor="red" @create="addSubmission" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'Submission Management' : 'จัดการการส่งงาน'" :description="$i18n.locale === 'en' ? 'Track and manage all artwork submissions, student assignments, and digital portfolios.' : 'ติดตามและจัดการการส่งผลงานศิลปะ งานที่ได้รับมอบหมาย และพอร์ตโฟลิโอดิจิทัลทั้งหมด'" icon="cil-list" :showCreateButton="canEdit" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Add Submission' : 'เพิ่มการส่งงาน'" themeColor="red" @create="addSubmission" @export="handleExport" />
+        <div v-if="!canEdit" class="alert alert-warning d-flex align-items-center mt-3 mb-2" role="note">
+            <CIcon name="cil-lock-locked" class="mr-2" />
+            <span>{{ $i18n.locale === 'en' ? 'View-Only access: creating, editing, importing, approving, or deleting submissions is disabled.' : 'สิทธิ์ดูอย่างเดียว (View Only): สามารถดูรายการและรายละเอียดผลงานได้ แต่ไม่สามารถเพิ่ม แก้ไข นำเข้า อนุมัติ หรือลบได้' }}</span>
+        </div>
         <p v-if="importFeedback" role="status" class="alert alert-success mt-3">{{ importFeedback }}</p>
-        <div class="submission-section-tabs mb-4" role="tablist">
-            <button type="button" class="section-tab" :class="{ active: activeSection === 'submissions' }" @click="activeSection = 'submissions'">
-                <CIcon name="cil-list" class="mr-2" />
-                <span>{{ $i18n.locale === 'en' ? 'Submissions' : 'รายการ Submission' }}</span>
-                <span class="tab-badge">{{ submissions.length }}</span>
-            </button>
-            <button type="button" class="section-tab" :class="{ active: activeSection === 'post-term' }" @click="activeSection = 'post-term'">
-                <CIcon name="cil-clock" class="mr-2" />
-                <span>{{ $i18n.locale === 'en' ? 'Post-term sale management' : 'จัดการการขายหลังครบ 1 ปี' }}</span>
-                <span v-if="postTermDueCount > 0" class="tab-badge-alert" v-c-tooltip="$i18n.locale === 'en' ? 'Artworks requiring attention' : 'มีผลงานที่ต้องบันทึกความประสงค์'">
-                    <CIcon name="cil-warning" size="sm" class="mr-1" />
-                    ! {{ postTermDueCount }}
-                </span>
-            </button>
-        </div>
-        <div v-if="activeSection === 'post-term'"><PostTermSaleQueue /></div>
-        <div v-else>
-            <SubmissionWidget v-model="filters.quickRange" />
-            <SubmissionFilter v-model="filters" />
-            <SubmissionTable ref="submissionTable" :filters="filters" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
-        </div>
+        <SubmissionWidget v-model="filters.quickRange" />
+        <SubmissionFilter v-model="filters" />
+        <SubmissionTable ref="submissionTable" :filters="filters" :read-only="!canEdit" @view="handleView" @edit="handleEdit" @delete="handleDelete" />
         <SubmissionCreateModal :show.sync="showCreateModal" :saving="saving" :error="saveError" @save="handleSave" />
         <SubmissionCreateChoiceModal :show.sync="showChoiceModal" :error="importError" :import-summary="importSummary" :importing="importing || importReading" @manual="handleChoiceManual" @import="handleChoiceImport" @confirm-import="confirmSubmissionImport" @artwork-import="openArtworkImport()" @download-template="downloadTemplate" @download-artwork-template="$refs.artworkImport.downloadTemplate()" />
         <ArtworkImportModal ref="artworkImport" :show.sync="showArtworkImportModal" :submissions="submissions" :initial-file="artworkImportFile" @imported="handleArtworkImported" />
@@ -31,7 +17,6 @@
 </template>
 
 <script>
-import Service from '@/service/api';
 import SubmissionTable from './components/table/SubmissionTable.vue'
 import HeaderHero from './components/HeaderHero.vue'
 import SubmissionWidget from './components/widget/SubmissionWidget.vue'
@@ -40,8 +25,8 @@ import SubmissionCreateModal from './components/modal/submission/SubmissionCreat
 import SubmissionCreateChoiceModal from './components/modal/submission/SubmissionCreateChoiceModal.vue'
 import SubmissionEditModal from './components/modal/submission/SubmissionEditModal.vue'
 import ArtworkImportModal from './components/modal/submission/ArtworkImportModal.vue'
-import PostTermSaleQueue from './components/post_term/PostTermSaleQueue.vue'
 import * as XLSX from 'xlsx';
+import { hasTabPermission } from '@/utils/permissions';
 
 export default {
     name: 'Submissions',
@@ -53,8 +38,7 @@ export default {
         SubmissionCreateModal,
         SubmissionCreateChoiceModal,
         SubmissionEditModal,
-        ArtworkImportModal,
-        PostTermSaleQueue
+        ArtworkImportModal
     },
     data() {
         return {
@@ -63,7 +47,6 @@ export default {
             showEditModal: false,
             showArtworkImportModal: false,
             artworkImportFile: null,
-            activeSection: 'submissions',
             selectedSubmission: null,
             categories: [],
             referenceReady: false,
@@ -75,7 +58,6 @@ export default {
             importFeedback: '',
             importing: false,
             importReading: false,
-            postTermDueCount: 0,
             filters: {
                 search: '',
                 startDate: null,
@@ -85,12 +67,11 @@ export default {
         }
     },
     computed: {
+        canEdit() { return hasTabPermission(this, 'submissions', 'edit'); },
         submissions() { return this.$store.getters['submission/submissions'] || [] }
     },
     async created() {
         this.fetchSubmissions();
-        this.fetchPostTermAlerts();
-        window.addEventListener('admin:data-changed', this.fetchPostTermAlerts);
         try {
             await Promise.all([
                 this.$store.dispatch('user/get', {}),
@@ -103,26 +84,7 @@ export default {
             this.referenceReady = true;
         }
     },
-    beforeDestroy() {
-        window.removeEventListener('admin:data-changed', this.fetchPostTermAlerts);
-    },
     methods: {
-        async fetchPostTermAlerts() {
-            try {
-                const res = await Service.artwork('post-term-list', {});
-                const items = res.data.data || [];
-                const now = new Date();
-                this.postTermDueCount = items.filter(item => {
-                    const sale = item.postTermSale || {};
-                    if (sale.needsReview) return true;
-                    if (sale.decision !== 'pending' || !sale.initialSaleEndsAt) return false;
-                    const deadline = new Date(sale.initialSaleEndsAt).getTime();
-                    return Number.isFinite(deadline) && deadline <= now.getTime() + 30 * 86400000;
-                }).length;
-            } catch (err) {
-                // silent
-            }
-        },
         fetchSubmissions() {
             this.$store.dispatch('submission/get', {});
         },
@@ -509,75 +471,6 @@ export default {
     }
 }
 </script>
-
-<style scoped>
-.submission-section-tabs {
-    display: flex;
-    gap: 8px;
-    border-bottom: 1px solid #eef0f3;
-    background: #ffffff;
-    padding: 12px 16px 0;
-    border-radius: 14px 14px 0 0;
-    border: 1px solid #eef0f3;
-    border-bottom: 1px solid #f0f1f5;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-}
-.section-tab {
-    border: 0;
-    background: transparent;
-    color: #64748b;
-    padding: 12px 20px;
-    font-weight: 700;
-    font-size: 0.92rem;
-    border-bottom: 3px solid transparent;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    transition: all 0.2s ease;
-}
-.section-tab:hover {
-    color: #8c1515;
-    background: rgba(255, 255, 255, 0.8);
-}
-.section-tab.active {
-    color: #8c1515;
-    border-bottom-color: #8c1515;
-    background: #ffffff;
-}
-.tab-badge {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 2px 8px;
-    font-size: 0.72rem;
-    font-weight: 800;
-    border-radius: 50px;
-    background: #f1f5f9;
-    color: #475569;
-}
-.section-tab.active .tab-badge {
-    background: #fff1f0;
-    color: #8c1515;
-}
-.tab-badge-alert {
-    display: inline-flex;
-    align-items: center;
-    margin-left: 8px;
-    padding: 3px 9px;
-    font-size: 0.72rem;
-    font-weight: 800;
-    border-radius: 50px;
-    background: #fee2e2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
-    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
-    animation: pulse-soft 2s infinite;
-}
-
-@keyframes pulse-soft {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-}
-</style>
 
 <style scoped>
 .submissions-dashboard {

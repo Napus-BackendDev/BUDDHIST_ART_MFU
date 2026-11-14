@@ -1,11 +1,10 @@
-import store from "@/store/store";
 import Service from "@/service/api";
 
 const ServerModule = {
     namespaced: true,
     state: {
         isReload: false,
-        item : []
+        item: []
     },
 
     mutations: {
@@ -13,48 +12,47 @@ const ServerModule = {
             state.isReload = obj;
         },
         item(state, obj) {
-            state.item = obj;
+            state.item = Array.isArray(obj) ? obj : [];
         }
     },
 
     actions: {
-        config({commit}, data) {
-            Service.roles('exp', data, {})
+        config({ commit }, data = {}) {
+            return Service.roles('exp', data, {})
                 .then((response) => {
-                    commit("item", response.data.data)
-                }).catch((err) => {
-            });
+                    const list = response?.data?.data || [];
+                    commit("item", list);
+                    return list;
+                });
         },
-        create({commit}, data) {
-            Service.roles('post', data, {})
+        create({ commit }, data) {
+            return Service.roles('post', data, {})
                 .then((response) => {
-                    commit("isReload", true)
-                }).catch((err) => {
-            });
+                    commit("isReload", true);
+                    return response?.data?.data;
+                });
         },
-        update({commit}, data) {
-            Service.roles('put', data, {})
+        update({ commit }, data) {
+            return Service.roles('put', data, {})
                 .then((response) => {
-                    commit("isReload", true)
-                }).catch((err) => {
-            });
+                    commit("isReload", true);
+                    return response?.data?.data;
+                });
         },
-
-        remove({commit}, data) {
-            Service.roles('delete', data, {})
+        remove({ commit }, data) {
+            return Service.roles('delete', data, {})
                 .then((response) => {
-
-                }).catch((err) => {
-            });
+                    commit("isReload", true);
+                    return response?.data?.data;
+                });
         },
     },
 
     getters: {
-        item(state, obj) {
+        item(state) {
             return state.item;
         },
-
-        isReload(state, obj) {
+        isReload(state) {
             return state.isReload;
         }
     },

@@ -69,7 +69,7 @@
                 <h3 class="mb-1 font-weight-bold text-dark portfolio-title">{{ $i18n.locale === 'en' ? 'My Order History' : 'ประวัติคำสั่งซื้อของฉัน' }}</h3>
                 <p class="text-muted mb-0 portfolio-subtitle">{{ $i18n.locale === 'en' ? 'Track your past purchases and collection expansion.' : 'ติดตามการสั่งซื้อและการขยายคอลเลกชันของคุณ' }}</p>
               </div>
-              <div class="search-box" style="min-width: 300px;">
+              <div class="search-box">
                 <CInput 
                   v-model="orderSearch"
                   :aria-label="$i18n.locale === 'en' ? 'Search orders' : 'ค้นหาคำสั่งซื้อ'"
@@ -82,6 +82,7 @@
             </CCardHeader>
 
             <CCardBody class="p-0">
+              <div class="table-responsive">
               <CDataTable
                 :items="filteredOrders"
                 :fields="[
@@ -143,7 +144,7 @@
                   </td>
                 </template>
                 <template #action="{item}">
-                  <td class="align-middle text-right px-4" style="white-space: nowrap;">
+                  <td class="align-middle text-right px-4 order-action-cell">
                     <!-- If not paid (no slip image) -->
                     <button 
                       type="button"
@@ -181,9 +182,9 @@
                       <!-- Invoice -->
                       <button 
                         type="button"
-                        :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
+                        :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'"
                         class="action-btn-doc icon-invoice mr-1" 
-                        v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
+                        v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'"
                         @click="downloadInvoice(item)"
                       >
                         <CIcon name="cil-cloud-download" size="sm" />
@@ -216,6 +217,7 @@
                   </td>
                 </template>
               </CDataTable>
+              </div>
             </CCardBody>
           </CCard>
         </div>
@@ -265,7 +267,7 @@
       </div>
       <div v-else-if="profileNotFound" role="status">
         <h2>{{ $i18n.locale === 'en' ? 'Artist profile not found' : 'ไม่พบโปรไฟล์ศิลปิน' }}</h2>
-        <router-link to="/artworks">{{ $i18n.locale === 'en' ? 'Back to gallery' : 'กลับสู่แกลเลอรี' }}</router-link>
+        <router-link to="/artworks">{{ $i18n.locale === 'en' ? 'Back to Artworks' : 'กลับสู่หน้าผลงานศิลปะ' }}</router-link>
       </div>
     </CContainer>
   </div>
@@ -497,7 +499,7 @@ export default {
         this.downloadFile(response.data, `Invoice_${item.orderIdDisplay || item._id}.pdf`);
       } catch (error) {
         console.error('Download Invoice Error:', error);
-        alert(this.$i18n.locale === 'en' ? 'Failed to download invoice.' : 'ดาวน์โหลดใบแจ้งหนี้ไม่สำเร็จ');
+        alert(this.$i18n.locale === 'en' ? 'Failed to download invoice.' : 'ดาวน์โหลดใบยืนยันการจองไม่สำเร็จ');
       }
     },
     async downloadCertificate(item) {
@@ -1088,5 +1090,48 @@ export default {
 .premium-pagination ::v-deep .page-item.disabled .page-link {
   background-color: transparent;
   opacity: 0.5;
+}
+.search-box {
+  width: 100%;
+  max-width: 320px;
+  min-width: 0;
+}
+
+.order-action-cell {
+  white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+  .portfolio-header {
+    padding-top: 1.5rem !important;
+    gap: 1rem;
+  }
+
+  .search-box {
+    max-width: 100%;
+  }
+
+  .btn-add-artwork {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-quick-pay {
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+
+  .action-btn-doc {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .btn-add-artwork {
+    width: 100%;
+  }
 }
 </style>

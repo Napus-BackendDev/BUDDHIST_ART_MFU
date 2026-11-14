@@ -12,7 +12,7 @@ const {
     generateArtworkCode,
     generateSubmissionCode
 } = require('../../Artwork/service/artworkCode');
-const { buildPostTermSale } = require('../../Artwork/service/postTermSale');
+const { buildPostTermSale, syncSubmissionPostTermDates } = require('../../Artwork/service/postTermSale');
 const { STATUS_CODES } = require('../../Settings/statusCodes');
 const access = require('../../../../middleware/submissionAccessMiddleware');
 const { processWorkbook, ExcelImportError } = require('./excelImport');
@@ -377,6 +377,8 @@ exports.onUpdate = async (request, response) => {
         // publish/PDF/mail side effect failed after the status was saved.
         const approvedArtworks = getArtworksByStatus(doc, statuses.Approved?._id);
         const rejectedArtworks = getArtworksByStatus(doc, statuses.Rejected?._id, previousDoc);
+        const previousEndAt = previousDoc?.create?.endAt ? new Date(previousDoc.create.endAt).getTime() : null;
+        const nextEndAt = doc?.create?.endAt ? new Date(doc.create.endAt).getTime() : null;
 
         // Process various side-effects
         const [_, __, statusTransitioned] = await Promise.all([
@@ -384,6 +386,10 @@ exports.onUpdate = async (request, response) => {
             processRejections(doc, rejectedArtworks),
             processStudentStatus(doc, statuses, roles)
         ]);
+
+        if (previousEndAt !== nextEndAt) {
+            await syncSubmissionPostTermDates(doc);
+        }
 
         if (statusTransitioned) {
             doc = await Submission.onQuery({ _id: query._id });

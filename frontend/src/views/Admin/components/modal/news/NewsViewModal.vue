@@ -49,6 +49,7 @@
                     {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
                 </CButton>
                 <CButton 
+                    v-if="!readOnly"
                     color="primary" 
                     @click="$emit('edit', news)"
                     class="btn-edit-news"
@@ -66,6 +67,7 @@ import DOMPurify from 'dompurify';
 export default {
     name: 'NewsViewModal',
     props: {
+        readOnly: { type: Boolean, default: false },
         show: { type: Boolean, default: false },
         news: { type: Object, default: () => null }
     },

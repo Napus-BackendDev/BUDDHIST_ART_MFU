@@ -17,15 +17,15 @@
           <!-- Left accent strip -->
           <div class="status-accent" :class="getStatusClass(item)"></div>
           
-          <div class="p-3 px-md-4 w-100 d-flex align-items-center justify-content-between flex-wrap">
+          <div class="submission-row-inner p-3 px-md-4 w-100 d-flex align-items-center justify-content-between flex-wrap">
             <!-- Left Info Side -->
-            <div class="d-flex align-items-center flex-grow-1 mr-4 py-2" style="min-width: 250px;">
+            <div class="submission-main d-flex align-items-center flex-grow-1 mr-md-4 py-2">
               <div class="icon-container-minimal mr-3 d-none d-sm-flex" :class="getStatusClass(item)">
                 <CIcon :name="getStatusIcon(item)" size="lg" />
               </div>
               <div class="title-details">
-                <h5 class="mb-1 font-weight-bold text-dark-premium text-truncate">{{ getName($i18n.locale, item) }}</h5>
-                <div class="d-flex align-items-center flex-wrap">
+                <h5 class="mb-1 font-weight-bold text-dark-premium submission-title-text">{{ getName($i18n.locale, item) }}</h5>
+                <div class="d-flex align-items-center flex-wrap submission-meta-list">
                   <div class="meta-item-minimal mr-3">
                     <CIcon name="cil-calendar" class="mr-1 opacity-6" size="sm" />
                     <span>{{ $i18n.locale === 'en' ? 'Due' : 'กำหนดส่ง' }}: {{ formatDate(item.create.endAt) }}</span>
@@ -40,7 +40,7 @@
             </div>
 
             <!-- Right Status/Progress Side -->
-            <div class="d-flex align-items-center py-2 flex-wrap ml-auto">
+            <div class="submission-meta-actions d-flex align-items-center py-2 flex-wrap ml-auto">
               <!-- Progress Indicator -->
               <div class="progress-wrapper-minimal mr-md-5 mr-3 d-none d-lg-block" style="width: 140px;">
                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -357,5 +357,68 @@ export default {
 
 .rounded-xl {
     border-radius: 20px !important;
+}
+.submission-main {
+  min-width: 0;
+  flex: 1 1 240px;
+}
+
+.title-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.submission-title-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+@media (min-width: 768px) {
+  .submission-title-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .submission-bar-content:hover {
+    transform: none !important;
+  }
+
+  .submission-row-inner {
+    gap: 0.5rem;
+  }
+
+  .submission-main {
+    flex: 1 1 100%;
+    padding-bottom: 0.25rem !important;
+  }
+
+  .submission-title-text {
+    font-size: 1rem;
+    white-space: normal;
+  }
+
+  .submission-meta-list {
+    gap: 0.35rem 0.75rem;
+  }
+
+  .submission-meta-actions {
+    width: 100%;
+    margin-left: 0 !important;
+    padding-top: 0.65rem !important;
+    border-top: 1px solid #f1f5f9;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .btn-circle-action {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
 }
 </style>

@@ -25,7 +25,7 @@
 
         <div class="wizard-body px-3 py-2" v-if="order">
             <p v-if="requestedDocument" class="alert alert-info" role="status">
-                {{ $i18n.locale === 'en' ? 'Use the Invoice or Certificate button below to download the document. Downloads remain subject to your access permissions.' : 'กดปุ่มใบแจ้งหนี้หรือใบรับรองด้านล่างเพื่อดาวน์โหลดเอกสาร ตามสิทธิ์การเข้าถึงของคุณ' }}
+                {{ $i18n.locale === 'en' ? 'Use the Invoice or Certificate button below to download the document. Downloads remain subject to your access permissions.' : 'กดปุ่มใบยืนยันการจองหรือใบรับรองด้านล่างเพื่อดาวน์โหลดเอกสาร ตามสิทธิ์การเข้าถึงของคุณ' }}
             </p>
             <div class="wizard-content-grid">
                 <!-- Left Column: Customer & Order Information -->
@@ -196,7 +196,7 @@
                         <div class="form-group-custom">
                             <label class="form-label">{{ $i18n.locale === 'en' ? 'Documents' : 'เอกสารที่เกี่ยวข้อง' }}</label>
                             <p v-if="order.invoiceStatus === 'Failed'" role="alert" class="invoice-failed small text-danger mb-2">
-                                {{ $i18n.locale === 'en' ? 'Invoice creation failed earlier. Press Invoice to generate it again.' : 'สร้างใบแจ้งหนี้ไม่สำเร็จก่อนหน้านี้ กดปุ่มใบแจ้งหนี้เพื่อสร้างใหม่' }}
+                                {{ $i18n.locale === 'en' ? 'Invoice creation failed earlier. Press Invoice to generate it again.' : 'สร้างใบยืนยันการจองไม่สำเร็จก่อนหน้านี้ กดปุ่มใบยืนยันการจองเพื่อสร้างใหม่' }}
                             </p>
                             <div class="document-buttons-grid">
                                 <!-- Receipt / Slip -->
@@ -230,11 +230,11 @@
                                     class="doc-pill-btn" 
                                     @click="downloadInvoice"
                                     :disabled="!!downloading"
-                                    :title="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
+                                    :title="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'"
                                 >
                                     <CSpinner v-if="downloading === 'invoice'" size="sm" class="mr-2" />
                                     <CIcon v-else name="cil-cloud-download" class="mr-2 doc-icon" />
-                                    <span>{{ downloading === 'invoice' ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Invoice' : 'ใบแจ้งหนี้') }}</span>
+                                    <span>{{ downloading === 'invoice' ? ($i18n.locale === 'en' ? 'Downloading...' : 'กำลังดาวน์โหลด...') : ($i18n.locale === 'en' ? 'Invoice' : 'ใบยืนยันการจอง') }}</span>
                                 </button>
                             </div>
                         </div>

@@ -3,7 +3,13 @@ const User = require('../controller/user');
 const UserModel = require('../models/user.model');
 const RoleModel = require('../../Settings/models/role.model');
 const StatusModel = require('../../Settings/models/status.model');
-const { isAdmin, isSelf } = require('../../../../middleware/userAccessMiddleware');
+const { isAdmin, isSelf, canReadTab } = require('../../../../middleware/userAccessMiddleware');
+const canReadUsersList = req => canReadTab(req, 'users')
+    || canReadTab(req, 'submissions')
+    || canReadTab(req, 'orders')
+    || canReadTab(req, 'overview')
+    || canReadTab(req, 'analytics')
+    || canReadTab(req, 'artworks');
 const ResMessage = require("../../Settings/service/message");
 const {
     normalizeStudentId,
@@ -17,6 +23,18 @@ const defaultPopulate = [
     { path: 'status' }
 ];
 
+const STUDENT_STATUS_FILTER = {
+    $or: [
+        { code: { $in: ['NEW_STUDENT', 'OLD_STUDENT'] } },
+        { 'title.value': { $in: ['NewStudent', 'OldStudent', 'New Student', 'Old Student', 'ผู้เรียนใหม่', 'ผู้เรียนเก่า'] } }
+    ]
+};
+
+const isStudentGroupStatusId = async (statusId) => {
+    if (!statusId || !mongo.ObjectId.isValid(statusId)) return false;
+    return Boolean(await StatusModel.exists({ _id: statusId, ...STUDENT_STATUS_FILTER }));
+};
+
 const withoutPassword = (doc) => {
     if (!doc) return doc;
     const value = doc.toObject ? doc.toObject() : JSON.parse(JSON.stringify(doc));
@@ -25,7 +43,7 @@ const withoutPassword = (doc) => {
 };
 
 const visibleProfile = (request, doc) => {
-    if (!doc || isAdmin(request) || isSelf(request, doc._id)) return withoutPassword(doc);
+    if (!doc || canReadUsersList(request) || isSelf(request, doc._id)) return withoutPassword(doc);
     const value = withoutPassword(doc);
     return Object.fromEntries(['_id', 'name', 'image', 'bio', 'createdAt']
         .filter(key => value[key] !== undefined).map(key => [key, value[key]]));
@@ -65,10 +83,10 @@ exports.onQuery = async function (request, response) {
 
 exports.onQuerys = async function (request, response) {
     try {
-        if (!isAdmin(request) && !mongo.ObjectId.isValid(request.user && request.user.userId)) {
+        if (!canReadUsersList(request) && !mongo.ObjectId.isValid(request.user && request.user.userId)) {
             return response.status(403).json({ code: '40300', message: 'Account identity required.' });
         }
-        let query = isAdmin(request) ? {} : { _id: new mongo.ObjectId(request.user.userId) };
+        let query = canReadUsersList(request) ? {} : { _id: new mongo.ObjectId(request.user.userId) };
         const doc = await User.onQuerys(query);
         return ResMessage.sendResponse(response, 0, 20000, doc);
     } catch (err) {
@@ -107,8 +125,13 @@ exports.onCreate = async function (request, response) {
         let doc;
         if (!isBulkImport) {
             const item = data[0];
+            if (item.role && typeof item.role === 'object' && item.role._id) item.role = item.role._id;
+            if (item.status && typeof item.status === 'object' && item.status._id) item.status = item.status._id;
+            if (item.status === '') item.status = null;
             if (isArtistRole(item.role, roleNameById)) {
                 item.contact = normalizeArtistContact(item.studentId, item.contact);
+            } else if (await isStudentGroupStatusId(item.status)) {
+                item.status = null;
             }
             doc = await User.onCreate(item);
         } else {
@@ -219,6 +242,9 @@ exports.onUpdate = async function (request, response) {
         delete data.password;
         if (!isAdmin(request)) delete data.course;
         else if (data.course !== undefined) data.course = normalizeCourse(data.course);
+        if (data.role && typeof data.role === 'object' && data.role._id) data.role = data.role._id;
+        if (data.status && typeof data.status === 'object' && data.status._id) data.status = data.status._id;
+        if (data.status === '') data.status = null;
         if (data.studentId !== undefined) data.studentId = normalizeStudentId(data.studentId);
         const existing = await UserModel.findById(query._id).populate('role').lean();
         if (data.contact && existing) data.contact = { ...existing.contact, ...data.contact };
@@ -238,6 +264,15 @@ exports.onUpdate = async function (request, response) {
         const effectiveRole = hasIncomingRole ? data.role : (existing && existing.role);
         if (isArtistRole(effectiveRole, roleNameById)) {
             data.contact = normalizeArtistContact(data.studentId || (existing && existing.studentId), data.contact, existing && existing.contact);
+        } else {
+            // Non-Artist accounts (Admin, Customer, Reviewer, Curator, custom roles) must not retain Student Group statuses or learner cohorts.
+            const candidateStatusId = data.status !== undefined ? data.status : (existing && existing.status);
+            if (await isStudentGroupStatusId(candidateStatusId)) {
+                data.status = null;
+            }
+            if (hasIncomingRole && existing && existing.role && isArtistRole(existing.role) && data.course === undefined) {
+                data.course = '';
+            }
         }
         const doc = await User.onUpdate(query, data);
         return ResMessage.sendResponse(response, 0, 20000, withoutPassword(doc));

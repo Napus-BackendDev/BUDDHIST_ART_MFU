@@ -10,6 +10,7 @@ const en = {
     header: {
         home: "หน้าหลัก",
         artworks: "ผลงานศิลปะ",
+        archive: "คลังผลงาน",
         news: "ข่าวสาร",
         about: "เกี่ยวกับเรา",
         login: "เข้าสู่ระบบ",
@@ -36,10 +37,12 @@ const en = {
         operations: "การดำเนินการ",
         orders: "คำสั่งซื้อ",
         artworks: "ผลงานศิลปะ",
+        archive: "คลังผลงาน",
         news: "ข่าวสาร",
         submissions: "ผลงานที่ส่ง",
         dataCenter: "ศูนย์ข้อมูล",
         users: "จัดการผู้ใช้งาน",
+        roles: "จัดการบทบาทและสิทธิ์",
         settings: "ตั้งค่าระบบ",
         returnToWebsite: "กลับไปหน้าหลัก",
         signOut: "ออกจากระบบ"

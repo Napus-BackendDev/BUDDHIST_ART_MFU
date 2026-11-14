@@ -32,10 +32,10 @@
                     style="height: 4px; background: linear-gradient(90deg, #E55B5B, #F9D976); border-radius: 12px 12px 0 0;">
                 </CCardHeader>
                 <CCardHeader
-                    class="bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                    class="bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center flex-wrap" style="gap: 0.5rem 1rem;">
                     <h5 class="font-weight-bold mb-0">{{ $i18n.locale === 'en' ? 'Order Details' : 'รายละเอียดคำสั่งซื้อ' }}</h5>
                     <CLink href="#" class="text-danger small font-weight-bold text-decoration-none">
-                        <CIcon name="cil-cloud-download" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้' }}
+                        <CIcon name="cil-cloud-download" size="sm" class="mr-1" /> {{ $i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง' }}
                     </CLink>
                 </CCardHeader>
                 <CCardBody class="p-4">
@@ -89,14 +89,14 @@
             </CCard>
 
             <!-- Action Buttons -->
-            <div class="d-flex justify-content-center">
-                <CButton color="danger" class="px-4 py-2 font-weight-bold shadow-sm mr-3"
-                    style="background-color: #E55B5B; border: none; min-width: 150px;" to="/">
+            <div class="d-flex justify-content-center flex-wrap bill-actions-row">
+                <CButton color="danger" class="px-4 py-2 font-weight-bold shadow-sm bill-action-btn"
+                    style="background-color: #E55B5B; border: none;" to="/">
                     {{ $i18n.locale === 'en' ? 'Return to Home' : 'กลับหน้าหลัก' }}
                 </CButton>
-                <CButton color="white" class="px-4 py-2 font-weight-bold shadow-sm border"
-                    style="color: #2c3e50; min-width: 150px;" @click="downloadBilling">
-                    <CIcon name="cil-cloud-download" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้' }}
+                <CButton color="white" class="px-4 py-2 font-weight-bold shadow-sm border bill-action-btn"
+                    style="color: #2c3e50;" @click="downloadBilling">
+                    <CIcon name="cil-cloud-download" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง' }}
                 </CButton>
             </div>
 
@@ -157,5 +157,30 @@ export default {
 .bill-page {
     padding-top: 0 !important;
     margin-top: -2rem !important;
+}
+
+.bill-actions-row {
+    gap: 0.75rem 1rem;
+}
+
+.bill-action-btn {
+    min-width: 150px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+    .bill-actions-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .bill-action-btn {
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+    }
 }
 </style>

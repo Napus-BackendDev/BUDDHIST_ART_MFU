@@ -31,17 +31,17 @@
                     <span v-else>{{ getInitials(getName('en') || getName('th')) }}</span>
                 </div>
                 <h3 class="font-weight-bold text-dark mb-2">{{ getName('en') || getName('th') || 'N/A' }}</h3>
-                <div class="d-flex justify-content-center align-items-center mb-3">
-                    <CBadge v-if="isArtist" :class="['status-badge-lg px-4 py-2 mx-1', getStatusClass(getStatusName())]">
+                <div class="d-flex justify-content-center align-items-center mb-3 flex-wrap">
+                    <CBadge :class="['status-badge-lg px-4 py-2 mx-1 mb-1', getStatusClass(getStatusName())]">
                         <CIcon :name="getStatusIcon(getStatusName())" size="sm" class="mr-2" />
                         {{ getLocalizedStatusName() }}
                     </CBadge>
-                    <CBadge :class="['status-badge-lg px-4 py-2 mx-1', getRoleClass(getRoleName())]">
-                        <CIcon :name="getRoleIcon(getRoleName())" size="sm" class="mr-2" />
+                    <CBadge :class="['status-badge-lg px-4 py-2 mx-1 mb-1', getRoleClass(user.role)]">
+                        <CIcon :name="getRoleIcon(user.role)" size="sm" class="mr-2" />
                         {{ getLocalizedRoleName() }}
                     </CBadge>
                 </div>
-                <div v-if="user.course" class="font-weight-bold text-muted mb-2">{{ courseText }}</div>
+                <div v-if="isArtist && user.course" class="font-weight-bold text-muted mb-2">{{ courseText }}</div>
                 <div class="text-muted small">
                     <CIcon name="cil-id-card" size="sm" class="mr-1" />
                     ID: {{ user.studentId || 'N/A' }} • Joined: {{ user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A' }}
@@ -122,6 +122,7 @@
                     {{ $i18n.locale === 'en' ? 'Close' : 'ปิด' }}
                 </CButton>
                 <CButton 
+                    v-if="!readOnly"
                     color="primary" 
                     @click="$emit('edit', user)"
                     class="btn-edit-user"
@@ -135,10 +136,21 @@
 
 <script>
 import { courseLabel } from '@/utils/courses';
+import {
+    getRoleEnName,
+    getSystemRoleKey,
+    getRoleDisplayLabel,
+    getRoleBadgeMeta,
+    resolveUserStatusMeta
+} from '@/utils/roles';
 
 export default {
     name: 'UserViewModal',
     props: {
+        readOnly: {
+            type: Boolean,
+            default: false
+        },
         show: {
             type: Boolean,
             default: false
@@ -153,30 +165,10 @@ export default {
             return courseLabel(this.user && this.user.course, this.$i18n.locale);
         },
         isCustomer() {
-            if (!this.user || !this.user.role) return false;
-            
-            // Check if role is an object (populated)
-            if (typeof this.user.role === 'object' && this.user.role.title) {
-                const titleEn = this.user.role.title.find(t => t.key === 'en');
-                return titleEn && titleEn.value === 'Customer';
-            }
-            
-            // Check if role is a string
-            const roleName = String(this.user.role).toLowerCase();
-            return roleName === 'customer';
+            return this.user ? getSystemRoleKey(this.user.role) === 'customer' : false;
         },
         isArtist() {
-            if (!this.user || !this.user.role) return false;
-            
-            // Check if role is an object (populated)
-            if (typeof this.user.role === 'object' && this.user.role.title) {
-                const titleEn = this.user.role.title.find(t => t.key === 'en');
-                return titleEn && titleEn.value === 'Artist';
-            }
-            
-            // Check if role is a string
-            const roleName = String(this.user.role).toLowerCase();
-            return roleName === 'artist';
+            return this.user ? getSystemRoleKey(this.user.role) === 'artist' : false;
         }
     },
     methods: {
@@ -189,7 +181,7 @@ export default {
                 case 'Active': return 'cil-check-circle';
                 case 'Inactive': return 'cil-clock';
                 case 'Suspended': return 'cil-ban';
-                default: return 'cil-circle';
+                default: return 'cil-clock';
             }
         },
         getStatusClass(status) {
@@ -197,7 +189,7 @@ export default {
                 case 'Active': return 'status-active';
                 case 'Inactive': return 'status-inactive';
                 case 'Suspended': return 'status-suspended';
-                default: return '';
+                default: return 'status-learner';
             }
         },
         getName(lang) {
@@ -211,84 +203,30 @@ export default {
         },
         getRoleName() {
             if (!this.user || !this.user.role) return 'User';
-            const role = this.user.role;
-            if (typeof role === 'string') return role;
-            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
-                const titleEn = role.title.find(t => t.key === 'en');
-                return titleEn ? titleEn.value : (role.title[0] ? role.title[0].value : 'Unknown');
-            }
-            return 'User';
+            return getRoleEnName(this.user.role);
         },
         getLocalizedRoleName() {
             if (!this.user || !this.user.role) return 'User';
-            const role = this.user.role;
-            if (typeof role === 'string') {
-                const map = {
-                    'admin': { en: 'Admin', th: 'ผู้ดูแลระบบ' },
-                    'artist': { en: 'Artist', th: 'ศิลปิน' },
-                    'customer': { en: 'Customer', th: 'ลูกค้า' },
-                    'student': { en: 'Student', th: 'นักศึกษา' }
-                };
-                const key = role.toLowerCase();
-                return map[key] ? map[key][this.$i18n.locale] : role;
-            }
-            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
-                const lang = this.$i18n.locale || 'en';
-                const titleLang = role.title.find(t => t.key === lang) || role.title.find(t => t.key === 'en');
-                return titleLang ? titleLang.value : 'Unknown';
-            }
-            return 'User';
+            return getRoleDisplayLabel(this.user.role, this.$i18n ? this.$i18n.locale : 'th');
         },
         getStatusName() {
-            if (!this.user || !this.user.status) return 'Active';
-            const status = this.user.status;
-            if (typeof status === 'string') return status;
-            if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
-                const titleEn = status.title.find(t => t.key === 'en');
-                return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Unknown');
-            }
-            return 'Active';
+            return resolveUserStatusMeta(this.user, 'en').key;
         },
         getLocalizedStatusName() {
-            if (!this.user || !this.user.status) {
-                return this.$i18n.locale === 'en' ? 'Active' : 'ใช้งานอยู่';
-            }
-            const status = this.user.status;
-            if (typeof status === 'string') {
-                const map = {
-                    'active': { en: 'Active', th: 'ใช้งานอยู่' },
-                    'inactive': { en: 'Inactive', th: 'ไม่ได้ใช้งาน' },
-                    'suspended': { en: 'Suspended', th: 'ระงับการใช้งาน' }
-                };
-                const key = status.toLowerCase();
-                return map[key] ? map[key][this.$i18n.locale] : status;
-            }
-            if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
-                const lang = this.$i18n.locale || 'en';
-                const titleLang = status.title.find(t => t.key === lang) || status.title.find(t => t.key === 'en');
-                return titleLang ? titleLang.value : 'Unknown';
-            }
-            return 'Active';
+            return resolveUserStatusMeta(this.user, this.$i18n ? this.$i18n.locale : 'th').label;
         },
         getRoleClass(role) {
-            if (!role) return 'role-default';
-            const r = role.toLowerCase();
-            switch(r) {
-                case 'admin': return 'role-admin';
-                case 'artist': return 'role-artist';
-                case 'customer': return 'role-customer';
-                default: return 'role-default';
-            }
+            const key = getSystemRoleKey(role);
+            if (key === 'admin') return 'role-admin';
+            if (key === 'artist') return 'role-artist';
+            if (key === 'customer') return 'role-customer';
+            const badge = getRoleBadgeMeta(role, this.$i18n ? this.$i18n.locale : 'th');
+            if (badge.class === 'status-reviewer') return 'role-reviewer';
+            if (badge.class === 'status-curator') return 'role-curator';
+            return 'role-default';
         },
         getRoleIcon(role) {
-            if (!role) return 'cil-user';
-            const r = role.toLowerCase();
-            switch(r) {
-                case 'admin': return 'cilShieldAlt';
-                case 'artist': return 'cil-brush';
-                case 'customer': return 'cil-user';
-                default: return 'cil-user';
-            }
+            return getRoleBadgeMeta(role, this.$i18n ? this.$i18n.locale : 'th').icon;
         }
     }
 }
@@ -456,8 +394,32 @@ export default {
 }
 
 .role-default {
-    background-color: #f1f5f9 !important;
-    color: #475569 !important;
-    border: 1px solid #cbd5e1 !important;
+    background-color: #eef2ff !important;
+    color: #3730a3 !important;
+    border: 1px solid #c7d2fe !important;
+}
+
+.role-reviewer {
+    background-color: #ede9fe !important;
+    color: #5b21b6 !important;
+    border: 1px solid #ddd6fe !important;
+}
+
+.role-curator {
+    background-color: #f0fdfa !important;
+    color: #0f766e !important;
+    border: 1px solid #99f6e4 !important;
+}
+
+.status-active {
+    background-color: #ecfdf5 !important;
+    color: #047857 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+
+.status-learner {
+    background-color: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
 }
 </style>

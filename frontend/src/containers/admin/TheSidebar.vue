@@ -36,6 +36,7 @@
 
 <script>
 import nav from '../_nav'
+import { hasTabPermission } from '@/utils/permissions'
 // import TheSidebarProfile from "@/projects/components/Util/TheSidebarProfile";
 export default {
   name: 'TheSidebar',
@@ -51,104 +52,141 @@ export default {
       return this.$store.state.sidebarMinimize
     },
     navs() {
+      const can = tab => hasTabPermission(this, tab, 'view');
+      const sections = [
+        {
+          title: this.$t('sidebar.main'),
+          items: [
+            {
+              tab: 'overview',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.overview'),
+              to: '/admin',
+              icon: 'cil-window-restore'
+            },
+            {
+              tab: 'analytics',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.analytics'),
+              to: '/admin/analytics',
+              icon: 'cil-chart'
+            }
+          ]
+        },
+        {
+          title: this.$t('sidebar.operations'),
+          items: [
+            {
+              tab: 'orders',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.orders'),
+              to: '/admin/orders',
+              icon: 'cil-cart',
+              badge: this.pendingPaymentCount > 0 ? {
+                color: 'info',
+                text: String(this.pendingPaymentCount)
+              } : null
+            },
+            {
+              tab: 'artworks',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.artworks'),
+              to: '/admin/artworks',
+              icon: 'cil-paint',
+              badge: this.pendingArtworkCount > 0 ? {
+                color: 'warning',
+                text: String(this.pendingArtworkCount)
+              } : null
+            },
+            {
+              tab: 'news',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.news'),
+              to: '/admin/news',
+              icon: 'cil-newspaper'
+            },
+            {
+              tab: 'submissions',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.submissions'),
+              to: '/admin/submissions',
+              icon: 'cil-cloud-upload',
+              badge: this.submissionAlertBadge
+            }
+          ]
+        },
+        {
+          title: this.$t('sidebar.dataCenter'),
+          items: [
+            {
+              tab: 'users',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.users'),
+              to: '/admin/users-management',
+              icon: 'cil-people'
+            },
+            {
+              tab: 'roles',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.roles'),
+              to: '/admin/roles',
+              icon: 'cil-shield-alt'
+            },
+            {
+              tab: 'settings',
+              _name: 'CSidebarNavItem',
+              name: this.$t('sidebar.settings'),
+              to: '/admin/settings',
+              icon: 'cil-settings'
+            }
+          ]
+        }
+      ];
+
+      const children = [];
+      sections.forEach(section => {
+        const visibleItems = section.items
+          .filter(item => can(item.tab))
+          .map(({ tab, ...rest }) => rest);
+        if (visibleItems.length > 0) {
+          children.push({
+            _name: 'CSidebarNavTitle',
+            _children: [section.title]
+          });
+          children.push(...visibleItems);
+        }
+      });
+
+      children.push(
+        {
+          _name: 'CSidebarNavDivider',
+          _classes: 'mt-auto'
+        },
+        {
+          _name: 'CSidebarNavItem',
+          name: this.$t('sidebar.returnToWebsite'),
+          to: '/',
+          icon: 'cil-home'
+        },
+        {
+          _name: 'CSidebarNavItem',
+          name: this.$t('sidebar.signOut'),
+          href: '#',
+          icon: 'cil-account-logout',
+          _nativeOn: { click: this.logout }
+        }
+      );
+
       return [{
         _name: 'CSidebarNav',
-        _children: [
-          {
-            _name: 'CSidebarNavTitle',
-            _children: [this.$t('sidebar.main')]
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.overview'),
-            to: '/admin',
-            icon: 'cil-window-restore'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.analytics'),
-            to: '/admin/analytics',
-            icon: 'cil-chart'
-          },
-          {
-            _name: 'CSidebarNavTitle',
-            _children: [this.$t('sidebar.operations')]
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.orders'),
-            to: '/admin/orders',
-            icon: 'cil-cart',
-            badge: this.pendingPaymentCount > 0 ? {
-              color: 'info',
-              text: String(this.pendingPaymentCount)
-            } : null
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.artworks'),
-            to: '/admin/artworks',
-            icon: 'cil-paint',
-            badge: this.pendingArtworkCount > 0 ? {
-              color: 'warning',
-              text: String(this.pendingArtworkCount)
-            } : null
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.news'),
-            to: '/admin/news',
-            icon: 'cil-newspaper'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.submissions'),
-            to: '/admin/submissions',
-            icon: 'cil-cloud-upload',
-            badge: this.submissionAlertBadge
-          },
-          {
-            _name: 'CSidebarNavTitle',
-            _children: [this.$t('sidebar.dataCenter')]
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.users'),
-            to: '/admin/users-management',
-            icon: 'cil-people'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.settings'),
-            to: '/admin/settings',
-            icon: 'cil-settings'
-          },
-          {
-            _name: 'CSidebarNavDivider',
-            _classes: 'mt-auto'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.returnToWebsite'),
-            to: '/',
-            icon: 'cil-home'
-          },
-          {
-            _name: 'CSidebarNavItem',
-            name: this.$t('sidebar.signOut'),
-            href: '#',
-            icon: 'cil-account-logout',
-            _nativeOn: { click: this.logout }
-          }
-        ]
-      }]
+        _children: children
+      }];
     },
     submissionAlertBadge() {
-      const totalAlerts = this.pendingSubmissionCount + this.postTermDueCount;
-      if (totalAlerts > 0) {
+      if (this.pendingSubmissionCount > 0) {
         return {
           color: 'danger',
-          text: `! ${totalAlerts}`
+          text: `! ${this.pendingSubmissionCount}`
         };
       }
       return null;
@@ -257,43 +295,19 @@ export default {
       return count;
     }
   },
-  data: function () {
-    return {
-      postTermDueCount: 0
-    };
-  },
   created() {
-    this.$store.dispatch('order/get').catch(err => console.error('Error loading orders in sidebar:', err));
-    this.$store.dispatch('artwork/get').catch(err => console.error('Error loading artworks in sidebar:', err));
-    this.$store.dispatch('submission/get').catch(err => console.error('Error loading submissions in sidebar:', err));
+    if (hasTabPermission(this, 'orders', 'view')) {
+      this.$store.dispatch('order/get').catch(err => console.error('Error loading orders in sidebar:', err));
+    }
+    if (hasTabPermission(this, 'artworks', 'view') || hasTabPermission(this, 'submissions', 'view')) {
+      this.$store.dispatch('artwork/get').catch(err => console.error('Error loading artworks in sidebar:', err));
+    }
+    if (hasTabPermission(this, 'submissions', 'view')) {
+      this.$store.dispatch('submission/get').catch(err => console.error('Error loading submissions in sidebar:', err));
+    }
     this.$store.dispatch('setting/status/get').catch(err => console.error('Error loading statuses in sidebar:', err));
-    this.fetchPostTermAlerts();
-    window.addEventListener('admin:data-changed', this.fetchPostTermAlerts);
-  },
-  beforeDestroy() {
-    window.removeEventListener('admin:data-changed', this.fetchPostTermAlerts);
   },
   methods: {
-    async fetchPostTermAlerts() {
-      try {
-        const res = await this.$service.artwork('post-term-list', {});
-        const items = res.data.data || [];
-        const now = new Date();
-        this.postTermDueCount = items.filter(item => {
-          const sale = item.postTermSale || {};
-          if (sale.needsReview) return true;
-          if (sale.decision === 'pending') return true;
-          const end = sale.initialSaleEndsAt ? new Date(sale.initialSaleEndsAt) : null;
-          if (end) {
-            const diffDays = (end - now) / (1000 * 60 * 60 * 24);
-            return diffDays <= 30;
-          }
-          return false;
-        }).length;
-      } catch (err) {
-        // silent
-      }
-    },
     logout() {
       localStorage.removeItem('objs');
       this.$store.commit('auth/showSignInModal', false);

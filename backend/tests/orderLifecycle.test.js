@@ -87,16 +87,19 @@ describe('Order Lifecycle', () => {
   });
 
   // Creates an Artwork left in its schema-default status (no Reserved/Sold Out).
-  const makeArtwork = async (price = 5000) => {
+  const makeArtwork = async (price = 5000, extra = {}) => {
     return Artwork.create({
       artworkCode: `BA-2569-TST-STUDENT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
       title: [{ key: 'en', value: 'Test Art' }, { key: 'th', value: 'งานทดสอบ' }],
+      size: [{ key: 'th', value: '50 x 70 ซม.' }, { key: 'en', value: '50 x 70 cm' }],
+      technique: [{ key: 'th', value: 'สีอะคริลิกบนผ้าใบ' }, { key: 'en', value: 'Acrylic on canvas' }],
       price,
       artist: testArtist._id,
       courseLevel: '6',
       status: { approval: approvedStatus._id, sale: availableStatus._id },
       // Intentionally NO `image` -> certificate generation is skipped (no puppeteer),
       // and the create path attaches no slip. Keeps the suite hermetic.
+      ...extra,
     });
   };
 
@@ -108,6 +111,10 @@ describe('Order Lifecycle', () => {
     expect(result.body.data.amounts).toMatchObject({ subtotal: 1000, shipping: 0, total: 1000 });
     await orderService.waitForPostCreateTasks();
     expect(pdfService.generateInvoice.mock.calls[0][0]).toMatchObject({ total: 1000, shipping: 0 });
+    expect(pdfService.generateInvoice.mock.calls[0][0].items[0]).toMatchObject({
+      size: '50 x 70 ซม.',
+      technique: 'สีอะคริลิกบนผ้าใบ',
+    });
     await Artwork.updateOne({ _id: art._id }, { price: 9000 });
     const exists = jest.spyOn(require('fs'), 'existsSync').mockReturnValue(false);
     try {
@@ -115,6 +122,8 @@ describe('Order Lifecycle', () => {
       const invoice = pdfService.generateInvoice.mock.calls.slice(-1)[0][0];
       expect(invoice.total).toBe(1000);
       expect(invoice.items[0].price).toBe(1000);
+      expect(invoice.items[0].size).toBe('50 x 70 ซม.');
+      expect(invoice.items[0].technique).toBe('สีอะคริลิกบนผ้าใบ');
     } finally { exists.mockRestore(); }
   });
 

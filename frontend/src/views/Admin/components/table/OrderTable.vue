@@ -67,18 +67,18 @@
                             <button class="action-btn icon-view" :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
+                            <button v-if="!readOnly" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button v-if="item.image" class="action-btn icon-success mx-2" :aria-label="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" @click="$emit('approve', item)" :disabled="loadingItems.includes(item._id)">
+                            <button v-if="!readOnly && item.image" class="action-btn icon-success mx-2" :aria-label="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" v-c-tooltip="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'" @click="$emit('approve', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon v-if="loadingActions[item._id] === 'Approved'" name="cil-reload" size="lg" class="spinner-animation" />
                                 <CIcon v-else name="cil-check" size="lg" />
                             </button>
-                            <button class="action-btn icon-danger mr-2" :aria-label="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" @click="$emit('reject', item)" :disabled="loadingItems.includes(item._id)">
+                            <button v-if="!readOnly" class="action-btn icon-danger mr-2" :aria-label="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" v-c-tooltip="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'" @click="$emit('reject', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon v-if="loadingActions[item._id] === 'Rejected'" name="cil-reload" size="lg" class="spinner-animation" />
                                 <CIcon v-else name="cil-x" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id) || downloadingItems.includes(item._id)">
+                            <button class="action-btn icon-download ml-2" :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'" @click="downloadInvoice(item)" :disabled="loadingItems.includes(item._id) || downloadingItems.includes(item._id)">
                                 <CSpinner v-if="downloadingItems.includes(item._id)" size="sm" />
                                 <CIcon v-else name="cil-file" size="lg" />
                             </button>
@@ -87,10 +87,10 @@
                             <button class="action-btn icon-view mr-2" :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="$emit('view-order', item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button v-if="getName('en', item.status) === 'Approved'" class="action-btn icon-edit mr-2" :aria-label="$i18n.locale === 'en' ? 'Edit delivery information' : 'แก้ไขข้อมูลจัดส่ง'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
+                            <button v-if="!readOnly && getName('en', item.status) === 'Approved'" class="action-btn icon-edit mr-2" :aria-label="$i18n.locale === 'en' ? 'Edit delivery information' : 'แก้ไขข้อมูลจัดส่ง'" @click="$emit('edit-order', item)" :disabled="loadingItems.includes(item._id)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button class="action-btn icon-download" :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'" @click="downloadInvoice(item)" :disabled="downloadingItems.includes(item._id)">
+                            <button class="action-btn icon-download" :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'" v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'" @click="downloadInvoice(item)" :disabled="downloadingItems.includes(item._id)">
                                 <CSpinner v-if="downloadingItems.includes(item._id)" size="sm" />
                                 <CIcon v-else name="cil-file" size="lg" />
                             </button>
@@ -130,6 +130,7 @@ export default {
     name: 'OrderTable',
     mixins: [statusBadgeMixin],
     props: {
+        readOnly: { type: Boolean, default: false },
         title: {
             type: String,
             default: ''
@@ -353,7 +354,7 @@ export default {
                 console.error('Download failed:', error);
                 this.$store.commit('dialog/showToast', {
                     title: this.$i18n.locale === 'en' ? 'Error' : 'ข้อผิดพลาด',
-                    message: this.$i18n.locale === 'en' ? 'Could not download invoice.' : 'ไม่สามารถดาวน์โหลดใบเสร็จได้',
+                    message: this.$i18n.locale === 'en' ? 'Could not download invoice.' : 'ไม่สามารถดาวน์โหลดใบยืนยันการจองได้',
                     variant: 'danger'
                 });
             } finally {

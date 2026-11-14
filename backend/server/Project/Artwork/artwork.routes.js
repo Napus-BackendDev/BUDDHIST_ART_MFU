@@ -22,9 +22,9 @@ router.put("", auth, access.update, artworkService.onUpdate);
 router.delete("", auth, access.remove, artworkService.onDelete);
 
 router.get("/category", categoryService.onQuerys);
-router.get('/category/:id/impact', admin, (req, res) => { req.params.resource = 'category'; return adminSettings.impact(req, res); });
-router.post("/category", admin, adminSettings.categoryCreate);
-router.put("/category", admin, adminSettings.categoryUpdate);
-router.delete("/category", admin, (req, res) => { req.params.resource = 'category'; return adminSettings.delete(req, res); });
+router.get('/category/:id/impact', admin.requirePermission("settings", "view"), (req, res) => { req.params.resource = 'category'; return adminSettings.impact(req, res); });
+router.post("/category", admin.requirePermission("settings", "edit"), adminSettings.categoryCreate);
+router.put("/category", admin.requirePermission("settings", "edit"), adminSettings.categoryUpdate);
+router.delete("/category", admin.requirePermission("settings", "edit"), (req, res) => { req.params.resource = 'category'; return adminSettings.delete(req, res); });
 
 module.exports = router;

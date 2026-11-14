@@ -106,8 +106,8 @@
                                 ? `Dimensions (${is3D ? 'Width × Length × Height' : 'Width × Length'})`
                                 : `ขนาด (${is3D ? 'กว้าง × ยาว × สูง' : 'กว้าง × ยาว'})` }} *
                         </label>
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
+                        <div class="d-flex align-items-center flex-wrap dimensions-inputs-row">
+                            <div class="dimension-field flex-grow-1">
                                 <div class="input-group-custom">
                                     <span class="dimension-prefix">W</span>
                                     <CInput 
@@ -119,7 +119,7 @@
                                 </div>
                             </div>
                             <div class="mx-2 text-muted font-weight-bold">×</div>
-                            <div class="flex-grow-1">
+                            <div class="dimension-field flex-grow-1">
                                 <div class="input-group-custom">
                                     <span class="dimension-prefix">L</span>
                                     <CInput 
@@ -132,7 +132,7 @@
                             </div>
                             <template v-if="is3D">
                                 <div class="mx-2 text-muted font-weight-bold">×</div>
-                                <div class="flex-grow-1">
+                                <div class="dimension-field flex-grow-1">
                                     <div class="input-group-custom">
                                         <span class="dimension-prefix">H</span>
                                         <CInput 
@@ -144,7 +144,7 @@
                                     </div>
                                 </div>
                             </template>
-                            <div class="ml-2">
+                            <div class="ml-sm-2 dimension-unit-col">
                                 <CDropdown :key="form.unit" :caret="false">
                                     <template #toggler>
                                         <CButton class="custom-select-btn" style="min-width: 80px; height: 46px;">
@@ -261,8 +261,8 @@
                                 ? `Dimensions (${is3D ? 'Width × Length × Height' : 'Width × Length'})`
                                 : `ขนาด (${is3D ? 'กว้าง × ยาว × สูง' : 'กว้าง × ยาว'})` }} *
                         </label>
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
+                        <div class="d-flex align-items-center flex-wrap dimensions-inputs-row">
+                            <div class="dimension-field flex-grow-1">
                                 <div class="input-group-custom">
                                     <span class="dimension-prefix">W</span>
                                     <CInput
@@ -274,7 +274,7 @@
                                 </div>
                             </div>
                             <div class="mx-2 text-muted font-weight-bold">×</div>
-                            <div class="flex-grow-1">
+                            <div class="dimension-field flex-grow-1">
                                 <div class="input-group-custom">
                                     <span class="dimension-prefix">L</span>
                                     <CInput
@@ -287,7 +287,7 @@
                             </div>
                             <template v-if="is3D">
                                 <div class="mx-2 text-muted font-weight-bold">×</div>
-                                <div class="flex-grow-1">
+                                <div class="dimension-field flex-grow-1">
                                     <div class="input-group-custom">
                                         <span class="dimension-prefix">H</span>
                                         <CInput
@@ -299,7 +299,7 @@
                                     </div>
                                 </div>
                             </template>
-                            <div class="ml-2">
+                            <div class="ml-sm-2 dimension-unit-col">
                                 <CDropdown :key="`en-${form.unit}`" :caret="false">
                                     <template #toggler>
                                         <CButton class="custom-select-btn" style="min-width: 80px; height: 46px;">
@@ -1459,5 +1459,36 @@ export default {
         flex: 1;
     }
 
+}
+.dimensions-inputs-row {
+    gap: 0.5rem 0.25rem;
+}
+
+.dimension-field {
+    min-width: 78px;
+}
+
+@media (max-width: 767.98px) {
+    ::v-deep .modal-body {
+        max-height: calc(100dvh - 150px);
+        overflow-y: auto;
+    }
+
+    .btn-create-artwork {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dimension-field {
+        flex: 1 1 38%;
+    }
+    .dimension-unit-col {
+        flex: 1 1 100%;
+        margin-top: 0.25rem;
+    }
+    .dimension-unit-col .custom-select-btn {
+        width: 100%;
+    }
 }
 </style>

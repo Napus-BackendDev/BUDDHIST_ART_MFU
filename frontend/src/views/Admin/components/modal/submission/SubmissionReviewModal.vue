@@ -325,7 +325,7 @@
                 </div>
                 
                 <div class="wizard-actions d-flex align-items-center">
-                    <div class="d-flex align-items-center mr-3" v-if="artwork && artwork.status === 'Pending'">
+                    <div class="d-flex align-items-center mr-3" v-if="!readOnly && artwork && artwork.status === 'Pending'">
                         <CButton 
                             class="btn-action-modal btn-passed-modal mr-2" 
                             :disabled="!!isUpdating"
@@ -368,6 +368,10 @@
 export default {
     name: 'SubmissionReviewModal',
     props: {
+        readOnly: {
+            type: Boolean,
+            default: false
+        },
         show: {
             type: Boolean,
             default: false

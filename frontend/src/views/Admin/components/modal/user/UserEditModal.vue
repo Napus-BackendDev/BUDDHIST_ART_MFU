@@ -86,6 +86,21 @@
                     </div>
                 </CCol>
             </CRow>
+            <CRow v-else>
+                <CCol md="12">
+                    <div class="form-group-custom">
+                        <label class="form-label">{{ $i18n.locale === 'en' ? 'Account Status' : 'สถานะบัญชี' }}</label>
+                        <div class="d-flex align-items-center justify-content-between px-3 py-2 rounded border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                            <span class="small text-muted">
+                                {{ $i18n.locale === 'en' ? 'Active (Non-learner role)' : 'ใช้งานอยู่ (บัญชีบุคลากร / ผู้ใช้งานทั่วไป)' }}
+                            </span>
+                            <span class="badge badge-pill px-3 py-1" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">
+                                {{ $i18n.locale === 'en' ? 'Active' : 'ใช้งานอยู่' }}
+                            </span>
+                        </div>
+                    </div>
+                </CCol>
+            </CRow>
 
             <!-- Course Row -->
             <CRow v-if="isArtist">
@@ -303,11 +318,15 @@ export default {
             this.$set(this.form, 'roleId', role._id);
             this.$set(this.form, 'roleName', role.name);
             this.$set(this.form, 'roleNameEn', role.nameEn);
-            // If the role is not Artist, clear the status fields
+            // Non-Artist roles do not carry learner statuses or cohort courses
             if (!isArtistRole(role.nameEn)) {
                 this.$set(this.form, 'statusId', '');
                 this.$set(this.form, 'statusName', '');
                 this.$set(this.form, 'statusNameEn', '');
+                this.$set(this.form, 'course', '');
+            } else if (!this.form.statusId && Array.isArray(this.statuses) && this.statuses.length) {
+                const defaultLearnerStatus = this.statuses.find(s => String(s.nameEn || '').toLowerCase().includes('new')) || this.statuses[0];
+                if (defaultLearnerStatus) this.handleStatusSelect(defaultLearnerStatus);
             }
         },
         handleStatusSelect(status) {
@@ -395,8 +414,8 @@ export default {
                 _id: this.form._id,
                 studentId: this.form.studentId,
                 role: this.form.roleId, // Always send ObjectID
-                status: this.form.statusId || null, // Always send ObjectID or null
-                course: normalizeCourse(this.form.course),
+                status: this.isArtist ? (this.form.statusId || null) : null, // Non-Artist accounts never keep learner statuses
+                course: this.isArtist ? normalizeCourse(this.form.course) : '',
                 name: [
                     { key: 'th', value: this.form.nameTh },
                     { key: 'en', value: this.form.nameEn || (this.isCustomer ? this.form.nameTh : '') }

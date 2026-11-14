@@ -16,6 +16,14 @@ const ArtworkModule = {
         },
         currentArtwork(state, obj) {
             state.currentArtwork = obj;
+        },
+        updateArtworkViews(state, updated) {
+            if (!updated || !updated._id || !Array.isArray(state.artworks)) return;
+            const targetId = String(updated._id);
+            const idx = state.artworks.findIndex(item => item && String(item._id) === targetId);
+            if (idx !== -1 && typeof updated.views === 'number') {
+                state.artworks.splice(idx, 1, { ...state.artworks[idx], views: updated.views });
+            }
         }
     },
 
@@ -45,7 +53,12 @@ const ArtworkModule = {
                 });
         },
         updateView({ commit }, id) {
-            return Service.artwork('view', id, {});
+            return Service.artwork('view', id, {})
+                .then((response) => {
+                    const updated = response && response.data && response.data.data;
+                    if (updated) commit('updateArtworkViews', updated);
+                    return updated;
+                });
         },
         create({ commit }, data) {
             return Service.artwork('post', data, {});

@@ -17,6 +17,9 @@
               </span>
             </h1>
             <div class="title-separator mt-3 mb-0"></div>
+            <p v-if="description" class="hero-description mt-4 mb-0">
+              {{ description }}
+            </p>
           </div>
         </CCol>
       </CRow>
@@ -39,7 +42,7 @@ export default {
     },
     badge: {
       type: String,
-      default: 'BUDDHIST ART GALLERY',
+      default: 'BUDDHIST ART SPACE',
     },
     titleLead: {
       type: String,
@@ -120,6 +123,15 @@ export default {
   border-radius: 2px;
 }
 
+.hero-description {
+  font-family: var(--app-font-family);
+  font-size: 1.04rem;
+  font-weight: 400;
+  line-height: 1.75;
+  color: #4b5563;
+  max-width: 64ch;
+}
+
 .reveal-animation {
   animation: heroTextReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -154,6 +166,11 @@ export default {
 
   .hero-title {
     font-size: 2.2rem;
+  }
+
+  .hero-description {
+    font-size: 0.96rem;
+    line-height: 1.7;
   }
 }
 </style>

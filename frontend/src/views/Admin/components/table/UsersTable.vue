@@ -36,12 +36,12 @@
                 <!-- Email Office / Personal Column -->
                 <template #email_details="{ item }">
                     <td class="py-3">
-                        <template v-if="getRoleNameEn(item.role) === 'Customer'">
-                            <div class="font-weight-bold" style="color: #4f5d73; font-size: 0.9rem;">{{ (item.contact && item.contact.personalEmail) || '-' }}</div>
+                        <template v-if="getRoleKey(item.role) === 'customer'">
+                            <div class="font-weight-bold" style="color: #4f5d73; font-size: 0.9rem;">{{ (item.contact && (item.contact.personalEmail || item.contact.studentEmail)) || '-' }}</div>
                         </template>
                         <template v-else>
-                            <div class="font-weight-bold" style="color: #4f5d73; font-size: 0.9rem;">{{ (item.contact && item.contact.studentEmail) || '-' }}</div>
-                            <div class="small text-muted font-weight-bold text-truncate" style="max-width: 180px;">{{ (item.contact && item.contact.personalEmail) || '-' }}</div>
+                            <div class="font-weight-bold" style="color: #4f5d73; font-size: 0.9rem;">{{ (item.contact && (item.contact.studentEmail || item.contact.personalEmail)) || '-' }}</div>
+                            <div v-if="item.contact && item.contact.studentEmail && item.contact.personalEmail && item.contact.studentEmail !== item.contact.personalEmail" class="small text-muted font-weight-bold text-truncate" style="max-width: 190px;">{{ item.contact.personalEmail }}</div>
                         </template>
                     </td>
                 </template>
@@ -49,19 +49,22 @@
                 <!-- Tel / Role Column -->
                 <template #tel_role="{ item }">
                     <td class="py-3">
-                        <div class="font-weight-bold" style="color: #2c3e50; font-size: 0.95rem;">{{ (item.contact && item.contact.telephone) || '-' }}</div>
-                        <div class="small text-muted font-weight-bold">{{ getRoleBadge(item.role).label }}</div>
+                        <div class="font-weight-bold mb-1" style="color: #2c3e50; font-size: 0.95rem;">{{ (item.contact && item.contact.telephone) || '-' }}</div>
+                        <span :class="['role-pill', getRoleBadge(item.role).class]">
+                            <CIcon :name="getRoleBadge(item.role).icon" size="sm" class="status-icon" />
+                            {{ getRoleBadge(item.role).label }}
+                        </span>
                     </td>
                 </template>
 
                 <!-- Learner status is separate from the account role. -->
                 <template #status="{ item }">
                     <td class="py-3">
-                        <div :class="['status-badge', getStatusBadge(getStatusNameEn(item.status)).class]">
-                            <CIcon :name="getStatusBadge(getStatusNameEn(item.status)).icon" size="sm" class="status-icon" />
-                            {{ getStatusName(item.status) }}
+                        <div :class="['status-badge', getStatusBadge(resolveStatusInfo(item).key).class]">
+                            <CIcon :name="getStatusBadge(resolveStatusInfo(item).key).icon" size="sm" class="status-icon" />
+                            {{ resolveStatusInfo(item).label }}
                         </div>
-                        <div v-if="item.course" class="small text-muted font-weight-bold mt-1 course-tag">{{ courseText(item.course) }}</div>
+                        <div v-if="resolveStatusInfo(item).isLearner && item.course" class="small text-muted font-weight-bold mt-1 course-tag">{{ courseText(item.course) }}</div>
                     </td>
                 </template>
                 <template #role="{ item }">
@@ -88,10 +91,10 @@
                             <button type="button" class="action-btn icon-view" :aria-label="($i18n.locale === 'en' ? 'View user: ' : 'ดูผู้ใช้: ') + (getName($i18n.locale, item) || getName('en', item) || item.studentId)" v-c-tooltip="$i18n.locale === 'en' ? 'View' : 'ดู'" @click="handleView(item)">
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button type="button" class="action-btn icon-edit mx-2" :aria-label="($i18n.locale === 'en' ? 'Edit user: ' : 'แก้ไขผู้ใช้: ') + (getName($i18n.locale, item) || getName('en', item) || item.studentId)" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="handleEdit(item)">
+                            <button v-if="!readOnly" type="button" class="action-btn icon-edit mx-2" :aria-label="($i18n.locale === 'en' ? 'Edit user: ' : 'แก้ไขผู้ใช้: ') + (getName($i18n.locale, item) || getName('en', item) || item.studentId)" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="handleEdit(item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
-                            <button type="button" class="action-btn icon-danger" :aria-label="($i18n.locale === 'en' ? 'Delete user: ' : 'ลบผู้ใช้: ') + (getName($i18n.locale, item) || getName('en', item) || item.studentId)" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="handleDelete(item)">
+                            <button v-if="!readOnly" type="button" class="action-btn icon-danger" :aria-label="($i18n.locale === 'en' ? 'Delete user: ' : 'ลบผู้ใช้: ') + (getName($i18n.locale, item) || getName('en', item) || item.studentId)" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="handleDelete(item)">
                                 <CIcon name="cil-trash" size="lg" />
                             </button>
                         </div>
@@ -123,11 +126,20 @@
 import { mapGetters } from 'vuex';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
 import { normalizeCourse, courseLabel } from '@/utils/courses';
+import {
+    getRoleEnName,
+    getSystemRoleKey,
+    getRoleDisplayLabel,
+    getRoleBadgeMeta,
+    resolveUserStatusMeta
+} from '@/utils/roles';
 
 export default {
     name: 'UsersTable',
     mixins: [statusBadgeMixin],
     props: {
+        readOnly: { type: Boolean, default: false },
+        roles: { type: Array, default: () => [] },
         filters: {
             type: Object,
             default: () => ({
@@ -182,24 +194,31 @@ export default {
                 // Get role details for matching
                 const userRoleId = (typeof user.role === 'object' && user.role) ? user.role._id : user.role;
                 const userRoleNameEn = this.getRoleNameEn(user.role);
-                const selectedRole = (this.filters.role || '').toLowerCase();
+                const userRoleNameTh = getRoleDisplayLabel(user.role, 'th', this.roles);
+                const userRoleCode = (typeof user.role === 'object' && user.role && user.role.code) ? user.role.code : '';
+                const selectedRole = (this.filters.role || '').trim().toLowerCase();
                 const roleMatch = !this.filters.role ||
                     this.filters.role === 'All Roles' ||
-                    (userRoleId && String(userRoleId) === this.filters.role) ||
-                    (userRoleNameEn && userRoleNameEn.toLowerCase() === selectedRole);
+                    (userRoleId && String(userRoleId) === String(this.filters.role)) ||
+                    (userRoleNameEn && userRoleNameEn.toLowerCase() === selectedRole) ||
+                    (userRoleNameTh && userRoleNameTh.toLowerCase() === selectedRole) ||
+                    (userRoleCode && userRoleCode.toLowerCase() === selectedRole);
 
-                // Get status details for matching
+                // Match against effective displayed status so non-learners with cleared/legacy student status behave consistently
+                const statusMeta = this.resolveStatusInfo(user);
                 const userStatusId = (typeof user.status === 'object' && user.status) ? user.status._id : user.status;
-                const userStatusNameEn = this.getStatusNameEn(user.status);
-                const userStatusCode = (typeof user.status === 'object' && user.status && user.status.code) ? user.status.code : '';
-                const selectedStatus = (this.filters.status || '').toLowerCase();
+                const userStatusNameEn = statusMeta.key;
+                const userStatusCode = statusMeta.code || '';
+                const selectedStatus = (this.filters.status || '').trim().toLowerCase();
                 const statusMatch = !this.filters.status ||
                     this.filters.status === 'All Status' ||
-                    (userStatusId && String(userStatusId) === this.filters.status) ||
+                    (statusMeta.isLearner && userStatusId && String(userStatusId) === String(this.filters.status)) ||
                     (userStatusNameEn && userStatusNameEn.toLowerCase() === selectedStatus) ||
+                    (statusMeta.label && statusMeta.label.toLowerCase() === selectedStatus) ||
                     (userStatusCode && userStatusCode.toLowerCase() === selectedStatus) ||
-                    (selectedStatus === 'newstudent' && (userStatusNameEn.toLowerCase().includes('new') || userStatusCode.toLowerCase().includes('new'))) ||
-                    (selectedStatus === 'oldstudent' && (userStatusNameEn.toLowerCase().includes('old') || userStatusCode.toLowerCase().includes('old')));
+                    (selectedStatus === 'active' && statusMeta.key.toLowerCase() === 'active') ||
+                    (selectedStatus === 'newstudent' && statusMeta.isLearner && (userStatusNameEn.toLowerCase().includes('new') || userStatusCode.toLowerCase().includes('new'))) ||
+                    (selectedStatus === 'oldstudent' && statusMeta.isLearner && (userStatusNameEn.toLowerCase().includes('old') || userStatusCode.toLowerCase().includes('old')));
 
                 const courseMatch = !this.filters.course || this.filters.course === 'All Courses' ||
                     normalizeCourse(user.course) === this.filters.course;
@@ -253,70 +272,24 @@ export default {
             }
         },
         getRoleNameEn(role) {
-            if (!role) return 'Customer';
-            if (typeof role === 'string') {
-                const r = role.toLowerCase();
-                if (r.includes('admin') || r.includes('ผู้ดูแลระบบ')) return 'Admin';
-                if (r.includes('artist') || r.includes('ศิลปิน')) return 'Artist';
-                if (r.includes('customer') || r.includes('ลูกค้า') || r.includes('user')) return 'Customer';
-                return role;
-            }
-            if (typeof role === 'object') {
-                if (role.code) {
-                    const c = String(role.code).toUpperCase();
-                    if (c === 'ADMIN') return 'Admin';
-                    if (c === 'ARTIST') return 'Artist';
-                    if (c === 'CUSTOMER' || c === 'USER') return 'Customer';
-                }
-                if (role.name) {
-                    const n = String(role.name).toLowerCase();
-                    if (n.includes('admin') || n.includes('ผู้ดูแลระบบ')) return 'Admin';
-                    if (n.includes('artist') || n.includes('ศิลปิน')) return 'Artist';
-                    if (n.includes('customer') || n.includes('user') || n.includes('ลูกค้า')) return 'Customer';
-                }
-                if (Array.isArray(role.title)) {
-                    const en = role.title.find(t => t.key === 'en')?.value || '';
-                    const th = role.title.find(t => t.key === 'th')?.value || '';
-                    const combined = (en + ' ' + th).toLowerCase();
-                    if (combined.includes('admin') || combined.includes('ผู้ดูแลระบบ')) return 'Admin';
-                    if (combined.includes('artist') || combined.includes('ศิลปิน')) return 'Artist';
-                    if (combined.includes('customer') || combined.includes('user') || combined.includes('ลูกค้า')) return 'Customer';
-                    return en || (role.title[0] ? role.title[0].value : 'Customer');
-                }
-            }
-            return 'Customer';
+            return getRoleEnName(role, this.roles);
+        },
+        getRoleKey(role) {
+            return getSystemRoleKey(role, this.roles);
         },
         getRoleBadge(role) {
-            const roleEn = this.getRoleNameEn(role);
-            if (roleEn === 'Admin') {
-                return {
-                    class: 'status-admin',
-                    icon: 'cilShieldAlt',
-                    label: this.$i18n.locale === 'en' ? 'Admin' : 'ผู้ดูแลระบบ'
-                };
-            }
-            if (roleEn === 'Artist') {
-                return {
-                    class: 'status-artist',
-                    icon: 'cil-brush',
-                    label: this.$i18n.locale === 'en' ? 'Artist' : 'ศิลปิน'
-                };
-            }
-            return {
-                class: 'status-customer',
-                icon: 'cil-user',
-                label: this.$i18n.locale === 'en' ? 'Customer' : 'ลูกค้า'
-            };
+            return getRoleBadgeMeta(role, this.$i18n ? this.$i18n.locale : 'th', this.roles);
+        },
+        resolveStatusInfo(user) {
+            return resolveUserStatusMeta(user, this.$i18n ? this.$i18n.locale : 'th', this.roles);
         },
         getStatusName(status) {
-            if (!status) return 'Active';
-            if (typeof status === 'string') return status;
-            if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
-                const lang = this.$i18n.locale || 'en';
-                const titleLang = status.title.find(t => t.key === lang) || status.title.find(t => t.key === 'en');
-                return titleLang ? titleLang.value : (status.title[0] ? status.title[0].value : 'Unknown');
-            }
-            return 'Active';
+            if (!status) return this.$i18n && this.$i18n.locale === 'en' ? 'Active' : 'ใช้งานอยู่';
+            return resolveUserStatusMeta(
+                { status, role: { title: [{ key: 'en', value: 'Artist' }] } },
+                this.$i18n ? this.$i18n.locale : 'th',
+                this.roles
+            ).label;
         },
         getStatusNameEn(status) {
             if (!status) return 'Active';
@@ -361,7 +334,8 @@ export default {
     margin: 0 1.5rem;
 }
 
-.status-badge {
+.status-badge,
+.role-pill {
     display: inline-flex;
     align-items: center;
     padding: 0.35rem 0.85rem;
@@ -370,6 +344,11 @@ export default {
     font-weight: 700;
     white-space: nowrap;
     letter-spacing: 0.2px;
+}
+
+.role-pill {
+    padding: 0.2rem 0.65rem;
+    font-size: 0.74rem;
 }
 
 .status-icon {
@@ -392,5 +371,23 @@ export default {
     background-color: #fffbeb;
     color: #b45309;
     border: 1px solid #fde68a;
+}
+
+.status-reviewer {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    border: 1px solid #ddd6fe;
+}
+
+.status-curator {
+    background-color: #f0fdfa;
+    color: #0f766e;
+    border: 1px solid #99f6e4;
+}
+
+.status-custom-role {
+    background-color: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
 }
 </style>

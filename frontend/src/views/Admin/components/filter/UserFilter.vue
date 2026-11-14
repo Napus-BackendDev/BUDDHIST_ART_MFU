@@ -51,6 +51,9 @@
               <CDropdownItem v-for="s in statuses" :key="s._id || s.nameEn" @click="updateFilter('status', s.nameEn || s.name)">
                 {{ s.name }}
               </CDropdownItem>
+              <CDropdownItem @click="updateFilter('status', 'Active')">
+                {{ $i18n.locale === 'en' ? 'Active (General Account)' : 'ใช้งานอยู่ (บัญชีทั่วไป)' }}
+              </CDropdownItem>
               <CDropdownItem v-if="statuses.length === 0" disabled class="small text-muted">{{ $i18n.locale === 'en' ? 'No Status Available' : 'ไม่มีสถานะ' }}</CDropdownItem>
             </div>
           </CDropdown>
@@ -79,6 +82,7 @@
 
 <script>
 import { COURSES, courseLabel } from '@/utils/courses'
+import { getRoleDisplayLabel } from '@/utils/roles'
 
 export default {
   name: 'UserFilter',
@@ -119,22 +123,16 @@ export default {
       if (role) {
         return role.name;
       }
-      if (valLower === 'admin' || valLower === 'ผู้ดูแลระบบ') {
-        return this.$i18n.locale === 'en' ? 'Admin' : 'ผู้ดูแลระบบ';
-      }
-      if (valLower === 'artist' || valLower === 'ศิลปิน') {
-        return this.$i18n.locale === 'en' ? 'Artist' : 'ศิลปิน';
-      }
-      if (valLower === 'customer' || valLower === 'user' || valLower === 'ลูกค้า') {
-        return this.$i18n.locale === 'en' ? 'Customer' : 'ลูกค้า';
-      }
-      return this.value.role;
+      return getRoleDisplayLabel(this.value.role, this.$i18n ? this.$i18n.locale : 'th', this.roles);
     },
     getSelectedStatusLabel() {
       if (!this.value.status || this.value.status === 'All Status') {
         return this.$i18n.locale === 'en' ? 'All Status' : 'สถานะทั้งหมด';
       }
       const valLower = String(this.value.status).trim().toLowerCase();
+      if (valLower === 'active' || valLower === 'ใช้งานอยู่') {
+        return this.$i18n.locale === 'en' ? 'Active (General Account)' : 'ใช้งานอยู่ (บัญชีทั่วไป)';
+      }
       const status = this.statuses.find(s =>
         (s.nameEn && s.nameEn.toLowerCase() === valLower) ||
         String(s._id) === this.value.status ||

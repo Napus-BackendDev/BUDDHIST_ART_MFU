@@ -49,8 +49,8 @@
                         </CDropdownItem>
                     </template>
                     <!-- Admin Role Links -->
-                    <template v-else-if="userRole === 'admin'">
-                        <CDropdownItem @click="handleNavigateTo('/admin')" class="font-weight-bold">
+                    <template v-else-if="hasAdminDashboardAccess">
+                        <CDropdownItem @click="handleNavigateTo(adminDashboardRoute)" class="font-weight-bold">
                             <CIcon name="cil-speedometer" class="mr-3" /> {{ $i18n.locale === 'en' ? 'Dashboard' : 'แดชบอร์ด' }}
                         </CDropdownItem>
                     </template>
@@ -103,6 +103,9 @@
                         <CHeaderNavLink to="/artworks" class="nav-link-custom">{{ $t('header.artworks') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                     <CHeaderNavItem class="px-4">
+                        <CHeaderNavLink to="/archive" class="nav-link-custom">{{ $t('header.archive') }}</CHeaderNavLink>
+                    </CHeaderNavItem>
+                    <CHeaderNavItem class="px-4">
                         <CHeaderNavLink to="/news" class="nav-link-custom">{{ $t('header.news') }}</CHeaderNavLink>
                     </CHeaderNavItem>
                     <CHeaderNavItem class="px-4">
@@ -141,6 +144,9 @@
                             <CHeaderNavLink to="/artworks" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.artworks') }}</CHeaderNavLink>
                         </li>
                         <li class="mb-4">
+                            <CHeaderNavLink to="/archive" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.archive') }}</CHeaderNavLink>
+                        </li>
+                        <li class="mb-4">
                             <CHeaderNavLink to="/news" class="text-dark h5 p-0" @click.native="mobileMenu = false">{{ $t('header.news') }}</CHeaderNavLink>
                         </li>
                         <li class="mb-4">
@@ -176,9 +182,9 @@
                 <div class="mb-4">
                     <CIcon name="cil-basket" size="xl" class="text-muted" style="transform: scale(2);" />
                 </div>
-                <h5 class="font-weight-bold mb-2">{{ $i18n.locale === 'en' ? 'Cart is empty' : 'ตะกร้าสินค้าว่างเปล่า' }}</h5>
+                <h5 class="font-weight-bold mb-2">{{ $i18n.locale === 'en' ? 'No artworks selected yet' : 'ยังไม่มีผลงานที่เลือกไว้' }}</h5>
                 <CButton color="danger" shape="pill" class="mt-3 px-4 font-weight-bold" @click="startShopping">
-                    {{ $i18n.locale === 'en' ? 'Shop Now' : 'ช้อปเลย' }}
+                    {{ $i18n.locale === 'en' ? 'Browse Artworks' : 'เลือกชมผลงาน' }}
                 </CButton>
             </div>
 
@@ -255,6 +261,12 @@
 <script>
 import { mapGetters, mapActions } from 'vuex';
 import { trapFocusTab } from '@/utils/modalKeyboard';
+import {
+    extractRoleTitleEn,
+    firstAllowedAdminRoute,
+    hasAdminAccess,
+    saveSessionPermissions
+} from '@/utils/permissions';
 
 export default {
     name: 'TheHeaderUser',
@@ -288,6 +300,12 @@ export default {
         },
         userId() {
             return this.$store.getters['auth/userId'];
+        },
+        hasAdminDashboardAccess() {
+            return this.isLoggedIn && hasAdminAccess(this);
+        },
+        adminDashboardRoute() {
+            return firstAllowedAdminRoute(this);
         }
     },
     watch: {
@@ -426,6 +444,13 @@ export default {
                             const users = await this.$store.dispatch('user/get', {});
                             const currentUser = users ? users.find(u => u._id === userId) : null;
                             this.userImage = currentUser && currentUser.image || '';
+                            if (currentUser && currentUser.role && typeof currentUser.role === 'object') {
+                                const roleName = extractRoleTitleEn(currentUser.role) || objs.role;
+                                this.userRole = String(roleName || 'customer').toLowerCase();
+                                this.$store.commit('auth/role', roleName);
+                                this.$store.commit('auth/permissions', currentUser.role.permissions);
+                                saveSessionPermissions(roleName, currentUser.role.permissions);
+                            }
                         } catch (error) {
                             // Profile loading does not determine whether a saved session exists.
                             // Authentication failures remain enforced by the API interceptor.

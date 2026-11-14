@@ -233,11 +233,11 @@
                   class="doc-pill-btn" 
                   :disabled="downloading === 'invoice'"
                   @click="downloadInvoice"
-                  :title="$i18n.locale === 'en' ? 'Download Invoice PDF' : 'ดาวน์โหลดใบแจ้งหนี้ PDF'"
+                  :title="$i18n.locale === 'en' ? 'Download Invoice PDF' : 'ดาวน์โหลดใบยืนยันการจอง PDF'"
                 >
                   <CSpinner v-if="downloading === 'invoice'" size="sm" class="mr-2" />
                   <CIcon v-else name="cil-cloud-download" class="mr-2 doc-icon" />
-                  <span>{{ $i18n.locale === 'en' ? 'Invoice' : 'ใบแจ้งหนี้' }}</span>
+                  <span>{{ $i18n.locale === 'en' ? 'Invoice' : 'ใบยืนยันการจอง' }}</span>
                 </button>
               </div>
             </div>

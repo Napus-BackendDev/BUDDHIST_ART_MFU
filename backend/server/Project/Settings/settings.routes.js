@@ -18,16 +18,16 @@ router.put("/message", auth, message.onUpdate);
 router.delete("/message", auth, message.onDelete);
 
 router.get("/group", group.onQuerys);
-router.get('/group/:id/impact', admin, (req, res) => { req.params.resource = 'group'; return adminSettings.impact(req, res); });
-router.post("/group", admin, adminSettings.groupCreate);
-router.put("/group", admin, adminSettings.groupUpdate);
-router.delete("/group", admin, (req, res) => { req.params.resource = 'group'; return adminSettings.delete(req, res); });
+router.get('/group/:id/impact', admin.requirePermission("settings", "view"), (req, res) => { req.params.resource = 'group'; return adminSettings.impact(req, res); });
+router.post("/group", admin.requirePermission("settings", "edit"), adminSettings.groupCreate);
+router.put("/group", admin.requirePermission("settings", "edit"), adminSettings.groupUpdate);
+router.delete("/group", admin.requirePermission("settings", "edit"), (req, res) => { req.params.resource = 'group'; return adminSettings.delete(req, res); });
 
 router.get("/status", status.onQuerys);
-router.get('/status/:id/impact', admin, (req, res) => { req.params.resource = 'status'; return adminSettings.impact(req, res); });
-router.post("/status", admin, adminSettings.statusCreate);
-router.put("/status", admin, adminSettings.statusUpdate);
-router.delete("/status", admin, (req, res) => { req.params.resource = 'status'; return adminSettings.delete(req, res); });
+router.get('/status/:id/impact', admin.requirePermission("settings", "view"), (req, res) => { req.params.resource = 'status'; return adminSettings.impact(req, res); });
+router.post("/status", admin.requirePermission("settings", "edit"), adminSettings.statusCreate);
+router.put("/status", admin.requirePermission("settings", "edit"), adminSettings.statusUpdate);
+router.delete("/status", admin.requirePermission("settings", "edit"), (req, res) => { req.params.resource = 'status'; return adminSettings.delete(req, res); });
 
 router.get("/verification", verification.onQuerys);
 router.post("/verification/explorers", auth, verification.onCreate);
@@ -38,9 +38,9 @@ router.delete("/verification", auth, verification.onDelete);
 
 router.get("/role", role.onQuerys);
 router.post("/role/explore", role.onQuerys);
-router.post("/role", auth, role.onCreate);
-router.put("/role", auth, role.onUpdate);
-router.delete("/role", auth, role.onDelete);
+router.post("/role", admin.requirePermission("roles", "edit"), role.onCreate);
+router.put("/role", admin.requirePermission("roles", "edit"), role.onUpdate);
+router.delete("/role", admin.requirePermission("roles", "edit"), role.onDelete);
 
 router.get("/storage", storage.onQuerys);
 router.post("/storage", auth, storage.onCreate);

@@ -58,7 +58,7 @@
                                         <div class="storage-main-row">
                                             <span class="storage-name">{{ storageName(item.storage) }}</span>
                                             <span v-if="isUniversityStorage(item.storage) && !item.storageDetail" class="storage-warning" v-c-tooltip="$i18n.locale === 'en' ? 'Exact location required' : 'กรุณาระบุตำแหน่งจัดเก็บจริง'">!</span>
-                                            <button v-if="isUniversityStorage(item.storage)" type="button" class="storage-edit-btn" @click.stop="openLocationEditor(item)" v-c-tooltip="$i18n.locale === 'en' ? 'Edit exact location' : 'แก้ไขตำแหน่งจัดเก็บจริง'">
+                                            <button v-if="!readOnly && isUniversityStorage(item.storage)" type="button" class="storage-edit-btn" @click.stop="openLocationEditor(item)" v-c-tooltip="$i18n.locale === 'en' ? 'Edit exact location' : 'แก้ไขตำแหน่งจัดเก็บจริง'">
                                                 <CIcon name="cil-pencil" size="sm" />
                                             </button>
                                         </div>
@@ -77,6 +77,7 @@
                                             <CIcon name="cilMagnifyingGlass" size="lg" />
                                         </button>
                                         <button 
+                                            v-if="!readOnly"
                                             type="button" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'" 
                                             @click.stop="openLocationEditor(item)"
@@ -84,6 +85,7 @@
                                             <CIcon name="cil-pencil" size="lg" />
                                         </button>
                                         <button 
+                                            v-if="!readOnly"
                                             type="button" class="action-btn icon-success mx-2" :aria-label="$i18n.locale === 'en' ? 'Approve' : 'อนุมัติ'"
                                             v-c-tooltip="isUpdating && selectedItem && selectedItem.id === item.id ? ($i18n.locale === 'en' ? 'Updating...' : 'กำลังอัปเดต...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติ')"
                                             :disabled="!!isUpdating"
@@ -93,6 +95,7 @@
                                             <CIcon v-else name="cil-check" size="lg" />
                                         </button>
                                         <button 
+                                            v-if="!readOnly"
                                             type="button" class="action-btn icon-danger mr-2" :aria-label="$i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ'"
                                             v-c-tooltip="isUpdating && selectedItem && selectedItem.id === item.id ? ($i18n.locale === 'en' ? 'Updating...' : 'กำลังอัปเดต...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ')"
                                             :disabled="!!isUpdating"
@@ -102,6 +105,7 @@
                                             <CIcon v-else name="cil-x" size="lg" />
                                         </button>
                                         <button 
+                                            v-if="!readOnly"
                                             type="button" class="action-btn icon-trash" :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" 
                                             @click.stop="$emit('delete', item)"
@@ -118,7 +122,7 @@
                                             <CIcon name="cilMagnifyingGlass" size="lg" />
                                         </button>
                                         <button 
-                                            v-if="item.status === 'Approved' || item.status === 'Passed'"
+                                            v-if="!readOnly && (item.status === 'Approved' || item.status === 'Passed')"
                                             type="button" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'Edit location' : 'แก้ไขตำแหน่ง'" 
                                             @click.stop="openLocationEditor(item)"
@@ -126,6 +130,7 @@
                                             <CIcon name="cil-pencil" size="lg" />
                                         </button>
                                         <button 
+                                            v-if="!readOnly"
                                             type="button" class="action-btn icon-trash ml-2" :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                             v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" 
                                             @click.stop="$emit('delete', item)"
@@ -148,6 +153,7 @@
             :show.sync="modalShow" 
             :artwork="selectedItem"
             :isUpdating="isUpdating"
+            :readOnly="readOnly"
             @update-status="handleAction"
         />
         <CModal class="admin-modal" :show.sync="locationModalShow" :title="$i18n.locale === 'en' ? 'Exact artwork location' : 'ระบุตำแหน่งจัดเก็บงานศิลปะ'" centered>
@@ -195,6 +201,7 @@ export default {
         Multiselect
     },
     props: {
+        readOnly: { type: Boolean, default: false },
         updateStatus: { type: Function, default: null },
         items: {
             type: Array,

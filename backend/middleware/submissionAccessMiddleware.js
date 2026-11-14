@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 const Submission = require('../server/Project/Submission/models/submission.model');
-const { isAdmin } = require('./userAccessMiddleware');
+const { canReadTab, canEditTab } = require('./userAccessMiddleware');
 const { STATUS_CODES, hasCode } = require('../server/Project/Settings/statusCodes');
+const canReadSubmissions = req => canReadTab(req, 'submissions');
+const isSubmissionEditor = req => canEditTab(req, 'submissions');
 const idOf = value => value && String(value._id || value);
 const isArtist = req => String(req.user?.role || '').trim().toLowerCase() === 'artist' && mongoose.isValidObjectId(req.user?.userId);
 const isMember = (req, doc) => isArtist(req) && (doc.artist || []).some(user => idOf(user) === String(req.user.userId));
@@ -10,7 +12,7 @@ const respond = (res, error, next) => error.status ? res.status(error.status).js
 const profile = user => !user || typeof user !== 'object' ? user : Object.fromEntries(['_id','name','image','bio'].filter(key=>user[key]!==undefined).map(key=>[key,user[key]]));
 
 const visible = (req, doc) => {
-    if (!doc || isAdmin(req)) return doc;
+    if (!doc || canReadSubmissions(req)) return doc;
     const member = isMember(req, doc);
     return { ...doc, artist:(doc.artist || []).map(profile), assignments:(doc.assignments || []).map(round => ({
         ...round, artist:undefined,
@@ -57,12 +59,12 @@ async function workContext(req, submissionId, assignmentId, artworkId) {
 }
 
 const explore = async (req,res,next) => {
-    if (isAdmin(req)) return next();
+    if (canReadSubmissions(req)) return next();
     try { await memberDocument(req,req.body._id); return next(); } catch(error) { return respond(res,error,next); }
 };
 const authorizeUpload = async req => {
-    if (isAdmin(req)) return;
+    if (isSubmissionEditor(req)) return;
     await workContext(req,req.body._id,req.body.assignmentId,req.body.artworkId);
     req.submissionUploadArtist=req.user.userId;
 };
-module.exports={isAdmin,isMember,idOf,fail,respond,visible,workContext,explore,authorizeUpload};
+module.exports={isAdmin:isSubmissionEditor,canReadSubmissions,isSubmissionEditor,isMember,idOf,fail,respond,visible,workContext,explore,authorizeUpload};

@@ -10,9 +10,9 @@ const userService = require("./service/user");
 router.get("", auth, userService.onQuerys);
 router.post("/explore", auth.optional, userService.onQuery);
 router.post("/explorers", auth.optional, userService.onQuery);
-router.post("", admin, userService.onCreate);
+router.post("", admin.requirePermission("users", "edit"), userService.onCreate);
 router.put("/upload", auth, uploadImage("profile", "image"), userService.onUpload);
 router.put("", auth, ownProfile, userService.onUpdate);
-router.delete("", admin, userService.onDelete);
+router.delete("", admin.requirePermission("users", "edit"), userService.onDelete);
 
 module.exports = router;

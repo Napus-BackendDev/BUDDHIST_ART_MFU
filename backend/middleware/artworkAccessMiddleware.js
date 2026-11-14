@@ -3,7 +3,12 @@ const Artwork = require('../server/Project/Artwork/models/artwork.model');
 const User = require('../server/Project/User/models/user.model');
 const Status = require('../server/Project/Settings/models/status.model');
 const { STATUS_CODES, hasCode, queryForCode } = require('../server/Project/Settings/statusCodes');
-const { isAdmin } = require('./userAccessMiddleware');
+const { canReadTab, canEditTab } = require('./userAccessMiddleware');
+const canReadArtworks = req => canReadTab(req, 'artworks')
+    || canReadTab(req, 'submissions')
+    || canReadTab(req, 'overview')
+    || canReadTab(req, 'analytics');
+const canEditArtworks = req => canEditTab(req, 'artworks');
 const idOf = value => value && String(value._id || value);
 const isArtist = req => String(req.user?.role || '').trim().toLowerCase() === 'artist'
     && mongoose.isValidObjectId(req.user?.userId);
@@ -13,14 +18,14 @@ const respond = (res, error, next) => error.status
     ? res.status(error.status).json({ code: String(error.status) + '00', message: error.message }) : next(error);
 
 const readQuery = async req => {
-    if (isAdmin(req)) return {};
+    if (canReadArtworks(req)) return {};
     const statuses = await Status.find({ $or: [queryForCode(STATUS_CODES.APPROVED), queryForCode(STATUS_CODES.RESERVED)] }).select('_id').lean();
     const published = { 'status.approval': { $in: statuses.map(status => status._id) } };
     return isArtist(req) ? { $or: [published, { artist: req.user.userId }] } : published;
 };
 
 const visible = (req, doc) => {
-    if (!doc || isAdmin(req) || isOwner(req, doc)) return doc;
+    if (!doc || canReadArtworks(req) || isOwner(req, doc)) return doc;
     const value = { ...doc };
     delete value.remark;
     delete value.rejectionReason;
@@ -69,7 +74,7 @@ async function prepare(req, current = null) {
 }
 
 const create = async (req, res, next) => {
-    if (isAdmin(req)) {
+    if (canEditArtworks(req)) {
         try {
             const rows = Array.isArray(req.body) ? req.body : [req.body];
             for (let index = 0; index < rows.length; index++) {
@@ -84,7 +89,7 @@ const create = async (req, res, next) => {
     try { await prepare(req); return next(); } catch (error) { return respond(res, error, next); }
 };
 const update = async (req, res, next) => {
-    if (isAdmin(req)) return next();
+    if (canEditArtworks(req)) return next();
     try {
         const doc = await owned(req, req.body._id);
         await prepare(req, doc);
@@ -93,7 +98,7 @@ const update = async (req, res, next) => {
     } catch (error) { return respond(res, error, next); }
 };
 const remove = async (req, res, next) => {
-    if (isAdmin(req)) return next();
+    if (canEditArtworks(req)) return next();
     try {
         const doc = await owned(req, req.body._id);
         if (doc.postTermSale?.applicable) throw fail(403, 'Submission artwork records must be managed by administrators.');
@@ -102,7 +107,7 @@ const remove = async (req, res, next) => {
     } catch (error) { return respond(res, error, next); }
 };
 const authorizeUpload = async req => {
-    if (isAdmin(req)) return;
+    if (canEditArtworks(req)) return;
     const doc = await owned(req, req.body._id);
     if (!hasCode(doc.status?.approval, STATUS_CODES.PENDING)) {
         throw fail(403, 'Save the artwork for review before uploading a replacement image.');

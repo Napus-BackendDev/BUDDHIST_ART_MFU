@@ -9,6 +9,11 @@
       :showCreateButton="false" 
     />
 
+    <div v-if="!canEdit" class="alert alert-warning d-flex align-items-center mb-3" role="note">
+      <CIcon name="cil-lock-locked" class="mr-2" />
+      <span>{{ locale === 'en' ? 'View-Only access: modifying groups, statuses, or categories is disabled.' : 'สิทธิ์ดูอย่างเดียว (View Only): ไม่สามารถเพิ่ม แก้ไข หรือลบการตั้งค่าระบบได้' }}</span>
+    </div>
+
 
     <!-- Main Workspace Container -->
     <CCard class="settings-shell border-0 mb-4">
@@ -69,7 +74,7 @@
                 <h2 id="groups-heading" class="pane-title">{{ locale === 'en' ? 'Groups' : 'กลุ่มการทำงาน' }}</h2>
                 <span class="pane-subtitle">{{ groups.length }} {{ locale === 'en' ? 'groups' : 'รายการ' }}</span>
               </div>
-              <CButton class="btn-action-primary-sm" @click="openCreate('group')">
+              <CButton v-if="canEdit" class="btn-action-primary-sm" @click="openCreate('group')">
                 <CIcon name="cil-plus" class="mr-1" />
                 {{ locale === 'en' ? 'Add Group' : 'เพิ่มกลุ่ม' }}
               </CButton>
@@ -110,7 +115,7 @@
                     <span class="status-counter-tag">{{ groupStatusCount(group._id) }} {{ locale === 'en' ? 'statuses' : 'สถานะ' }}</span>
                   </div>
                 </div>
-                <div class="group-actions">
+                <div v-if="canEdit" class="group-actions">
                   <button 
                     type="button" 
                     class="action-btn icon-edit" 
@@ -148,7 +153,7 @@
                   {{ selectedGroup ? (locale === 'en' ? 'Workflow statuses belonging to this group' : 'สถานะการทำงานภายในกลุ่มนี้') : (locale === 'en' ? 'Select a group to begin' : 'เลือกกลุ่มจากด้านซ้ายเพื่อดูสถานะ') }}
                 </span>
               </div>
-              <CButton v-if="selectedGroup" class="btn-action-primary-sm" @click="openCreate('status')">
+              <CButton v-if="canEdit && selectedGroup" class="btn-action-primary-sm" @click="openCreate('status')">
                 <CIcon name="cil-plus" class="mr-1" />
                 {{ locale === 'en' ? 'Add Status' : 'เพิ่มสถานะ' }}
               </CButton>
@@ -175,7 +180,7 @@
                   </div>
                   <small v-if="descriptionName(status)" class="status-desc">{{ descriptionName(status) }}</small>
                 </div>
-                <div class="row-actions">
+                <div v-if="canEdit" class="row-actions">
                   <button 
                     type="button" 
                     class="action-btn icon-edit" 
@@ -201,7 +206,7 @@
               <p class="empty-text">
                 {{ selectedGroup ? (locale === 'en' ? 'No statuses in this group yet.' : 'กลุ่มนี้ยังไม่มีรายการสถานะ') : (locale === 'en' ? 'Choose a group on the left.' : 'กรุณาเลือกกลุ่มจากด้านซ้าย') }}
               </p>
-              <CButton v-if="selectedGroup" class="btn-action-primary-sm" @click="openCreate('status')">
+              <CButton v-if="canEdit && selectedGroup" class="btn-action-primary-sm" @click="openCreate('status')">
                 <CIcon name="cil-plus" class="mr-1" />
                 {{ locale === 'en' ? 'Create first status' : 'สร้างสถานะแรก' }}
               </CButton>
@@ -216,7 +221,7 @@
               <h2 class="pane-title">{{ locale === 'en' ? 'Artwork Categories' : 'หมวดหมู่ผลงานศิลปะ' }}</h2>
               <span class="pane-subtitle">{{ locale === 'en' ? 'Category names are displayed on public catalogues and filters.' : 'ชื่อหมวดหมู่นี้จะแสดงในแคตตาล็อกผลงานและตัวกรองสำหรับประชาชน' }}</span>
             </div>
-            <CButton class="btn-action-primary-sm" @click="openCreate('category')">
+            <CButton v-if="canEdit" class="btn-action-primary-sm" @click="openCreate('category')">
               <CIcon name="cil-plus" class="mr-1" />
               {{ locale === 'en' ? 'Add Category' : 'เพิ่มหมวดหมู่' }}
             </CButton>
@@ -241,7 +246,7 @@
                   <th style="width: 32%;">{{ locale === 'en' ? 'Thai Name' : 'ชื่อภาษาไทย' }}</th>
                   <th style="width: 32%;">{{ locale === 'en' ? 'English Name' : 'ชื่อภาษาอังกฤษ' }}</th>
                   <th style="width: 22%;">{{ locale === 'en' ? 'Code' : 'รหัสระบบ' }}</th>
-                  <th class="text-right" style="width: 14%;">{{ locale === 'en' ? 'Actions' : 'การจัดการ' }}</th>
+                  <th class="text-right" style="width: 14%;" v-if="canEdit">{{ locale === 'en' ? 'Actions' : 'การจัดการ' }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -255,7 +260,7 @@
                   <td>
                     <span class="code-badge-pill">{{ category.code || '—' }}</span>
                   </td>
-                  <td class="text-right">
+                  <td v-if="canEdit" class="text-right">
                     <button 
                       type="button" 
                       class="action-btn icon-edit" 
@@ -433,6 +438,7 @@ import Service from '@/service/api.js';
 import HeaderHero from './components/HeaderHero.vue';
 import MissingFieldsHint from '@/components/MissingFieldsHint.vue';
 import { missingLabels } from '@/utils/missingFields';
+import { hasTabPermission } from '@/utils/permissions';
 
 const localized = value => {
   const list = Array.isArray(value) ? value : [];
@@ -477,6 +483,9 @@ export default {
     }; 
   },
   computed: {
+    canEdit() {
+      return hasTabPermission(this, 'settings', 'edit');
+    },
     missingFields() {
       return missingLabels([
         ['nameTh', !!this.form.title.th],

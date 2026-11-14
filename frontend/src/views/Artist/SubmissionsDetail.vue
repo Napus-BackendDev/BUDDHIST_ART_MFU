@@ -37,13 +37,13 @@
            :class="{ 'is-expanded': expandedAssignmentId === assign._id }"
            @click="handleBarClick(assign)"
          >
-           <div class="assignment-bar-content shadow-premium-sm rounded-xl bg-white border-0 overflow-hidden d-flex align-items-center p-3 px-md-4">
+           <div class="assignment-bar-content shadow-premium-sm rounded-xl bg-white border-0 overflow-hidden d-flex align-items-center flex-wrap p-3 px-md-4">
             <div class="task-icon-circle mr-3 mr-md-4" :class="getAssignmentStatusClass(assign)">
               <CIcon :name="getAssignmentIcon(assign)" />
             </div>
 
-            <div class="flex-grow-1 mr-3 mr-md-4 py-1">
-              <h6 class="mb-1 font-weight-bold text-dark-premium text-truncate">{{ getName($i18n.locale, assign) }}</h6>
+            <div class="assignment-info-col flex-grow-1 mr-md-4 py-1">
+              <h6 class="mb-1 font-weight-bold text-dark-premium assignment-title-text">{{ getName($i18n.locale, assign) }}</h6>
               <div class="d-flex align-items-center flex-wrap">
                 <div class="meta-item-minimal mr-3">
                   <CIcon name="cil-calendar" class="mr-1 opacity-6" size="sm" />
@@ -66,7 +66,7 @@
             </div>
 
             <!-- Right Side: Status Badge & Actions -->
-            <div class="d-flex align-items-center ml-auto">
+            <div class="assignment-actions-col d-flex align-items-center flex-wrap ml-md-auto">
               <!-- Status Pill Badge -->
               <div class="status-indicator-minimal mr-3 d-none d-md-block">
                  <div :class="['status-pill-flat', getAssignmentStatusClass(assign)]">
@@ -76,14 +76,14 @@
               </div>
 
               <!-- Action Buttons -->
-              <div class="action-btn-minimal d-flex align-items-center">
+              <div class="action-btn-minimal d-flex align-items-center flex-wrap">
                 <!-- If Has Artworks: Can always view -->
                 <template v-if="assign.artworks && assign.artworks.length > 0">
                   <CButton 
                     color="primary" 
                     shape="pill" 
                     variant="outline" 
-                    class="btn-sm px-3 font-weight-bold mr-2" 
+                    class="btn-sm px-3 font-weight-bold assignment-action-btn" 
                     @click.stop="handleViewWork(assign)"
                   >
                     {{ $i18n.locale === 'en' ? 'View Artworks' : 'ดูผลงานทั้งหมด' }}
@@ -96,7 +96,7 @@
                   color="info" 
                   shape="pill" 
                   variant="outline" 
-                  class="btn-sm px-3 font-weight-bold" 
+                  class="btn-sm px-3 font-weight-bold assignment-action-btn" 
                   @click.stop="handleOpenSubmission(assign)"
                 >
                   {{ hasSubmitted(assign)
@@ -155,7 +155,7 @@
                           </div>
                         </div>
                         
-                        <div class="d-flex align-items-center ml-md-3 gap-3" style="gap: 12px;">
+                        <div class="artwork-item-actions d-flex align-items-center flex-wrap ml-md-3" style="gap: 10px;">
                           <!-- Resubmit Button for Rejected -->
                           <CButton 
                             v-if="canSubmitAssignment(assign) && isOwnArtwork(artwork) && getApprovalStatusClass(artwork) === 'status-closed' && !isClosed(assign) && !isNotStarted(assign)"
@@ -907,4 +907,93 @@ export default {
 
 .rounded-xl { border-radius: 20px !important; }
 .opacity-6 { opacity: 0.6; }
+.assignment-info-col {
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.assignment-title-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.action-btn-minimal {
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .assignment-title-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .btn-back-minimal {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px;
+    flex-shrink: 0;
+  }
+
+  .assignment-bar-content {
+    align-items: flex-start !important;
+    gap: 0.5rem;
+  }
+
+  .assignment-bar-content:hover {
+    transform: none !important;
+  }
+
+  .assignment-info-col {
+    margin-right: 0 !important;
+  }
+
+  .assignment-title-text {
+    white-space: normal;
+    font-size: 0.98rem;
+  }
+
+  .assignment-actions-col {
+    width: 100%;
+    margin-left: 0 !important;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .action-btn-minimal {
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .assignment-action-btn {
+    flex: 1 1 130px;
+    min-height: 44px;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .artwork-horizontal-item {
+    align-items: stretch !important;
+  }
+
+  .artwork-item-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 0.35rem;
+  }
+
+  .artwork-item-actions .btn-view-pill,
+  .artwork-item-actions .btn-outline-info {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
 </style>

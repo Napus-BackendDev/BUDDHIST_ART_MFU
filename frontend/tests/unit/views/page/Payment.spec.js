@@ -39,7 +39,7 @@ describe('Payment checkout guards', () => {
     expect(vm.paymentError).toBe('invoice');
     expect(Payment.computed.paymentErrorMessage.call(vm)).toContain('Could not download invoice');
     vm.$i18n.locale='th';
-    expect(Payment.computed.paymentErrorMessage.call(vm)).toContain('ไม่สามารถดาวน์โหลดใบแจ้งหนี้');
+    expect(Payment.computed.paymentErrorMessage.call(vm)).toContain('ไม่สามารถดาวน์โหลดใบยืนยันการจอง');
     expect(vm.isDownloading).toBe(false);
   });
 

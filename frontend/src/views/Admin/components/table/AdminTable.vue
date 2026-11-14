@@ -91,6 +91,7 @@
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                             <button 
+                                v-if="!readOnly"
                                 class="action-btn icon-edit ml-2" 
                                 :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 @click="onEdit(item)"
@@ -99,6 +100,7 @@
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button 
+                                v-if="!readOnly"
                                 class="action-btn icon-success mx-2" 
                                 :disabled="loadingItems.includes(item._id)"
                                 :aria-label="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติ')" v-c-tooltip="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Approve' : 'อนุมัติ')"
@@ -108,6 +110,7 @@
                                 <CIcon v-else name="cil-check" size="lg" />
                             </button>
                             <button 
+                                v-if="!readOnly"
                                 class="action-btn icon-danger" 
                                 :disabled="loadingItems.includes(item._id)"
                                 :aria-label="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ')" v-c-tooltip="loadingItems.includes(item._id) ? ($i18n.locale === 'en' ? 'Processing...' : 'กำลังประมวลผล...') : ($i18n.locale === 'en' ? 'Reject' : 'ปฏิเสธ')"
@@ -117,6 +120,7 @@
                                 <CIcon v-else name="cil-x" size="lg" />
                             </button>
                             <button 
+                                v-if="!readOnly"
                                 class="action-btn icon-trash ml-2" 
                                 :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="onDelete(item)"
@@ -133,10 +137,11 @@
                             >
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
-                            <button v-if="approvalStatus(item) === 'Approved'" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
+                            <button v-if="!readOnly && approvalStatus(item) === 'Approved'" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button 
+                                v-if="!readOnly"
                                 class="action-btn icon-trash ml-2" 
                                 :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 @click="onDelete(item)"
@@ -202,6 +207,7 @@ export default {
     components: { TablePaginationFooter },
     mixins: [statusBadgeMixin],
     props: {
+        readOnly: { type: Boolean, default: false },
         items: {
             type: Array,
             default: () => []

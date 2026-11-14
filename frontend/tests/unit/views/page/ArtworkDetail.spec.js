@@ -112,3 +112,56 @@ describe('ArtworkDetail.vue related artworks', () => {
     expect(relatedArtworks.map(artwork => artwork._id)).toEqual(['same-owner'])
   })
 })
+
+describe('ArtworkDetail.vue feedback (price label & view-on-reserve)', () => {
+  it('renders Price / ราคา instead of Collector\'s Value', async () => {
+    const fs = require('fs')
+    const path = require('path')
+    const source = fs.readFileSync(path.resolve(__dirname, '../../../../src/views/page/ArtworkDetail.vue'), 'utf8')
+    expect(source).toContain("'Price' : 'ราคา'")
+    expect(source).not.toContain("Collector's Value")
+    expect(source).not.toContain('มูลค่าการสะสมผลงาน')
+  })
+
+  it('does not increment views on detail page fetch, only when adding to reservation cart', async () => {
+    const fetchVm = {
+      $route: { params: { id: firstId } },
+      allArtworks: works,
+      getName,
+      $store: {
+        dispatch: jest.fn().mockResolvedValue(works[1])
+      },
+      artwork: null,
+      loading: false,
+      fetchSequence: 0,
+      catalogueLoadError: false
+    }
+    await ArtworkDetail.methods.fetchArtwork.call(fetchVm)
+    expect(fetchVm.$store.dispatch).not.toHaveBeenCalledWith('artwork/updateView', expect.anything())
+
+    const purchasableWork = {
+      _id: firstId,
+      status: {
+        approval: { title: [{ key: 'en', value: 'Approved' }] },
+        sale: { title: [{ key: 'en', value: 'Available' }] }
+      }
+    }
+    const cartVm = {
+      artwork: purchasableWork,
+      getName,
+      isPreview: false,
+      isSoldOut: false,
+      isPurchasable: true,
+      isApprovalReserved: false,
+      isInCart: false,
+      isAddingToCart: false,
+      showAddedModal: false,
+      $store: {
+        dispatch: jest.fn().mockResolvedValue(purchasableWork)
+      }
+    }
+    await ArtworkDetail.methods.addToCart.call(cartVm)
+    expect(cartVm.$store.dispatch).toHaveBeenCalledWith('cart/addToCart', purchasableWork)
+    expect(cartVm.$store.dispatch).toHaveBeenCalledWith('artwork/updateView', firstId)
+  })
+})

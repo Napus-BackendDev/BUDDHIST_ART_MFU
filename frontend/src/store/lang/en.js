@@ -10,6 +10,7 @@ const en = {
     header: {
         home: "Home",
         artworks: "Artworks",
+        archive: "Archive",
         news: "News",
         about: "About Us",
         login: "Login",
@@ -36,10 +37,12 @@ const en = {
         operations: "Operations",
         orders: "Orders",
         artworks: "Artworks",
+        archive: "Archive",
         news: "News",
         submissions: "Submissions",
         dataCenter: "Data Center",
         users: "User Management",
+        roles: "Roles & Permissions",
         settings: "System Settings",
         returnToWebsite: "Back to Website",
         signOut: "Sign Out"

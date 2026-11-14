@@ -11,7 +11,7 @@
       <h5 class="modal-title">{{ $i18n.locale === 'en' ? 'Edit Profile' : 'แก้ไขโปรไฟล์' }}</h5>
       <button type="button" class="close" :disabled="saving" :aria-label="$i18n.locale === 'en' ? 'Close' : 'ปิด'" @click="localShow = false"><span aria-hidden="true">×</span></button>
     </template>
-    <div class="p-4" :aria-busy="saving ? 'true' : 'false'">
+    <div class="p-3 p-md-4" :aria-busy="saving ? 'true' : 'false'">
       <p v-if="saveError" ref="saveErrorNotice" tabindex="-1" role="alert" class="alert alert-danger">{{ $i18n.locale === 'en' ? 'Could not save your profile. Your changes are still here. Please try again.' : 'บันทึกโปรไฟล์ไม่สำเร็จ ข้อมูลที่แก้ไขยังอยู่ กรุณาลองใหม่' }}</p>
       <div v-if="validationError" class="alert alert-danger" role="alert">{{ validationError }}</div>
       <CRow>
@@ -43,11 +43,11 @@
       </CRow>
     </div>
     <template #footer>
-      <div class="d-flex w-100 justify-content-end p-3 rounded-bottom">
-        <CButton @click="handleCancel" :disabled="saving" variant="outline" shape="pill" class="mr-3 hover-lift px-4">
+      <div class="d-flex w-100 justify-content-end p-3 rounded-bottom profile-modal-footer">
+        <CButton @click="handleCancel" :disabled="saving" variant="outline" shape="pill" class="hover-lift px-4 profile-footer-btn">
           {{ $i18n.locale === 'en' ? 'Cancel' : 'ยกเลิก' }}
         </CButton>
-        <CButton color="dark" :disabled="saving" shape="pill" class="px-5 font-weight-bold shadow-sm hover-lift btn-premium" @click="handleSave">
+        <CButton color="dark" :disabled="saving" shape="pill" class="px-4 px-md-5 font-weight-bold shadow-sm hover-lift btn-premium profile-footer-btn" @click="handleSave">
           {{ saving ? ($i18n.locale === 'en' ? 'Saving...' : 'กำลังบันทึก...') : ($i18n.locale === 'en' ? 'Save Changes' : 'บันทึกการเปลี่ยนแปลง') }}
         </CButton>
       </div>
@@ -168,5 +168,36 @@ export default {
 
 .hover-lift:hover {
     transform: translateY(-3px);
+}
+.profile-modal-footer {
+    gap: 0.75rem;
+}
+
+@media (max-width: 767.98px) {
+    ::v-deep .modal-dialog {
+        width: calc(100% - 1rem);
+        margin: 0.5rem auto;
+    }
+
+    ::v-deep .modal-body {
+        max-height: calc(100dvh - 160px);
+        overflow-y: auto;
+        padding: 0.5rem !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .profile-modal-footer {
+        flex-direction: column-reverse;
+        padding: 0.75rem !important;
+    }
+
+    .profile-footer-btn {
+        width: 100%;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 }
 </style>

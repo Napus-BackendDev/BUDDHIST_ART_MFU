@@ -47,10 +47,10 @@
                                     <button class="action-btn icon-view" :aria-label="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" v-c-tooltip="$i18n.locale === 'en' ? 'View Details' : 'ดูรายละเอียด'" @click="onView(item)">
                                         <CIcon name="cilMagnifyingGlass" size="lg" />
                                     </button>
-                                    <button class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
+                                    <button v-if="!readOnly" class="action-btn icon-edit ml-2" :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'" @click="onEdit(item)">
                                         <CIcon name="cil-pencil" size="lg" />
                                     </button>
-                                    <button class="action-btn icon-trash ml-2" :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="onDelete(item)">
+                                    <button v-if="!readOnly" class="action-btn icon-trash ml-2" :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'" @click="onDelete(item)">
                                         <CIcon name="cil-trash" size="lg" />
                                     </button>
                                 </div>
@@ -89,6 +89,7 @@ export default {
     components: { TablePaginationFooter },
     mixins: [statusBadgeMixin],
     props: {
+        readOnly: { type: Boolean, default: false },
         items: { type: Array, default: () => [] },
         filters: {
             type: Object,

@@ -97,7 +97,7 @@ exports.onImage = async (req, res) => {
         const artwork = document?.assignments?.flatMap(a => a.artworks || []).find(a => String(a._id) === id);
         if (!artwork?.image) return res.sendStatus(404);
         const published = hasCode(artwork.status, STATUS_CODES.APPROVED);
-        if (!published && !access.isAdmin(req) && !access.isMember(req, document)) return res.sendStatus(404);
+        if (!published && !access.canReadSubmissions(req) && !access.isMember(req, document)) return res.sendStatus(404);
         const buffer = await cachedImage(artwork.image);
         res.set('Cache-Control', published ? 'public, max-age=3600' : 'private, no-store');
         res.set('X-Content-Type-Options', 'nosniff');

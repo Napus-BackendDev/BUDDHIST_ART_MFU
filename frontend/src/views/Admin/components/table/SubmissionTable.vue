@@ -66,6 +66,7 @@
                                 <CIcon name="cilMagnifyingGlass" size="lg" />
                             </button>
                             <button 
+                                v-if="!readOnly"
                                 class="action-btn icon-edit ml-2" 
                                 :aria-label="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Edit' : 'แก้ไข'"
@@ -74,6 +75,7 @@
                                 <CIcon name="cil-pencil" size="lg" />
                             </button>
                             <button 
+                                v-if="!readOnly"
                                 class="action-btn icon-trash ml-2" 
                                 :aria-label="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
                                 v-c-tooltip="$i18n.locale === 'en' ? 'Delete' : 'ลบ'"
@@ -104,6 +106,7 @@ export default {
     components: { TablePaginationFooter },
     mixins: [statusBadgeMixin],
     props: {
+        readOnly: { type: Boolean, default: false },
         filters: {
             type: Object,
             default: () => ({

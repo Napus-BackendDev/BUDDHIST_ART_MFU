@@ -24,7 +24,7 @@
                         <div class="back-arrow-circle">
                             <CIcon name="cilArrowLeft" size="lg" />
                         </div>
-                        <span class="ml-2 font-weight-bold">{{ $i18n.locale === 'en' ? 'Return to Gallery' : 'กลับสู่แกลเลอรี' }}</span>
+                        <span class="ml-2 font-weight-bold">{{ $i18n.locale === 'en' ? 'Return to Artworks' : 'กลับสู่หน้าผลงานศิลปะ' }}</span>
                     </CLink>
                     
                     <div class="d-flex align-items-center" v-if="isPreview">
@@ -153,26 +153,30 @@
                                     </div>
                                 </div>
 
-                                <!-- Exhibition Only / Display Only Block -->
-                                <div v-if="!isPurchasable" class="exhibition-display-block mb-4">
+                                <!-- Exhibition Only / Archive / Display Only Block -->
+                                <div v-if="!isPurchasable || isArchivedArtwork" class="exhibition-display-block mb-4">
                                     <div class="d-flex align-items-center mb-2">
                                         <div class="exhibition-dot mr-2" :style="{ backgroundColor: isSoldOut ? '#ef4444' : '#8c3b32' }"></div>
                                         <span class="label">
-                                            <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? "Artwork Status" : 'สถานะผลงาน' }}</span>
+                                            <span v-if="isArchivedArtwork">{{ $i18n.locale === 'en' ? 'Artwork Archive' : 'คลังผลงาน (Archive)' }}</span>
+                                            <span v-else-if="isSoldOut">{{ $i18n.locale === 'en' ? "Artwork Status" : 'สถานะผลงาน' }}</span>
                                             <span v-else-if="isPostTermDisplayOnly">{{ $i18n.locale === 'en' ? "Display only" : 'แสดงเฉย ๆ' }}</span>
-                                            <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? "Gallery Exhibition" : 'ผลงานเพื่อการจัดแสดง' }}</span>
+                                            <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? 'Exhibition Artwork' : 'ผลงานเพื่อการจัดแสดง' }}</span>
                                             <span v-else>{{ $i18n.locale === 'en' ? "Artwork Status" : 'สถานะผลงาน' }}</span>
                                         </span>
                                     </div>
                                     <div class="exhibition-text">
-                                        <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? 'Sold Out' : 'จำหน่ายแล้ว' }}</span>
+                                        <span v-if="isArchivedArtwork && isSoldOut">{{ $i18n.locale === 'en' ? 'Sold Out (Archived)' : 'จำหน่ายแล้ว (คลังผลงาน)' }}</span>
+                                        <span v-else-if="isArchivedArtwork">{{ $i18n.locale === 'en' ? 'Archive' : 'จัดแสดง / Archive' }}</span>
+                                        <span v-else-if="isSoldOut">{{ $i18n.locale === 'en' ? 'Sold Out' : 'จำหน่ายแล้ว' }}</span>
                                         <span v-else-if="isPostTermDisplayOnly">{{ $i18n.locale === 'en' ? 'Display only' : 'แสดงเฉย ๆ' }}</span>
                                         <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? 'Exhibition Only' : 'โชว์เท่านั้น' }}</span>
                                         <span v-else-if="isApprovalReserved">{{ $i18n.locale === 'en' ? 'Reserved' : 'จองแล้ว' }}</span>
                                         <span v-else>{{ $i18n.locale === 'en' ? 'Not for Sale' : 'ไม่ขาย' }}</span>
                                     </div>
                                     <p class="exhibition-desc mb-0">
-                                        <span v-if="isSoldOut">{{ $i18n.locale === 'en' ? 'This artwork has been sold and is no longer available.' : 'ผลงานชิ้นนี้ขายไปแล้วและไม่มีจำหน่ายในขณะนี้' }}</span>
+                                        <span v-if="isArchivedArtwork">{{ $i18n.locale === 'en' ? 'This artwork from a closed cohort has entered the permanent Archive after its 1-year term and is preserved for study without sale.' : 'ผลงานชิ้นนี้ครบกำหนด 1 ปีหลังปิดระบบส่งผลงาน จึงจัดเก็บอยู่ในคลังผลงาน (Archive) เพื่อการรับชมและศึกษาโดยไม่เปิดจำหน่าย' }}</span>
+                                        <span v-else-if="isSoldOut">{{ $i18n.locale === 'en' ? 'This artwork has been sold and is no longer available.' : 'ผลงานชิ้นนี้ขายไปแล้วและไม่มีจำหน่ายในขณะนี้' }}</span>
                                         <span v-else-if="isPostTermDisplayOnly">{{ $i18n.locale === 'en' ? 'This artwork remains in the public portfolio but is not available for purchase.' : 'ผลงานชิ้นนี้ยังแสดงในพอร์ต แต่ไม่เปิดให้ซื้อ' }}</span>
                                         <span v-else-if="isExhibitionDetail">{{ $i18n.locale === 'en' ? 'This artwork is curated for exhibition and is currently not available for purchase.' : 'ผลงานศิลปะชิ้นนี้ได้รับการจัดสรรเพื่อร่วมแสดงนิทรรศการและไม่ได้เปิดให้สั่งซื้อในขณะนี้' }}</span>
                                         <span v-else-if="isApprovalReserved">{{ $i18n.locale === 'en' ? 'Another buyer is completing payment for this artwork. It returns to sale if the order expires.' : 'มีผู้ซื้อกำลังชำระเงินสำหรับผลงานนี้ หากคำสั่งซื้อหมดอายุ ผลงานจะกลับมาเปิดขาย' }}</span>
@@ -181,7 +185,7 @@
                                 </div>
                                 <div v-else class="valuation-block mb-4">
                                     <div class="valuation-label-row d-flex justify-content-between align-items-center mb-2">
-                                        <span class="label">{{ $i18n.locale === 'en' ? "Collector's Value" : 'มูลค่าการสะสมผลงาน' }}</span>
+                                        <span class="label">{{ $i18n.locale === 'en' ? 'Price' : 'ราคา' }}</span>
                                     </div>
                                     <div class="valuation-price">
                                         <span class="currency">฿</span>
@@ -192,7 +196,7 @@
 
                                 <!-- Collector Actions Interface -->
                                 <div class="action-stack-premium pt-4 border-top">
-                                    <CButton block :color="isSoldOut || isPreview || !isPurchasable || (isApprovalReserved && !isInCart) ? 'secondary' : (isInCart ? 'dark' : 'danger')" size="lg" shape="pill"
+                                    <CButton v-if="!isArchivedArtwork" block :color="isSoldOut || isPreview || !isPurchasable || (isApprovalReserved && !isInCart) ? 'secondary' : (isInCart ? 'dark' : 'danger')" size="lg" shape="pill"
                                         :disabled="isSoldOut || isPreview || !isPurchasable || (isApprovalReserved && !isInCart) || isAddingToCart"
                                         class="btn-purchase-premium shadow-lg mb-3"
                                         :style="isSoldOut || isPreview || !isPurchasable || (isApprovalReserved && !isInCart) || isInCart ? 'background: #e2e8f0 !important; color: #94a3b8 !important;' : 'background: linear-gradient(135deg, #4a1d18, #612721); color: white !important;'"
@@ -208,9 +212,12 @@
                                         {{ isAddingToCart ? ($i18n.locale === 'en' ? 'Checking status...' : 'กำลังตรวจสอบสถานะ...') : getButtonText }}
                                     </CButton>
                                     
-                                    <div class="d-flex align-items-center justify-content-between action-buttons-row">
+                                    <div class="d-flex align-items-center justify-content-between action-buttons-row" style="gap: 10px;">
                                         <CButton color="outline-dark" shape="pill" class="btn-action-secondary px-4 flex-grow-1 d-flex align-items-center justify-content-center" @click="shareArtwork">
                                             <CIcon name="cilShare" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Share Artwork' : 'แชร์ผลงานนี้' }}
+                                        </CButton>
+                                        <CButton v-if="isArchivedArtwork" color="outline-secondary" shape="pill" class="btn-action-secondary px-4 d-flex align-items-center justify-content-center" @click="$router.push('/archive')">
+                                            {{ $i18n.locale === 'en' ? 'View Archive' : 'ดูคลัง Archive' }}
                                         </CButton>
                                     </div>
                                     <div v-if="shareUrl" class="artwork-share-panel mt-3">
@@ -342,7 +349,7 @@
 
 <script>
 import moment from 'moment';
-import { isArtworkPurchasable } from '@/utils/artworkPurchase';
+import { isArtworkPurchasable, isArtworkArchived } from '@/utils/artworkPurchase';
 import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 import ArtworkCard from '@/components/CardArtwork.vue';
 
@@ -366,7 +373,8 @@ export default {
             isCopying: false,
             artwork: {},
             polling: null,
-            isAddingToCart: false
+            isAddingToCart: false,
+            recordedViewId: null
         }
     },
     computed: {
@@ -385,15 +393,20 @@ export default {
             if (!this.artwork || !this.artwork._id) return false;
             return this.$store.getters['cart/isInCart'](this.artwork._id);
         },
+        isArchivedArtwork() {
+            return isArtworkArchived(this.artwork, this.getName);
+        },
         isPurchasable() {
-            if (this.isPreview) return false;
+            if (this.isPreview || this.isArchivedArtwork) return false;
             return isArtworkPurchasable(this.artwork, this.getName);
         },
         isPostTermDisplayOnly() {
+            if (this.isArchivedArtwork) return true;
             const lifecycle = this.artwork && this.artwork.postTermSale;
             if (!lifecycle || !lifecycle.applicable) return false;
             if (lifecycle.needsReview || !lifecycle.initialSaleEndsAt) return true;
-            if (lifecycle.mode === 'standard_sale') return false;
+            if (lifecycle.decision === 'continue_sale' || lifecycle.mode === 'standard_sale') return false;
+            if (lifecycle.mode === 'display_only' && lifecycle.decision === 'display_only') return true;
             return new Date(lifecycle.initialSaleEndsAt).getTime() <= Date.now();
         },
         isApprovalReserved() {
@@ -411,6 +424,11 @@ export default {
         },
         getButtonText() {
             if (this.isPreview) return this.$i18n.locale === 'en' ? 'Preview Mode' : 'โหมดดูตัวอย่าง';
+            if (this.isArchivedArtwork) {
+                return this.isSoldOut
+                    ? (this.$i18n.locale === 'en' ? 'Sold Out (Archived)' : 'จำหน่ายแล้ว (คลังผลงาน)')
+                    : (this.$i18n.locale === 'en' ? 'Archive' : 'จัดแสดง / Archive');
+            }
             if (this.isSoldOut) return this.$i18n.locale === 'en' ? 'Already Sold Out' : 'จำหน่ายแล้ว';
             
             if (this.isApprovalReserved && !this.isInCart) return this.$i18n.locale === 'en' ? 'Being Ordered' : 'จองแล้ว';
@@ -437,6 +455,7 @@ export default {
 
             return this.approvedArtworks.filter(art => {
                 if (String(art._id) === String(currentArtworkId) || !art.artist) return false;
+                if (Boolean(isArtworkArchived(art, this.getName)) !== Boolean(this.isArchivedArtwork)) return false;
                 const artistId = typeof art.artist === 'object' ? art.artist._id : art.artist;
                 return String(artistId) === String(currentArtistId);
             }).slice(0, 4);
@@ -461,6 +480,7 @@ export default {
             handler() {
                 this.shareUrl = '';
                 this.shareStatus = '';
+                this.recordedViewId = null;
                 this.fetchArtwork();
             }
         }
@@ -525,15 +545,6 @@ export default {
                     resolvedId = matches[0]._id;
                 }
 
-                if (!silent) {
-                    try {
-                        await this.$store.dispatch('artwork/updateView', resolvedId);
-                    } catch (viewError) {
-                        console.error('Error updating artwork view:', viewError);
-                    }
-                    if (sequence !== this.fetchSequence) return;
-                }
-
                 readingDetail = true;
                 const result = await this.$store.dispatch('artwork/explore', { _id: resolvedId });
                 if (sequence !== this.fetchSequence) return;
@@ -546,6 +557,19 @@ export default {
                     if (sequence !== this.fetchSequence) return;
                     this.catalogueLoadError = false;
                     this.loadError = false;
+                }
+                if (!silent && !this.isPreview && this.artwork && this.artwork._id && this.isArchivedArtwork && this.recordedViewId !== this.artwork._id) {
+                    const viewingId = this.artwork._id;
+                    this.recordedViewId = viewingId;
+                    Promise.resolve(this.$store.dispatch('artwork/updateView', viewingId))
+                        .then((updated) => {
+                            if (sequence === this.fetchSequence && this.artwork && String(this.artwork._id) === String(viewingId) && updated && typeof updated.views === 'number') {
+                                this.artwork = { ...this.artwork, views: updated.views };
+                            }
+                        })
+                        .catch(() => {
+                            if (this.recordedViewId === viewingId) this.recordedViewId = null;
+                        });
                 }
             } catch (error) {
                 if (sequence !== this.fetchSequence) return;
@@ -603,6 +627,13 @@ export default {
                         return;
                     }
                     this.$store.dispatch('cart/addToCart', result);
+                    Promise.resolve(this.$store.dispatch('artwork/updateView', result._id))
+                        .then((updated) => {
+                            if (this.artwork && updated && typeof updated.views === 'number') {
+                                this.artwork = { ...this.artwork, views: updated.views };
+                            }
+                        })
+                        .catch(() => {});
                     this.showAddedModal = true;
                 } else {
                     this.$store.dispatch('cart/removeFromCart', this.artwork._id);
@@ -1206,6 +1237,15 @@ export default {
 
 .action-buttons-row {
     display: flex;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 575.98px) {
+    .btn-purchase-premium,
+    .btn-action-secondary {
+        min-height: 46px;
+        flex: 1 1 140px;
+    }
 }
 
 .btn-action-secondary {

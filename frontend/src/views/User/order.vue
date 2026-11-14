@@ -8,7 +8,7 @@
           <div class="title-separator-sm mb-3"></div>
           <p class="text-muted mb-0">{{ $i18n.locale === 'en' ? 'Track your past purchases and delivery status.' : 'ติดตามประวัติการสั่งซื้อและสถานะการจัดส่ง' }}</p>
         </div>
-        <CButton color="dark" variant="outline" shape="pill" class="btn-sm font-weight-bold shadow-sm hover-lift mt-3 mt-md-0" @click="$router.push('/user')">
+        <CButton color="dark" variant="outline" shape="pill" class="btn-sm font-weight-bold shadow-sm hover-lift mt-3 mt-md-0 back-dashboard-btn" @click="$router.push('/user')">
           <CIcon name="cil-arrow-left" class="mr-2" /> {{ $i18n.locale === 'en' ? 'Back to Dashboard' : 'กลับไปที่แดชบอร์ด' }}
         </CButton>
       </div>
@@ -18,8 +18,8 @@
         <CCardHeader class="bg-white border-bottom-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
           <h5 class="font-weight-bold text-dark mb-0">{{ $i18n.locale === 'en' ? 'Order History' : 'ประวัติการสั่งซื้อ' }}</h5>
           
-          <div class="d-flex align-items-center mt-3 mt-sm-0">
-             <div class="search-box" style="min-width: 300px;">
+          <div class="d-flex align-items-center mt-3 mt-sm-0 search-box-wrap">
+             <div class="search-box">
                <CInput 
                  v-model="search"
                  :placeholder="$i18n.locale === 'en' ? 'Search orders...' : 'ค้นหาคำสั่งซื้อ...'" 
@@ -39,6 +39,7 @@
           </div>
           <p v-if="documentError" role="alert" class="text-danger px-4 pt-3 mb-0">{{ documentErrorMessage }}</p>
           <p v-if="slipError" role="alert" class="text-danger px-4 pt-3 mb-0">{{ slipErrorMessage }}</p>
+          <div class="table-responsive">
           <CDataTable
             :loading="loadingOrders"
             :key="tableKey"
@@ -108,7 +109,7 @@
             </template>
 
             <template #action="{item}">
-              <td class="align-middle text-right px-4" style="white-space: nowrap;">
+              <td class="align-middle text-right px-4 order-action-cell">
                 <!-- If not paid (no slip image) -->
                 <button type="button"
                   v-if="canUploadSlip(item)"
@@ -144,8 +145,8 @@
                   <!-- Invoice -->
                   <button type="button"
                     class="action-btn-doc icon-invoice mr-1" 
-                    :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
-                    v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบแจ้งหนี้'"
+                    :aria-label="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'"
+                    v-c-tooltip="$i18n.locale === 'en' ? 'Download Invoice' : 'ดาวน์โหลดใบยืนยันการจอง'"
                     @click="downloadInvoice(item)"
                     :disabled="!!downloading"
                   >
@@ -177,10 +178,11 @@
               </td>
             </template>
           </CDataTable>
+          </div>
         </CCardBody>
         
         <CCardFooter
-            class="d-flex justify-content-between align-items-center bg-white border-0 rounded-bottom pagination-footer">
+            class="d-flex justify-content-between align-items-center flex-wrap bg-white border-0 rounded-bottom pagination-footer">
             <div class="text-muted text-sm" v-if="filteredOrders.length > 0">
                 {{ $i18n.locale === 'en' ? 'Showing' : 'แสดง' }} {{ (activePage - 1) * itemsPerPage + 1 }} {{ $i18n.locale === 'en' ? 'to' : 'ถึง' }} {{ Math.min(activePage * itemsPerPage, filteredOrders.length) }} {{ $i18n.locale === 'en' ? 'of' : 'จาก' }} {{ filteredOrders.length }} {{ $i18n.locale === 'en' ? 'orders' : 'รายการ' }}
             </div>
@@ -701,5 +703,56 @@ export default {
     background: linear-gradient(135deg, #8a3a31 0%, #612721 100%);
     box-shadow: 0 8px 20px rgba(97, 39, 33, 0.25) !important;
     transform: translateY(-2px);
+}
+.search-box-wrap {
+    max-width: 100%;
+}
+
+.search-box {
+    width: 100%;
+    max-width: 320px;
+    min-width: 0;
+}
+
+.order-action-cell {
+    white-space: nowrap;
+}
+
+.pagination-footer {
+    gap: 0.75rem;
+}
+
+@media (max-width: 767.98px) {
+    .section-title {
+        font-size: 1.6rem;
+    }
+
+    .back-dashboard-btn {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .search-box-wrap,
+    .search-box {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .btn-quick-pay {
+        min-height: 40px;
+        padding: 8px 14px;
+    }
+
+    .action-btn-doc {
+        width: 42px;
+        height: 42px;
+    }
+
+    .pagination-footer {
+        justify-content: center !important;
+        text-align: center;
+    }
 }
 </style>

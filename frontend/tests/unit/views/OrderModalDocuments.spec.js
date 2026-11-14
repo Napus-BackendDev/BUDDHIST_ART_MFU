@@ -41,7 +41,7 @@ test.each(['invoice','certificate'])('%s failure is visible, localized and clear
   await w.vm[download]();await w.vm.$nextTick()
   expect(w.find('[role="alert"]').text()).toContain(kind==='invoice'?'Could not download invoice':'Could not download certificate')
   locale.locale='th';await w.vm.$nextTick()
-  expect(w.find('[role="alert"]').text()).toContain(kind==='invoice'?'ไม่สามารถดาวน์โหลดใบแจ้งหนี้':'ไม่สามารถดาวน์โหลดใบรับรอง')
+  expect(w.find('[role="alert"]').text()).toContain(kind==='invoice'?'ไม่สามารถดาวน์โหลดใบยืนยันการจอง':'ไม่สามารถดาวน์โหลดใบรับรอง')
   Service.order.mockResolvedValueOnce({data:'qa-pdf'})
   await w.vm[download]();await w.vm.$nextTick()
   expect(w.find('[role="alert"]').exists()).toBe(false)

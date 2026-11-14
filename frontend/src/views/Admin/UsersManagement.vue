@@ -5,12 +5,17 @@
             :description="$i18n.locale === 'en' ? 'Manage system users, roles, and permissions effectively. Support for manual entry and bulk import.' : 'จัดการผู้ใช้งาน ระบบบทบาท และสิทธิ์การเข้าถึง รองรับการเพิ่มข้อมูลด้วยตนเองและนำเข้าแบบกลุ่ม'" 
             :createButtonText="$i18n.locale === 'en' ? 'Create User' : 'เพิ่มผู้ใช้งาน'"
             icon="cil-people"
-            :showCreateButton="!usersLoading && !usersLoadError"
+            :showCreateButton="canEdit && !usersLoading && !usersLoadError"
             :showExportButton="!usersLoading && !usersLoadError"
             themeColor="red"
             @create="showChoiceModal = true"
             @export="exportToExcel"
         />
+
+        <div v-if="!canEdit" class="alert alert-warning d-flex align-items-center mb-3" role="note">
+            <CIcon name="cil-lock-locked" class="mr-2" />
+            <span>{{ $i18n.locale === 'en' ? 'View-Only access: creating, editing, importing, or deleting users is disabled.' : 'สิทธิ์ดูอย่างเดียว (View Only): ไม่สามารถเพิ่ม แก้ไข นำเข้า หรือลบผู้ใช้งานได้' }}</span>
+        </div>
 
         <p v-if="usersLoading" role="status" class="alert alert-info">
             {{ $i18n.locale === 'en' ? 'Loading users...' : 'กำลังโหลดข้อมูลผู้ใช้...' }}
@@ -22,13 +27,15 @@
             </CButton>
         </div>
         <template v-else>
-        <UserWidget v-model="filters.status" :currentRole.sync="filters.role" />
+        <UserWidget v-model="filters.status" :currentRole.sync="filters.role" :roles="roles" />
 
         <UserFilter v-model="filters" :roles="roles" :statuses="studentStatuses" />
 
         <UsersTable 
             ref="usersTable" 
             :filters="filters" 
+            :roles="roles"
+            :read-only="!canEdit"
             @view="handleViewUser"
             @edit="handleEditUser"
             @delete="handleDeleteUser"
@@ -56,6 +63,7 @@
         <UserViewModal 
             :show.sync="showViewModal"
             :user="selectedUser"
+            :read-only="!canEdit"
             @edit="handleEditUser"
         />
 
@@ -83,10 +91,11 @@ import UserCreateModal from './components/modal/user/UserCreateModal.vue';
 import UserViewModal from './components/modal/user/UserViewModal.vue';
 import UserEditModal from './components/modal/user/UserEditModal.vue';
 import { normalizeArtistContact, normalizeStudentId, isArtistRole } from '@/utils/officialEmail';
-import { dedupeRoles, dedupeStatuses } from '@/utils/roles';
+import { dedupeRoles, dedupeStatuses, resolveLocalizedTitle, getRoleDisplayLabel, resolveUserStatusMeta } from '@/utils/roles';
 import { learnerImportHeaders, learnerImportRow, resolveLearnerImportStatus, courseByNameFromSheets, courseForLearner } from '@/utils/learnerImport';
 import { courseLabel } from '@/utils/courses';
 import { retryAtFromHeaders } from '@/utils/rateLimit';
+import { hasTabPermission } from '@/utils/permissions';
 
 export default {
     name: 'UsersManagement',
@@ -123,6 +132,9 @@ export default {
         }
     },
     computed: {
+        canEdit() {
+            return hasTabPermission(this, 'users', 'edit');
+        },
         usersLoadMessage() {
             if (this.usersLoadError === 'rate') return this.$i18n.locale === 'en'
                 ? 'Too many requests. Please wait before retrying.'
@@ -138,15 +150,13 @@ export default {
         }),
         roles() {
             if (!this.rawRoles || !Array.isArray(this.rawRoles)) return [];
+            const lang = this.$i18n.locale || 'en';
             const mapped = this.rawRoles.map(r => {
                 if (!r.title || !Array.isArray(r.title)) return null;
-                const lang = this.$i18n.locale || 'en';
-                const titleLang = r.title.find(t => t.key === lang) || r.title.find(t => t.key === 'en');
-                const name = titleLang ? titleLang.value : (r.title[0] ? r.title[0].value : 'Unknown');
-                const titleEn = r.title.find(t => t.key === 'en');
-                const nameEn = titleEn ? titleEn.value : 'Unknown';
-                return { _id: r._id, name, nameEn };
-            }).filter(role => role && role.nameEn !== 'Unknown' && role.nameEn !== '');
+                const name = resolveLocalizedTitle(r, lang);
+                const nameEn = resolveLocalizedTitle(r, 'en') || name;
+                return { _id: r._id, name, nameEn, code: r.code, title: r.title };
+            }).filter(role => role && role.name && role.nameEn);
             return dedupeRoles(mapped);
         },
         studentStatuses() {
@@ -458,7 +468,7 @@ ${updating} of them already exist and will be UPDATED (name, contact and status 
                     'Personal Email': (user.contact && user.contact.personalEmail) || '-',
                     'Telephone': (user.contact && user.contact.telephone) || '-',
                     'Role': this.getRoleName(user.role),
-                    'Status': this.getStatusName(user.status),
+                    'Status': resolveUserStatusMeta(user, this.$i18n.locale, this.roles).label,
                     'Course': courseLabel(user.course, this.$i18n.locale) || '-',
                     'Profile Image': user.image || '-'
                 };
@@ -496,22 +506,10 @@ ${updating} of them already exist and will be UPDATED (name, contact and status 
             return '';
         },
         getRoleName(role) {
-            if (!role) return 'User';
-            if (typeof role === 'string') return role;
-            if (typeof role === 'object' && role.title && Array.isArray(role.title)) {
-                const titleEn = role.title.find(t => t.key === 'en');
-                return titleEn ? titleEn.value : (role.title[0] ? role.title[0].value : 'Unknown');
-            }
-            return 'User';
+            return getRoleDisplayLabel(role, this.$i18n.locale, this.roles);
         },
         getStatusName(status) {
-            if (!status) return 'Active';
-            if (typeof status === 'string') return status;
-            if (typeof status === 'object' && status.title && Array.isArray(status.title)) {
-                const titleEn = status.title.find(t => t.key === 'en');
-                return titleEn ? titleEn.value : (status.title[0] ? status.title[0].value : 'Unknown');
-            }
-            return 'Active';
+            return resolveUserStatusMeta({ status }, this.$i18n.locale, this.roles).label;
         }
     }
 }

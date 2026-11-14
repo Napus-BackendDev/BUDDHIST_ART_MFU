@@ -44,8 +44,28 @@ const buildPostTermSale = endAt => {
 const getEffectiveMode = (postTermSale, now = new Date()) => {
     if (!postTermSale?.applicable) return null;
     if (postTermSale.needsReview || !postTermSale.initialSaleEndsAt) return MODES.DISPLAY;
+    if (postTermSale.mode === MODES.DISPLAY && postTermSale.decision === DECISIONS.DISPLAY) return MODES.DISPLAY;
     if (new Date(postTermSale.initialSaleEndsAt) > now) return MODES.INITIAL;
     return postTermSale.decision === DECISIONS.CONTINUE ? MODES.STANDARD : MODES.DISPLAY;
+};
+
+const isReservedApproval = artwork => {
+    const approval = artwork?.status?.approval;
+    if (!approval || typeof approval !== 'object') return false;
+    if (approval.code === STATUS_CODES.RESERVED) return true;
+    const titles = Array.isArray(approval.title) ? approval.title : [];
+    return titles.some(t => String(t?.value || '').toLowerCase() === 'reserved');
+};
+
+const isArchivedArtwork = (artwork, now = new Date()) => {
+    const sale = artwork?.postTermSale;
+    if (!sale?.applicable) return false;
+    if (isReservedApproval(artwork)) return false;
+    if (sale.needsReview || !sale.initialSaleEndsAt) return false;
+    if (sale.decision === DECISIONS.CONTINUE) return false;
+    if (sale.mode === MODES.DISPLAY && sale.decision === DECISIONS.DISPLAY) return true;
+    const endsAt = new Date(sale.initialSaleEndsAt).getTime();
+    return Number.isFinite(endsAt) && endsAt <= now.getTime();
 };
 
 const isPostTermPurchasable = (artwork, now = new Date()) => {
@@ -54,7 +74,9 @@ const isPostTermPurchasable = (artwork, now = new Date()) => {
     return getEffectiveMode(artwork.postTermSale, now) !== MODES.DISPLAY;
 };
 
-const isAdminUser = request => String(request?.user?.role || '').toLowerCase() === 'admin';
+const { canReadTab, canEditTab } = require('../../../../middleware/userAccessMiddleware');
+const isAdminUser = request => canEditTab(request, 'artworks') || canEditTab(request, 'submissions');
+const canReadPostTerm = request => canReadTab(request, 'artworks') || canReadTab(request, 'submissions') || canReadTab(request, 'orders');
 const requestUserId = request => request?.user?.userId || request?.user?._id || request?.user?.id || null;
 const sameId = (a, b) => !!a && !!b && idString(a) === idString(b);
 
@@ -82,7 +104,7 @@ const setSaleStatusForMode = async (artwork, mode, statuses = {}) => {
 
     let nextSale = null;
     if (mode === MODES.DISPLAY) nextSale = exhibitionId;
-    if (mode === MODES.STANDARD) {
+    if (mode === MODES.STANDARD || mode === MODES.INITIAL) {
         nextSale = availableId;
     }
     if (!nextSale || nextSale === currentSale) return artwork;
@@ -105,9 +127,11 @@ const sendDecisionMail = async (artwork, decision) => {
         const title = artwork.title?.find(item => item.key === 'th')?.value
             || artwork.title?.find(item => item.key === 'en')?.value
             || 'Artwork';
-        const choice = decision === DECISIONS.CONTINUE ? 'วางขายต่อแบบปกติ / Continue regular sale' : 'แสดงเฉย ๆ / Display only';
-        const html = `<p>บันทึกความประสงค์สำหรับผลงาน <strong>${title}</strong> แล้ว</p><p>ผลการเลือก: <strong>${choice}</strong></p><p><a href="${portalLink()}">${portalLink()}</a></p>`;
-        await sendMail(email, 'ยืนยันการขายผลงานครบสิทธิ์ 1 ปี - พุทธศิลปกรรม มฟล.', '', html);
+        const choice = decision === DECISIONS.CONTINUE
+            ? 'เปิดจำหน่ายอีกครั้งโดยผู้ดูแลระบบ / Restored to sale by administrator'
+            : 'ย้ายเข้าคลังผลงาน (Archive) — จัดแสดงโดยไม่เปิดจำหน่าย / Moved to Archive (Display only)';
+        const html = `<p>อัปเดตสถานะคลังผลงานสำหรับ <strong>${title}</strong></p><p>สถานะล่าสุด: <strong>${choice}</strong></p><p><a href="${portalLink()}">${portalLink()}</a></p>`;
+        await sendMail(email, 'แจ้งสถานะคลังผลงาน (Archive) ครบกำหนด 1 ปี - พุทธศิลปกรรม มฟล.', '', html);
     } catch (error) {
         console.error('[PostTermSale] Decision email failed:', error.message);
     }
@@ -122,10 +146,10 @@ const sendReminderMail = async (artwork, kind) => {
             || artwork.title?.find(item => item.key === 'en')?.value
             || 'Artwork';
         const suffix = kind === 'expired'
-            ? 'ครบกำหนดแล้ว ระบบหยุดรับคำสั่งซื้อใหม่จนกว่าจะได้รับความประสงค์'
-            : `สิทธิ์ขายจะครบกำหนดใน ${kind} วัน กรุณาเลือกขายต่อแบบปกติหรือแสดงเฉย ๆ`;
+            ? 'ครบกำหนด 1 ปีหลังปิดรอบส่งผลงานแล้ว ระบบได้ย้ายผลงานเข้าสู่คลังผลงาน (Archive) เพื่อจัดแสดงโดยไม่เปิดจำหน่ายเรียบร้อยแล้ว'
+            : `ใกล้ครบกำหนด 1 ปีในอีก ${kind} วัน หลังจากนั้นระบบจะย้ายผลงานเข้าสู่คลังผลงาน (Archive) แบบไม่เปิดจำหน่ายโดยอัตโนมัติ`;
         const link = portalLink();
-        await sendMail(email, 'แจ้งเตือนการขายผลงานครบสิทธิ์ 1 ปี - พุทธศิลปกรรม มฟล.', '', `<p>${title}</p><p>${suffix}</p><p><a href="${link}">เข้าสู่ระบบเพื่อเลือกความประสงค์ / Sign in to choose: ${link}</a></p>`);
+        await sendMail(email, 'แจ้งเตือนกำหนดย้ายผลงานเข้าคลัง Archive (ครบ 1 ปี) - พุทธศิลปกรรม มฟล.', '', `<p>${title}</p><p>${suffix}</p><p><a href="${link}">ดูรายละเอียดในพอร์ตโฟลิโอ / View in Artist Portal: ${link}</a></p>`);
     } catch (error) {
         console.error('[PostTermSale] Reminder email failed:', error.message);
     }
@@ -156,8 +180,8 @@ const applyDecision = async ({ artworkId, decision, request }) => {
         throw error;
     }
     const principalId = requestUserId(request);
-    if (!isAdminUser(request) && !sameId(artwork.artist, principalId)) {
-        const error = new Error('ARTWORK_OWNER_REQUIRED');
+    if (!isAdminUser(request)) {
+        const error = new Error('ARTWORK_ADMIN_REQUIRED');
         error.statusCode = 403;
         throw error;
     }
@@ -171,7 +195,9 @@ const applyDecision = async ({ artworkId, decision, request }) => {
     const currentSaleData = typeof artwork.postTermSale?.toObject === 'function'
         ? artwork.postTermSale.toObject()
         : { ...(artwork.postTermSale || {}) };
-    const mode = getEffectiveMode({ ...currentSaleData, decision }, now);
+    const mode = decision === DECISIONS.DISPLAY
+        ? MODES.DISPLAY
+        : (new Date(artwork.postTermSale.initialSaleEndsAt) > now ? MODES.INITIAL : MODES.STANDARD);
     // Repeated clicks for the already-effective choice are idempotent and do
     // not create duplicate audit entries or confirmation emails.
     if (currentSaleData.decision === decision
@@ -179,9 +205,9 @@ const applyDecision = async ({ artworkId, decision, request }) => {
         && getEffectiveMode(currentSaleData, now) === mode) {
         return artwork;
     }
-    const recordedAs = isAdminUser(request) ? 'admin' : 'artist';
-    const contactMethod = request.body?.contactMethod || (recordedAs === 'artist' ? 'portal' : null);
-    if (recordedAs === 'admin' && !ADMIN_CONTACT_METHODS.has(contactMethod)) {
+    const recordedAs = 'admin';
+    const contactMethod = request.body?.contactMethod || null;
+    if (!ADMIN_CONTACT_METHODS.has(contactMethod)) {
         const error = new Error('CONTACT_METHOD_REQUIRED');
         error.statusCode = 400;
         throw error;
@@ -239,19 +265,77 @@ const applyDecision = async ({ artworkId, decision, request }) => {
 
 const sendJson = async (response, code, data) => ResMessage.sendResponse(response, 0, code, data);
 
+const syncSubmissionPostTermDates = async (submissionDoc, now = new Date()) => {
+    const artworkIds = [];
+    for (const assignment of submissionDoc?.assignments || []) {
+        for (const item of assignment?.artworks || []) {
+            if (item?._id) artworkIds.push(item._id);
+        }
+    }
+    if (!artworkIds.length) return 0;
+
+    const artworks = await ArtworkModel.find({
+        submissionArtworkId: { $in: artworkIds },
+        'postTermSale.applicable': true
+    }).lean();
+    if (!artworks.length) return 0;
+
+    const statuses = {
+        available: await getStatus('Available'),
+        exhibition: await getStatus('Exhibition'),
+        soldOut: await getStatus('Sold Out'),
+        reserved: await getStatus('Reserved')
+    };
+    const nextBase = buildPostTermSale(submissionDoc?.create?.endAt);
+    let synced = 0;
+
+    for (const artwork of artworks) {
+        const existing = artwork.postTermSale || {};
+        // Preserve explicit administrator overrides unless Submission endAt was cleared.
+        if (existing.recordedAs === 'admin' && !nextBase.needsReview) continue;
+
+        let nextMode = nextBase.mode;
+        if (!nextBase.needsReview && nextBase.initialSaleEndsAt) {
+            nextMode = new Date(nextBase.initialSaleEndsAt) > now ? MODES.INITIAL : MODES.DISPLAY;
+        }
+        const updateSet = {
+            'postTermSale.needsReview': Boolean(nextBase.needsReview),
+            'postTermSale.initialSaleEndsAt': nextBase.initialSaleEndsAt || null,
+            'postTermSale.mode': nextMode,
+            'postTermSale.effectiveAt': nextBase.initialSaleEndsAt || now,
+            'postTermSale.note': nextBase.note || 'Synced with updated Submission endAt.'
+        };
+        if (nextMode === MODES.INITIAL) {
+            updateSet['postTermSale.decision'] = DECISIONS.PENDING;
+            updateSet['postTermSale.recordedAs'] = 'system';
+            updateSet['postTermSale.notifications'] = { day30SentAt: null, day7SentAt: null, expiredSentAt: null };
+        }
+        const updated = await ArtworkModel.findOneAndUpdate(
+            { _id: artwork._id },
+            { $set: updateSet },
+            { new: true }
+        ).lean();
+        await setSaleStatusForMode(updated || artwork, nextMode, statuses);
+        synced += 1;
+    }
+    return synced;
+};
+
 exports.appBaseUrl = appBaseUrl;
-exports.constants = { MODES, DECISIONS, addCalendarYear, buildPostTermSale, getEffectiveMode, isPostTermPurchasable, isAdminUser, requestUserId };
+exports.constants = { MODES, DECISIONS, addCalendarYear, buildPostTermSale, getEffectiveMode, isArchivedArtwork, isPostTermPurchasable, isAdminUser, requestUserId };
 exports.getEffectiveMode = getEffectiveMode;
+exports.isArchivedArtwork = isArchivedArtwork;
 exports.isPostTermPurchasable = isPostTermPurchasable;
 exports.buildPostTermSale = buildPostTermSale;
 exports.addCalendarYear = addCalendarYear;
 exports.isAdminUser = isAdminUser;
 exports.requestUserId = requestUserId;
 exports.setSaleStatusForMode = setSaleStatusForMode;
+exports.syncSubmissionPostTermDates = syncSubmissionPostTermDates;
 
 exports.onList = async (request, response) => {
     try {
-        const admin = isAdminUser(request);
+        const admin = canReadPostTerm(request);
         const query = { 'postTermSale.applicable': true };
         const userId = requestUserId(request);
         if (!admin) {

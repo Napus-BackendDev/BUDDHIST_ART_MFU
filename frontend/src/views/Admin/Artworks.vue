@@ -1,10 +1,14 @@
 <template>
     <div class="artworks-dashboard">
-        <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานศิลปะ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="true" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" themeColor="yellow" @create="onAddArtwork" @export="handleExport" />
+        <HeaderHero :title="$i18n.locale === 'en' ? 'Artwork Management' : 'จัดการผลงานศิลปะ'" :description="$i18n.locale === 'en' ? 'Manage your art collection, update availability, and showcase new arrivals.' : 'จัดการคอลเลกชันผลงานศิลปะ อัปเดตสถานะ และแสดงผลงานใหม่'" icon="cil-paint" :showCreateButton="canEdit" :showExportButton="true" :createButtonText="$i18n.locale === 'en' ? 'Create Artwork' : 'เพิ่มผลงานศิลปะ'" themeColor="yellow" @create="onAddArtwork" @export="handleExport" />
+        <div v-if="!canEdit" class="alert alert-warning d-flex align-items-center mb-3" role="note">
+            <CIcon name="cil-lock-locked" class="mr-2" />
+            <span>{{ $i18n.locale === 'en' ? 'View-Only access: creating, editing, approving, rejecting, or deleting artworks is disabled.' : 'สิทธิ์ดูอย่างเดียว (View Only): ไม่สามารถเพิ่ม แก้ไข อนุมัติ ปฏิเสธ หรือลบผลงานได้' }}</span>
+        </div>
         <p v-if="importFeedback" class="alert alert-success" role="status">{{ importFeedback }}</p>
         <ArtworkWidget v-model="filters.status" :items="artworks" />
         <ArtworkFilter v-model="filters" :categories="categories" />
-        <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" :loadingActions="loadingActions" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
+        <AdminTable ref="adminTable" :filters="filters" :items="artworks" :loadingItems="loadingItems" :loadingActions="loadingActions" :read-only="!canEdit" @view="handleViewArtwork" @edit="handleEditArtwork" @delete="handleDeleteArtwork" @approve="handleApproveArtwork" @reject="handleRejectArtwork"/>
         <ArtworkCreateModal :show.sync="showCreateModal" :saving="saving" @save="handleSaveArtwork"/>
         <ArtworkCreateChoiceModal :show.sync="showChoiceModal" :error="importError" :import-count="pendingImport.length" :importing="importing" @manual="handleChoiceManual" @import="handleChoiceImport" @confirm-import="confirmArtworkImport" @download-template="downloadTemplate"/>
         <ArtworkViewModal :show.sync="showViewModal" :artwork="selectedArtwork" @edit="handleEditArtworkFromView"/>
@@ -45,6 +49,7 @@ import ArtworkEditModal from './components/modal/artwork/ArtworkEditModal.vue';
 import ArtworkCreateChoiceModal from './components/modal/artwork/ArtworkCreateChoiceModal.vue';
 import * as XLSX from 'xlsx';
 import { parseArtworkRows } from '@/utils/submissionArtworkImport';
+import { hasTabPermission } from '@/utils/permissions';
 
 export default {
     name: 'Artworks',
@@ -96,6 +101,9 @@ export default {
         }
     },
     computed: {
+        canEdit() {
+            return hasTabPermission(this, 'artworks', 'edit');
+        },
         artworks() {
             return this.$store.getters['artwork/artworks'] || [];
         }

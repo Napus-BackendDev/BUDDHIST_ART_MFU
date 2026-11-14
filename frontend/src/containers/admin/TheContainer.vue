@@ -34,6 +34,7 @@ import DialogMessage from "@/projects/components/dialog/DialogMessage.vue";
 import CenterLoading from "@/projects/components/dialog/CenterLoading.vue";
 import SignIn from "@/projects/components/dialog/SignIn.vue";
 import TwoFA from "@/projects/components/dialog/TwoFA.vue";
+import { extractRoleTitleEn, firstAllowedAdminRoute, hasTabPermission, normalizePermissions, readSession, saveSessionPermissions } from "@/utils/permissions";
 
 //
 export default {
@@ -49,9 +50,8 @@ export default {
   },
 
   mounted() {
-
-    // this.notifyUser();
     this.showNotification();
+    this.syncLivePermissions();
 
 
 
@@ -128,6 +128,29 @@ export default {
       };
 
       new Notification(title, options);
+    },
+    async syncLivePermissions() {
+      try {
+        const session = readSession();
+        if (!session || !session.xAccessToken || !session.accounts) return;
+        const users = await this.$store.dispatch('user/get', {});
+        const me = Array.isArray(users) ? users.find(u => String(u._id) === String(session.accounts)) : null;
+        if (!me || !me.role || typeof me.role !== 'object') return;
+        const roleName = extractRoleTitleEn(me.role) || session.role;
+        const nextPermissions = normalizePermissions(me.role.permissions, roleName);
+        this.$store.commit('auth/role', roleName);
+        this.$store.commit('auth/permissions', nextPermissions);
+        saveSessionPermissions(roleName, nextPermissions);
+
+        const tabRecord = [...this.$route.matched].reverse().find(r => r.meta && r.meta.tab);
+        const tab = tabRecord ? tabRecord.meta.tab : null;
+        if (tab && !hasTabPermission({ role: roleName, permissions: nextPermissions }, tab, 'view')) {
+          const fallback = firstAllowedAdminRoute({ role: roleName, permissions: nextPermissions });
+          this.$router.replace(fallback === '/' ? '/forbidden' : fallback).catch(() => {});
+        }
+      } catch (e) {
+        // Ignore transient sync errors; backend RBAC remains authoritative.
+      }
     }
   },
   computed: {

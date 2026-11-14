@@ -92,3 +92,26 @@ test('does not generate certificates for unapproved orders', async () => {
     expect(getImageBuffer).not.toHaveBeenCalled();
     expect(PdfService.generateCertificateOfAuthenticity).not.toHaveBeenCalled();
 });
+
+test('renders fallback placeholder instead of crashing when an artwork in the order has null image', async () => {
+    const doc = await Order.onQuery();
+    doc.artwork = [{ image: null, title: [{ key: 'th', value: 'ไม่มีรูป' }] }];
+    Order.onQuery.mockResolvedValue(doc);
+    await onDownloadCertificate({ params: { id: orderId } }, response);
+    expect(getImageBuffer).not.toHaveBeenCalled();
+    expect(PdfService.generateCertificateOfAuthenticity).toHaveBeenCalledWith(expect.objectContaining({ artworkBuffer: null }));
+    expect(response.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
+});
+
+test('forwards artwork category to certificate generator so 3D categories can render DIMENSION', async () => {
+    const doc = await Order.onQuery();
+    const category = { code: 'SCULPTURE', title: { en: 'Sculpture', th: 'ประติมากรรม' } };
+    doc.artwork = [{ image: null, category, size: [{ key: 'en', value: '30 x 30 x 60 cm' }] }];
+    Order.onQuery.mockResolvedValue(doc);
+    await onDownloadCertificate({ params: { id: orderId } }, response);
+    expect(PdfService.generateCertificateOfAuthenticity).toHaveBeenCalledWith(
+        expect.objectContaining({
+            info: expect.objectContaining({ category })
+        })
+    );
+});

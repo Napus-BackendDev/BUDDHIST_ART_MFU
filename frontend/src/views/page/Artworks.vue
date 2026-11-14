@@ -1,7 +1,13 @@
 <template>
     <div class="artworks-page min-vh-100 pb-5">
         <!-- Modular Hero Header -->
-        <SectionHeaderArtworks />
+        <SectionHeaderArtworks
+            :variant="archiveMode ? 'archive' : 'artworks'"
+            :badge="archiveMode ? ($i18n.locale === 'en' ? 'BUDDHIST ART ARCHIVE' : 'คลังผลงานย้อนหลัง') : 'BUDDHIST ART SPACE'"
+            :title-lead="archiveMode ? ($i18n.locale === 'en' ? 'Art' : 'คลังผลงาน') : ($i18n.locale === 'en' ? 'Artwork' : 'ผลงาน')"
+            :title-highlight="archiveMode ? ($i18n.locale === 'en' ? 'Archive' : 'Art Archive') : ($i18n.locale === 'en' ? 'Collection' : 'ศิลปะ')"
+            :description="heroDescription"
+        />
 
         <CContainer class="pt-5 mt-2" ref="artworksContainer">
             <div class="row">
@@ -25,7 +31,7 @@
                         </div>
 
                         <!-- 2. FILTER BY PRICE -->
-                        <div class="sidebar-filter-section mb-4" :class="{ 'is-collapsed': collapsedSections.priceSlider }">
+                        <div v-if="!archiveMode" class="sidebar-filter-section mb-4" :class="{ 'is-collapsed': collapsedSections.priceSlider }">
                             <button type="button" class="filter-section-header" :aria-expanded="!collapsedSections.priceSlider" @click="toggleSection('priceSlider')">
                                 <span class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'FILTER BY PRICE' : 'กรองตามราคา' }}</span>
                                 <div class="filter-toggle-btn" :title="collapsedSections.priceSlider ? ($i18n.locale === 'en' ? 'Expand' : 'ขยาย') : ($i18n.locale === 'en' ? 'Collapse' : 'ย่อ')">
@@ -74,7 +80,7 @@
                         </div>
 
                         <!-- 3. FILTER BY RANGE -->
-                        <div class="sidebar-filter-section mb-4" :class="{ 'is-collapsed': collapsedSections.priceRange }">
+                        <div v-if="!archiveMode" class="sidebar-filter-section mb-4" :class="{ 'is-collapsed': collapsedSections.priceRange }">
                             <button type="button" class="filter-section-header" :aria-expanded="!collapsedSections.priceRange" @click="toggleSection('priceRange')">
                                 <span class="filter-section-heading mb-0">{{ $i18n.locale === 'en' ? 'FILTER BY RANGE' : 'ช่วงราคา' }}</span>
                                 <div class="filter-toggle-btn" :title="collapsedSections.priceRange ? ($i18n.locale === 'en' ? 'Expand' : 'ขยาย') : ($i18n.locale === 'en' ? 'Collapse' : 'ย่อ')">
@@ -227,7 +233,7 @@
                         </div>
                         <div v-else>
                             <div v-if="paginatedArtworks.length > 0">
-                                <ArtworkCard :artworks="paginatedArtworks" :cols="3" />
+                                <ArtworkCard :artworks="paginatedArtworks" :cols="3" :archive-mode="archiveMode" />
 
                                 <!-- Pagination Component -->
                                 <div v-if="totalPages > 1" class="pagination-wrapper mt-5 pt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center">
@@ -279,11 +285,20 @@
                             </div>
                             <div v-else class="text-center py-5 no-results-box bg-white mt-3 rounded-xl border p-5">
                                 <CIcon name="cil-magnifying-glass" size="xl" class="text-muted-soft mb-3" />
-                                <h4 class="text-dark font-weight-bold mb-2">{{ $i18n.locale === 'en' ? 'No artworks found' : 'ไม่พบผลงานศิลปะ' }}</h4>
+                                <h4 class="text-dark font-weight-bold mb-2">
+                                    {{ archiveMode && !hasActiveFilters
+                                        ? ($i18n.locale === 'en' ? 'No archived artworks yet' : 'ยังไม่มีผลงานในคลัง Archive')
+                                        : ($i18n.locale === 'en' ? 'No artworks found' : 'ไม่พบผลงานศิลปะ') }}
+                                </h4>
                                 <p class="text-muted small max-w-sm mx-auto mb-4">
-                                    {{ $i18n.locale === 'en' ? 'Try adjusting your search criteria or resetting filters.' : 'ลองเปลี่ยนคำค้นหาหรือรีเซ็ตตัวกรองเพื่อค้นหาผลงาน' }}
+                                    {{ archiveMode && !hasActiveFilters
+                                        ? ($i18n.locale === 'en' ? 'Artworks from closed submissions appear here automatically 1 year after submission closing.' : 'ผลงานจากระบบส่งงานที่ปิดครบ 1 ปีจะย้ายมาจัดเก็บที่หน้านี้โดยอัตโนมัติ')
+                                        : ($i18n.locale === 'en' ? 'Try adjusting your search criteria or resetting filters.' : 'ลองเปลี่ยนคำค้นหาหรือรีเซ็ตตัวกรองเพื่อค้นหาผลงาน') }}
                                 </p>
-                                <button type="button" class="btn-reset-all px-4 py-2" @click="resetAllFilters">
+                                <router-link v-if="archiveMode && !hasActiveFilters" to="/artworks" class="btn-reset-all px-4 py-2 d-inline-block text-decoration-none">
+                                    {{ $i18n.locale === 'en' ? 'Browse Active Artworks' : 'กลับสู่หน้าผลงานศิลปะ' }}
+                                </router-link>
+                                <button v-else type="button" class="btn-reset-all px-4 py-2" @click="resetAllFilters">
                                     {{ $i18n.locale === 'en' ? 'Reset All Filters' : 'ล้างตัวกรองทั้งหมด' }}
                                 </button>
                             </div>
@@ -309,12 +324,19 @@
 import ArtworkCard from '@/components/CardArtwork.vue'
 import SectionHeaderArtworks from './components/SectionHeaderArtworks.vue'
 import { retryAtFromHeaders } from '@/utils/rateLimit'
+import { getArtworkCohortLevel, isArtworkArchived } from '@/utils/artworkPurchase'
 
 export default {
     name: 'Artworks',
     components: {
         ArtworkCard,
         SectionHeaderArtworks
+    },
+    props: {
+        archiveMode: {
+            type: Boolean,
+            default: false
+        }
     },
     data() {
         return {
@@ -452,6 +474,17 @@ export default {
         }
     },
     computed: {
+        heroDescription() {
+            const isEn = this.$i18n && this.$i18n.locale === 'en';
+            if (this.archiveMode) {
+                return isEn
+                    ? 'Certified artwork archive of graduates from MFU’s Buddhist Art short-course program, from Cohort 1 to the present.'
+                    : 'ฐานข้อมูลผลงานรับรองของผู้สำเร็จการศึกษาหลักสูตรระยะสั้น พุทธศิลปกรรม มหาวิทยาลัยแม่ฟ้าหลวง ตั้งแต่รุ่นที่ 1 ถึงรุ่นปัจจุบัน';
+            }
+            return isEn
+                ? 'Current Buddhist Art short-course cohort works held as joint IP between learners and Mae Fah Luang University (1 year post-graduation). Net proceeds support creators (60%) and the Program Fund for future learners (40%).'
+                : 'ผลงานสร้างสรรค์หลักสูตรระยะสั้น พุทธศิลปกรรม รุ่นปัจจุบัน ทรัพย์สินทางปัญญาร่วมผู้เรียนและมหาวิทยาลัยแม่ฟ้าหลวง (ต่อเนื่อง 1 ปีหลังสำเร็จการศึกษา) จัดสรรสุทธิผู้สร้างสรรค์ 60% และกองทุนหลักสูตรฯ 40% เพื่อทุนรุ่นต่อไป';
+        },
         loadErrorMessage() {
             if (this.loadError === 'rateLimit') {
                 return this.$i18n.locale === 'en' ? 'Too many requests. Please wait before retrying.' : 'มีคำขอถี่เกินกำหนด กรุณารอก่อนลองใหม่';
@@ -466,7 +499,9 @@ export default {
         approvedArtworks() {
             return this.allArtworks.filter(art => {
                 const status = this.getStatusLabel(art);
-                return ['Approved', 'Success', 'Reserved'].includes(status);
+                if (!['Approved', 'Success', 'Reserved'].includes(status)) return false;
+                const archived = isArtworkArchived(art, this.getName);
+                return this.archiveMode ? archived : !archived;
             });
         },
         priceBrackets() {
@@ -506,7 +541,9 @@ export default {
                         sortValue: this.getCohortSortValue(artwork)
                     });
                 }
-                cohorts.get(key).artworkCount += 1;
+                const cohortEntry = cohorts.get(key);
+                cohortEntry.artworkCount += 1;
+                cohortEntry.sortValue = Math.max(cohortEntry.sortValue, this.getCohortSortValue(artwork));
             });
 
             this.submissions.forEach(submission => {
@@ -522,7 +559,11 @@ export default {
                     ...cohort,
                     participantCount: cohort.participantIds.size
                 }))
-                .sort((a, b) => b.sortValue - a.sortValue);
+                .sort((a, b) => {
+                    if (a.key === 'independent' && b.key !== 'independent') return 1;
+                    if (b.key === 'independent' && a.key !== 'independent') return -1;
+                    return b.sortValue - a.sortValue;
+                });
         },
         cohortMap() {
             return this.cohortOptions.reduce((map, cohort) => {
@@ -543,9 +584,11 @@ export default {
                 (this.filters.searchQuery && this.filters.searchQuery.trim() !== '') ||
                 this.filters.category !== 'All Categories' ||
                 this.filters.cohort !== 'all' ||
-                this.filters.minPrice > 0 ||
-                this.filters.maxPrice < this.maxAvailablePrice ||
-                this.activePriceBracket !== null
+                (!this.archiveMode && (
+                    this.filters.minPrice > 0 ||
+                    this.filters.maxPrice < this.maxAvailablePrice ||
+                    this.activePriceBracket !== null
+                ))
             );
         },
         filteredArtworks() {
@@ -574,11 +617,13 @@ export default {
                 result = result.filter(art => this.getCohortKey(art) === this.filters.cohort);
             }
 
-            // Price Filter (Dynamic Slider)
-            result = result.filter(art => {
-                const price = parseFloat(art.price) || 0;
-                return price >= this.filters.minPrice && price <= this.filters.maxPrice;
-            });
+            // Price Filter (Dynamic Slider) - skipped in Archive mode
+            if (!this.archiveMode) {
+                result = result.filter(art => {
+                    const price = parseFloat(art.price) || 0;
+                    return price >= this.filters.minPrice && price <= this.filters.maxPrice;
+                });
+            }
 
             // Sort by cohort age or participant count
             result.sort((a, b) => {
@@ -751,14 +796,13 @@ export default {
             return String(item && item.academicYear || '').trim();
         },
         getCourseLevel(item) {
-            const level = String(item && item.courseLevel || '').trim();
-            return level && level !== '00' ? level : '';
+            return getArtworkCohortLevel(item);
         },
         getCohortKey(item) {
             const academicYear = this.getAcademicYear(item);
             const courseLevel = this.getCourseLevel(item);
-            if (!academicYear && !courseLevel) return 'general';
-            return `${academicYear || 'unknown'}|${courseLevel || '00'}`;
+            if (!courseLevel) return 'independent';
+            return `${academicYear || 'unknown'}|${courseLevel}`;
         },
         getParticipantIds(submission) {
             const participants = [
@@ -793,13 +837,13 @@ export default {
             return ((createdAt.getFullYear() + 543) * 1000) + (createdAt.getMonth() * 31) + createdAt.getDate();
         },
         formatCohortLabel(cohort) {
-            if (cohort.key === 'general') {
-                return this.$i18n.locale === 'en' ? 'General works' : 'ผลงานทั่วไป';
+            if (cohort.key === 'independent' || cohort.key === 'general' || !cohort.courseLevel) {
+                return this.$i18n.locale === 'en' ? 'Independent Artwork' : 'งานศิลปะ อิสระ';
             }
 
-            const levelLabel = cohort.courseLevel
-                ? (this.$i18n.locale === 'en' ? `Cohort ${cohort.courseLevel}` : `รุ่น ${cohort.courseLevel}`)
-                : '';
+            const levelLabel = this.$i18n.locale === 'en'
+                ? `Cohort ${cohort.courseLevel}`
+                : `รุ่น ${cohort.courseLevel}`;
             return [levelLabel, cohort.academicYear].filter(Boolean).join(' · ');
         },
         getName(lang, item) {

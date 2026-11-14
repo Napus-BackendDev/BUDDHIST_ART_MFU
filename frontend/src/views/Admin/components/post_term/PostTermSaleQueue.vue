@@ -5,7 +5,7 @@
       <CCardBody class="p-4">
         <!-- Filter Tabs -->
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-          <div class="queue-tabs-wrapper" role="tablist" :aria-label="$i18n.locale === 'en' ? 'Post-term sale filters' : 'ตัวกรองการขายหลังครบ 1 ปี'">
+          <div class="queue-tabs-wrapper" role="tablist" :aria-label="$i18n.locale === 'en' ? 'Archive lifecycle filters' : 'ตัวกรองสถานะคลังผลงาน Archive'">
             <button 
               v-for="tab in tabs" 
               :key="tab.key" 
@@ -21,6 +21,7 @@
 
           <div class="d-flex align-items-center flex-wrap justify-content-end">
             <button
+              v-if="!isReadOnly"
               type="button"
               class="btn-select-all mr-2"
               :disabled="loading || !selectableFilteredItems.length"
@@ -33,14 +34,14 @@
                 : ($i18n.locale === 'en' ? 'Select all' : 'เลือกทั้งหมด') }}
             </button>
             <button 
-              v-if="selectedIds.length" 
+              v-if="!isReadOnly && selectedIds.length" 
               type="button" 
               class="btn-bulk-decision mr-2" 
               :disabled="saving" 
               @click="openBulkDecision"
             >
               <CIcon name="cil-check" class="mr-1" />
-              {{ $i18n.locale === 'en' ? `Record ${selectedIds.length} decisions` : `บันทึกความประสงค์ ${selectedIds.length} รายการ` }}
+              {{ $i18n.locale === 'en' ? `Manage ${selectedIds.length} Archive items` : `จัดการ Archive ${selectedIds.length} รายการ` }}
             </button>
             <button 
               type="button" 
@@ -84,7 +85,7 @@
     <CCard class="artwork-table-card mb-4 border-0">
       <div v-if="loading" class="text-center py-5">
         <CSpinner color="primary" />
-        <p class="text-muted mt-3 mb-0">{{ $i18n.locale === 'en' ? 'Loading post-term artworks...' : 'กำลังโหลดข้อมูลการขายหลังครบ 1 ปี...' }}</p>
+        <p class="text-muted mt-3 mb-0">{{ $i18n.locale === 'en' ? 'Loading Archive lifecycle items...' : 'กำลังโหลดข้อมูลติดตามสถานะ Archive...' }}</p>
       </div>
 
       <div v-else-if="filteredItems.length === 0" class="empty-state-wrap py-5">
@@ -107,7 +108,7 @@
                 type="checkbox" 
                 class="custom-table-checkbox" 
                 :checked="selectedIds.includes(item._id)" 
-                :disabled="item.postTermSale && item.postTermSale.needsReview" 
+                :disabled="isReadOnly || (item.postTermSale && item.postTermSale.needsReview)" 
                 :aria-label="`Select ${titleOf(item)}`" 
                 @change="toggleSelection(item)" 
               />
@@ -202,14 +203,17 @@
           <!-- Action Button -->
           <template #action="{ item }">
             <td class="align-middle text-right py-3 pr-4">
+              <span v-if="isReadOnly" class="text-muted small font-weight-bold">
+                {{ $i18n.locale === 'en' ? 'View Only' : 'ดูอย่างเดียว' }}
+              </span>
               <CButton 
-                v-if="!(item.postTermSale && item.postTermSale.needsReview)" 
+                v-else-if="!(item.postTermSale && item.postTermSale.needsReview)" 
                 class="btn-decision-action" 
                 size="sm" 
                 @click="openDecision(item)"
               >
                 <CIcon name="cil-pencil" class="mr-1" />
-                {{ $i18n.locale === 'en' ? 'Record decision' : 'บันทึกความประสงค์' }}
+                {{ $i18n.locale === 'en' ? 'Manage Archive' : 'จัดการ Archive' }}
               </CButton>
               <span v-else class="text-danger small font-weight-bold">
                 {{ $i18n.locale === 'en' ? 'Review required' : 'ต้องตรวจสอบวัน' }}
@@ -237,7 +241,7 @@
     <!-- Record Decision Modal -->
     <CModal 
       :show.sync="showModal" 
-      :title="$i18n.locale === 'en' ? 'Record Post-term Sale Decision' : 'บันทึกความประสงค์การขายหลังครบ 1 ปี'" 
+      :title="$i18n.locale === 'en' ? 'Manage Archive / Admin Override' : 'จัดการสถานะ Archive / กู้คืนการขาย (Admin)'" 
       centered 
       class="admin-modal" 
       size="lg"
@@ -245,7 +249,7 @@
       <div v-if="selectedItem" class="p-3">
         <div v-if="selectedIds.length > 1" class="alert alert-info border-0 rounded-lg py-2 mb-3">
           <CIcon name="cil-info" class="mr-2" />
-          {{ $i18n.locale === 'en' ? `Applying the same decision to ${selectedIds.length} selected artworks.` : `กำลังจะบันทึกความประสงค์เดียวกันให้ผลงานที่เลือกทั้งหมด ${selectedIds.length} รายการ` }}
+          {{ $i18n.locale === 'en' ? `Applying the same Archive action to ${selectedIds.length} selected artworks.` : `กำลังจะอัปเดตสถานะเดียวกันให้ผลงานที่เลือกทั้งหมด ${selectedIds.length} รายการ` }}
         </div>
 
         <!-- Selected Artwork Header Preview -->
@@ -264,14 +268,14 @@
             <div class="small text-muted">
               <span>{{ artistOf(selectedItem) }}</span>
               <span class="mx-2">·</span>
-              <span>{{ $i18n.locale === 'en' ? 'Deadline:' : 'วันครบกำหนด:' }} {{ formatDate(selectedItem.postTermSale && selectedItem.postTermSale.initialSaleEndsAt) }}</span>
+              <span>{{ $i18n.locale === 'en' ? 'Archive Date:' : 'กำหนดเข้า Archive:' }} {{ formatDate(selectedItem.postTermSale && selectedItem.postTermSale.initialSaleEndsAt) }}</span>
             </div>
           </div>
         </div>
 
         <!-- Decision Selection Option Cards -->
         <div class="form-group mb-3">
-          <label class="modal-form-label">{{ $i18n.locale === 'en' ? 'Select Decision' : 'เลือกความประสงค์' }} <span class="text-danger">*</span></label>
+          <label class="modal-form-label">{{ $i18n.locale === 'en' ? 'Select Admin Action' : 'เลือกการดำเนินการ (Admin)' }} <span class="text-danger">*</span></label>
           <div class="decision-card-grid">
             <button
               type="button"
@@ -285,8 +289,8 @@
                   <CIcon name="cil-cart" size="lg" />
                 </div>
                 <div>
-                  <div class="decision-card-title">{{ $i18n.locale === 'en' ? 'Continue Regular Sale' : 'วางขายต่อแบบปกติ' }}</div>
-                  <div class="decision-card-desc">{{ $i18n.locale === 'en' ? 'Available for purchase with no end date until changed.' : 'ขายต่อไม่มีกำหนดจนกว่าจะหยุดขาย พร้อมออกใบรับรองสิทธิ์' }}</div>
+                  <div class="decision-card-title">{{ $i18n.locale === 'en' ? 'Restore / Special Sale (Admin)' : 'เปิดขายต่อกรณีพิเศษ (Admin)' }}</div>
+                  <div class="decision-card-desc">{{ $i18n.locale === 'en' ? 'Exempt from Archive and keep available for purchase.' : 'ยกเว้นการย้ายเข้า Archive และเปิดจำหน่ายต่อจนกว่าจะเปลี่ยนสถานะ' }}</div>
                 </div>
               </div>
             </button>
@@ -303,8 +307,8 @@
                   <CIcon name="cil-eye" size="lg" />
                 </div>
                 <div>
-                  <div class="decision-card-title">{{ $i18n.locale === 'en' ? 'Display Only (Archive)' : 'แสดงเฉย ๆ (จัดแสดงในนิทรรศการ)' }}</div>
-                  <div class="decision-card-desc">{{ $i18n.locale === 'en' ? 'Remain in student portfolio without purchase button.' : 'ยังคงอยู่ในพอร์ตโฟลิโอแต่ปิดการสั่งซื้อ' }}</div>
+                  <div class="decision-card-title">{{ $i18n.locale === 'en' ? 'Move to Archive (Display Only)' : 'ย้ายเข้าคลัง Archive (ไม่เปิดจำหน่าย)' }}</div>
+                  <div class="decision-card-desc">{{ $i18n.locale === 'en' ? 'Move artwork into the non-commercial Archive immediately.' : 'จัดเก็บเข้าหน้าคลังผลงาน Archive เพื่อรับชมโดยปิดการสั่งซื้อ' }}</div>
                 </div>
               </div>
             </button>
@@ -347,7 +351,7 @@
           @click="saveDecision"
         >
           <CIcon v-if="saving" name="cil-reload" class="mr-2 spinner-animation" />
-          {{ saving ? ($i18n.locale === 'en' ? 'Saving...' : 'กำลังบันทึก...') : ($i18n.locale === 'en' ? 'Save Decision' : 'บันทึกความประสงค์') }}
+          {{ saving ? ($i18n.locale === 'en' ? 'Saving...' : 'กำลังบันทึก...') : ($i18n.locale === 'en' ? 'Save Admin Action' : 'บันทึกการจัดการ') }}
         </CButton>
       </template>
     </CModal>
@@ -371,11 +375,16 @@
 import moment from 'moment';
 import Service from '@/service/api';
 import { artworkImageUrl } from '@/utils/submissionArtworkImport';
+import { isArtworkArchived } from '@/utils/artworkPurchase';
 import { statusBadgeMixin } from '@/mixins/statusBadgeMixin';
+import { hasTabPermission } from '@/utils/permissions';
 
 export default {
   name: 'PostTermSaleQueue',
   mixins: [statusBadgeMixin],
+  props: {
+    readOnly: { type: Boolean, default: false }
+  },
   data() {
     return {
       items: [],
@@ -407,6 +416,9 @@ export default {
     }
   },
   computed: {
+    isReadOnly() {
+      return this.readOnly || !hasTabPermission(this, 'submissions', 'edit');
+    },
     filteredItems() {
       const q = this.search.trim().toLowerCase();
       return this.items.filter(item => {
@@ -414,14 +426,7 @@ export default {
         const round = this.getRoundLabel(item);
         const haystack = `${this.titleOf(item)} ${this.artistOf(item)} ${item.artworkCode || ''} ${item.academicYear || ''} ${batch} ${round}`.toLowerCase();
         if (q && !haystack.includes(q)) return false;
-        const sale = item.postTermSale || {};
-        const expired = sale.initialSaleEndsAt && moment(sale.initialSaleEndsAt).isSameOrBefore(moment());
-        if (this.filter === 'due') return !expired && moment(sale.initialSaleEndsAt).diff(moment(), 'days', true) <= 30;
-        if (this.filter === 'pending') return sale.decision === 'pending';
-        if (this.filter === 'standard') return sale.mode === 'standard_sale' || (sale.decision === 'continue_sale' && expired);
-        if (this.filter === 'display') return sale.mode === 'display_only' || (sale.decision === 'display_only' && expired);
-        if (this.filter === 'sold') return this.saleName(item) === 'Sold Out';
-        return true;
+        return this.matchesTab(item, this.filter);
       });
     },
     paginatedItems() {
@@ -435,21 +440,15 @@ export default {
       return this.selectableFilteredItems.length > 0 && this.selectableFilteredItems.every(item => this.selectedIds.includes(item._id));
     },
     tabs() {
-      const count = key => key === 'all' ? this.items.length : this.items.filter(item => {
-        const sale = item.postTermSale || {};
-        const expired = sale.initialSaleEndsAt && moment(sale.initialSaleEndsAt).isSameOrBefore(moment());
-        if (key === 'due') return !expired && moment(sale.initialSaleEndsAt).diff(moment(), 'days', true) <= 30;
-        if (key === 'pending') return sale.decision === 'pending';
-        if (key === 'standard') return sale.mode === 'standard_sale' || (sale.decision === 'continue_sale' && expired);
-        if (key === 'display') return sale.mode === 'display_only' || (sale.decision === 'display_only' && expired);
-        return this.saleName(item) === 'Sold Out';
-      }).length;
+      const count = key => key === 'all'
+        ? this.items.length
+        : this.items.filter(item => this.matchesTab(item, key)).length;
       return [
         { key: 'all', label: this.$i18n.locale === 'en' ? 'All Artworks' : 'ทั้งหมด', count: count('all') },
-        { key: 'due', label: this.$i18n.locale === 'en' ? 'Due within 30 Days' : 'ใกล้ครบ 30 วัน', count: count('due') },
-        { key: 'pending', label: this.$i18n.locale === 'en' ? 'Pending Decision' : 'รอคำตอบ', count: count('pending') },
-        { key: 'standard', label: this.$i18n.locale === 'en' ? 'Continue Sale' : 'ขายต่อปกติ', count: count('standard') },
-        { key: 'display', label: this.$i18n.locale === 'en' ? 'Display Only' : 'แสดงเฉย ๆ', count: count('display') },
+        { key: 'due', label: this.$i18n.locale === 'en' ? 'Archive Due ≤30d' : 'ใกล้เข้า Archive ≤30 วัน', count: count('due') },
+        { key: 'pending', label: this.$i18n.locale === 'en' ? 'Active 1-Year Term' : 'รอครบกำหนด 1 ปี', count: count('pending') },
+        { key: 'display', label: this.$i18n.locale === 'en' ? 'Archived' : 'อยู่ในคลัง (Archive)', count: count('display') },
+        { key: 'standard', label: this.$i18n.locale === 'en' ? 'Admin Sale Override' : 'เปิดขายพิเศษ (Admin)', count: count('standard') },
         { key: 'sold', label: this.$i18n.locale === 'en' ? 'Sold Out' : 'ขายแล้ว', count: count('sold') }
       ];
     },
@@ -579,13 +578,30 @@ export default {
       if (days <= 30) return 'cil-clock';
       return 'cil-calendar';
     },
+    matchesTab(item, key) {
+      if (key === 'all') return true;
+      const sale = item.postTermSale || {};
+      const archived = isArtworkArchived(item, this.getName);
+      const expired = sale.initialSaleEndsAt && moment(sale.initialSaleEndsAt).isSameOrBefore(moment());
+      if (key === 'due') {
+        return !archived && !expired && sale.initialSaleEndsAt && moment(sale.initialSaleEndsAt).diff(moment(), 'days', true) <= 30;
+      }
+      if (key === 'pending') return !archived && sale.decision === 'pending';
+      if (key === 'standard') return sale.mode === 'standard_sale' || sale.decision === 'continue_sale';
+      if (key === 'display') return archived;
+      if (key === 'sold') return this.saleName(item) === 'Sold Out';
+      return true;
+    },
     getDecisionStatusBadge(item) {
       const sale = item.postTermSale || {};
+      const archived = isArtworkArchived(item, this.getName);
       if (this.saleName(item) === 'Sold Out') {
         return {
           class: 'status-sold',
           icon: 'cil-check-circle',
-          label: this.$i18n.locale === 'en' ? 'Sold Out' : 'ขายแล้ว'
+          label: archived
+            ? (this.$i18n.locale === 'en' ? 'Sold Out (Archived)' : 'ขายแล้ว (Archive)')
+            : (this.$i18n.locale === 'en' ? 'Sold Out' : 'ขายแล้ว')
         };
       }
       if (sale.needsReview) {
@@ -595,31 +611,24 @@ export default {
           label: this.$i18n.locale === 'en' ? 'Needs Review' : 'ต้องตรวจสอบ'
         };
       }
-      if (sale.mode === 'standard_sale' || (sale.decision === 'continue_sale' && moment(sale.initialSaleEndsAt).isSameOrBefore(moment()))) {
+      if (sale.mode === 'standard_sale' || sale.decision === 'continue_sale') {
         return {
           class: 'status-artist',
           icon: 'cil-check-circle',
-          label: this.$i18n.locale === 'en' ? 'Continue Regular Sale' : 'ขายต่อแบบปกติ'
+          label: this.$i18n.locale === 'en' ? 'Admin Special Sale' : 'เปิดขายพิเศษ (Admin)'
         };
       }
-      if (sale.mode === 'display_only' || (sale.decision === 'display_only' && moment(sale.initialSaleEndsAt).isSameOrBefore(moment()))) {
+      if (archived || sale.mode === 'display_only') {
         return {
           class: 'status-muted',
           icon: 'cil-eye',
-          label: this.$i18n.locale === 'en' ? 'Display Only' : 'แสดงเฉย ๆ'
-        };
-      }
-      if (sale.decision === 'continue_sale') {
-        return {
-          class: 'status-artist',
-          icon: 'cil-clock',
-          label: this.$i18n.locale === 'en' ? 'Waiting Term · Continue Sale' : 'รอครบกำหนด · ขายต่อ'
+          label: this.$i18n.locale === 'en' ? 'Archived' : 'อยู่ในคลัง (Archive)'
         };
       }
       return {
         class: 'status-customer',
         icon: 'cil-clock',
-        label: this.$i18n.locale === 'en' ? 'Pending Decision' : 'รอคำตอบ'
+        label: this.$i18n.locale === 'en' ? 'Active 1-Year Term' : 'รอครบกำหนด 1 ปี'
       };
     },
     toggleSelection(item) {
@@ -679,7 +688,7 @@ export default {
         await this.fetchItems();
         this.$store.commit('dialog/showToast', {
           title: this.$i18n.locale === 'en' ? 'Saved' : 'บันทึกเรียบร้อย',
-          message: this.$i18n.locale === 'en' ? 'Updated post-term sale decision successfully.' : 'อัปเดตการขายหลังครบ 1 ปีเรียบร้อย',
+          message: this.$i18n.locale === 'en' ? 'Updated Archive lifecycle status successfully.' : 'อัปเดตสถานะคลังผลงาน Archive เรียบร้อย',
           variant: 'success'
         });
       } catch (error) {

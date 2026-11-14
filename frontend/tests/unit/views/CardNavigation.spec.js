@@ -33,6 +33,7 @@ test('cart action remains separate from detail navigation', async () => {
   await new Promise(resolve => setImmediate(resolve))
   expect(push).not.toHaveBeenCalled()
   expect(dispatch).toHaveBeenCalledWith('cart/addToCart', art)
+  expect(dispatch).toHaveBeenCalledWith('artwork/updateView', 'qa-art')
   wrapper.destroy()
 })
 
@@ -70,5 +71,21 @@ test.each([['th', 'จองแล้ว'], ['en', 'Reserved']])('reserved artwo
   const reserved = { ...art, status: { approval: status('Reserved'), sale: status('Available') } }
   const { wrapper } = setup(Artwork, { artworks: [reserved], isPublic: true }, locale)
   expect(wrapper.find('.price-value.exhibition-only').text()).toBe(label)
+  wrapper.destroy()
+})
+
+test.each([
+  ['th', '6', 'ผู้เรียนรุ่นที่ 06, จิตรกรรม'],
+  ['en', '6', 'Cohort 06, Painting'],
+  ['th', '00', 'งานศิลปะ อิสระ, จิตรกรรม'],
+  ['en', '', 'Independent Artwork, Painting'],
+])('card cohort tag renders localized learner cohort or independent label (%s, level=%s)', (locale, courseLevel, expected) => {
+  const artworkWithCohort = {
+    ...art,
+    courseLevel,
+    category: { title: [{ key: 'th', value: 'จิตรกรรม' }, { key: 'en', value: 'Painting' }] }
+  }
+  const { wrapper } = setup(Artwork, { artworks: [artworkWithCohort], isPublic: true }, locale)
+  expect(wrapper.find('.badge-cohort-tag').text()).toBe(expected)
   wrapper.destroy()
 })

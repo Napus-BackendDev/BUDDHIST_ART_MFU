@@ -474,4 +474,46 @@ export default {
     margin-top: 0.5rem;
   }
 }
+@media (max-width: 767.98px) {
+  .meta-pill {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .pill-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .btn-edit-premium {
+    min-height: 44px;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-quick-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem !important;
+    width: 100%;
+  }
+
+  .btn-quick-nav {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 110px;
+    max-width: 180px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .btn-edit-premium {
+    width: 100%;
+  }
+}
 </style>

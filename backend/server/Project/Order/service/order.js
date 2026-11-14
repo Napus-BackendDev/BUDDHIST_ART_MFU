@@ -60,6 +60,37 @@ const orderArtworkTitles = (artworks = []) => artworks
     .map(art => (art && art.title && (art.title.find(t => t.key === 'th')?.value || art.title[0]?.value)) || '')
     .filter(Boolean).join(', ') || 'Artwork';
 
+const thaiFirstValue = (value, fallback = '') => {
+    if (!value) return fallback;
+    if (Array.isArray(value)) {
+        return value.find(item => item && item.key === 'th')?.value
+            || value.find(item => item && item.value)?.value
+            || fallback;
+    }
+    return String(value);
+};
+
+const buildInvoiceData = (doc) => {
+    const items = (doc.artwork || []).map(art => ({
+        title: thaiFirstValue(art.title),
+        artist: thaiFirstValue(art.artist?.name, 'Unknown Artist'),
+        size: thaiFirstValue(art.size, '-'),
+        technique: thaiFirstValue(art.technique, '-'),
+        price: getLinePrice(doc, art),
+        image: art.image
+    }));
+    const { subtotal, shipping, total } = getOrderAmounts(doc);
+    return {
+        orderId: doc.orderNumber || doc._id.toString(),
+        customerName: doc.contact?.name || 'Customer',
+        customerAddress: doc.address?.bill || doc.address?.shipping || 'N/A',
+        items,
+        subtotal,
+        shipping,
+        total
+    };
+};
+
 const idString = (value) => value && (value._id || value).toString();
 
 const isValidObjectId = (value) => mongo.ObjectId.isValid(value);
@@ -249,7 +280,11 @@ exports.onCreate = async function (request, response) {
                 'status.sale': availableStatus._id,
                 $or: [
                     { 'postTermSale.applicable': { $ne: true } },
-                    { 'postTermSale.initialSaleEndsAt': { $gt: new Date() } },
+                    {
+                        'postTermSale.initialSaleEndsAt': { $gt: new Date() },
+                        'postTermSale.decision': { $ne: constants.DECISIONS.DISPLAY },
+                        'postTermSale.mode': { $ne: constants.MODES.DISPLAY }
+                    },
                     { 'postTermSale.mode': constants.MODES.STANDARD },
                     { 'postTermSale.decision': constants.DECISIONS.CONTINUE }
                 ]
@@ -307,48 +342,7 @@ exports.onCreate = async function (request, response) {
         let mailFailed = false;
         let invoiceCompleted = false;
         try {
-        let invoiceData = {
-            orderId: doc.orderNumber || doc._id.toString(),
-            customerName: doc.contact?.name || "Customer",
-            customerAddress: doc.address?.bill || doc.address?.shipping || "N/A",
-            items: [],
-            total: 0,
-            accountName: "มหาวิทยาลัยแม่ฟ้าหลวง (กองทุนพุทธศิลปกรรมแห่งมหาวิทยาลัยแม่ฟ้าหลวง)",
-            bankName: "ธนาคารกรุงเทพฯ สาขาแม่ฟ้าหลวงฯ",
-            accountNo: "672-0-50576-4"
-        };
-
-        if (doc.artwork && doc.artwork.length > 0) {
-            invoiceData.items = doc.artwork.map(art => {
-                let title = "";
-                if (art.title && Array.isArray(art.title)) {
-                    title = art.title.find(t => t.key === 'th')?.value || art.title[0]?.value;
-                } else {
-                    title = art.title;
-                }
-
-                let artistName = "Unknown Artist";
-                if (art.artist) {
-                    if (art.artist.name && Array.isArray(art.artist.name)) {
-                        artistName = art.artist.name.find(n => n.key === 'th')?.value || art.artist.name[0]?.value;
-                    } else if (art.artist.name) {
-                        artistName = art.artist.name;
-                    }
-                }
-
-                invoiceData.total += art.price || 0;
-
-                return {
-                    title: title,
-                    artist: artistName,
-                    price: getLinePrice(doc, art),
-                    image: art.image
-                };
-            });
-        }
-
-        const { subtotal, shipping, total } = getOrderAmounts(doc);
-        Object.assign(invoiceData, { subtotal, shipping, total });
+        const invoiceData = buildInvoiceData(doc);
         const pdfBuffer = await pdfService.generateInvoice(invoiceData);
 
         const sanitize = (text) => {
@@ -597,7 +591,7 @@ exports.onUpload = async function (request, response) {
                     });
                 }
 
-                await sendMail(fullDoc.contact.email, 'ได้รับหลักฐานการชำระเงินและใบแจ้งหนี้ - พุทธศิลปกรรม มฟล.', '', html, attachments);
+                await sendMail(fullDoc.contact.email, 'ได้รับหลักฐานการชำระเงินและใบยืนยันการจอง - พุทธศิลปกรรม มฟล.', '', html, attachments);
                 console.log(`[Backend Checkout Flow 6.4] Confirmation email with invoice sent to ${fullDoc.contact.email}`);
             }
         } catch (emailErr) {
@@ -725,8 +719,13 @@ exports.onUpdate = async function (request, response) {
                         const attachments = [];
                         const artworkImage = await resolveStoredPublicFileAsync(artwork.image, root);
                         const artworkImagePath = artworkImage?.filePath || '';
+                        const safeOrderIdentifier = String(orderIdentifier).replace(/[^a-zA-Z0-9_-]/g, '_');
                         const artworkImageCid = artworkImagePath
-                            ? `artwork-${String(orderIdentifier).replace(/[^a-zA-Z0-9_-]/g, '_')}@buddhist-art-mfu`
+                            ? `artwork-${safeOrderIdentifier}@buddhist-art-mfu`
+                            : '';
+                        const logoPath = path.join(root, 'assets/img/logo.png');
+                        const logoCid = fs.existsSync(logoPath)
+                            ? `logo-${safeOrderIdentifier}@buddhist-art-mfu`
                             : '';
 
                         const html = approvedOrderMail({
@@ -735,7 +734,8 @@ exports.onUpdate = async function (request, response) {
                             artworkTitle,
                             price: getOrderAmounts(fullDoc).total,
                             artwork,
-                            imageCid: artworkImageCid
+                            imageCid: artworkImageCid,
+                            logoCid
                         });
                         
                         // 1. Certificate (from memory buffer)
@@ -744,6 +744,16 @@ exports.onUpdate = async function (request, response) {
                             content: pdfBuffer,
                             contentType: 'application/pdf'
                         });
+
+                        if (logoCid) {
+                            attachments.push({
+                                filename: 'logo.png',
+                                path: logoPath,
+                                cid: logoCid,
+                                contentDisposition: 'inline',
+                                contentType: 'image/png'
+                            });
+                        }
 
                         // 2. Artwork image shown inside the certificate email body.
                         if (artworkImagePath) {
@@ -877,76 +887,8 @@ exports.onDownloadInvoice = async function (request, response) {
             return ResMessage.sendResponse(response, 0, 40400);
         }
 
-        // Check if file already exists on server
-        if (doc.invoiceFile && !(doc.amounts?.shipping > 0)) {
-            const sanitize = (text) => {
-                if (!text) return "";
-                if (Array.isArray(text)) {
-                    const enVal = text.find(t => t.key === 'en')?.value;
-                    const thVal = text.find(t => t.key === 'th')?.value;
-                    return String(enVal || thVal || text[0]?.value || "").trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "");
-                }
-                return String(text).trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "");
-            };
-
-            const buyerName = sanitize(doc.contact?.name || (doc.user && doc.user.name) || "Customer");
-            const buyerId = doc.user ? (doc.user._id || doc.user) : "Guest";
-            
-            const uploadDir = path.join(__dirname, `../../../../public/account/User/${buyerId}_${buyerName}/Invoice`);
-            const filePath = path.join(uploadDir, doc.invoiceFile);
-
-            if (fs.existsSync(filePath)) {
-                const existingPdf = fs.readFileSync(filePath);
-                response.setHeader('Content-Type', 'application/pdf');
-                const downloadName = doc.orderNumber || doc._id.toString().substring(doc._id.toString().length - 8).toUpperCase();
-                response.setHeader('Content-Disposition', `attachment; filename=Invoice_${downloadName}.pdf`);
-                return response.send(existingPdf);
-            }
-        }
-
-        // --- 📄 Prepare Invoice Data (Fallback if file missing) ---
-        let invoiceData = {
-            orderId: doc.orderNumber || doc._id.toString(),
-            customerName: doc.contact?.name || "Customer",
-            customerAddress: doc.address?.bill || doc.address?.shipping || "N/A",
-            items: [],
-            total: 0,
-            accountName: "มหาวิทยาลัยแม่ฟ้าหลวง (กองทุนพุทธศิลปกรรมแห่งมหาวิทยาลัยแม่ฟ้าหลวง)",
-            bankName: "ธนาคารกรุงเทพฯ สาขาแม่ฟ้าหลวงฯ",
-            accountNo: "672-0-50576-4"
-        };
-
-        if (doc.artwork && doc.artwork.length > 0) {
-            invoiceData.items = doc.artwork.map(art => {
-                let title = "";
-                if (art.title && Array.isArray(art.title)) {
-                    title = art.title.find(t => t.key === 'th')?.value || art.title[0]?.value;
-                } else {
-                    title = art.title;
-                }
-
-                let artistName = "Unknown Artist";
-                if (art.artist) {
-                    if (art.artist.name && Array.isArray(art.artist.name)) {
-                        artistName = art.artist.name.find(n => n.key === 'th')?.value || art.artist.name[0]?.value;
-                    } else if (art.artist.name) {
-                        artistName = art.artist.name;
-                    }
-                }
-
-                invoiceData.total += art.price || 0;
-
-                return {
-                    title: title,
-                    artist: artistName,
-                    price: getLinePrice(doc, art),
-                    image: art.image
-                };
-            });
-        }
-
-        const { subtotal, shipping, total } = getOrderAmounts(doc);
-        Object.assign(invoiceData, { subtotal, shipping, total });
+        // Always generate from the active template so document updates apply to existing orders.
+        const invoiceData = buildInvoiceData(doc);
         const pdfBuffer = await pdfService.generateInvoice(invoiceData);
 
         // A manual regeneration clears an earlier failure so the order stops looking broken.
@@ -1068,9 +1010,12 @@ async function generateAndSaveCertificateFile(doc) {
         const artworkLocalPath = artworkImage?.filePath || '';
 
         // Imported images may use a public Drive share outside the upload root.
-        // Fail the whole certificate if any image is unavailable, rather than omit a purchased artwork.
+        // Fail the whole certificate if a remote image URL is unavailable, while
+        // letting artworks with no stored image fall back cleanly to placeholder.
+        const rawImage = typeof art.image === 'string' ? art.image.trim() : '';
+        const hasValidImage = Boolean(rawImage && rawImage !== 'null' && rawImage !== 'undefined');
         const artworkBuffer = artworkLocalPath && fs.existsSync(artworkLocalPath)
-            ? null : await getImageBuffer(art.image);
+            ? null : (hasValidImage ? await getImageBuffer(rawImage) : null);
 
         // 2. Prepare Info
         const getVal = (arr, key = 'en') => {
@@ -1086,6 +1031,7 @@ async function generateAndSaveCertificateFile(doc) {
             artworkNameTH: getVal(art.title, 'th'),
             artworkNameEN: getVal(art.title, 'en'),
             size: getVal(art.size, 'en') || getVal(art.size, 'th') || "N/A",
+            category: art.category,
             technique: getVal(art.technique, 'th') || getVal(art.technique, 'en') || "N/A",
             techniqueEN: getVal(art.technique, 'en'),
             techniqueTH: getVal(art.technique, 'th'),
