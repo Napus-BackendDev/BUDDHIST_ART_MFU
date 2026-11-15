@@ -29,7 +29,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-/.tmp-*
+.tmp-*
 
 # Large local-only artifacts
 Buddhist_Art_MFU_User_Manual.pdf
@@ -82,6 +82,7 @@ deploy/
 docker-compose.production.yml
 
 # Local developer / mock seed scripts & dev env
+/backend/scripts/checkAdminUser.js
 /backend/scripts/seedLocalDemo.js
 /backend/scripts/seedMockOrders.js
 /backend/scripts/seedPostTermSaleMock.js
@@ -90,3 +91,4 @@ docker-compose.production.yml
 # Non-runtime docs, QA reports, TOR captures & helper scripts
 /docs/
 /scripts/
+/frontend/README.md
