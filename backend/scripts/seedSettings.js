@@ -18,6 +18,10 @@ async function seedAll() {
             throw new Error('MONGODB URI not found in .env.dev');
         }
 
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('Refusing to run: seedSettings deletes Settings data and must not run in production.');
+        }
+
         console.log('Connecting to MongoDB...');
         await mongoose.connect(mongoURI, {
             useNewUrlParser: true,
