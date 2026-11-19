@@ -18,7 +18,8 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
           const thVal = text.find(t => t.key === 'th')?.value;
           value = enVal || thVal || text[0]?.value || "";
         }
-        return String(value).trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "");
+        // Cap length: Thai is 3 bytes/char and Linux/WebDAV reject path parts over 255 bytes.
+        return Array.from(String(value).trim().replace(/\s+/g, "_").replace(/[/\\?%*:|"<>]/g, "")).slice(0, 60).join("");
       };
 
       // Internal async function to resolve path
@@ -104,7 +105,7 @@ module.exports = function uploadImage(folderType, fieldName = "image", isMultipl
           cb(null, folderPath);
         } catch (err) {
           console.error(`[UploadMiddleware] Error:`, err);
-          cb(null, path.join(__dirname, `../public/System/doc/`));
+          cb(null, path.join(__dirname, `../public/system/doc/`));
         }
       };
 

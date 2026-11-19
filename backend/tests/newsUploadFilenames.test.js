@@ -31,3 +31,14 @@ test('multiple image uploads retain extensions and distinct filenames in one req
   expect(first.endsWith('.png')).toBe(true);
   expect(second.endsWith('.jpeg')).toBe(true);
 });
+test('long Thai news title keeps the upload folder name within the 255-byte limit', async () => {
+  const mongoose = require('mongoose');
+  const title = 'ภาพบรรยากาศพิธีเปิดนิทรรศการกลุ่มศิลปินจีน–ไทย ครั้งที่ 4 ณ กรุงปักกิ่ง สาธารณรัฐประชาชนจีน';
+  mongoose.model = jest.fn(() => ({ findById: async () => ({ title: [{ key: 'th', value: title }], create: { datetime: 1795054358980 } }) }));
+  const id = '507f1f77bcf86cd799439011';
+  const folder = await new Promise(resolve => storage.destination({ body: { _id: id } }, {}, (e, dir) => resolve(dir)));
+  const name = require('path').basename(folder);
+  expect(Buffer.byteLength(name)).toBeLessThan(255);
+  expect(name.endsWith('_1795054358980')).toBe(true);
+  require('fs').rmSync(folder, { recursive: true, force: true });
+});
