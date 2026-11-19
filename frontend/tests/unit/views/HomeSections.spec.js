@@ -6,17 +6,17 @@ import SectionStudentShowcase from '@/views/page/components/SectionStudentShowca
 const status = value => ({ title: [{ key: 'en', value }] })
 
 describe('Homepage artwork sections feedback', () => {
-  it('SectionFeaturedHome uses Latest Learner Artworks title, prioritizes purchasable works, avoids Showcase top overlap when pool allows, and uses deterministic seeded shuffle', () => {
+  it('SectionFeaturedHome uses Latest Learner Artworks title, prioritizes purchasable works strictly from the latest cohort, avoids Showcase top overlap when pool allows, and uses deterministic seeded shuffle', () => {
     const localVue = createLocalVue()
     localVue.mixin(i18nMixin)
     const artworks = [
-      // 13 cohort-6 works (top 12 picked by showcase seed) + 2 distinct works
-      ...Array.from({ length: 13 }, (_, idx) => ({
+      // 16 cohort-6 works (top 12 picked by showcase seed, 4 distinct purchasable left in cohort 6)
+      ...Array.from({ length: 17 }, (_, idx) => ({
         _id: `c6-${idx}`,
         courseLevel: '6',
         academicYear: '2026',
         createdAt: `2026-06-${String(idx + 1).padStart(2, '0')}`,
-        status: { approval: status('Approved'), sale: status(idx === 12 ? 'Sold Out' : 'Available') },
+        status: { approval: status('Approved'), sale: status(idx === 16 ? 'Sold Out' : 'Available') },
       })),
       { _id: 'cohort5-avail-a', courseLevel: '5', academicYear: '2025', createdAt: '2025-10-01', status: { approval: status('Approved'), sale: status('Available') } },
       { _id: 'cohort5-avail-b', courseLevel: '5', academicYear: '2025', createdAt: '2025-10-02', status: { approval: status('Approved'), sale: status('Available') } },
@@ -44,15 +44,44 @@ describe('Homepage artwork sections feedback', () => {
     const ids1 = w1.vm.filteredArtworks.map(a => a._id)
     expect(ids1).toHaveLength(4)
     expect(ids1).toEqual(w1Again.vm.filteredArtworks.map(a => a._id))
-    // All 4 must be purchasable (sold-out excluded while purchasable options exist)
-    expect(ids1).not.toContain('cohort5-sold')
-    expect(ids1).not.toContain('c6-12')
-    // Non-showcase available works are prioritized before Showcase's top 12
-    expect(ids1).toEqual(expect.arrayContaining(['cohort5-avail-a', 'cohort5-avail-b', 'indep-avail-c']))
-    // Order varies across seeds (check on a 6-item distinct pool via utility)
+    // All 4 must come strictly from latest cohort 6 (no cohort 5 or independent mixing)
+    expect(ids1.every(id => id.startsWith('c6-'))).toBe(true)
+    // Sold-out excluded while purchasable cohort-6 works exist
+    expect(ids1).not.toContain('c6-16')
+    expect(ids1).not.toContain('cohort5-avail-a')
+    expect(ids1).not.toContain('indep-avail-c')
     expect(w2.vm.filteredArtworks).toHaveLength(4)
+    expect(w2.vm.filteredArtworks.every(a => a._id.startsWith('c6-'))).toBe(true)
 
     w1.destroy(); w1Again.destroy(); w2.destroy()
+  })
+
+  it('SectionFeaturedHome fills remaining slots from the next newest cohort only when the latest cohort has fewer than 4 artworks', () => {
+    const localVue = createLocalVue()
+    localVue.mixin(i18nMixin)
+    const artworks = [
+      { _id: 'c7-1', courseLevel: '7', academicYear: '2027', createdAt: '2027-01-01', status: { approval: status('Approved'), sale: status('Available') } },
+      { _id: 'c7-2', courseLevel: '7', academicYear: '2027', createdAt: '2027-01-02', status: { approval: status('Approved'), sale: status('Available') } },
+      { _id: 'c6-1', courseLevel: '6', academicYear: '2026', createdAt: '2026-06-01', status: { approval: status('Approved'), sale: status('Available') } },
+      { _id: 'c6-2', courseLevel: '6', academicYear: '2026', createdAt: '2026-06-02', status: { approval: status('Approved'), sale: status('Available') } },
+      { _id: 'c5-1', courseLevel: '5', academicYear: '2025', createdAt: '2025-10-01', status: { approval: status('Approved'), sale: status('Available') } },
+    ]
+    const w = shallowMount(SectionFeaturedHome, {
+      localVue,
+      data() { return { loading: false, loadError: false, fetching: false, polling: null, visitSeed: '2026-11-19:test' } },
+      methods: { fetchArtworks: jest.fn() },
+      mocks: {
+        $i18n: { locale: 'th' },
+        $store: { getters: { 'artwork/artworks': artworks }, dispatch: jest.fn() },
+      },
+      stubs: { CContainer: true, CSpinner: true, CIcon: true, CardArtworks: true },
+    })
+
+    const ids = w.vm.filteredArtworks.map(a => a._id)
+    expect(ids).toHaveLength(4)
+    expect(ids).toEqual(expect.arrayContaining(['c7-1', 'c7-2', 'c6-1', 'c6-2']))
+    expect(ids).not.toContain('c5-1')
+    w.destroy()
   })
 
   it('SectionStudentShowcase keeps showcase heading, prioritizes purchasable works, shuffles deterministically, and expands to 12 items (3 rows)', () => {

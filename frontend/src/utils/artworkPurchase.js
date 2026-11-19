@@ -31,6 +31,13 @@ export function getArtworkCohortLevel(item) {
   return level && level !== '00' ? level : '';
 }
 
+export function getArtworkCohortKey(item) {
+  const academicYear = String((item && item.academicYear) || '').trim();
+  const courseLevel = getArtworkCohortLevel(item);
+  if (!courseLevel) return 'independent';
+  return `${academicYear || 'unknown'}|${courseLevel}`;
+}
+
 export function formatArtworkCohortTag(item, locale = 'th') {
   const level = getArtworkCohortLevel(item);
   if (!level) {
@@ -137,7 +144,12 @@ export function prioritizePurchasableWithShuffle(items = [], getName, seed = 'de
 export function selectFeaturedHomeArtworks(items = [], getName, baseSeed = 'home', limit = 4) {
   if (!Array.isArray(items) || items.length === 0) return [];
   const rankedLearners = items.filter((art) => isLearnerArtwork(art) && getArtworkCohortLevel(art));
-  const topRank = rankedLearners.length > 0 ? Math.max(...rankedLearners.map(getArtworkCohortRank)) : 0;
+  const unrankedItems = items.filter((art) => !isLearnerArtwork(art) || !getArtworkCohortLevel(art));
+  const ranksDesc = Array.from(new Set(rankedLearners.map(getArtworkCohortRank)))
+    .filter((rank) => rank > 0)
+    .sort((a, b) => b - a);
+
+  const topRank = ranksDesc.length > 0 ? ranksDesc[0] : 0;
   const topCohortPool = topRank > 0
     ? rankedLearners.filter((art) => getArtworkCohortRank(art) === topRank)
     : items.filter(isLearnerArtwork);
@@ -148,28 +160,48 @@ export function selectFeaturedHomeArtworks(items = [], getName, baseSeed = 'home
       .filter(Boolean)
   );
 
-  const availDistinct = [];
-  const availOverlap = [];
-  const restDistinct = [];
-  const restOverlap = [];
+  const pickWithOverlapGuard = (pool, seedPrefix) => {
+    const availDistinct = [];
+    const availOverlap = [];
+    const restDistinct = [];
+    const restOverlap = [];
 
-  items.forEach((art) => {
-    const isPurchasable = isArtworkPurchasable(art, getName);
-    const inShowcase = art && art._id && topShowcaseIds.has(art._id);
-    if (isPurchasable) {
-      if (inShowcase) availOverlap.push(art);
-      else availDistinct.push(art);
-    } else if (inShowcase) {
-      restOverlap.push(art);
-    } else {
-      restDistinct.push(art);
-    }
-  });
+    pool.forEach((art) => {
+      const isPurchasable = isArtworkPurchasable(art, getName);
+      const inShowcase = art && art._id && topShowcaseIds.has(art._id);
+      if (isPurchasable) {
+        if (inShowcase) availOverlap.push(art);
+        else availDistinct.push(art);
+      } else if (inShowcase) {
+        restOverlap.push(art);
+      } else {
+        restDistinct.push(art);
+      }
+    });
 
-  return [
-    ...seededShuffle(availDistinct, `${baseSeed}:featured:avail-d`),
-    ...seededShuffle(availOverlap, `${baseSeed}:featured:avail-o`),
-    ...seededShuffle(restDistinct, `${baseSeed}:featured:rest-d`),
-    ...seededShuffle(restOverlap, `${baseSeed}:featured:rest-o`),
-  ].slice(0, limit);
+    return [
+      ...seededShuffle(availDistinct, `${seedPrefix}:avail-d`),
+      ...seededShuffle(availOverlap, `${seedPrefix}:avail-o`),
+      ...seededShuffle(restDistinct, `${seedPrefix}:rest-d`),
+      ...seededShuffle(restOverlap, `${seedPrefix}:rest-o`),
+    ];
+  };
+
+  if (ranksDesc.length === 0) {
+    return pickWithOverlapGuard(unrankedItems, `${baseSeed}:featured`).slice(0, limit);
+  }
+
+  const picked = pickWithOverlapGuard(topCohortPool, `${baseSeed}:featured`);
+
+  for (let i = 1; i < ranksDesc.length && picked.length < limit; i += 1) {
+    const rank = ranksDesc[i];
+    const olderPool = rankedLearners.filter((art) => getArtworkCohortRank(art) === rank);
+    picked.push(...prioritizePurchasableWithShuffle(olderPool, getName, `${baseSeed}:featured:rank-${rank}`));
+  }
+
+  if (picked.length < limit && unrankedItems.length > 0) {
+    picked.push(...prioritizePurchasableWithShuffle(unrankedItems, getName, `${baseSeed}:featured:unranked`));
+  }
+
+  return picked.slice(0, limit);
 }

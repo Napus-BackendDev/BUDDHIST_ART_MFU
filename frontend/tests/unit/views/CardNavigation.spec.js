@@ -75,17 +75,39 @@ test.each([['th', 'จองแล้ว'], ['en', 'Reserved']])('reserved artwo
 })
 
 test.each([
-  ['th', '6', 'ผู้เรียนรุ่นที่ 06, จิตรกรรม'],
-  ['en', '6', 'Cohort 06, Painting'],
-  ['th', '00', 'งานศิลปะ อิสระ, จิตรกรรม'],
-  ['en', '', 'Independent Artwork, Painting'],
-])('card cohort tag renders localized learner cohort or independent label (%s, level=%s)', (locale, courseLevel, expected) => {
+  ['th', '6', 'ผู้เรียนรุ่นที่ 06', 'จิตรกรรม'],
+  ['en', '6', 'Cohort 06', 'Painting'],
+  ['th', '00', 'งานศิลปะ อิสระ', 'จิตรกรรม'],
+  ['en', '', 'Independent Artwork', 'Painting'],
+])('card cohort and category tags render separately in localized labels (%s, level=%s)', (locale, courseLevel, expectedCohort, expectedCategory) => {
   const artworkWithCohort = {
     ...art,
     courseLevel,
     category: { title: [{ key: 'th', value: 'จิตรกรรม' }, { key: 'en', value: 'Painting' }] }
   }
   const { wrapper } = setup(Artwork, { artworks: [artworkWithCohort], isPublic: true }, locale)
-  expect(wrapper.find('.badge-cohort-tag').text()).toBe(expected)
+  expect(wrapper.find('.badge-cohort-tag').text()).toBe(expectedCohort)
+  expect(wrapper.find('.badge-category-tag').text()).toBe(expectedCategory)
+  wrapper.destroy()
+})
+
+test.each([
+  [false, '/artworks'],
+  [true, '/archive'],
+])('clicking cohort or category tag navigates to filtered catalog without opening detail (archiveMode=%s)', async (archiveMode, expectedPath) => {
+  const artworkWithMeta = {
+    ...art,
+    courseLevel: '06',
+    academicYear: '2569',
+    category: { title: [{ key: 'th', value: 'จิตรกรรม' }, { key: 'en', value: 'Painting' }] }
+  }
+  const { wrapper, push } = setup(Artwork, { artworks: [artworkWithMeta], isPublic: true, archiveMode }, 'th')
+
+  await wrapper.find('.badge-cohort-tag').trigger('click')
+  expect(push).toHaveBeenCalledWith({ path: expectedPath, query: { cohort: '2569|06' } })
+
+  push.mockClear()
+  await wrapper.find('.badge-category-tag').trigger('click')
+  expect(push).toHaveBeenCalledWith({ path: expectedPath, query: { category: 'จิตรกรรม' } })
   wrapper.destroy()
 })

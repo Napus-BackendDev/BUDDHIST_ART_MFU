@@ -124,7 +124,7 @@
                                     <button type="button"
                                         class="filter-list-item"
                                         :class="{ 'active': filters.category === 'All Categories' }"
-                                        @click="filters.category = 'All Categories'"
+                                        @click="clearCategoryFilter"
                                     >
                                         <span class="item-title">{{ $i18n.locale === 'en' ? 'All Styles' : 'ทั้งหมด' }}</span>
                                         <span class="item-count">({{ approvedArtworks.length }})</span>
@@ -134,7 +134,7 @@
                                         v-if="getCategoryCount(getName($i18n.locale, cat)) > 0" 
                                         :key="cat._id"
                                         class="filter-list-item"
-                                        :class="{ 'active': filters.category === getName($i18n.locale, cat) }"
+                                        :class="{ 'active': isCategorySelected(cat) }"
                                         @click="toggleCategory(getName($i18n.locale, cat))"
                                     >
                                         <span class="item-title">{{ getName($i18n.locale, cat) }}</span>
@@ -161,7 +161,7 @@
                                     <button type="button"
                                         class="filter-list-item"
                                         :class="{ 'active': filters.cohort === 'all' }"
-                                        @click="filters.cohort = 'all'"
+                                        @click="clearCohortFilter"
                                     >
                                         <span class="item-title">{{ $i18n.locale === 'en' ? 'All Cohorts' : 'ทุกรุ่น' }}</span>
                                         <span class="item-count">({{ approvedArtworks.length }})</span>
@@ -216,6 +216,36 @@
                                 </option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Active Tag Filter Summary Bar (visible on both desktop and mobile) -->
+                    <div v-if="filters.cohort !== 'all' || filters.category !== 'All Categories'" class="active-filter-bar d-flex flex-wrap align-items-center mb-4">
+                        <span class="active-filter-chip active-filter-chip--cohort" v-if="filters.cohort !== 'all'">
+                            <span class="active-filter-chip-text">
+                                {{ activeCohortSummaryLabel }} · {{ activeCohortCount }} {{ $i18n.locale === 'en' ? 'artworks' : 'ผลงาน' }}
+                            </span>
+                            <button
+                                type="button"
+                                class="active-filter-remove"
+                                :aria-label="$i18n.locale === 'en' ? `Clear ${activeCohortSummaryLabel} filter` : `ล้างตัวกรอง ${activeCohortSummaryLabel}`"
+                                @click="clearCohortFilter"
+                            >
+                                ×
+                            </button>
+                        </span>
+                        <span class="active-filter-chip active-filter-chip--category" v-if="filters.category !== 'All Categories'">
+                            <span class="active-filter-chip-text">
+                                {{ activeCategoryLabel }} · {{ activeCategoryCount }} {{ $i18n.locale === 'en' ? 'artworks' : 'ผลงาน' }}
+                            </span>
+                            <button
+                                type="button"
+                                class="active-filter-remove"
+                                :aria-label="$i18n.locale === 'en' ? `Clear ${activeCategoryLabel} filter` : `ล้างตัวกรองหมวด ${activeCategoryLabel}`"
+                                @click="clearCategoryFilter"
+                            >
+                                ×
+                            </button>
+                        </span>
                     </div>
 
                     <!-- Artworks Content Area -->
@@ -324,7 +354,7 @@
 import ArtworkCard from '@/components/CardArtwork.vue'
 import SectionHeaderArtworks from './components/SectionHeaderArtworks.vue'
 import { retryAtFromHeaders } from '@/utils/rateLimit'
-import { getArtworkCohortLevel, isArtworkArchived } from '@/utils/artworkPurchase'
+import { getArtworkCohortLevel, getArtworkCohortKey, formatArtworkCohortTag, isArtworkArchived } from '@/utils/artworkPurchase'
 
 export default {
     name: 'Artworks',
@@ -571,6 +601,37 @@ export default {
                 return map;
             }, {});
         },
+        activeCohortOption() {
+            if (!this.filters.cohort || this.filters.cohort === 'all') return null;
+            return this.cohortMap[this.filters.cohort] || null;
+        },
+        activeCohortSummaryLabel() {
+            const locale = this.$i18n ? this.$i18n.locale : 'th';
+            const key = this.filters.cohort;
+            if (!key || key === 'all') return '';
+            if (key === 'independent') {
+                return formatArtworkCohortTag({ courseLevel: '00' }, locale);
+            }
+            const cohort = this.activeCohortOption;
+            const courseLevel = cohort ? cohort.courseLevel : (String(key).split('|')[1] || '');
+            return courseLevel
+                ? formatArtworkCohortTag({ courseLevel }, locale)
+                : key;
+        },
+        activeCohortCount() {
+            if (!this.filters.cohort || this.filters.cohort === 'all') return 0;
+            return this.approvedArtworks.filter(art => this.getCohortKey(art) === this.filters.cohort).length;
+        },
+        activeCategoryLabel() {
+            if (!this.filters.category || this.filters.category === 'All Categories') return '';
+            const locale = this.$i18n ? this.$i18n.locale : 'th';
+            const matched = this.categories.find(cat => this.matchesCategoryFilter(cat, this.filters.category));
+            return matched ? this.getName(locale, matched) : this.filters.category;
+        },
+        activeCategoryCount() {
+            if (!this.filters.category || this.filters.category === 'All Categories') return 0;
+            return this.getCategoryCount(this.filters.category);
+        },
         trackStyle() {
             const minPercent = (this.tempMinPrice / this.maxAvailablePrice) * 100;
             const maxPercent = (this.tempMaxPrice / this.maxAvailablePrice) * 100;
@@ -607,8 +668,7 @@ export default {
             if (this.filters.category && this.filters.category !== 'All Categories') {
                 result = result.filter(art => {
                     if (!art.category) return false;
-                    const catName = this.getName(this.$i18n.locale, art.category);
-                    return catName === this.filters.category;
+                    return this.matchesCategoryFilter(art.category, this.filters.category);
                 });
             }
 
@@ -687,13 +747,6 @@ export default {
                 ]);
                 this.categories = cats || [];
                 this.submissions = submissions || [];
-                
-                if (this.$route.query.category) {
-                    this.filters.category = this.$route.query.category;
-                }
-                if (this.$route.query.search) {
-                    this.filters.searchQuery = this.$route.query.search;
-                }
             } catch (error) {
                 this.handleLoadError(error);
             } finally {
@@ -734,12 +787,52 @@ export default {
                 window.scrollTo({ top: 350, behavior: 'smooth' });
             }
         },
-        toggleCategory(categoryName) {
-            if (this.filters.category === categoryName) {
-                this.filters.category = 'All Categories';
-            } else {
-                this.filters.category = categoryName;
+        syncRouteQuery() {
+            if (!this.$router || !this.$route) return;
+            const nextQuery = {};
+            if (this.filters.searchQuery && this.filters.searchQuery.trim() !== '') {
+                nextQuery.search = this.filters.searchQuery;
             }
+            if (this.filters.category && this.filters.category !== 'All Categories') {
+                nextQuery.category = this.filters.category;
+            }
+            if (this.filters.cohort && this.filters.cohort !== 'all') {
+                nextQuery.cohort = this.filters.cohort;
+            }
+            if (this.filters.sort && this.filters.sort !== 'newest') {
+                nextQuery.sort = this.filters.sort;
+            }
+            const currentQuery = this.$route.query || {};
+            const curKeys = Object.keys(currentQuery).filter(k => currentQuery[k] !== undefined && currentQuery[k] !== '').sort();
+            const nextKeys = Object.keys(nextQuery).sort();
+            const unchanged = curKeys.length === nextKeys.length
+                && curKeys.every((k, idx) => k === nextKeys[idx] && String(currentQuery[k]) === String(nextQuery[k]));
+            if (!unchanged) {
+                this.$router.replace({ path: this.$route.path || '/artworks', query: nextQuery }).catch(() => {});
+            }
+        },
+        matchesCategoryFilter(artCategory, filterValue) {
+            if (!artCategory || !filterValue || filterValue === 'All Categories') return false;
+            const target = String(filterValue).trim().toLowerCase();
+            if (!target) return false;
+            if (typeof artCategory === 'string') {
+                return artCategory.trim().toLowerCase() === target;
+            }
+            return ['th', 'en'].some(locale => String(this.getName(locale, artCategory) || '').trim().toLowerCase() === target);
+        },
+        isCategorySelected(cat) {
+            return this.matchesCategoryFilter(cat, this.filters.category);
+        },
+        toggleCategory(categoryName) {
+            const matchedExisting = this.categories.find(cat => this.matchesCategoryFilter(cat, this.filters.category));
+            const isSame = this.filters.category === categoryName
+                || (matchedExisting && this.matchesCategoryFilter(matchedExisting, categoryName));
+            this.filters.category = isSame ? 'All Categories' : categoryName;
+            this.syncRouteQuery();
+        },
+        clearCategoryFilter() {
+            this.filters.category = 'All Categories';
+            this.syncRouteQuery();
         },
         toggleCohort(cohortKey) {
             if (this.filters.cohort === cohortKey) {
@@ -747,6 +840,11 @@ export default {
             } else {
                 this.filters.cohort = cohortKey;
             }
+            this.syncRouteQuery();
+        },
+        clearCohortFilter() {
+            this.filters.cohort = 'all';
+            this.syncRouteQuery();
         },
         selectPriceBracket(bracket) {
             if (this.activePriceBracket === bracket.key) {
@@ -781,16 +879,14 @@ export default {
             this.filters.cohort = 'all';
             this.filters.sort = 'newest';
             this.resetPriceFilter();
+            this.syncRouteQuery();
         },
         getBracketLabel(key) {
             const bracket = this.priceBrackets.find(b => b.key === key);
             return bracket ? bracket.label : '';
         },
         getCategoryCount(categoryName) {
-            return this.approvedArtworks.filter(art => {
-                const catName = art.category ? this.getName(this.$i18n.locale, art.category) : '';
-                return catName === categoryName;
-            }).length;
+            return this.approvedArtworks.filter(art => this.matchesCategoryFilter(art.category, categoryName)).length;
         },
         getAcademicYear(item) {
             return String(item && item.academicYear || '').trim();
@@ -799,10 +895,7 @@ export default {
             return getArtworkCohortLevel(item);
         },
         getCohortKey(item) {
-            const academicYear = this.getAcademicYear(item);
-            const courseLevel = this.getCourseLevel(item);
-            if (!courseLevel) return 'independent';
-            return `${academicYear || 'unknown'}|${courseLevel}`;
+            return getArtworkCohortKey(item);
         },
         getParticipantIds(submission) {
             const participants = [
@@ -1271,6 +1364,55 @@ export default {
     font-size: 0.8rem;
     font-weight: 600;
     box-shadow: 0 2px 6px rgba(74, 29, 24, 0.15);
+}
+
+.active-filter-bar {
+    gap: 8px;
+}
+
+.active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.active-filter-chip--cohort {
+    background-color: #fbf7f1;
+    color: #4a1d18;
+    border: 1px solid rgba(74, 29, 24, 0.22);
+}
+
+.active-filter-chip--category {
+    background-color: #f5f3ef;
+    color: #57534e;
+    border: 1px solid rgba(120, 113, 108, 0.25);
+}
+
+.active-filter-remove {
+    appearance: none;
+    border: none;
+    background: rgba(0, 0, 0, 0.08);
+    color: inherit;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.active-filter-remove:hover {
+    background: rgba(0, 0, 0, 0.16);
 }
 
 .custom-sort-select {

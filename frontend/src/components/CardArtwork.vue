@@ -53,10 +53,26 @@
                             </p>
                             <!-- Cohort & Category Tags under Artwork Title/Artist -->
                             <div class="art-meta-tags d-flex align-items-center flex-wrap gap-2">
-                                <span class="badge-cohort-tag">
-                                    {{ getCohortLabel(art) }}<template v-if="art.category">, {{ getName(currentLocale, art.category) }}</template>
-                                </span>
-                                <span class="art-technique text-truncate" v-if="art.technique">
+                                <button
+                                    type="button"
+                                    class="badge-cohort-tag"
+                                    :title="currentLocale === 'en' ? `View all artworks in ${getCohortLabel(art)}` : `ดูผลงานทั้งหมดใน${getCohortLabel(art)}`"
+                                    :aria-label="currentLocale === 'en' ? `View all artworks in ${getCohortLabel(art)}` : `ดูผลงานทั้งหมดใน${getCohortLabel(art)}`"
+                                    @click.stop="navigateToCohort(art)"
+                                >
+                                    {{ getCohortLabel(art) }}
+                                </button>
+                                <button
+                                    v-if="getCategoryLabel(art)"
+                                    type="button"
+                                    class="badge-category-tag"
+                                    :title="currentLocale === 'en' ? `View all ${getCategoryLabel(art)} artworks` : `ดูผลงานหมวด${getCategoryLabel(art)}ทั้งหมด`"
+                                    :aria-label="currentLocale === 'en' ? `View all ${getCategoryLabel(art)} artworks` : `ดูผลงานหมวด${getCategoryLabel(art)}ทั้งหมด`"
+                                    @click.stop="navigateToCategory(art)"
+                                >
+                                    {{ getCategoryLabel(art) }}
+                                </button>
+                                <span class="art-technique text-truncate" v-if="art.technique && getName(currentLocale, art.technique)">
                                     {{ getName(currentLocale, art.technique) }}
                                 </span>
                             </div>
@@ -183,7 +199,7 @@
 </template>
 
 <script>
-import { isArtworkPurchasable, isArtworkArchived, formatArtworkCohortTag } from '@/utils/artworkPurchase';
+import { isArtworkPurchasable, isArtworkArchived, formatArtworkCohortTag, getArtworkCohortKey } from '@/utils/artworkPurchase';
 import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 export default {
     name: 'CardArtwork',
@@ -220,6 +236,22 @@ export default {
         artworkImageUrl,
         getCohortLabel(art) {
             return formatArtworkCohortTag(art, this.currentLocale);
+        },
+        getCategoryLabel(art) {
+            if (!art || !art.category) return '';
+            return this.getName(this.currentLocale, art.category);
+        },
+        navigateToCohort(art) {
+            if (!this.$router) return;
+            const path = this.isArchivedCard(art) ? '/archive' : '/artworks';
+            this.$router.push({ path, query: { cohort: getArtworkCohortKey(art) } }).catch(() => {});
+        },
+        navigateToCategory(art) {
+            if (!this.$router) return;
+            const category = this.getCategoryLabel(art);
+            if (!category) return;
+            const path = this.isArchivedCard(art) ? '/archive' : '/artworks';
+            this.$router.push({ path, query: { category } }).catch(() => {});
         },
         getDetail(art) {
             this.$router.push(`/artwork/${art._id}`);
@@ -461,12 +493,11 @@ export default {
     gap: 6px;
 }
 
-.badge-cohort-tag {
+.badge-cohort-tag,
+.badge-category-tag {
     display: inline-flex;
     align-items: center;
-    background-color: #fbf7f1;
-    color: #4a1d18;
-    border: 1px solid rgba(74, 29, 24, 0.15);
+    appearance: none;
     padding: 3px 9px;
     border-radius: 6px;
     font-size: 0.76rem;
@@ -475,12 +506,37 @@ export default {
     letter-spacing: 0.02em;
     transition: all 0.2s ease;
     user-select: none;
+    cursor: pointer;
+}
+
+.badge-cohort-tag {
+    background-color: #fbf7f1;
+    color: #4a1d18;
+    border: 1px solid rgba(74, 29, 24, 0.18);
 }
 
 .badge-cohort-tag:hover {
     background-color: #4a1d18;
     border-color: #4a1d18;
     color: #ffffff;
+}
+
+.badge-category-tag {
+    background-color: #f5f3ef;
+    color: #57534e;
+    border: 1px solid rgba(120, 113, 108, 0.22);
+}
+
+.badge-category-tag:hover {
+    background-color: #7c5a2b;
+    border-color: #7c5a2b;
+    color: #ffffff;
+}
+
+.badge-cohort-tag:focus-visible,
+.badge-category-tag:focus-visible {
+    outline: 2px solid #4a1d18;
+    outline-offset: 2px;
 }
 
 .art-technique {

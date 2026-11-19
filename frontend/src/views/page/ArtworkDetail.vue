@@ -88,6 +88,27 @@
                                 <!-- Title & Fine Art Label -->
                                 <div class="title-header-block mb-3">
                                     <h1 class="artwork-master-title mb-2 text-dark">{{ getName($i18n.locale, artwork) }}</h1>
+                                    <div class="detail-meta-tags d-flex align-items-center flex-wrap mb-3">
+                                        <button
+                                            type="button"
+                                            class="badge-cohort-tag"
+                                            :title="currentLocale === 'en' ? `View all artworks in ${cohortLabel}` : `ดูผลงานทั้งหมดใน${cohortLabel}`"
+                                            :aria-label="currentLocale === 'en' ? `View all artworks in ${cohortLabel}` : `ดูผลงานทั้งหมดใน${cohortLabel}`"
+                                            @click="navigateToCohort"
+                                        >
+                                            {{ cohortLabel }}
+                                        </button>
+                                        <button
+                                            v-if="categoryLabel"
+                                            type="button"
+                                            class="badge-category-tag"
+                                            :title="currentLocale === 'en' ? `View all ${categoryLabel} artworks` : `ดูผลงานหมวด${categoryLabel}ทั้งหมด`"
+                                            :aria-label="currentLocale === 'en' ? `View all ${categoryLabel} artworks` : `ดูผลงานหมวด${categoryLabel}ทั้งหมด`"
+                                            @click="navigateToCategory"
+                                        >
+                                            {{ categoryLabel }}
+                                        </button>
+                                    </div>
                                     <div class="title-divider"></div>
                                 </div>
 
@@ -349,7 +370,7 @@
 
 <script>
 import moment from 'moment';
-import { isArtworkPurchasable, isArtworkArchived } from '@/utils/artworkPurchase';
+import { isArtworkPurchasable, isArtworkArchived, formatArtworkCohortTag, getArtworkCohortKey } from '@/utils/artworkPurchase';
 import { artworkImageUrl } from '@/utils/submissionArtworkImport';
 import ArtworkCard from '@/components/CardArtwork.vue';
 
@@ -378,6 +399,16 @@ export default {
         }
     },
     computed: {
+        currentLocale() {
+            return this.$i18n ? this.$i18n.locale : 'th';
+        },
+        cohortLabel() {
+            return formatArtworkCohortTag(this.artwork, this.currentLocale);
+        },
+        categoryLabel() {
+            if (!this.artwork || !this.artwork.category) return '';
+            return this.getName(this.currentLocale, this.artwork.category);
+        },
         artistProfileRoute() {
             const artist = this.artwork && this.artwork.artist;
             if (!artist) return null;
@@ -490,6 +521,16 @@ export default {
         getStatusLabel(art) {
             if (!art || !art.status || !art.status.approval) return 'Pending';
             return this.getName('en', art.status.approval);
+        },
+        navigateToCohort() {
+            if (!this.$router || !this.artwork) return;
+            const path = this.isArchivedArtwork ? '/archive' : '/artworks';
+            this.$router.push({ path, query: { cohort: getArtworkCohortKey(this.artwork) } }).catch(() => {});
+        },
+        navigateToCategory() {
+            if (!this.$router || !this.categoryLabel) return;
+            const path = this.isArchivedArtwork ? '/archive' : '/artworks';
+            this.$router.push({ path, query: { category: this.categoryLabel } }).catch(() => {});
         },
         async fetchArtwork(silent = false) {
             const id = this.$route.params.id;
@@ -1492,5 +1533,55 @@ export default {
     border-radius: 50px;
     letter-spacing: 0.5px;
     border: 1px solid rgba(74, 29, 24, 0.1);
+}
+
+.detail-meta-tags {
+    gap: 8px;
+}
+
+.detail-meta-tags .badge-cohort-tag,
+.detail-meta-tags .badge-category-tag {
+    display: inline-flex;
+    align-items: center;
+    appearance: none;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
+    user-select: none;
+    cursor: pointer;
+}
+
+.detail-meta-tags .badge-cohort-tag {
+    background-color: #fbf7f1;
+    color: #4a1d18;
+    border: 1px solid rgba(74, 29, 24, 0.18);
+}
+
+.detail-meta-tags .badge-cohort-tag:hover {
+    background-color: #4a1d18;
+    border-color: #4a1d18;
+    color: #ffffff;
+}
+
+.detail-meta-tags .badge-category-tag {
+    background-color: #f5f3ef;
+    color: #57534e;
+    border: 1px solid rgba(120, 113, 108, 0.22);
+}
+
+.detail-meta-tags .badge-category-tag:hover {
+    background-color: #7c5a2b;
+    border-color: #7c5a2b;
+    color: #ffffff;
+}
+
+.detail-meta-tags .badge-cohort-tag:focus-visible,
+.detail-meta-tags .badge-category-tag:focus-visible {
+    outline: 2px solid #4a1d18;
+    outline-offset: 2px;
 }
 </style>
